@@ -147,6 +147,9 @@ try {
 
   await evaluate(`(() => {
     const scene = window.__LENDAS__.scene.getScene('GameScene');
+    // Conversas e painéis da campanha pausam o jogo: fecha antes de testar o chefe.
+    scene.campaign?.ui.closeDialogue();
+    if (scene.campaign) scene.campaign.ui.reward.hidden = true;
     const boss = scene.boss;
     boss.patternCooldown = 999999;
     scene.player.body.reset(boss.x + 90, boss.y);

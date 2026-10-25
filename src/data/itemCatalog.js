@@ -7,6 +7,7 @@ import { ANIMAL_PRODUCTS, FARM_CROPS, FORGE_RECIPES, MINE_CONFIG } from './build
 import { BUILDING_DEFS, BUILDING_ORDER } from './buildings.js';
 import { LEATHER_DROP, MISSIONS, RARE_SHOP, SITES } from './campaign.js';
 import { CONSUMABLES } from './consumables.js';
+import { CRAFT_RECIPES, CRAFT_STATIONS } from './craftRecipes.js';
 import { MARKET_CATALOG, TRAVELER_CATALOG, sellPriceOf } from './economy.js';
 import { ENEMY_TYPES } from './enemies.js';
 import { CHEST_LOOT_RECIPES, HARVEST_STRUCTURE_TYPES } from './harvestStructures.js';
@@ -128,6 +129,11 @@ export function itemSources(type) {
     add('craft', `Cozinhar na Fogueira: ${bundleText(cook.cost)} → ${bundleText(cook.yield)} (nível ${BUILDING_DEFS.campfire.unlocks.cook}).`, { building: 'campfire', tab: 'fire' });
   }
   if (type === 'torch') add('craft', `Fabricar na Fogueira: ${bundleText(TORCH_RECIPE.cost)} → 1 tocha.`, { building: 'campfire', tab: 'fire' });
+  for (const recipe of CRAFT_RECIPES) {
+    if (!recipe.yield[type]) continue;
+    const level = recipe.level > 1 ? ` • nível ${recipe.level}` : '';
+    add('craft', `Receita ${recipe.name} (${CRAFT_STATIONS[recipe.station]}): ${bundleText(recipe.cost)} → ${recipe.yield[type]} ${label(type).toLowerCase()}${level}.`, { building: recipe.station, tab: 'recipes' });
+  }
 
   // Comércio.
   for (const entry of MARKET_CATALOG) {
@@ -190,6 +196,8 @@ export function itemUses(type) {
     uses.push(`Ferreiro: ${names}${recipes.length > 4 ? ` e mais ${recipes.length - 4}` : ''}.`);
   }
   if (TORCH_RECIPE.cost[type]) uses.push('Fogueira: fabricar tochas.');
+  const crafts = CRAFT_RECIPES.filter((recipe) => recipe.cost[type]);
+  if (crafts.length > 0) uses.push(`Receitas: ${crafts.map((recipe) => `${recipe.name} (${CRAFT_STATIONS[recipe.station]})`).join(', ')}.`);
   if (BUILDING_DEFS.campfire.cookRecipe?.cost?.[type]) uses.push('Fogueira: cozinhar poções de vida.');
   const buildings = BUILDING_ORDER.filter((key) => Object.values(BUILDING_DEFS[key].costs ?? {}).some((cost) => cost?.[type]));
   if (buildings.length > 0) uses.push(`Construir e melhorar: ${buildings.map(BUILDING_NAME).join(', ')}.`);

@@ -418,7 +418,7 @@ export class GameUI {
       const definition = HARVEST_STRUCTURE_TYPES[nearestStructure.type];
       hint = `E  •  ${definition.requiresPickaxe ? 'Minerar' : 'Coletar'} ${definition.label}`;
     } else if (nearestResource) hint = `E  •  ${nearestResource.type === 'stone' ? 'Minerar' : 'Coletar'} ${RESOURCE_TYPES[nearestResource.type].label}`;
-    else if (nearestBackpack) hint = 'E  •  Recuperar mochila de morte';
+    else if (nearestBackpack) hint = nearestBackpack.kind === 'chest' ? 'E  •  Abrir baú do monstro' : 'E  •  Recuperar mochila de morte';
     else if (isNearCamp) {
       hint = time.isNight
         ? 'C  •  Abrir acampamento   |   F  •  Dormir / pular a noite   |   M  •  Mapa'
@@ -447,7 +447,7 @@ export class GameUI {
       : nearestResource
         ? `${nearestResource.type === 'stone' ? 'MINERAR' : 'COLETAR'} ${RESOURCE_TYPES[nearestResource.type].label.toUpperCase()}`
         : nearestBackpack
-          ? 'RECUPERAR MOCHILA'
+          ? (nearestBackpack.kind === 'chest' ? 'ABRIR BAÚ' : 'RECUPERAR MOCHILA')
           : 'ATACAR';
 
     this.statusLabel.setText(this.statusText(time));

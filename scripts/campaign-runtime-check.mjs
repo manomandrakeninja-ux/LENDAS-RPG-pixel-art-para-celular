@@ -70,6 +70,8 @@ await runInChrome({ name: 'campaign', port: 9358, width: 1280, height: 800 }, as
   const rats = await inScene(async (scene) => {
     scene.campaign.ui.reward.hidden = true;
     scene.campaign.accept('m003');
+    // A conversa ao aceitar pausa o jogo até o jogador fechar.
+    scene.campaign.ui.closeDialogue();
     const crafted = scene.buildingMenuAction('craft', 'simpleSword');
     const site = scene.campaign.sites.get('deposito');
     scene.player.body.reset(site.def.x, site.def.y + 120);
@@ -109,6 +111,8 @@ await runInChrome({ name: 'campaign', port: 9358, width: 1280, height: 800 }, as
     ui.toggleJournal(false);
     const vigia = scene.campaign.npcs.get('vigia');
     scene.player.body.reset(vigia.x + 10, vigia.y + 6);
+    // Subir de nível pausa o jogo: escolhe o bônus antes de conversar.
+    while (scene.progression.hasPendingChoice) scene.chooseLevelUp('health');
     scene.interact();
     const dialogText = ui.dialog.textContent;
     ui.dialog.querySelector('button[data-dialog="0"]')?.click();

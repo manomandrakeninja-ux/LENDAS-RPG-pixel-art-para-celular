@@ -5,15 +5,22 @@ export class DeathBackpackManager {
     this.scene = scene;
     this.backpacks = [];
     this.nextId = 1;
-    for (const saved of savedBackpacks) this.create(saved.x, saved.y, saved.items ?? {}, saved.id);
+    for (const saved of savedBackpacks) {
+      this.create(saved.x, saved.y, saved.items ?? {}, saved.id, { kind: saved.kind, coins: saved.coins, name: saved.name });
+    }
   }
 
-  create(x, y, items, id = null) {
+  /** kind: 'backpack' (itens que não couberam) ou 'chest' (baú deixado por monstro especial). */
+  create(x, y, items, id = null, { kind = 'backpack', coins = 0, name = '' } = {}) {
+    const chest = kind === 'chest';
     const backpack = {
       id: id ?? `death-bag-${this.nextId++}`,
       x: Math.round(x),
       y: Math.round(y),
-      items: { ...items }
+      items: { ...items },
+      kind: chest ? 'chest' : 'backpack',
+      coins: Math.max(0, Math.floor(Number(coins) || 0)),
+      name: String(name || '')
     };
     if (id) {
       const numericId = Number(id.split?.('-').at(-1));
@@ -22,11 +29,15 @@ export class DeathBackpackManager {
 
     backpack.glow = this.scene.add.image(backpack.x, backpack.y - 8, 'vfx', 'spark-0')
       .setBlendMode(Phaser.BlendModes.ADD)
-      .setAlpha(0.26)
+      .setAlpha(chest ? 0.5 : 0.26)
       .setDepth(backpack.y - 2);
-    backpack.sprite = this.scene.add.image(backpack.x, backpack.y, 'nature', 'death-backpack')
-      .setOrigin(0.5, 0.84)
-      .setDepth(backpack.y);
+    if (chest) {
+      backpack.glow.setTint(0xffd76b).setScale(2);
+      this.scene.tweens.add({ targets: backpack.glow, alpha: 0.2, duration: 700, yoyo: true, repeat: -1 });
+    }
+    backpack.sprite = chest && this.scene.textures.exists('harvest-structure-chest')
+      ? this.scene.add.image(backpack.x, backpack.y, 'harvest-structure-chest').setOrigin(0.5, 0.88).setDepth(backpack.y)
+      : this.scene.add.image(backpack.x, backpack.y, 'nature', 'death-backpack').setOrigin(0.5, 0.84).setDepth(backpack.y);
     backpack.hint = this.scene.add.text(backpack.x, backpack.y - 25, 'E', {
       fontFamily: 'Press Start 2P', fontSize: '8px', color: '#fff3cf',
       backgroundColor: '#26392dcc', padding: { x: 4, y: 3 }
@@ -52,11 +63,14 @@ export class DeathBackpackManager {
   collect(backpack, inventory) {
     const result = inventory.addBundle(backpack.items);
     backpack.items = result.remaining;
+    // As moedas do baú saem na primeira vez que ele é aberto.
+    const coins = backpack.coins;
+    backpack.coins = 0;
     if (Object.keys(backpack.items).length === 0) {
       this.remove(backpack);
-      return { ...result, complete: true };
+      return { ...result, coins, complete: true };
     }
-    return { ...result, complete: false };
+    return { ...result, coins, complete: false };
   }
 
   updateHints(selected) {
@@ -67,6 +81,7 @@ export class DeathBackpackManager {
     const index = this.backpacks.indexOf(backpack);
     if (index === -1) return;
     this.backpacks.splice(index, 1);
+    this.scene.tweens.killTweensOf(backpack.glow);
     backpack.glow.destroy();
     backpack.sprite.destroy();
     backpack.hint.destroy();
@@ -77,7 +92,10 @@ export class DeathBackpackManager {
       id: backpack.id,
       x: backpack.x,
       y: backpack.y,
-      items: { ...backpack.items }
+      items: { ...backpack.items },
+      kind: backpack.kind,
+      coins: backpack.coins,
+      name: backpack.name
     }));
   }
 }

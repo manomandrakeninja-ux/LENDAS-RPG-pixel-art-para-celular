@@ -11,6 +11,7 @@ import {
 import { MARKET_CATALOG, findCatalogEntry, sellPriceOf } from '../data/economy.js';
 import { TRAVELER_GOODS, questById } from '../data/travelers.js';
 import { TORCH_RECIPE } from '../data/itemCatalog.js';
+import { recipeItems, recipesFor } from '../data/craftRecipes.js';
 import { RESOURCE_TYPES } from './config.js';
 import { resourceIconHtml, textureUrl } from './iconUrls.js';
 
@@ -27,6 +28,7 @@ const PORTRAITS = {
 };
 
 const UPGRADES_TAB = { id: 'upgrades', label: 'Níveis' };
+const RECIPES_TAB = { id: 'recipes', label: 'Receitas' };
 
 function escapeHtml(value) {
   return String(value)
@@ -146,7 +148,8 @@ export class BuildingMenu {
       wall: [{ id: 'wall', label: 'Muralha' }],
       tower: [{ id: 'tower', label: 'Torre' }]
     };
-    return [...tabs[building], UPGRADES_TAB];
+    const recipes = recipesFor(building).length > 0 ? [RECIPES_TAB] : [];
+    return [...tabs[building], ...recipes, UPGRADES_TAB];
   }
 
   open(building) {
@@ -213,6 +216,7 @@ export class BuildingMenu {
   renderContent() {
     if (this.building === 'camp') return this.renderOverview();
     if (this.tab === 'upgrades') return this.renderUpgrade(this.building);
+    if (this.tab === 'recipes') return this.renderRecipes(this.building);
     const renderers = {
       campfire: () => this.renderCampfire(),
       farm: () => this.renderFarm(),
@@ -346,6 +350,33 @@ export class BuildingMenu {
         </article>
       </div>
     `;
+  }
+
+  // ---------- Receitas de itens ----------
+
+  renderRecipes(building) {
+    const level = this.camp.levels[building];
+    const cards = recipesFor(building).map((recipe) => {
+      const locked = level < recipe.level;
+      const affordable = this.camp.canPay(recipe.cost);
+      const extras = [
+        recipe.yield.xp ? `+${recipe.yield.xp} XP` : '',
+        recipe.yield.coins ? `+${recipe.yield.coins} moedas` : ''
+      ].filter(Boolean).join(' • ');
+      return `
+        <article class="building-menu__card ${locked ? 'building-menu__card--locked' : ''}">
+          <h2>${escapeHtml(recipe.name)}</h2>
+          <p>${escapeHtml(recipe.description)}</p>
+          <div class="building-menu__stat">Usa: ${this.costHtml(recipe.cost)}</div>
+          <div class="building-menu__stat">Faz: ${this.itemChips(recipeItems(recipe))}${extras ? ` <span class="recipe-extra">${extras}</span>` : ''}</div>
+          <div class="building-menu__actions">
+            <button type="button" data-action="craft-item" data-arg="${recipe.id}" ${disabled(locked || !affordable)}>${locked ? `REQUER NÍVEL ${recipe.level}` : affordable ? 'CRIAR' : 'FALTAM MATERIAIS'}</button>
+          </div>
+        </article>`;
+    }).join('');
+    return `
+      <p class="building-menu__note">Toque num material para ver onde conseguir. Os custos usam a mochila e o armazém.</p>
+      <div class="building-menu__grid">${cards}</div>`;
   }
 
   // ---------- Fogueira ----------

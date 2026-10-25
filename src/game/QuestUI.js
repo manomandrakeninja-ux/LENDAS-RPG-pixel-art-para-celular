@@ -65,6 +65,15 @@ export class QuestUI {
     return !this.journal.hidden;
   }
 
+  /** Diário, conversa ou tela de missão concluída abertos: o jogo pausa. */
+  get isBlocking() {
+    return !this.journal.hidden || !this.dialog.hidden || !this.reward.hidden;
+  }
+
+  closeReward() {
+    this.reward.hidden = true;
+  }
+
   // ---------- Textos ----------
 
   enemyName(target) {
@@ -377,7 +386,6 @@ export class QuestUI {
         <button type="button" class="button--primary">CONTINUAR</button>
       </div>`;
     this.reward.hidden = false;
-    window.clearTimeout(this.rewardTimer);
-    this.rewardTimer = window.setTimeout(() => { this.reward.hidden = true; }, lore ? 12000 : 6000);
+    this.reward.querySelector('button')?.focus({ preventScroll: true });
   }
 }

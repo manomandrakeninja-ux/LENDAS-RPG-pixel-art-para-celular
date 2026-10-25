@@ -622,3 +622,61 @@
   display: flex;
   flex-wrap: wrap;
 }
+
+/* ---------- Menu dos prédios mais compacto: janela no centro, o jogo aparece em volta ---------- */
+.building-menu {
+  background: radial-gradient(circle at 50% 45%, rgba(30, 20, 12, 0.35), rgba(8, 5, 3, 0.7));
+  backdrop-filter: none;
+}
+
+.building-menu__window {
+  width: min(820px, 88vw);
+  height: min(600px, 84dvh);
+}
+
+.building-menu .building-menu__header {
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+.building-menu__portrait-frame {
+  width: 56px;
+  height: 56px;
+}
+
+.building-menu__portrait {
+  width: 48px;
+  height: 48px;
+}
+
+.building-menu .building-menu__title {
+  font-size: 16px;
+}
+
+/* Telas pequenas (celular deitado ou em pé): quase a tela toda, mas ainda com borda. */
+@media (max-width: 720px), (max-height: 560px) {
+  .building-menu {
+    padding: max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
+  }
+
+  .building-menu__window {
+    width: min(760px, 100%);
+    height: 100%;
+    border: 3px solid #c9a76b;
+    border-radius: 12px;
+  }
+
+  .building-menu__portrait-frame {
+    width: 44px;
+    height: 44px;
+  }
+
+  .building-menu__portrait {
+    width: 36px;
+    height: 36px;
+  }
+
+  .building-menu .building-menu__title {
+    font-size: 12px;
+  }
+}

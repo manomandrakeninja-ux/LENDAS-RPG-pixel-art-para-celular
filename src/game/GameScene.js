@@ -45,6 +45,8 @@ import { createGameAnimations, preloadGameAssets } from './assets.js';
 import { TORCH_RECIPE } from '../data/itemCatalog.js';
 import { ItemInfoPanel } from './ItemInfoPanel.js';
 import { SettingsPanel } from './SettingsPanel.js';
+import { rollMonsterChest } from '../data/monsterChests.js';
+import { CRAFT_RECIPES_BY_ID, CRAFT_STATIONS, recipeItems } from '../data/craftRecipes.js';
 
 export const PICKAXE_MESSAGE = 'Você precisa de uma picareta para minerar isso.';
 // Mineração: segure o botão por 4 s (picareta de ferro: 2 s).
@@ -67,6 +69,9 @@ export class GameScene extends Phaser.Scene {
     // scene.restart() reaproveita esta instância: o estado de fim de jogo precisa ser zerado.
     this.gameOver = false;
     this.skipSave = false;
+    this.wasUiPaused = false;
+    this.hitstopActive = false;
+    this.mining = null;
     this.dungeonMarker = null;
     document.getElementById('game-over').hidden = true;
     document.getElementById('epic-banner').hidden = true;
@@ -174,18 +179,26 @@ export class GameScene extends Phaser.Scene {
     });
     this.cursors = this.input.keyboard.createCursorKeys();
     this.input.keyboard.on('keydown', () => this.audio.unlock());
-    this.input.keyboard.on('keydown-L', () => this.toggleJournal());
+    this.input.keyboard.on('keydown-L', () => {
+      if (this.campaign?.ui?.isOpen || !this.overlayBlocked()) this.toggleJournal();
+    });
     this.input.keyboard.on('keydown-ESC', () => {
       if (this.worldMap.isOpen) this.worldMap.close();
       else if (this.buildingMenu.isOpen) this.buildingMenu.close();
       else if (this.campaign?.ui.isOpen) this.campaign.ui.toggleJournal(false);
       else if (this.campaign?.ui.dialog && !this.campaign.ui.dialog.hidden) this.campaign.ui.closeDialogue();
+      else if (this.campaign?.ui.reward && !this.campaign.ui.reward.hidden) this.campaign.ui.closeReward();
       else if (this.backpackPanel.isOpen) this.backpackPanel.close();
     });
-    this.input.keyboard.on('keydown-M', () => this.worldMap.toggle());
+    this.input.keyboard.on('keydown-M', () => {
+      if (this.worldMap.isOpen) this.worldMap.close();
+      else if (!this.overlayBlocked()) this.worldMap.open();
+    });
     this.input.keyboard.on('keydown-B', () => this.toggleBackpack());
     this.input.keyboard.on('keydown-I', () => this.toggleBackpack());
-    this.input.keyboard.on('keydown-C', () => this.toggleCampMenu());
+    this.input.keyboard.on('keydown-C', () => {
+      if (this.ui.campOpen || !this.overlayBlocked()) this.toggleCampMenu();
+    });
     this.input.keyboard.on('keydown-F', () => this.restAtCamp());
     this.input.keyboard.on('keydown-R', () => this.sleepAtCamp());
     this.input.keyboard.on('keydown-E', () => this.interact());
@@ -211,7 +224,7 @@ export class GameScene extends Phaser.Scene {
       const rect = this.game.canvas.getBoundingClientRect();
       const x = (event.clientX - rect.left) * (this.scale.width / rect.width);
       const y = (event.clientY - rect.top) * (this.scale.height / rect.height);
-      if (this.worldMap?.isOpen || this.buildingMenu?.isOpen) return;
+      if (this.isUiPaused()) return;
       // Barra rápida do HUD: Mochila, Comer (tecla 2) e Poção (tecla 1).
       if (this.ui.minimapAt(x, y)) {
         this.worldMap.open();
@@ -295,6 +308,43 @@ export class GameScene extends Phaser.Scene {
     this.campaign?.ui.toggleJournal();
   }
 
+  /** Baú com itens aleatórios ao lado de um monstro especial derrotado. */
+  dropMonsterChest(source, tier = 'elite') {
+    const loot = rollMonsterChest(tier);
+    const angle = Math.random() * Math.PI * 2;
+    const x = Phaser.Math.Clamp(source.x + Math.cos(angle) * 18, 40, this.worldBounds.width - 40);
+    const y = Phaser.Math.Clamp(source.y + Math.sin(angle) * 12 + 6, 40, this.worldBounds.height - 40);
+    const chest = this.deathBackpacks.create(x, y, loot.items, null, { kind: 'chest', coins: loot.coins, name: source.name ?? '' });
+    this.effects.spawnImpact(x, y - 8, { tint: 0xffd76b, strong: true });
+    this.campaign?.ui?.toast?.(`${source.name ?? 'O monstro'} deixou um baú!`, 'gold');
+    return chest;
+  }
+
+  /** Painéis que não podem ficar por baixo de outro (menu de prédio, mapa, nível, item, configurações, missão concluída). */
+  overlayBlocked() {
+    return Boolean(
+      this.gameOver ||
+      this.progression?.hasPendingChoice ||
+      this.worldMap?.isOpen ||
+      this.buildingMenu?.isOpen ||
+      this.itemInfo?.isOpen ||
+      this.settingsPanel?.isOpen ||
+      (this.campaign?.ui?.reward && !this.campaign.ui.reward.hidden)
+    );
+  }
+
+  /** Algum painel que deve pausar o jogo está aberto? */
+  isUiPaused() {
+    return Boolean(
+      this.progression?.hasPendingChoice ||
+      this.worldMap?.isOpen ||
+      this.buildingMenu?.isOpen ||
+      this.itemInfo?.isOpen ||
+      this.settingsPanel?.isOpen ||
+      this.campaign?.ui?.isBlocking
+    );
+  }
+
   toggleBackpack() {
     if (this.worldMap?.isOpen || this.buildingMenu?.isOpen || this.gameOver) return;
     this.backpackPanel.toggle();
@@ -308,8 +358,16 @@ export class GameScene extends Phaser.Scene {
     }
     if (this.player.health <= 0 && !this.isRespawning) this.respawn();
 
-    // A escolha de nível pausa o relógio do jogo.
-    const paused = this.progression.hasPendingChoice;
+    // Pausa automática: escolha de nível, mapa, menus dos prédios, conversas, diário,
+    // missão concluída, informações de item e configurações param o relógio, a física e os inimigos.
+    const paused = this.isUiPaused();
+    if (paused !== this.wasUiPaused) {
+      this.wasUiPaused = paused;
+      if (paused) {
+        this.physics.world.pause();
+        this.cancelMining?.();
+      } else if (!this.hitstopActive) this.physics.world.resume();
+    }
     if (!paused) this.timeState = this.updateDayNight(delta);
     this.isRaining = isRaining(this.timeState);
     if (!paused) {
@@ -323,12 +381,10 @@ export class GameScene extends Phaser.Scene {
       this.menuRefreshTimer = 0;
       this.buildingMenu?.refresh();
     }
-    if (this.worldMap.isOpen || this.progression.hasPendingChoice) {
+    if (paused) {
       this.player.body.setVelocity(0, 0);
       for (const enemy of this.enemies) enemy.body?.setVelocity(0, 0);
       this.boss?.body?.setVelocity(0, 0);
-    } else if (this.buildingMenu?.isOpen || this.itemInfo?.isOpen || this.settingsPanel?.isOpen) {
-      this.player.body.setVelocity(0, 0);
     } else {
       const pointer = this.input.activePointer;
       const pointerWorld = this.cameras.main.getWorldPoint(pointer.x, pointer.y);
@@ -538,7 +594,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   attackNearby() {
-    if (this.player.attackCooldown > 0 || this.progression?.hasPendingChoice || this.worldMap?.isOpen || this.buildingMenu?.isOpen || this.itemInfo?.isOpen || this.settingsPanel?.isOpen || this.gameOver) return;
+    if (this.player.attackCooldown > 0 || this.progression?.hasPendingChoice || this.worldMap?.isOpen || this.buildingMenu?.isOpen || this.itemInfo?.isOpen || this.settingsPanel?.isOpen || this.campaign?.ui?.isBlocking || this.gameOver) return;
     this.player.attackCooldown = COMBAT_CONFIG.basicAttackCooldownMs;
     if (this.mining) this.cancelMining();
     const target = this.nearestEnemy(COMBAT_CONFIG.basicAttackRange);
@@ -651,7 +707,7 @@ export class GameScene extends Phaser.Scene {
   specialAttack() {
     if (this.player.specialCooldown > 0 ||
         this.player.stamina < COMBAT_CONFIG.specialStaminaCost ||
-        this.progression?.hasPendingChoice || this.worldMap?.isOpen || this.ui.campOpen || this.buildingMenu?.isOpen) return;
+        this.progression?.hasPendingChoice || this.worldMap?.isOpen || this.ui.campOpen || this.buildingMenu?.isOpen || this.isUiPaused()) return;
     this.player.specialCooldown = 4800;
     this.player.stamina -= COMBAT_CONFIG.specialStaminaCost;
     this.player.showAttack();
@@ -835,6 +891,7 @@ export class GameScene extends Phaser.Scene {
       });
     }
     this.coinPickups.spawn(boss.x, boss.y + 8, BOSS_CONFIG.coinDrop);
+    this.dropMonsterChest(boss, 'boss');
     this.camp.equipment.unlockRecipe(BOSS_CONFIG.recipeId);
     this.player.recalculateEquipment(this.camp.equipment);
     this.ui.showMessage('Titã do Bioma derrotado! Núcleo do Titã e receita rara obtidos.');
@@ -869,6 +926,7 @@ export class GameScene extends Phaser.Scene {
     if (Object.keys(result.remaining).length > 0) {
       this.deathBackpacks.create(enemy.x, enemy.y, result.remaining);
     }
+    if (enemy.isElite || enemy.isQuestBoss) this.dropMonsterChest(enemy, enemy.isQuestBoss ? 'boss' : 'elite');
     this.camp.questKills += 1;
     const gained = Object.entries(result.accepted)
       .map(([type, amount]) => `+${amount} ${RESOURCE_TYPES[type]?.label.toLowerCase() ?? type}`)
@@ -940,7 +998,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   interact() {
-    if (this.mining || this.itemInfo?.isOpen || this.settingsPanel?.isOpen) return;
+    if (this.mining || this.overlayBlocked() || this.campaign?.ui?.isOpen) return;
     if (this.campaign?.interact()) return;
     const resource = this.world.nearbyResource(this.player.x, this.player.y);
     const structure = this.harvestStructures.nearest(this.player.x, this.player.y);
@@ -992,14 +1050,19 @@ export class GameScene extends Phaser.Scene {
       return;
     }
     if (backpack) {
+      const isChest = backpack.kind === 'chest';
       const result = this.deathBackpacks.collect(backpack, this.inventory);
-      const gained = Object.entries(result.accepted)
-        .map(([type, amount]) => `+${amount} ${RESOURCE_TYPES[type]?.label.toLowerCase() ?? type}`)
-        .join(', ');
+      if (result.coins > 0) this.economy.addCoins(result.coins);
+      this.campaign?.onGathered(result.accepted);
+      const gained = [
+        ...Object.entries(result.accepted).map(([type, amount]) => `+${amount} ${RESOURCE_TYPES[type]?.label.toLowerCase() ?? type}`),
+        ...(result.coins > 0 ? [`+${result.coins} moedas`] : [])
+      ].join(', ');
       this.audio.playCollect();
+      if (isChest) this.effects.spawnHarvest(backpack.x, backpack.y - 10, 0xffd76b);
       this.ui.showMessage(result.complete
-        ? `Recuperou a mochila de morte • ${gained}`
-        : INVENTORY_CONFIG.fullMessage);
+        ? `${isChest ? 'Baú do monstro aberto' : 'Recuperou a mochila de morte'} • ${gained}`
+        : `${INVENTORY_CONFIG.fullMessage}${gained ? ` • ${gained}` : ''}`);
       this.save();
       return;
     }
@@ -1203,7 +1266,7 @@ export class GameScene extends Phaser.Scene {
     setTimeout(() => {
       this.hitstopActive = false;
       if (!this.sys.isActive()) return;
-      this.physics.world.resume();
+      if (!this.isUiPaused()) this.physics.world.resume();
       this.anims.resumeAll();
     }, ms);
   }
@@ -1368,6 +1431,34 @@ export class GameScene extends Phaser.Scene {
     } else if (action === 'craft') {
       result = camp.craft(arg);
       if (result.ok) this.campaign?.emit({ type: 'craft', target: arg });
+    } else if (action === 'craft-item') {
+      // Receitas de itens (aba Receitas da Fogueira, Casa, Ferreiro e Fazenda).
+      const recipe = CRAFT_RECIPES_BY_ID[arg];
+      const items = recipe ? recipeItems(recipe) : {};
+      if (!recipe) result = { ok: false, message: 'Receita desconhecida.' };
+      else if ((camp.levels[recipe.station] ?? 0) < recipe.level) {
+        result = { ok: false, message: `Requer ${CRAFT_STATIONS[recipe.station]} nível ${recipe.level}.` };
+      } else if (Object.keys(items).length > 0 && !this.inventory.canAddBundle(items)) {
+        result = { ok: false, message: INVENTORY_CONFIG.fullMessage };
+      } else if (!camp.pay(recipe.cost)) {
+        result = { ok: false, message: 'Faltam materiais para esta receita.' };
+      } else {
+        if (Object.keys(items).length > 0) this.inventory.addBundle(items);
+        const extras = [];
+        if (recipe.yield.coins) {
+          this.economy.addCoins(recipe.yield.coins);
+          extras.push(`+${recipe.yield.coins} moedas`);
+        }
+        if (recipe.yield.xp) {
+          this.grantExperience(recipe.yield.xp, false);
+          extras.push(`+${recipe.yield.xp} XP`);
+        }
+        this.campaign?.emit({ type: 'craft', target: arg });
+        this.effects.spawnHarvest(this.player.x, this.player.y - 10, 0xf2c45c);
+        this.audio.playCollect();
+        const gained = [formatGain(items), ...extras].filter(Boolean).join(', ');
+        result = { ok: true, message: `${recipe.name}: ${gained}.` };
+      }
     } else if (action === 'craft-torch') {
       // Fogueira: 2 madeiras + 1 tecido = 1 tocha (TORCH_RECIPE no catálogo de itens).
       if (!this.inventory.canAdd('torch', 1) && this.inventory.items.torch === 0) result = { ok: false, message: INVENTORY_CONFIG.fullMessage };

@@ -38,6 +38,9 @@ document.fonts.load('10px "Press Start 2P"').then(() => {
       min: { width: 320, height: 320 },
       autoCenter: Phaser.Scale.CENTER_BOTH
     },
+    // Só cliques no próprio canvas valem para o mundo. Sem isso, a Phaser trata cliques
+    // nos menus em HTML como cliques no mapa (abria outro prédio por trás do menu).
+    input: { windowEvents: false },
     physics: {
       default: 'arcade',
       arcade: { debug: false }

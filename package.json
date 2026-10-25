@@ -31,7 +31,8 @@
     "test:runtime:campaign": "node scripts/campaign-runtime-check.mjs",
     "test:runtime:evolution": "node scripts/evolution-runtime-check.mjs",
     "test:runtime:iteminfo": "node scripts/iteminfo-runtime-check.mjs",
-    "test:runtime:settings": "node scripts/settings-runtime-check.mjs"
+    "test:runtime:settings": "node scripts/settings-runtime-check.mjs",
+    "test:runtime:fixes": "node scripts/fixes-runtime-check.mjs"
   },
   "dependencies": {
     "@fontsource/press-start-2p": "^5.2.6",
