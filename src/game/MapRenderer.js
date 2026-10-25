@@ -161,7 +161,11 @@ export class MapRenderer {
       context.lineWidth = Math.max(1.5, 4 * scale);
       context.setLineDash(defense.wallStanding ? [] : [4, 4]);
       context.beginPath();
-      context.arc(toX(camp.x), toY(camp.y), defense.radius * scale, 0, Math.PI * 2);
+      defense.octagonVertices(defense.radius).forEach((vertex, index) => {
+        if (index === 0) context.moveTo(toX(vertex.x), toY(vertex.y));
+        else context.lineTo(toX(vertex.x), toY(vertex.y));
+      });
+      context.closePath();
       context.stroke();
       context.setLineDash([]);
     }

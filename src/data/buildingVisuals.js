@@ -42,11 +42,11 @@ export const BUILDING_VISUALS = Object.freeze({
     4: { frame: 'store' },
     8: { frame: 'store-8' }
   },
-  // Muralha: paliçada → estacas reforçadas com torres de madeira → pedra com torres e bandeiras.
+  // Muralha octogonal: paliçada de toras → pedra com ameias e torres → castelo com torres de telhado azul.
   wall: {
-    1: { gate: 'gate-1', bastion: null },
-    4: { gate: 'gate-4', bastion: 'bastion-4' },
-    8: { gate: 'gate-8', bastion: 'bastion-8' }
+    1: { gate: 'gate-1', segment: 'wallseg-1', corner: 'wallcorner-1' },
+    4: { gate: 'gate-4', segment: 'wallseg-4', corner: 'wallcorner-4' },
+    8: { gate: 'gate-8', segment: 'wallseg-8', corner: 'wallcorner-8' }
   },
   // Torre de Vigia: plataforma de madeira → torre reforçada → torre imponente com telhado.
   tower: {

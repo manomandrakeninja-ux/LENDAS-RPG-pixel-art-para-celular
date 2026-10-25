@@ -5,8 +5,6 @@ import { buildingVisual } from '../data/buildingVisuals.js';
 
 const WALL = BUILDING_DEFS.wall;
 const TOWER = BUILDING_DEFS.tower;
-const GATE_HALF_ANGLE = 0.075;
-const POST_SPACING = 15;
 
 const MATERIAL_COLORS = {
   wood: { body: '#8a5a32', light: '#b98352', dark: '#4e321d' },
@@ -233,6 +231,87 @@ function ensureTextures(scene) {
     canvas.polygon([[15, 0], [22, 2], [15, 5]], '#c0483b');
     canvas.rect(13, 26, 4, 6, '#2a1c12');
   });
+  // ----- Muralha octogonal: blocos que se encaixam sem vãos e torres de canto -----
+  const STONE_WALL = ['#3a3d42', '#55595f', '#6f747a', '#8d9298', '#b4b8bb'];
+  const stoneFace = (canvas, x, y, width, height, colors = STONE_WALL) => {
+    for (let py = y; py < y + height; py += 1) {
+      const row = Math.floor((py - y) / 4);
+      for (let px = x; px < x + width; px += 1) {
+        const seam = (py - y) % 4 === 3 || (px - x + (row % 2) * 4) % 8 === 7;
+        const tone = ((px * 7 + row * 13) % 11) > 7 ? 3 : 2;
+        canvas.pixel(px, py, seam ? colors[1] : colors[tone]);
+      }
+    }
+  };
+  // Estágio 1: paliçada de toras pontiagudas (3 toras por bloco).
+  drawTexture(scene, 'wallseg-1', 16, 30, (canvas) => {
+    for (const x of [0, 5, 10]) {
+      canvas.rect(x, 6, 6, 24, '#7a4d2a');
+      canvas.rect(x, 6, 2, 24, '#a0703f');
+      canvas.rect(x + 5, 6, 1, 24, '#4a2f1e');
+      canvas.polygon([[x, 6], [x + 3, 0], [x + 6, 6]], '#a0703f');
+    }
+    canvas.rect(0, 13, 16, 2, '#c9b27a');
+    canvas.rect(0, 22, 16, 2, '#c9b27a');
+  });
+  drawTexture(scene, 'wallcorner-1', 22, 40, (canvas) => {
+    canvas.shadow(11, 39, 9, 1.6, 100);
+    canvas.rect(4, 8, 14, 32, '#6e4628');
+    canvas.rect(4, 8, 4, 32, '#94633a');
+    canvas.rect(16, 8, 2, 32, '#4a2f1e');
+    canvas.polygon([[4, 8], [11, 0], [18, 8]], '#94633a');
+    for (const y of [14, 24, 32]) canvas.rect(4, y, 14, 2, '#c9b27a');
+  });
+  // Estágio 4: muro de pedra com ameias.
+  drawTexture(scene, 'wallseg-4', 16, 30, (canvas) => {
+    stoneFace(canvas, 0, 6, 16, 24);
+    canvas.rect(0, 2, 8, 5, STONE_WALL[3]);
+    canvas.rect(0, 2, 8, 1, STONE_WALL[4]);
+    canvas.rect(0, 6, 16, 1, STONE_WALL[4]);
+    canvas.rect(0, 29, 16, 1, STONE_WALL[0]);
+  });
+  drawTexture(scene, 'wallcorner-4', 30, 54, (canvas) => {
+    canvas.shadow(15, 53, 13, 2, 110);
+    stoneFace(canvas, 3, 10, 24, 44);
+    canvas.rect(3, 10, 4, 44, STONE_WALL[3]);
+    canvas.rect(23, 10, 4, 44, STONE_WALL[1]);
+    canvas.rect(1, 8, 28, 4, STONE_WALL[3]);
+    for (let x = 1; x < 29; x += 7) canvas.rect(x, 2, 4, 6, STONE_WALL[3]);
+    canvas.rect(13, 24, 4, 8, '#1a1416');
+    canvas.rect(13, 38, 4, 6, '#1a1416');
+  });
+  // Estágio 8: paredão alto com pilastras e ameias (referência do castelo).
+  drawTexture(scene, 'wallseg-8', 16, 36, (canvas) => {
+    stoneFace(canvas, 0, 8, 16, 28);
+    canvas.rect(0, 2, 8, 7, STONE_WALL[3]);
+    canvas.rect(0, 2, 8, 1, STONE_WALL[4]);
+    canvas.rect(0, 8, 16, 2, STONE_WALL[4]);
+    canvas.rect(5, 12, 6, 22, STONE_WALL[2]);
+    canvas.rect(5, 12, 1, 22, STONE_WALL[4]);
+    canvas.rect(10, 12, 1, 22, STONE_WALL[1]);
+    canvas.rect(0, 34, 16, 2, STONE_WALL[0]);
+  });
+  drawTexture(scene, 'wallcorner-8', 36, 76, (canvas) => {
+    canvas.shadow(18, 75, 16, 2.4, 120);
+    stoneFace(canvas, 4, 30, 28, 46);
+    canvas.rect(4, 30, 5, 46, STONE_WALL[3]);
+    canvas.rect(27, 30, 5, 46, STONE_WALL[1]);
+    canvas.rect(2, 26, 32, 5, STONE_WALL[3]);
+    for (let x = 2; x < 34; x += 7) canvas.rect(x, 21, 4, 5, STONE_WALL[3]);
+    // Telhado cônico azul e bandeira.
+    canvas.polygon([[3, 24], [18, 3], [33, 24]], '#2f4f8a');
+    canvas.polygon([[18, 3], [33, 24], [22, 24]], '#233c6a');
+    for (let y = 8; y < 24; y += 3) canvas.line(18 - (y - 3) * 0.7, y, 18 + (y - 3) * 0.7, y, '#3f66a8');
+    canvas.rect(17, 0, 1, 5, '#5a3b26');
+    canvas.polygon([[18, 0], [26, 2], [18, 4]], '#2f6ea8');
+    // Estandarte azul com emblema dourado e seteira.
+    canvas.rect(13, 36, 10, 20, '#2f4f8a');
+    canvas.polygon([[13, 56], [18, 61], [23, 56]], '#2f4f8a');
+    canvas.rect(13, 36, 10, 1, '#e8c13a');
+    canvas.rect(17, 42, 2, 8, '#e8c13a');
+    canvas.rect(15, 44, 6, 2, '#e8c13a');
+    canvas.rect(16, 64, 4, 7, '#1a1416');
+  });
   drawTexture(scene, 'tower-archer', 6, 8, (canvas) => {
     canvas.rect(1, 3, 4, 5, '#2f5f38');
     canvas.rect(1, 3, 1, 5, '#4a8a52');
@@ -354,44 +433,48 @@ export class CampDefense {
       return;
     }
 
-    const material = this.wallStat('material');
-    if (this.wallStat('moatDamageRatio') > 0) {
-      const moat = this.track(this.scene.add.graphics().setDepth(cy - this.radius - 40), this.wallObjects);
-      moat.lineStyle(8, 0x2e6f8f, 0.75);
-      moat.strokeCircle(cx, cy, this.radius + 26);
-      moat.lineStyle(2, 0x8fd3ee, 0.55);
-      moat.strokeCircle(cx, cy, this.radius + 23);
-    }
-    const rings = this.wallStat('outerSlow') > 0 ? [this.radius, this.radius + 11] : [this.radius];
-    for (const [ringIndex, ringRadius] of rings.entries()) {
-      const count = Math.floor((Math.PI * 2 * ringRadius) / POST_SPACING);
-      for (let index = 0; index < count; index += 1) {
-        const angle = (index / count) * Math.PI * 2;
-        const fromGate = Math.abs(Phaser.Math.Angle.Wrap(angle - Math.PI / 2));
-        if (fromGate < GATE_HALF_ANGLE * (ringIndex === 0 ? 1 : 1.3)) continue;
-        const x = cx + Math.cos(angle) * ringRadius;
-        const y = cy + Math.sin(angle) * ringRadius;
-        const post = this.track(this.scene.add.image(x, y, `wall-post-${material}`)
-          .setOrigin(0.5, 1)
-          .setDepth(y + 2), this.wallObjects);
-        if (ringIndex > 0) post.setScale(0.8).setAlpha(0.9);
-        // Corpo físico estático: inimigos não atravessam a muralha.
-        this.scene.physics.add.existing(post, true);
-        this.posts.push(post);
-      }
-    }
-    // Aparência pelo estágio: portão de toras → guaritas de madeira → portão de pedra com estandartes.
+    // Aparência pelo estágio: paliçada (1–3), pedra com ameias (4–7), castelo com torres azuis (8+).
     const visual = buildingVisual('wall', this.wallLevel);
     const celebrate = this.wallStage !== undefined && this.wallStage !== visual.stage;
     this.wallStage = visual.stage;
-    const gatehouse = this.track(this.scene.add.image(gateX, gateY + 4, visual.gate).setOrigin(0.5, 1).setDepth(gateY + 1), this.wallObjects);
-    if (visual.bastion) {
-      for (const angle of [0, Math.PI, -Math.PI / 2, -Math.PI / 4 * 3, -Math.PI / 4]) {
-        const bx = cx + Math.cos(angle) * this.radius;
-        const by = cy + Math.sin(angle) * this.radius;
-        this.track(this.scene.add.image(bx, by + 6, visual.bastion).setOrigin(0.5, 1).setDepth(by + 8), this.wallObjects);
+    this.wallVisuals = [];
+    const vertices = this.octagonVertices(this.radius);
+    if (this.wallStat('moatDamageRatio') > 0) {
+      const moat = this.track(this.scene.add.graphics().setDepth(cy - this.radius - 40), this.wallObjects);
+      const outer = this.octagonVertices(this.radius + 30);
+      moat.lineStyle(10, 0x2e6f8f, 0.75);
+      moat.strokePoints(outer, true);
+      moat.lineStyle(2, 0x8fd3ee, 0.55);
+      moat.strokePoints(this.octagonVertices(this.radius + 26), true);
+      // Ponte de tábuas sobre o fosso, na frente do portão.
+      const bridgeY = cy + this.radius + 30;
+      moat.fillStyle(0x7a5236, 1).fillRect(gateX - 26, bridgeY - 9, 52, 18);
+      moat.fillStyle(0x94633a, 1);
+      for (let x = gateX - 26; x < gateX + 26; x += 6) moat.fillRect(x, bridgeY - 9, 5, 18);
+      moat.fillStyle(0x4a2f1e, 1).fillRect(gateX - 27, bridgeY - 10, 54, 2).fillRect(gateX - 27, bridgeY + 8, 54, 2);
+    }
+    // Lados: blocos posicionados de forma que se sobreponham (nenhum vão).
+    for (let index = 0; index < vertices.length; index += 1) {
+      const from = vertices[index];
+      const to = vertices[(index + 1) % vertices.length];
+      const dx = to.x - from.x;
+      const dy = to.y - from.y;
+      const length = Math.hypot(dx, dy);
+      const ux = dx / length;
+      const uy = dy / length;
+      const step = Math.min(Math.abs(ux) > 0.01 ? 13 / Math.abs(ux) : Infinity, Math.abs(uy) > 0.01 ? 7 / Math.abs(uy) : Infinity);
+      for (let along = 0; along <= length; along += step) {
+        const x = from.x + ux * along;
+        const y = from.y + uy * along;
+        // Vão do portão no lado sul.
+        if (Math.abs(y - gateY) < 2 && Math.abs(x - gateX) < 34) continue;
+        this.addWallPiece(x, y, visual.segment, 16, 12);
       }
     }
+    for (const vertex of vertices) this.addWallPiece(vertex.x, vertex.y + 2, visual.corner, 26, 16, 4);
+    // Torres que ladeiam o portão.
+    for (const side of [-1, 1]) this.addWallPiece(gateX + side * 44, gateY + 2, visual.corner, 26, 16, 4);
+    const gatehouse = this.track(this.scene.add.image(gateX, gateY + 4, visual.gate).setOrigin(0.5, 1).setDepth(gateY + 1), this.wallObjects);
     if (celebrate) this.camp.celebrateEvolution('wall', gatehouse, visual.stage);
     this.gateLights = [];
     for (const side of [-1, 1]) {
@@ -422,6 +505,34 @@ export class CampDefense {
     this.wallBuilding.sprite = gate;
     this.wallBuilding.sprites = [gate];
     this.wallBuilding.label = label;
+    // Blocos novos: religa a colisão com o jogador e com os inimigos.
+    if (this.enemyList) this.setupEnemyCollision(this.enemyList);
+    else this.setupPlayerCollision();
+    this.refreshWallDamage();
+  }
+
+  /** Vértices do octógono com lados retos ao norte/sul/leste/oeste; "apothem" = distância do centro aos lados. */
+  octagonVertices(apothem) {
+    const radius = apothem / Math.cos(Math.PI / 8);
+    return Array.from({ length: 8 }, (_, index) => {
+      const angle = Math.PI / 8 + index * (Math.PI / 4);
+      return new Phaser.Math.Vector2(this.camp.x + Math.cos(angle) * radius, this.camp.y + Math.sin(angle) * radius);
+    });
+  }
+
+  addWallPiece(x, y, texture, bodyWidth, bodyHeight, depthOffset = 2) {
+    const image = this.track(this.scene.add.image(x, y, texture).setOrigin(0.5, 1).setDepth(y + depthOffset), this.wallObjects);
+    this.wallVisuals.push(image);
+    const body = this.track(this.scene.add.zone(x, y - bodyHeight / 2 + 2, bodyWidth, bodyHeight), this.wallObjects);
+    this.scene.physics.add.existing(body, true);
+    this.posts.push(body);
+    return image;
+  }
+
+  /** Colisão da muralha com o jogador (o portão continua aberto). */
+  setupPlayerCollision(player = this.scene.player) {
+    if (this.playerCollider) this.playerCollider.destroy();
+    this.playerCollider = player && this.posts?.length ? this.scene.physics.add.collider(player, this.posts) : null;
     this.refreshWallDamage();
   }
 
@@ -429,13 +540,16 @@ export class CampDefense {
     if (!this.posts) return;
     const ratio = this.wallMaxHp > 0 ? this.wallHp / this.wallMaxHp : 0;
     const broken = this.wallLevel >= 1 && this.wallHp <= 0;
-    for (const post of this.posts) {
-      post.setAlpha(broken ? 0.3 : 1);
-      if (broken) post.setTint(0x5a4a44);
-      else if (ratio < 0.5) post.setTint(0xffb1a0);
-      else post.clearTint();
+    for (const piece of this.wallVisuals ?? []) {
+      piece.setAlpha(broken ? 0.35 : 1);
+      if (broken) piece.setTint(0x5a4a44);
+      else if (ratio < 0.5) piece.setTint(0xffb1a0);
+      else piece.clearTint();
     }
     for (const door of this.doors) door.setAlpha(broken ? 0.3 : 1);
+    // Muralha caída deixa de bloquear.
+    if (this.wallCollider) this.wallCollider.active = !broken;
+    if (this.playerCollider) this.playerCollider.active = !broken;
   }
 
   damageWall(amount, source = null) {
@@ -470,7 +584,9 @@ export class CampDefense {
 
   /** Configura colisão física: inimigos batem na muralha e não atravessam. */
   setupEnemyCollision(enemies) {
+    this.enemyList = enemies;
     if (this.wallCollider) this.wallCollider.destroy();
+    this.setupPlayerCollision();
     this.wallCollider = this.scene.physics.add.collider(this.posts, enemies, (post, enemy) => {
       // Marca o encosto: o invasor parado no poste já está "na muralha".
       enemy.lastWallTouch = this.scene.time.now;

@@ -63,6 +63,32 @@ await runInChrome({ name: 'evolution', port: 9359, width: 1280, height: 800 }, a
   check(upgrade.ok && upgrade.before === 'house-1' && upgrade.after === 'house' && upgrade.level === 4 && upgrade.interactive,
     `Melhoria durante o jogo: ${JSON.stringify(upgrade)}`);
 
+  // Muralha octogonal: o personagem não atravessa os lados e passa pelo portão sul.
+  await setLevels(8);
+  const wall = await inScene(async (scene) => {
+    const camp = scene.camp;
+    const walk = (x, y, vx, vy) => new Promise((resolve) => {
+      scene.player.body.reset(x, y);
+      const started = performance.now();
+      const push = () => {
+        scene.player.body.setVelocity(vx, vy);
+        if (performance.now() - started > 1300) resolve({ x: Math.round(scene.player.x), y: Math.round(scene.player.y) });
+        else requestAnimationFrame(push);
+      };
+      push();
+    });
+    const east = await walk(camp.x + 250, camp.y, 170, 0);
+    const north = await walk(camp.x + 40, camp.y - 250, 0, -170);
+    const diagonal = await walk(camp.x + 180, camp.y - 180, 120, -120);
+    const gate = await walk(camp.x, camp.y + 250, 0, 170);
+    scene.player.body.reset(camp.x, camp.y + 60);
+    return { radius: camp.defense.radius, camp: { x: camp.x, y: camp.y }, east, north, diagonal, gate };
+  });
+  check(wall.east.x < wall.camp.x + wall.radius && wall.north.y > wall.camp.y - wall.radius &&
+    Math.hypot(wall.diagonal.x - wall.camp.x, wall.diagonal.y - wall.camp.y) < wall.radius / Math.cos(Math.PI / 8),
+  `O personagem atravessou a muralha: ${JSON.stringify(wall)}`);
+  check(wall.gate.y > wall.camp.y + wall.radius + 20, `O portão não deixou passar: ${JSON.stringify(wall)}`);
+
   // Salvar e recarregar mantém a aparência.
   await setLevels(8);
   await inScene((scene) => scene.save());
