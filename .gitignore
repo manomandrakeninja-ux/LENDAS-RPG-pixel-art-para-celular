@@ -8,3 +8,6 @@ dist/
 *.log
 .DS_Store
 Thumbs.db
+
+# imagens de comprovação geradas localmente
+comprovacao-evolucao/

@@ -52,7 +52,7 @@ export const BUILDING_VISUALS = Object.freeze({
   tower: {
     1: { texture: 'tower-1', top: 40 },
     4: { texture: 'tower-stone', top: 52 },
-    8: { texture: 'tower-8', top: 64 }
+    8: { texture: 'tower-8', top: 46 }
   }
 });
 
