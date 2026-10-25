@@ -59,9 +59,9 @@ export class Player extends Phaser.GameObjects.Container {
 
     // Equipamento visível: espada na mão, picareta nas costas (e na mão ao minerar).
     this.ensureGearTextures();
-    this.backPickaxe = scene.add.image(-5, -3, 'gear-pickaxe-stone').setOrigin(0.5, 0.85).setRotation(-0.7).setVisible(false);
-    this.weapon = scene.add.image(7, 2, 'gear-sword-rusty').setOrigin(0.5, 0.9);
-    this.handTool = scene.add.image(0, 0, 'gear-pickaxe-stone').setOrigin(0.5, 0.9).setVisible(false);
+    this.backPickaxe = scene.add.image(-4, -10, 'gear-pickaxe-stone').setOrigin(0.5, 0.85).setRotation(-0.7).setVisible(false);
+    this.weapon = scene.add.image(7, -8, 'gear-sword-rusty').setOrigin(0.5, 0.82);
+    this.handTool = scene.add.image(0, 0, 'gear-pickaxe-stone').setOrigin(0.5, 0.85).setVisible(false);
     this.addAt(this.backPickaxe, 0);
     this.add([this.weapon, this.handTool]);
     this.swingTimer = 0;
@@ -134,7 +134,7 @@ export class Player extends Phaser.GameObjects.Container {
       this.weapon.setVisible(false);
       this.backPickaxe.setVisible(false);
       this.handTool.setVisible(true)
-        .setPosition(side * 6, -4)
+        .setPosition(side * 8, -9)
         .setFlipX(side < 0)
         .setRotation(side * (1.4 - lift * 2.1));
       return;
@@ -142,6 +142,9 @@ export class Player extends Phaser.GameObjects.Container {
     this.handTool.setVisible(false);
     this.weapon.setVisible(true);
     this.backPickaxe.setVisible(hasPickaxe);
+    // Nas costas: olhando para a esquerda, as costas ficam do lado direito da tela.
+    const backSide = this.direction === 'left' ? 1 : -1;
+    this.backPickaxe.setPosition(backSide * 4, -10).setFlipX(backSide > 0).setRotation(backSide * 0.7);
     this.moveTo(this.backPickaxe, behind ? this.list.length - 1 : 0);
     if (this.swingTimer > 0) {
       this.swingTimer = Math.max(0, this.swingTimer - delta);
@@ -149,17 +152,17 @@ export class Player extends Phaser.GameObjects.Container {
       const eased = 1 - (1 - t) * (1 - t);
       const angle = this.swingAngle;
       this.weapon
-        .setPosition(Math.cos(angle) * 8, -7 + Math.sin(angle) * 5)
+        .setPosition(Math.cos(angle) * 8, -11 + Math.sin(angle) * 5)
         .setFlipX(false)
         .setRotation(angle + Math.PI / 2 + (-1.5 + eased * 3));
       this.moveTo(this.weapon, this.list.length - 1);
       return;
     }
     const poses = {
-      down: [7, 3, 0.45],
-      right: [6, 3, 0.35],
-      left: [-6, 3, -0.35],
-      up: [6, 0, 0.3]
+      down: [7, -8, 0.45],
+      right: [1, -8, 0.35],
+      left: [-1, -8, -0.35],
+      up: [7, -9, 0.3]
     };
     const [x, y, rotation] = poses[this.direction] ?? poses.down;
     this.weapon.setPosition(x, y).setRotation(rotation).setFlipX(this.direction === 'left');
@@ -249,7 +252,8 @@ export class Player extends Phaser.GameObjects.Container {
   damage(amount, source = null, options = {}) {
     if (this.invulnerable > 0) return false;
     const fireFactor = options.fire ? 1 - this.fireResistance : 1;
-    const dealt = Math.max(1, Math.round(amount * fireFactor) - this.defense);
+    const scaled = amount * fireFactor * (COMBAT_CONFIG.enemyDamageToPlayer ?? 1);
+    const dealt = Math.max(1, Math.round(scaled) - this.defense);
     this.health = Math.max(0, this.health - dealt);
     this.invulnerable = 450;
     this.sprite.setTint(0xffc2a8);

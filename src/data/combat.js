@@ -1,4 +1,6 @@
 export const COMBAT_CONFIG = {
+  // Dano que inimigos, chefes e invasões causam no jogador (0.5 = metade). Feedback: morriam demais.
+  enemyDamageToPlayer: 0.5,
   basicAttackRange: 75,
   basicAttackCooldownMs: 420,
   specialAttackRange: 125,
