@@ -16,20 +16,14 @@ import { drawSiteArt } from '../art/sites.js';
 import { CampaignState } from './CampaignState.js';
 import { Enemy } from './Enemies.js';
 import { RESOURCE_TYPES } from './config.js';
+import { LEATHER_DROP, RARE_SHOP } from '../data/campaign.js';
 import { QuestUI } from './QuestUI.js';
 
 const INTERACT_RANGE = 46;
 const SPAWN_RANGE = 380;
 const DEFEND_RADIUS = 170;
 
-// Lojas de comerciantes raros (mercador das sombras, miragens e eventos).
-export const RARE_SHOP = [
-  { id: 'elixir', name: 'Elixir de Força', price: 60, items: { elixir: 1 } },
-  { id: 'vigor', name: 'Poção de Vigor', price: 25, items: { staminaPotion: 1 } },
-  { id: 'crystal', name: 'Cristal Azul', price: 30, items: { crystal: 1 } },
-  { id: 'fabric', name: 'Tecido', price: 12, items: { fabric: 2 } },
-  { id: 'magma', name: 'Núcleo de Magma', price: 70, items: { magmaCore: 1 } }
-];
+export { RARE_SHOP } from '../data/campaign.js';
 
 /**
  * Lado "mundo" da campanha: locais de missão, moradores, inimigos e chefes de
@@ -328,7 +322,7 @@ export class CampaignSystem {
     });
     if (enemy.isQuestBoss) this.emit({ type: 'boss', target: enemy.questTag });
     // Couro: lobos, javalis e ursos às vezes deixam couro.
-    if (['wolf', 'boar'].includes(enemy.kind) && Math.random() < 0.45) this.giveItems({ leather: 1 }, enemy.x, enemy.y);
+    if (LEATHER_DROP.enemies.includes(enemy.kind) && Math.random() < LEATHER_DROP.chance) this.giveItems({ leather: 1 }, enemy.x, enemy.y);
     this.questEnemies = this.questEnemies.filter((entry) => entry !== enemy);
   }
 

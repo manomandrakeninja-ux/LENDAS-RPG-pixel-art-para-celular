@@ -103,7 +103,7 @@ await runInChrome({ name: 'visual', port: 9357, width: 1280, height: 800 }, asyn
     scene.toggleBackpack();
     const open = scene.backpackPanel.isOpen;
     const useButtons = document.querySelectorAll('#backpack-grid [data-bag="use"]').length;
-    document.querySelector('#backpack-grid [data-type="potion"]').click();
+    document.querySelector('#backpack-grid [data-bag="use"][data-type="potion"]').click();
     const afterPotion = { health: scene.player.health, potion: scene.inventory.items.potion };
     scene.toggleBackpack();
     return { ids, afterEat, open, useButtons, afterPotion, closed: !scene.backpackPanel.isOpen, splash: Boolean(document.getElementById('splash')) };

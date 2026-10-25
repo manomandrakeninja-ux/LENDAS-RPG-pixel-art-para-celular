@@ -42,6 +42,8 @@ import { TouchControls } from './TouchControls.js';
 import { BuffSystem, DAILY_BUFF_IDS } from './BuffSystem.js';
 import { RaidDirector } from './RaidDirector.js';
 import { createGameAnimations, preloadGameAssets } from './assets.js';
+import { TORCH_RECIPE } from '../data/itemCatalog.js';
+import { ItemInfoPanel } from './ItemInfoPanel.js';
 
 export const PICKAXE_MESSAGE = 'Você precisa de uma picareta para minerar isso.';
 // Mineração: segure o botão por 4 s (picareta de ferro: 2 s).
@@ -142,6 +144,7 @@ export class GameScene extends Phaser.Scene {
     this.worldMap = new WorldMapOverlay(this);
     this.buildingMenu = new BuildingMenu(this);
     this.backpackPanel = new BackpackPanel(this);
+    this.itemInfo = new ItemInfoPanel(this);
     this.touch = new TouchControls(this);
     this.restState = null;
     this.storeAllAvailable = false;
@@ -314,7 +317,7 @@ export class GameScene extends Phaser.Scene {
       this.player.body.setVelocity(0, 0);
       for (const enemy of this.enemies) enemy.body?.setVelocity(0, 0);
       this.boss?.body?.setVelocity(0, 0);
-    } else if (this.buildingMenu?.isOpen) {
+    } else if (this.buildingMenu?.isOpen || this.itemInfo?.isOpen) {
       this.player.body.setVelocity(0, 0);
     } else {
       const pointer = this.input.activePointer;
@@ -524,7 +527,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   attackNearby() {
-    if (this.player.attackCooldown > 0 || this.progression?.hasPendingChoice || this.worldMap?.isOpen || this.buildingMenu?.isOpen || this.gameOver) return;
+    if (this.player.attackCooldown > 0 || this.progression?.hasPendingChoice || this.worldMap?.isOpen || this.buildingMenu?.isOpen || this.itemInfo?.isOpen || this.gameOver) return;
     this.player.attackCooldown = COMBAT_CONFIG.basicAttackCooldownMs;
     if (this.mining) this.cancelMining();
     const target = this.nearestEnemy(COMBAT_CONFIG.basicAttackRange);
@@ -926,7 +929,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   interact() {
-    if (this.mining) return;
+    if (this.mining || this.itemInfo?.isOpen) return;
     if (this.campaign?.interact()) return;
     const resource = this.world.nearbyResource(this.player.x, this.player.y);
     const structure = this.harvestStructures.nearest(this.player.x, this.player.y);
@@ -1343,9 +1346,9 @@ export class GameScene extends Phaser.Scene {
       result = camp.craft(arg);
       if (result.ok) this.campaign?.emit({ type: 'craft', target: arg });
     } else if (action === 'craft-torch') {
-      // Fogueira: 2 madeiras + 1 tecido = 1 tocha.
+      // Fogueira: 2 madeiras + 1 tecido = 1 tocha (TORCH_RECIPE no catálogo de itens).
       if (!this.inventory.canAdd('torch', 1) && this.inventory.items.torch === 0) result = { ok: false, message: INVENTORY_CONFIG.fullMessage };
-      else if (!camp.pay({ wood: 2, fabric: 1 })) result = { ok: false, message: 'A tocha precisa de 2 madeiras e 1 tecido.' };
+      else if (!camp.pay(TORCH_RECIPE.cost)) result = { ok: false, message: 'A tocha precisa de 2 madeiras e 1 tecido.' };
       else {
         this.inventory.restore('torch', 1);
         this.campaign?.emit({ type: 'craft', target: 'torch' });

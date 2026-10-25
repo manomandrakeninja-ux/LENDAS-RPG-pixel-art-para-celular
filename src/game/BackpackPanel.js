@@ -43,6 +43,10 @@ export class BackpackPanel {
     this.handleClick = (event) => {
       const button = event.target.closest('button[data-bag]');
       if (!button || button.disabled) return;
+      if (button.dataset.bag === 'info') {
+        this.scene.itemInfo?.open(button.dataset.type);
+        return;
+      }
       if (button.dataset.bag === 'use') this.scene.useItem(button.dataset.type);
       if (button.dataset.bag === 'store-all') this.scene.storeAllAtCamp();
       this.lastKey = '';
@@ -50,6 +54,9 @@ export class BackpackPanel {
     };
     this.handleClose = () => this.close();
     this.root.addEventListener('click', this.handleClick);
+    // Toques na mochila não chegam ao mundo do jogo embaixo dela.
+    this.stopDown = (event) => event.stopPropagation();
+    for (const type of ['pointerdown', 'mousedown', 'touchstart']) this.root.addEventListener(type, this.stopDown);
     this.closeButton.addEventListener('click', this.handleClose);
     scene.events.once('shutdown', () => {
       this.root.removeEventListener('click', this.handleClick);
@@ -96,8 +103,10 @@ export class BackpackPanel {
       const usable = isConsumable(type);
       return `
         <div class="bag-slot ${usable ? 'bag-slot--usable' : ''}" title="${label}">
-          <div class="bag-slot__icon">${resourceIconHtml(scene, type, 32)}<span class="bag-slot__count">${amount}</span></div>
-          <div class="bag-slot__name">${label}</div>
+          <button type="button" class="bag-slot__look" data-bag="info" data-type="${type}" aria-label="Informações: ${label}">
+            <span class="bag-slot__icon">${resourceIconHtml(scene, type, 32)}<span class="bag-slot__count">${amount}</span></span>
+            <span class="bag-slot__name">${label}</span>
+          </button>
           <div class="bag-slot__info">${describe(type)}</div>
           ${usable ? `<button type="button" data-bag="use" data-type="${type}">${USE_LABEL[type] ?? 'USAR'}</button>` : ''}
         </div>`;

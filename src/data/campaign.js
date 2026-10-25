@@ -136,6 +136,18 @@ const inRegion = (key, dx, dy) => ({ x: REGIONS[key].x + dx, y: REGIONS[key].y +
 // kind: marker (chegar), source (E dá itens), loot (E dá itens uma vez), investigate (E),
 //       rescue (E resgata), talk (E conversa), enemies (grupo de inimigos), boss, pillar, defend, assault.
 // art: desenho do local (CampaignSystem.ensureSiteTextures).
+// Lojas de comerciantes raros (mercador das sombras, miragens e eventos).
+export const RARE_SHOP = [
+  { id: 'elixir', name: 'Elixir de Força', price: 60, items: { elixir: 1 } },
+  { id: 'vigor', name: 'Poção de Vigor', price: 25, items: { staminaPotion: 1 } },
+  { id: 'crystal', name: 'Cristal Azul', price: 30, items: { crystal: 1 } },
+  { id: 'fabric', name: 'Tecido', price: 12, items: { fabric: 2 } },
+  { id: 'magma', name: 'Núcleo de Magma', price: 70, items: { magmaCore: 1 } }
+];
+
+// Couro: lobos e javalis às vezes deixam couro ao serem derrotados.
+export const LEATHER_DROP = Object.freeze({ enemies: Object.freeze(['wolf', 'boar']), chance: 0.45 });
+
 export const SITES = {
   // Capítulo 1 (arredores do acampamento)
   cogumelos: { name: 'Clareira de Cogumelos', ...at(-520, -260), kind: 'source', art: 'mushrooms', gives: { food: 1 }, emits: { type: 'structure', target: 'mushroom' }, uses: 3 },

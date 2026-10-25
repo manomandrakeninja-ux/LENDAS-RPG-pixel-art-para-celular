@@ -10,6 +10,7 @@ import {
 } from '../data/buildings.js';
 import { MARKET_CATALOG, findCatalogEntry, sellPriceOf } from '../data/economy.js';
 import { TRAVELER_GOODS, questById } from '../data/travelers.js';
+import { TORCH_RECIPE } from '../data/itemCatalog.js';
 import { RESOURCE_TYPES } from './config.js';
 import { resourceIconHtml, textureUrl } from './iconUrls.js';
 
@@ -74,6 +75,12 @@ export class BuildingMenu {
       this.render();
     };
     this.handleContent = (event) => {
+      // Ícone/nome de um item: abre o painel de informações (não executa a ação).
+      const item = event.target.closest('[data-item]');
+      if (item) {
+        this.scene.itemInfo?.open(item.dataset.item, { need: Number(item.dataset.need) || null });
+        return;
+      }
       const button = event.target.closest('button[data-action]');
       if (!button || button.disabled) return;
       if (button.dataset.action === 'open') {
@@ -190,10 +197,16 @@ export class BuildingMenu {
     this.tabs.innerHTML = tabs.map((tab) => `
       <button type="button" data-tab="${tab.id}" aria-selected="${tab.id === this.tab}">${escapeHtml(tab.label)}</button>
     `).join('');
-    const scrollTop = this.content.scrollTop;
-    this.content.innerHTML = this.renderContent();
-    this.decorate();
-    this.content.scrollTop = scrollTop;
+    // Só troca o conteúdo quando algo mudou: redesenhar a cada meio segundo
+    // trocava os botões no meio de um clique e o clique se perdia.
+    const html = this.renderContent();
+    if (html !== this.lastContentHtml || !this.content.firstChild) {
+      const scrollTop = this.content.scrollTop;
+      this.lastContentHtml = html;
+      this.content.innerHTML = html;
+      this.decorate();
+      this.content.scrollTop = scrollTop;
+    }
     this.footer.textContent = this.scene.lastBuildingMessage || 'Toque em um botão grande para executar a ação.';
   }
 
@@ -217,8 +230,21 @@ export class BuildingMenu {
     return Object.entries(cost).map(([type, amount]) => {
       const have = availableFor(type, sources);
       const ok = have >= amount;
-      return `<span class="cost-chip ${ok ? 'cost-ok' : 'cost-missing'}" title="${escapeHtml(resourceLabel(type))}">${resourceIconHtml(this.scene, type, 16)}${amount} ${escapeHtml(resourceLabel(type))} <small>(${Math.min(have, 9999)})</small></span>`;
+      const inner = `${resourceIconHtml(this.scene, type, 16)}${amount} ${escapeHtml(resourceLabel(type))} <small>(${Math.min(have, 9999)})</small>`;
+      if (type === 'coins') return `<span class="cost-chip ${ok ? 'cost-ok' : 'cost-missing'}" title="moedas">${inner}</span>`;
+      return `<button type="button" class="cost-chip ${ok ? 'cost-ok' : 'cost-missing'}" data-item="${type}" data-need="${amount}" title="Ver ${escapeHtml(resourceLabel(type))}">${inner}</button>`;
     }).join('');
+  }
+
+  /** Itens entregues (mercado, viajante): botões que abrem o painel do item. */
+  itemChips(bundle = {}) {
+    return Object.entries(bundle).map(([type, amount]) =>
+      `<button type="button" class="cost-chip item-chip" data-item="${type}" title="Ver ${escapeHtml(resourceLabel(type))}">${resourceIconHtml(this.scene, type, 16)}${amount} ${escapeHtml(resourceLabel(type))}</button>`).join('');
+  }
+
+  /** Ícone de recurso clicável nas listas (armazém, venda). */
+  itemIcon(type) {
+    return `<button type="button" class="item-icon-button" data-item="${type}" aria-label="Informações: ${escapeHtml(resourceLabel(type))}">${resourceIconHtml(this.scene, type, 24)}</button>`;
   }
 
   portraitUrl(key) {
@@ -351,14 +377,15 @@ export class BuildingMenu {
         <article class="building-menu__card">
           <h2>Fabricar tocha</h2>
           <p>2 madeiras + 1 tecido → 1 tocha (tecla 3 acende e amplia a luz).</p>
-          <div class="building-menu__stat">${this.costHtml({ wood: 2, fabric: 1 })}</div>
+          <div class="building-menu__stat">${this.costHtml(TORCH_RECIPE.cost)}</div>
           <div class="building-menu__actions">
-            <button type="button" data-action="craft-torch" ${disabled(!camp.canPay({ wood: 2, fabric: 1 }))}>FABRICAR TOCHA</button>
+            <button type="button" data-action="craft-torch" ${disabled(!camp.canPay(TORCH_RECIPE.cost))}>FABRICAR TOCHA</button>
           </div>
         </article>
         <article class="building-menu__card">
           <h2>Cozinhar</h2>
           <p>${formatBundle(cook.cost)} → ${formatBundle(cook.yield)}. ${canCook ? '' : 'Requer Fogueira nível 3.'}</p>
+          <div class="building-menu__stat">${this.costHtml(cook.cost)}</div>
           <div class="building-menu__actions">
             <button type="button" data-action="cook" ${disabled(!canCook || !camp.canPay(cook.cost))}>COZINHAR POÇÃO</button>
           </div>
@@ -398,6 +425,7 @@ export class BuildingMenu {
         <article class="building-menu__card">
           <h2>${escapeHtml(good.name)}</h2>
           <p>Estoque: ${offer.quantity} • ${good.price} moedas</p>
+          <div class="building-menu__stat">${this.itemChips(good.yield)}</div>
           <div class="building-menu__actions">
             <button type="button" data-action="traveler-buy" data-arg="${good.id}" ${disabled(offer.quantity <= 0 || this.scene.economy.coins < good.price)}>COMPRAR</button>
           </div>
@@ -569,7 +597,7 @@ export class BuildingMenu {
     if (this.tab === 'secret') {
       const rows = Object.entries(RESOURCE_TYPES).filter(([type]) => scene.inventory.items[type] > 0 || camp.secretChest[type] > 0).map(([type, resource]) => `
         <div class="building-menu__resource">
-          ${resourceIconHtml(this.scene, type, 24)}
+          ${this.itemIcon(type)}
           <span>${escapeHtml(resource.label)}</span>
           <span>Mochila: ${scene.inventory.items[type]}</span>
           <span>Baú: ${camp.secretChest[type]}</span>
@@ -585,7 +613,7 @@ export class BuildingMenu {
     }
     const rows = Object.entries(RESOURCE_TYPES).filter(([type]) => scene.inventory.items[type] > 0 || camp.storage[type] > 0).map(([type, resource]) => `
       <div class="building-menu__resource">
-        ${resourceIconHtml(this.scene, type, 24)}
+        ${this.itemIcon(type)}
         <span>${escapeHtml(resource.label)}</span>
         <span>Mochila: ${scene.inventory.items[type]}</span>
         <span>Armazém: ${camp.storage[type]}</span>
@@ -655,7 +683,8 @@ export class BuildingMenu {
     return `
       <article class="building-menu__card">
         <h2>${escapeHtml(definition.name)}</h2>
-        <p>Estoque: ${offer.quantity} • Entrega: ${escapeHtml(formatBundle(definition.yield))}</p>
+        <p>Estoque: ${offer.quantity}</p>
+        <div class="building-menu__stat">${this.itemChips(definition.yield)}</div>
         <div class="building-menu__stat">Preço: ${price} moedas${price < definition.price ? ` (era ${definition.price})` : ''}</div>
         <div class="building-menu__actions">
           <button type="button" data-action="buy" data-arg="${offer.id}" data-arg2="${source}" ${disabled(offer.quantity <= 0 || this.scene.economy.coins < price)}>COMPRAR 1</button>
@@ -669,7 +698,7 @@ export class BuildingMenu {
     if (this.tab === 'sell') {
       const rows = Object.entries(RESOURCE_TYPES).filter(([type]) => scene.inventory.items[type] > 0).map(([type, resource]) => `
         <div class="building-menu__resource">
-          ${resourceIconHtml(this.scene, type, 24)}
+          ${this.itemIcon(type)}
           <span>${escapeHtml(resource.label)}</span>
           <span>Quantidade: ${scene.inventory.items[type]}</span>
           <span>Preço: ${sellPriceOf(type)} ${sellPriceOf(type) === 1 ? 'moeda' : 'moedas'}</span>
@@ -694,7 +723,8 @@ export class BuildingMenu {
         return `
           <article class="building-menu__card">
             <h2>${escapeHtml(entry.name)}</h2>
-            <p>Entrega no armazém em 2 dias: ${escapeHtml(formatBundle(entry.yield))}</p>
+            <p>Entrega no armazém em 2 dias.</p>
+            <div class="building-menu__stat">${this.itemChips(entry.yield)}</div>
             <div class="building-menu__actions">
               <button type="button" data-action="order" data-arg="${entry.id}" ${disabled(scene.economy.coins < price)}>ENCOMENDAR • ${price} MOEDAS</button>
             </div>

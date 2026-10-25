@@ -169,6 +169,46 @@ export class WorldMapOverlay {
   close() {
     this.isOpen = false;
     this.root.hidden = true;
+    this.target = null;
+  }
+
+  /** Abre o mapa inteiro com um alfinete num ponto (fonte de um item, por exemplo). */
+  showTarget({ x, y, label }) {
+    this.target = { x, y, label };
+    this.zoomIndex = 0;
+    this.open();
+  }
+
+  drawTarget(context, toX, toY) {
+    const target = this.target;
+    if (!target) return;
+    const x = Math.round(toX(target.x));
+    const y = Math.round(toY(target.y));
+    context.save();
+    context.strokeStyle = '#ffd76b';
+    context.lineWidth = 3;
+    context.beginPath();
+    context.arc(x, y, 14, 0, Math.PI * 2);
+    context.stroke();
+    context.fillStyle = '#e0452f';
+    context.strokeStyle = '#1a120d';
+    context.lineWidth = 2;
+    context.beginPath();
+    context.moveTo(x, y);
+    context.arc(x, y - 18, 8, Math.PI * 0.75, Math.PI * 0.25);
+    context.closePath();
+    context.fill();
+    context.stroke();
+    context.fillStyle = '#fff1ce';
+    context.fillRect(x - 2, y - 20, 4, 4);
+    context.font = '9px "Press Start 2P", monospace';
+    context.textAlign = 'center';
+    context.lineWidth = 4;
+    context.strokeStyle = 'rgba(20, 14, 10, 0.9)';
+    context.strokeText(target.label.toUpperCase(), x, y - 32);
+    context.fillStyle = '#ffd76b';
+    context.fillText(target.label.toUpperCase(), x, y - 32);
+    context.restore();
   }
 
   toggle() {
@@ -269,6 +309,7 @@ export class WorldMapOverlay {
     if (markers.player && renderer) renderer.drawPlayer(context, toX(markers.player.x), toY(markers.player.y), 9);
     else if (markers.player) drawMarker(context, markers.player, toX, toY);
 
+    this.drawTarget(context, toX, toY);
     this.drawCompass(context, width - 46, 46);
     this.drawScaleBar(context, 18, height - 22, scale);
     context.restore();
