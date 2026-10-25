@@ -390,7 +390,7 @@ export class CampaignSystem {
     const next = this.state.availableMissions()[0];
     // Etapas seguidas de uma mesma luta (fases do Golem) começam na hora.
     if (next?.autoAccept) this.state.accept(next.id);
-    else if (next) this.ui.toast(`Nova missão: ${next.title} (L para o Diário)`, 'gold');
+    else if (next) this.offerMission(next);
     if (mission.chapter !== next?.chapter && next) {
       this.scene.showEpic?.(`CAPÍTULO ${next.chapter}`, this.chapterTitle(next.chapter), 4200);
     }
@@ -400,6 +400,51 @@ export class CampaignSystem {
     this.ui.refresh();
     this.scene.save();
     return result;
+  }
+
+  /** Oferece a missão recém-liberada na hora, com o morador que a pede. */
+  offerMission(mission) {
+    this.ui.toast(`Nova missão: ${mission.title}`, 'gold');
+    this.ui.dialogue(mission.npc, `Nova missão — ${mission.title}: ${mission.description}`, [
+      { label: 'ACEITAR', primary: true, action: () => this.accept(mission.id) },
+      { label: 'DEPOIS (L)', action: () => {} }
+    ]);
+  }
+
+  /** Destino mais próximo da missão rastreada (local ou morador), para o rastreador apontar. */
+  trackedTarget() {
+    const state = this.state;
+    const mission = state.tracked ? MISSIONS_BY_ID[state.tracked] : null;
+    if (!mission) return null;
+    const ctx = this.ctx;
+    const player = this.scene.player;
+    const candidates = [];
+    mission.objectives.forEach((objective, index) => {
+      if (state.objectiveValue(mission, index, ctx) >= (objective.count ?? 1)) return;
+      for (const id of this.sitesForObjective(mission, objective)) {
+        const site = this.sites.get(id);
+        if (site) candidates.push({ name: site.def.name, x: site.def.x, y: site.def.y });
+      }
+      if (objective.type === 'talk' && this.npcs.has(objective.target)) {
+        const npc = this.npcs.get(objective.target);
+        candidates.push({ name: NPCS[objective.target].name, x: npc.x, y: npc.y });
+      }
+    });
+    if (candidates.length === 0 && state.isComplete(mission, ctx) && this.npcs.has(mission.npc)) {
+      const npc = this.npcs.get(mission.npc);
+      candidates.push({ name: NPCS[mission.npc].name, x: npc.x, y: npc.y });
+    }
+    let best = null;
+    for (const candidate of candidates) {
+      candidate.distance = Phaser.Math.Distance.Between(player.x, player.y, candidate.x, candidate.y);
+      if (!best || candidate.distance < best.distance) best = candidate;
+    }
+    if (!best) return null;
+    const angle = Math.atan2(best.y - player.y, best.x - player.x);
+    const directions = ['L', 'SE', 'S', 'SO', 'O', 'NO', 'N', 'NE'];
+    best.direction = directions[(Math.round(angle / (Math.PI / 4)) + 8) % 8];
+    best.steps = Math.round(best.distance / 10);
+    return best;
   }
 
   chapterTitle(number) {

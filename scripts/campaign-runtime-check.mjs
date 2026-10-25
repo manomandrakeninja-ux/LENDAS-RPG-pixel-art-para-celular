@@ -44,12 +44,18 @@ await runInChrome({ name: 'campaign', port: 9358, width: 1280, height: 800 }, as
   // 3. Missão 2 aceita pelo Diário; cogumelos na clareira de missão.
   const mushrooms = await inScene(async (scene) => {
     scene.campaign.ui.reward.hidden = true;
+    // A missão 2 é oferecida na hora, num diálogo com ACEITAR.
+    const offered = !scene.campaign.ui.dialog.hidden && scene.campaign.ui.dialog.textContent.includes('O Preço da Fome');
+    scene.campaign.ui.closeDialogue();
     scene.toggleJournal();
     const accept = scene.campaign.ui.journal.querySelector('[data-q-accept="m002"]');
     accept?.click();
     scene.campaign.ui.toggleJournal(false);
     scene.campaign.syncWorld();
+    scene.campaign.ui.refreshTracker();
+    const route = scene.campaign.ui.tracker.textContent;
     const site = scene.campaign.sites.get('cogumelos');
+    if (!offered || !route.includes('Clareira de Cogumelos')) return { site: Boolean(site), offered, route };
     if (!site) return { site: false, state: scene.campaign.state.stateOf('m002') };
     for (let index = 0; index < 3; index += 1) {
       scene.player.body.reset(site.def.x + 10, site.def.y + 8);

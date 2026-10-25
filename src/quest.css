@@ -49,6 +49,12 @@
   font-size: 7px;
 }
 
+.quest-tracker__route {
+  margin: 6px 0 0;
+  color: #c59cff;
+  font-size: 7px;
+}
+
 .quest-tracker__ready {
   margin: 6px 0 0;
   color: #ffe08a;

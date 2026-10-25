@@ -55,7 +55,8 @@ export class World {
 
   drawGroundDetails() {
     const { width, height, tileSize } = WORLD;
-    const frames = ['detail-grass', 'detail-flowers', 'detail-pebbles', 'detail-leaves', 'detail-mushroom'];
+    // Sem cogumelos decorativos: eles se confundiam com os coletáveis da missão 2.
+    const frames = ['detail-grass', 'detail-flowers', 'detail-pebbles', 'detail-leaves'];
     for (let y = tileSize; y < height - tileSize; y += tileSize) {
       for (let x = tileSize; x < width - tileSize; x += tileSize) {
         if (Phaser.Math.Between(1, 100) > 16) continue;

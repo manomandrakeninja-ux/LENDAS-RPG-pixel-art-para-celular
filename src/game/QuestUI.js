@@ -139,10 +139,15 @@ export class QuestUI {
       return `<li class="${done ? 'is-done' : ''}">${done ? '✔' : '•'} ${escapeHtml(this.objectiveLabel(objective))} <b>${Math.floor(value)}/${count}</b></li>`;
     }).join('');
     const ready = state.isComplete(tracked, ctx);
+    const target = this.campaign.trackedTarget();
+    const route = target
+      ? `<p class="quest-tracker__route">${target.steps <= 5 ? 'Você chegou' : `Rumo ${target.direction} • ${target.steps} passos`}: ${escapeHtml(target.name)}</p>`
+      : '';
     this.tracker.innerHTML = `
       <p class="quest-tracker__kicker">Capítulo ${tracked.chapter} • missão ${tracked.number}/100</p>
       <h3>${escapeHtml(tracked.title)}</h3>
       <ul>${lines}</ul>
+      ${route}
       ${ready ? `<p class="quest-tracker__ready">Pronta! Entregue a ${escapeHtml(NPCS[tracked.npc]?.name ?? 'pelo Diário')}</p>` : ''}`;
   }
 

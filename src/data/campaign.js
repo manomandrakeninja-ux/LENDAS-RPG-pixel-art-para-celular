@@ -321,7 +321,7 @@ export const MISSIONS = [
   // Capítulo 1 — O Viajante sem Memória
   mission(1, 'vigia', 'Uma Fogueira na Escuridão', 'Bram precisa de lenha para manter o fogo aceso esta noite. Colete madeira nas árvores e tocos ao redor.',
     [o.gather('wood', 5)], { lore: 'despertar', items: { food: 2 } }),
-  mission(2, 'vigia', 'O Preço da Fome', 'Sem comida ninguém aguenta. Colha cogumelos na clareira a oeste do acampamento (ou cogumelos noturnos pelo mapa).',
+  mission(2, 'vigia', 'O Preço da Fome', 'Sem comida ninguém aguenta. Vá até a Clareira de Cogumelos, a noroeste do acampamento (losango no minimapa), e colha com E três vezes. À noite, os cogumelos do mapa também contam.',
     [o.structure('mushroom', 3)], { items: { iron: 2, stone: 3, wood: 2 }, outro: 'Leve este ferro ao Ferreiro do acampamento. Uma lâmina simples já ajuda.' }),
   mission(3, 'vigia', 'Uma Arma Enferrujada', 'Forje a Espada Simples no Ferreiro e limpe o depósito infestado de ratos gigantes a nordeste.',
     [o.owns(['simpleSword', 'ironSword', 'steelSword', 'legendarySword', 'dragonBlade', 'titanBlade']), o.kill('rato', 2)]),
