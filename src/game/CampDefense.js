@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { BUILDING_DEFS, buildingStat } from '../data/buildings.js';
-import { PixelCanvas } from '../art/pixel.js';
+import { PixelCanvas, ramp } from '../art/pixel.js';
+import { buildingVisual } from '../data/buildingVisuals.js';
 
 const WALL = BUILDING_DEFS.wall;
 const TOWER = BUILDING_DEFS.tower;
@@ -123,6 +124,114 @@ function ensureTextures(scene) {
     canvas.rect(2, 7, 6, 3, '#3c3f45');
     canvas.polygon([[5, 0], [2, 6], [5, 8], [8, 6]], '#e0602a');
     canvas.polygon([[5, 2], [4, 6], [6, 6]], '#ffd76b');
+  });
+  // Torre estágio 1: plataforma de madeira sobre estacas.
+  drawTexture(scene, 'tower-1', 30, 50, (canvas) => {
+    canvas.shadow(15, 48, 11, 2, 110);
+    for (const x of [6, 22]) {
+      canvas.rect(x, 18, 3, 30, '#6e4628');
+      canvas.rect(x, 18, 1, 30, '#94633a');
+    }
+    canvas.line(8, 22, 23, 44, '#4a2f1e');
+    canvas.line(23, 22, 8, 44, '#4a2f1e');
+    canvas.rect(2, 14, 26, 4, '#94633a');
+    canvas.rect(2, 14, 26, 1, '#b98450');
+    for (let x = 3; x < 28; x += 4) canvas.rect(x, 8, 2, 6, '#6e4628');
+    canvas.rect(2, 8, 26, 1, '#94633a');
+    for (let y = 20; y < 46; y += 4) canvas.rect(13, y, 5, 1, '#94633a');
+  });
+  // Torre estágio 8: pedra com telhado cônico, janelas com luz e bandeira.
+  drawTexture(scene, 'tower-8', 36, 70, (canvas) => {
+    const stone = ['#3f454a', '#5d6569', '#7f878a', '#a7aeab', '#cfd0c4'];
+    canvas.shadow(18, 68, 14, 2.4, 120);
+    for (let y = 26; y < 68; y += 1) {
+      for (let x = 7; x < 29; x += 1) {
+        const seam = (y - 26) % 5 === 4 || (x - 7 + (Math.floor((y - 26) / 5) % 2) * 4) % 8 === 7;
+        canvas.pixel(x, y, seam ? stone[1] : x < 12 ? stone[3] : x > 24 ? stone[1] : stone[2]);
+      }
+    }
+    canvas.rect(4, 22, 28, 5, stone[3]);
+    canvas.rect(4, 26, 28, 1, stone[1]);
+    canvas.polygon([[3, 23], [18, 2], [33, 23]], '#8e2f2c');
+    canvas.polygon([[18, 2], [33, 23], [22, 23]], '#6a2422');
+    canvas.line(3, 23, 18, 2, '#c0483b');
+    canvas.rect(17, 0, 1, 4, '#5a3b26');
+    canvas.polygon([[18, 0], [25, 2], [18, 4]], '#e8c13a');
+    for (const y of [34, 48]) {
+      canvas.rect(16, y, 4, 6, '#2a1c12');
+      canvas.rect(17, y + 1, 2, 4, '#f2c45c');
+    }
+    canvas.rect(14, 58, 8, 10, '#3b2615');
+    canvas.rect(15, 59, 6, 9, '#7a4d2a');
+    canvas.rect(7, 30, 22, 1, '#8e2f2c');
+  });
+  // Portão da muralha por estágio.
+  drawTexture(scene, 'gate-1', 56, 30, (canvas) => {
+    canvas.shadow(28, 29, 24, 1.6, 90);
+    for (const x of [4, 48]) {
+      canvas.rect(x, 4, 5, 25, '#6e4628');
+      canvas.rect(x, 4, 2, 25, '#94633a');
+      canvas.polygon([[x, 4], [x + 2, 0], [x + 5, 4]], '#94633a');
+    }
+    canvas.rect(4, 6, 49, 3, '#7a5236');
+    canvas.rect(4, 6, 49, 1, '#b98450');
+  });
+  drawTexture(scene, 'gate-4', 64, 46, (canvas) => {
+    canvas.shadow(32, 45, 28, 2, 100);
+    for (const x of [2, 48]) {
+      for (const px of [x, x + 11]) canvas.rect(px, 18, 3, 27, '#6e4628');
+      canvas.rect(x, 12, 14, 7, '#94633a');
+      canvas.rect(x, 12, 14, 1, '#b98450');
+      for (let px = x; px < x + 14; px += 4) canvas.rect(px, 6, 2, 6, '#6e4628');
+      canvas.line(x + 1, 22, x + 12, 40, '#4a2f1e');
+    }
+    canvas.rect(16, 18, 32, 4, '#7a5236');
+    canvas.rect(16, 18, 32, 1, '#b98450');
+  });
+  drawTexture(scene, 'gate-8', 72, 56, (canvas) => {
+    const stone = ['#3f454a', '#5d6569', '#7f878a', '#a7aeab', '#cfd0c4'];
+    canvas.shadow(36, 55, 32, 2.2, 110);
+    for (const x of [2, 54]) {
+      for (let y = 14; y < 55; y += 1) {
+        for (let px = x; px < x + 16; px += 1) {
+          const seam = (y - 14) % 5 === 4 || (px - x + (Math.floor((y - 14) / 5) % 2) * 4) % 8 === 7;
+          canvas.pixel(px, y, seam ? stone[1] : px < x + 4 ? stone[3] : stone[2]);
+        }
+      }
+      for (let px = x; px < x + 16; px += 5) canvas.rect(px, 9, 3, 5, stone[3]);
+      canvas.rect(x + 6, 24, 4, 7, '#2a1c12');
+      canvas.rect(x + 7, 25, 2, 5, '#f2c45c');
+      canvas.rect(x + 7, 0, 1, 10, '#5a3b26');
+      canvas.polygon([[x + 8, 0], [x + 15, 2], [x + 8, 5]], '#c0483b');
+    }
+    for (let px = 18; px < 54; px += 1) {
+      for (let y = 14; y < 22; y += 1) canvas.pixel(px, y, (px + y) % 7 === 0 ? stone[1] : stone[2]);
+    }
+    canvas.rect(18, 14, 36, 1, stone[4]);
+    canvas.polygon([[30, 22], [42, 22], [41, 34], [36, 37], [31, 34]], '#2f6ea8');
+    canvas.shadedEllipse(36, 28, 3, 3, ramp('#e8c13a'));
+  });
+  drawTexture(scene, 'bastion-4', 26, 40, (canvas) => {
+    canvas.shadow(13, 39, 11, 1.6, 100);
+    for (const x of [4, 19]) canvas.rect(x, 14, 3, 25, '#6e4628');
+    canvas.line(5, 18, 20, 36, '#4a2f1e');
+    canvas.rect(1, 9, 24, 6, '#94633a');
+    canvas.rect(1, 9, 24, 1, '#b98450');
+    for (let x = 1; x < 25; x += 4) canvas.rect(x, 4, 2, 5, '#6e4628');
+  });
+  drawTexture(scene, 'bastion-8', 30, 50, (canvas) => {
+    const stone = ['#3f454a', '#5d6569', '#7f878a', '#a7aeab', '#cfd0c4'];
+    canvas.shadow(15, 49, 12, 2, 110);
+    for (let y = 16; y < 49; y += 1) {
+      for (let x = 4; x < 26; x += 1) {
+        const seam = (y - 16) % 5 === 4 || (x - 4 + (Math.floor((y - 16) / 5) % 2) * 4) % 8 === 7;
+        canvas.pixel(x, y, seam ? stone[1] : x < 8 ? stone[3] : x > 22 ? stone[1] : stone[2]);
+      }
+    }
+    for (let x = 3; x < 27; x += 6) canvas.rect(x, 11, 4, 5, stone[3]);
+    canvas.rect(14, 0, 1, 12, '#5a3b26');
+    canvas.polygon([[15, 0], [22, 2], [15, 5]], '#c0483b');
+    canvas.rect(13, 26, 4, 6, '#2a1c12');
   });
   drawTexture(scene, 'tower-archer', 6, 8, (canvas) => {
     canvas.rect(1, 3, 4, 5, '#2f5f38');
@@ -271,6 +380,19 @@ export class CampDefense {
         this.posts.push(post);
       }
     }
+    // Aparência pelo estágio: portão de toras → guaritas de madeira → portão de pedra com estandartes.
+    const visual = buildingVisual('wall', this.wallLevel);
+    const celebrate = this.wallStage !== undefined && this.wallStage !== visual.stage;
+    this.wallStage = visual.stage;
+    const gatehouse = this.track(this.scene.add.image(gateX, gateY + 4, visual.gate).setOrigin(0.5, 1).setDepth(gateY + 1), this.wallObjects);
+    if (visual.bastion) {
+      for (const angle of [0, Math.PI, -Math.PI / 2, -Math.PI / 4 * 3, -Math.PI / 4]) {
+        const bx = cx + Math.cos(angle) * this.radius;
+        const by = cy + Math.sin(angle) * this.radius;
+        this.track(this.scene.add.image(bx, by + 6, visual.bastion).setOrigin(0.5, 1).setDepth(by + 8), this.wallObjects);
+      }
+    }
+    if (celebrate) this.camp.celebrateEvolution('wall', gatehouse, visual.stage);
     this.gateLights = [];
     for (const side of [-1, 1]) {
       const torchX = gateX + side * 30;
@@ -415,7 +537,11 @@ export class CampDefense {
       return;
     }
     const count = this.towerStat('towers');
-    const texture = this.towerLevel >= 5 ? 'tower-stone' : 'tower-wood';
+    const visual = buildingVisual('tower', this.towerLevel);
+    const texture = visual.texture;
+    const top = visual.top;
+    const celebrate = this.towerStage !== undefined && this.towerStage !== visual.stage;
+    this.towerStage = visual.stage;
     const sprites = [];
     for (let index = 0; index < count; index += 1) {
       const x = this.camp.x + positions[index].x;
@@ -430,21 +556,23 @@ export class CampDefense {
       });
       const archers = this.towerStat('archers');
       for (let archer = 0; archer < archers; archer += 1) {
-        this.track(this.scene.add.image(x - 9 + archer * 6, y - 52, 'tower-archer')
+        this.track(this.scene.add.image(x - 9 + archer * 6, y - top, 'tower-archer')
           .setOrigin(0.5, 1)
           .setDepth(y + 11), this.towerObjects);
       }
       if (this.towerLevel >= TOWER.cannon.level) {
-        this.track(this.scene.add.image(x + 12, y - 44, 'tower-cannon').setDepth(y + 12), this.towerObjects);
+        this.track(this.scene.add.image(x + 12, y - top + 8, 'tower-cannon').setDepth(y + 12), this.towerObjects);
       }
       sprites.push(sprite);
-      const lantern = this.track(this.scene.add.image(x, y - 46, 'buildings', 'warm-glow')
+      const lantern = this.track(this.scene.add.image(x, y - top + 6, 'buildings', 'warm-glow')
         .setScale(1.6).setBlendMode(Phaser.BlendModes.ADD).setAlpha(0.05).setDepth(4502), this.towerObjects);
       this.towerLights.push(lantern);
       if (this.scene.obstacles) this.towerObstacles.push(this.scene.obstacles.add(x, y - 6, 18, 10));
       this.towers.push({ x, y: y - 50, cooldown: 600 * index, cannonCooldown: TOWER.cannon.intervalMs });
     }
+    label.setPosition(first.x, first.y - top - 24);
     Object.assign(this.towerBuilding, { sprite: sprites[0], sprites, label });
+    if (celebrate) for (const sprite of sprites) this.camp.celebrateEvolution('tower', sprite, visual.stage);
   }
 
   onLevelChanged(key) {

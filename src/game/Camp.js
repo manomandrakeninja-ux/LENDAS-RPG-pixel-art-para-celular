@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { PixelCanvas } from '../art/pixel.js';
 import { BUILDING_FOOTPRINTS } from './Obstacles.js';
+import { buildingVisual } from '../data/buildingVisuals.js';
 import {
   BUILDING_DEFS,
   BUILDING_HIT_DURABILITY_LOSS,
@@ -25,7 +26,6 @@ export const BUILDINGS = BUILDING_DEFS;
 
 // Prédios com sprite do atlas; Fogueira, Muralha e Torre têm visual próprio.
 const ATLAS_FRAMES = { forge: 'forge', farm: 'farm', house: 'house', market: 'store' };
-const LEVEL_TINTS = [0xffffff, 0xffffff, 0xfff2cf, 0xffeab8, 0xffe3a3, 0xffdb8f, 0xffd27c, 0xffc96a, 0xffbf5a, 0xffb44c, 0xfff07a];
 const DAMAGED_TINT = 0xff9c8a;
 const DESTROYED_TINT = 0x6b5751;
 
@@ -80,6 +80,8 @@ export class Camp {
     this.savedWallHp = Number(saved.wallHp);
     this.buildings = {};
     this.lightGlows = [];
+    // Estágio visual atual de cada prédio (1, 4 ou 8), para trocar a arte só quando muda.
+    this.visualStages = {};
     this.lampVisuals = [];
     if (scene) this.create();
   }
@@ -171,7 +173,7 @@ export class Camp {
     const definition = BUILDING_DEFS[key];
     const x = this.x + definition.position.x;
     const y = this.y + definition.position.y;
-    const sprite = this.scene.add.image(x, y, 'buildings', ATLAS_FRAMES[key])
+    const sprite = this.scene.add.image(x, y, 'buildings', buildingVisual(key, this.levels[key])?.frame ?? ATLAS_FRAMES[key])
       .setOrigin(0.5, 0.84)
       .setDepth(y + 10)
       .setInteractive({ useHandCursor: true });
@@ -205,16 +207,64 @@ export class Camp {
       const building = this.buildings[key];
       if (!building) continue;
       building.label?.setText(this.labelText(key));
+      this.applyVisual(key);
       const durability = this.durability[key];
       building.glow?.setVisible(durability > 0 && this.isBuilt(key));
-      const tint = durability === 0 ? DESTROYED_TINT : durability < MAX_DURABILITY ? DAMAGED_TINT : LEVEL_TINTS[this.levels[key]];
+      // O nível agora aparece na própria arte (evolução visual); o tom só indica dano.
+      const tint = durability === 0 ? DESTROYED_TINT : durability < MAX_DURABILITY ? DAMAGED_TINT : null;
       for (const sprite of building.sprites ?? [building.sprite]) {
         if (!sprite?.setTint) continue;
-        if (key === 'campfire' && durability === MAX_DURABILITY) sprite.clearTint();
+        if (tint === null) sprite.clearTint();
         else sprite.setTint(tint);
       }
     }
     this.refreshAnimalPen();
+  }
+
+  /**
+   * Troca a arte do prédio conforme o nível (1–3, 4–7, 8+). Mantém posição,
+   * clique, colisão e luz; na evolução durante o jogo, mostra um brilho rápido.
+   */
+  applyVisual(key) {
+    if (key === 'wall' || key === 'tower') return;
+    const building = this.buildings[key];
+    const sprite = building?.sprite;
+    const visual = buildingVisual(key, this.levels[key]);
+    if (!sprite || !visual) return;
+    const previous = this.visualStages[key];
+    if (previous === visual.stage) return;
+    this.visualStages[key] = visual.stage;
+    if (visual.animation) sprite.play(visual.animation);
+    else sprite.setFrame(visual.frame);
+    const height = sprite.frame.height;
+    if (sprite.input?.hitArea) sprite.input.hitArea.setTo(0, 0, sprite.frame.width, height);
+    building.label?.setY(sprite.y - height * 0.84 - (key === 'campfire' ? 6 : 2));
+    if (key === 'forge' && this.smoke) {
+      this.smoke.setVisible(Boolean(visual.smoke));
+      if (visual.smoke) this.smoke.setPosition(sprite.x + visual.smoke.x, sprite.y + visual.smoke.y).setDepth(sprite.y + visual.smoke.y + 7);
+    }
+    if (previous !== undefined) this.celebrateEvolution(key, sprite, visual.stage);
+  }
+
+  celebrateEvolution(key, sprite, stage) {
+    const scene = this.scene;
+    if (!scene?.add) return;
+    const burst = scene.add.particles(sprite.x, sprite.y - sprite.frame.height * 0.45, 'vfx', {
+      frame: ['spark-0', 'spark-1'],
+      speed: { min: 30, max: 90 },
+      lifespan: 650,
+      scale: { start: 1, end: 0 },
+      alpha: { start: 1, end: 0 },
+      blendMode: Phaser.BlendModes.ADD,
+      emitting: false
+    }).setDepth(sprite.y + 60);
+    scene.hudCamera?.ignore(burst);
+    burst.explode(18);
+    scene.time.delayedCall(900, () => burst.destroy());
+    sprite.setScale(1, 0.9);
+    scene.tweens.add({ targets: sprite, scaleY: 1, duration: 260, ease: 'Back.out' });
+    const name = BUILDING_DEFS[key]?.name ?? key;
+    scene.ui?.showMessage?.(`${name} evoluiu! Nova aparência (estágio ${stage === 8 ? 'avançado' : 'melhorado'}).`);
   }
 
   createAnimalPen() {

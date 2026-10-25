@@ -1054,6 +1054,283 @@ function drawHouseBody(canvas, { wall, roofColor, timber = true }) {
   canvas.line(32, 7, 60, 33, darken(roofColor, 0.25));
 }
 
+// ---------- Evolução visual dos prédios (estágios 1 e 8; o estágio 4 é a arte acima) ----------
+// Estágio 1 = simples e pequeno (64 x 64); estágio 8 = grande e detalhado (80 x 80, base em y≈67).
+
+function lantern(canvas, x, y) {
+  canvas.rect(x, y, 3, 1, '#3c3f45');
+  canvas.rect(x, y + 1, 3, 4, '#f4b94d');
+  canvas.pixel(x + 1, y + 2, '#fff0a0');
+  canvas.rect(x, y + 5, 3, 1, '#3c3f45');
+}
+
+function flag(canvas, x, y, color, height = 10) {
+  canvas.rect(x, y, 1, height, WOOD[1]);
+  canvas.polygon([[x + 1, y], [x + 7, y + 2], [x + 1, y + 5]], color);
+  canvas.pixel(x + 2, y + 1, lighten(color, 0.3));
+}
+
+function cropRows(canvas, x, y, columns, rows, color) {
+  for (let row = 0; row < rows; row += 1) {
+    canvas.rect(x, y + row * 5, columns * 5, 3, DIRT[1]);
+    for (let column = 0; column < columns; column += 1) {
+      canvas.rect(x + column * 5 + 1, y + row * 5 - 2, 3, 3, color);
+      canvas.pixel(x + column * 5 + 2, y + row * 5 - 3, lighten(color, 0.3));
+    }
+  }
+}
+
+function fenceLine(canvas, x, y, length, color = WOOD[2]) {
+  canvas.rect(x, y + 2, length, 1, color);
+  canvas.rect(x, y + 5, length, 1, darken(color, 0.15));
+  for (let px = x; px <= x + length; px += 6) {
+    canvas.rect(px, y, 2, 8, color);
+    canvas.pixel(px, y, lighten(color, 0.2));
+  }
+}
+
+const STAGE_ART = {
+  'house-1': { size: 64, draw: (c) => {
+    // Cabana de toras com telhado de palha.
+    c.shadow(32, 57, 22, 3.5, 115);
+    for (let y = 36; y < 54; y += 3) {
+      c.rect(16, y, 32, 3, WOOD[2]);
+      c.rect(16, y + 2, 32, 1, WOOD[0]);
+      c.pixel(15, y + 1, WOOD[1]);
+      c.pixel(48, y + 1, WOOD[1]);
+    }
+    roof(c, [[11, 38], [32, 18], [53, 38]], '#c9a24f', 18, 38);
+    c.line(11, 38, 32, 18, '#e8c97a');
+    c.rect(28, 42, 8, 12, '#3a2414');
+    c.rect(29, 43, 6, 11, '#6e4628');
+    c.rect(19, 41, 5, 4, '#2a1c12');
+    c.pixel(20, 42, '#e09a3f');
+    // Lenha empilhada.
+    for (const [x, y] of [[50, 50], [53, 50], [51, 47]]) c.shadedEllipse(x, y, 1.8, 1.8, ['#5a3b26', '#94633a', '#c49556', '#e0c08a']);
+  } },
+  'house-8': { size: 80, draw: (c) => {
+    // Casa de dois andares: térreo de pedra, andar de madeira, chaminé, varanda e jardim.
+    c.shadow(40, 72, 34, 4.5, 125);
+    bricks(c, 12, 48, 56, 20, '#9a948c');
+    planks(c, 14, 28, 52, 20, '#b0814f');
+    for (const x of [14, 32, 48, 64]) c.rect(x, 28, 2, 20, WOOD[0]);
+    c.rect(14, 28, 52, 2, WOOD[0]);
+    c.rect(12, 46, 56, 2, WOOD[0]);
+    roof(c, [[6, 31], [40, 4], [74, 31], [67, 33], [40, 12], [13, 33]], '#3f5a8a', 4, 33);
+    roof(c, [[13, 33], [40, 12], [67, 33]], '#6e4a2c', 12, 33);
+    c.line(6, 31, 40, 4, '#7d9acb');
+    // Água-furtada e chaminé.
+    roof(c, [[30, 22], [40, 14], [50, 22]], '#3f5a8a', 14, 22);
+    windowLight(c, 37, 18, 6, 5);
+    bricks(c, 56, 6, 8, 18, '#7a746c');
+    c.rect(55, 5, 10, 2, STONE[3]);
+    // Janelas iluminadas e porta.
+    for (const x of [18, 54]) windowLight(c, x, 32);
+    for (const x of [18, 54]) windowLight(c, x, 52, 8, 7);
+    door(c, 35, 52, 10, 16);
+    // Varanda com grade.
+    c.rect(28, 45, 24, 2, WOOD[3]);
+    for (let x = 28; x < 52; x += 3) c.rect(x, 41, 1, 4, WOOD[1]);
+    c.rect(28, 41, 24, 1, WOOD[2]);
+    lantern(c, 31, 52);
+    lantern(c, 47, 52);
+    foundation(c, 11, 68, 58);
+    // Canteiros de flores.
+    for (const x of [14, 58]) {
+      c.rect(x, 64, 8, 3, WOOD[1]);
+      for (let i = 0; i < 4; i += 1) c.pixel(x + 1 + i * 2, 63, ['#e05a4f', '#f2d36b', '#c59cff', '#f4efe0'][i]);
+    }
+  } },
+  'forge-1': { size: 64, draw: (c) => {
+    // Abrigo simples: telhado inclinado em postes, forja de pedra pequena e bigorna num toco.
+    c.shadow(32, 57, 24, 3.5, 115);
+    for (const x of [12, 30, 48]) c.rect(x, 30, 3, 24, WOOD[1]);
+    c.polygon([[8, 32], [52, 22], [56, 26], [12, 36]], '#6e4628');
+    for (let x = 10; x < 54; x += 5) c.line(x, 34 - (x - 8) * 0.22, x + 2, 33 - (x - 8) * 0.22, WOOD[0]);
+    // Forja de pedra com brasa.
+    c.forEllipse(22, 48, 8, 6, (x, y) => c.pixel(x, y, hash(x, y, 2) > 0.5 ? STONE[2] : STONE[1]));
+    c.ellipse(22, 46, 4, 2.5, '#e0602a');
+    c.ellipse(22, 46, 2, 1.2, '#ffd76b');
+    // Bigorna sobre um toco.
+    c.rect(37, 49, 8, 5, BARK[1]);
+    c.rect(35, 46, 12, 3, '#5a5f66');
+    c.rect(35, 46, 12, 1, '#9aa3ab');
+    c.line(48, 38, 51, 44, WOOD[2]);
+    c.rect(46, 37, 4, 2, '#7d858c');
+  } },
+  'forge-8': { size: 80, draw: (c) => {
+    // Grande oficina de mestre: paredes de pedra, duas chaminés, fornalha em arco e rack de armas.
+    c.shadow(40, 72, 36, 4.5, 130);
+    bricks(c, 10, 34, 60, 34, '#77736c');
+    roof(c, [[4, 37], [36, 10], [68, 37], [61, 39], [36, 18], [11, 39]], '#3a3e44', 10, 39);
+    c.line(4, 37, 36, 10, '#9aa3ab');
+    c.line(36, 10, 68, 37, '#6c747c');
+    for (const x of [14, 58]) bricks(c, x, 4, 10, 30, '#5f5b55');
+    for (const x of [13, 57]) c.rect(x, 3, 12, 2, STONE[3]);
+    // Fornalha em arco com fogo forte.
+    c.rect(14, 44, 22, 24, '#241e20');
+    c.forEllipse(25, 44, 11, 7, (x, y) => { if (y <= 44) c.pixel(x, y, '#241e20'); });
+    c.rect(17, 48, 16, 20, '#c2452c');
+    c.rect(19, 52, 12, 16, '#f08a3a');
+    c.rect(21, 57, 8, 11, '#ffd36b');
+    c.pixel(24, 55, '#fff3c4');
+    // Faixas de metal e emblema dourado.
+    c.rect(10, 34, 60, 2, '#5a5f66');
+    c.rect(10, 34, 60, 1, '#9aa3ab');
+    c.shadedEllipse(52, 42, 4, 4, ['#8a5a14', '#d99a2b', '#ffe08a', '#fff6c8']);
+    c.rect(50, 41, 4, 2, '#5a3b26');
+    // Bigorna grande, barril de têmpera e rack com espadas.
+    c.rect(40, 62, 14, 4, '#3c3f45');
+    c.rect(38, 60, 18, 3, '#5a5f66');
+    c.rect(38, 60, 18, 1, '#9aa3ab');
+    c.rect(43, 66, 8, 3, '#2f3237');
+    c.shadedEllipse(64, 62, 4, 5, ramp('#6e4628'));
+    c.ellipse(64, 58, 3.5, 1.5, '#3f84c4');
+    for (const x of [44, 48, 52]) {
+      c.line(x, 46, x, 56, '#cfd0c4');
+      c.rect(x - 1, 55, 3, 1, '#8a5a14');
+    }
+    c.rect(42, 46, 13, 1, WOOD[1]);
+    foundation(c, 9, 68, 62);
+  } },
+  'farm-1': { size: 64, draw: (c) => {
+    // Pequena horta cercada, galpão de ferramentas e espantalho.
+    c.shadow(32, 58, 26, 3.5, 100);
+    c.rect(8, 36, 40, 18, DIRT[2]);
+    cropRows(c, 10, 40, 7, 3, '#6fa84b');
+    fenceLine(c, 6, 32, 44);
+    fenceLine(c, 6, 52, 44);
+    // Galpão.
+    planks(c, 48, 34, 12, 18, '#8a5e38', true);
+    c.polygon([[46, 35], [54, 27], [62, 35]], '#6e4628');
+    c.rect(52, 42, 4, 10, '#3a2414');
+    // Espantalho.
+    c.rect(28, 20, 1, 14, WOOD[1]);
+    c.rect(24, 24, 9, 1, WOOD[1]);
+    c.shadedEllipse(28.5, 19, 2.5, 2.5, ramp('#d9b45c'));
+    c.rect(25, 16, 7, 2, '#8a5a14');
+    c.rect(26, 25, 5, 5, '#3f6b8a');
+  } },
+  'farm-8': { size: 80, draw: (c) => {
+    // Fazenda completa: celeiro grande, silo, moinho e canal de irrigação entre as plantações.
+    c.shadow(40, 73, 36, 4.5, 115);
+    // Moinho (esquerda).
+    c.polygon([[4, 66], [8, 30], [16, 30], [20, 66]], '#e3d8b0');
+    c.polygon([[16, 30], [20, 66], [14, 66], [13, 30]], '#b8ad88');
+    c.polygon([[6, 32], [12, 22], [18, 32]], '#8a3a2a');
+    for (const [dx, dy] of [[-12, -10], [12, -10], [12, 10], [-12, 10]]) c.line(12, 30, 12 + dx, 30 + dy, '#d9c8a0');
+    c.shadedEllipse(12, 30, 2, 2, ramp('#6e4628'));
+    // Silo.
+    c.rect(22, 30, 12, 36, '#c9bd94');
+    for (let y = 32; y < 66; y += 4) c.rect(22, y, 12, 1, '#a69a74');
+    c.rect(22, 30, 3, 36, '#e3d8b0');
+    c.forEllipse(28, 30, 6.5, 6, (x, y) => { if (y <= 30) c.pixel(x, y, '#9a3e35'); });
+    // Celeiro grande.
+    planks(c, 36, 34, 40, 32, '#a83f33', true);
+    c.rect(36, 34, 40, 2, '#efe6d2');
+    roof(c, [[32, 37], [56, 12], [80, 37], [75, 39], [56, 20], [37, 39]], '#5b3a2e', 12, 39);
+    c.line(32, 37, 56, 12, '#efe6d2');
+    c.rect(48, 46, 16, 20, '#efe6d2');
+    c.rect(49, 47, 14, 19, '#7d2c25');
+    c.line(49, 47, 62, 65, '#efe6d2');
+    c.line(62, 47, 49, 65, '#efe6d2');
+    c.rect(53, 25, 6, 5, '#efe6d2');
+    c.rect(54, 26, 4, 3, '#3a1e1a');
+    foundation(c, 35, 66, 42);
+    // Canal de irrigação e plantações na frente.
+    c.rect(2, 70, 76, 3, '#3f84c4');
+    c.rect(2, 70, 76, 1, '#a9d4ff');
+    cropRows(c, 4, 76, 6, 1, '#d8b75d');
+    cropRows(c, 44, 76, 6, 1, '#6fa84b');
+  } },
+  'store-1': { size: 64, draw: (c) => {
+    // Banca simples: mesa, toldo em dois postes e poucos produtos.
+    c.shadow(32, 57, 22, 3.5, 110);
+    for (const x of [16, 46]) c.rect(x, 28, 2, 26, WOOD[1]);
+    for (let x = 12; x < 52; x += 1) {
+      const stripe = Math.floor((x - 12) / 5) % 2 === 0;
+      c.rect(x, 26, 1, 6, stripe ? '#d8463b' : '#f3ead4');
+      if (x % 5 < 2) c.pixel(x, 32, stripe ? '#a8342c' : '#d6cbb0');
+    }
+    planks(c, 18, 44, 28, 8, '#8a5e38');
+    c.rect(18, 43, 28, 2, WOOD[3]);
+    for (const [x, color] of [[23, '#d8413a'], [28, '#e9a13b'], [38, '#6fa84b']]) c.shadedEllipse(x, 41, 2, 1.8, ramp(color));
+    planks(c, 47, 46, 8, 7, '#9a6c45');
+    c.line(47, 46, 54, 52, WOOD[0]);
+  } },
+  'store-8': { size: 80, draw: (c) => {
+    // Mercado completo: prédio com várias bancas, toldos coloridos, barris, bandeiras e lanternas.
+    c.shadow(40, 72, 36, 4.5, 125);
+    planks(c, 12, 26, 56, 26, '#b08451');
+    roof(c, [[6, 29], [40, 6], [74, 29], [67, 31], [40, 14], [13, 31]], '#9a3e35', 6, 31);
+    c.line(6, 29, 40, 6, '#d06a5a');
+    windowLight(c, 20, 32);
+    windowLight(c, 52, 32);
+    c.rect(32, 30, 16, 9, WOOD[1]);
+    c.rect(33, 31, 14, 7, WOOD[2]);
+    c.shadedEllipse(40, 34.5, 3, 3, ['#a8761c', '#e8b83a', '#ffe07a', '#fff6c8']);
+    // Três bancas com toldos de cores diferentes.
+    for (const [x, colorA, colorB] of [[6, '#2f6ea8', '#f3ead4'], [29, '#d8463b', '#f3ead4'], [52, '#3f8a3a', '#f3ead4']]) {
+      for (let px = x; px < x + 22; px += 1) {
+        const stripe = Math.floor((px - x) / 4) % 2 === 0;
+        c.rect(px, 46, 1, 6, stripe ? colorA : colorB);
+        if (px % 4 < 2) c.pixel(px, 52, stripe ? darken(colorA, 0.25) : '#d6cbb0');
+      }
+      for (const post of [x + 1, x + 20]) c.rect(post, 52, 1, 12, WOOD[0]);
+      planks(c, x + 1, 60, 20, 6, '#7c5434');
+      c.rect(x + 1, 59, 20, 1, WOOD[3]);
+    }
+    for (const [x, color] of [[10, '#d8413a'], [15, '#f2d36b'], [33, '#e9a13b'], [38, '#c59cff'], [56, '#6fa84b'], [61, '#d8413a']]) {
+      c.shadedEllipse(x, 57, 2, 1.8, ramp(color));
+    }
+    for (const x of [2, 74]) c.shadedEllipse(x + 2, 64, 3, 4, ramp('#8a5e38'));
+    flag(c, 10, 10, '#e8c13a');
+    flag(c, 66, 10, '#2f6ea8');
+    lantern(c, 28, 40);
+    lantern(c, 50, 40);
+    foundation(c, 11, 66, 58);
+  } }
+};
+
+for (const stage of [4, 8]) {
+  for (let frame = 0; frame < 4; frame += 1) {
+    const sway = [0, 1, -1, 1][frame];
+    const tall = [6, 4, 7, 5][frame];
+    STAGE_ART[`campfire${stage}-${frame}`] = stage === 4
+      ? { size: 32, draw: (c) => {
+        // Fogueira maior: anel de pedras largas e bancos de tora ao redor.
+        c.shadow(16, 28, 14, 3, 110);
+        for (const [x, y] of [[4, 26], [9, 28], [16, 29], [23, 28], [28, 26], [3, 22], [29, 22]]) c.shadedEllipse(x, y, 2.6, 2, STONE.slice(1));
+        c.rect(0, 30, 7, 2, BARK[2]);
+        c.rect(25, 30, 7, 2, BARK[2]);
+        c.line(8, 26, 24, 20, BARK[1]);
+        c.line(8, 20, 24, 26, BARK[0]);
+        c.polygon([[16 + sway, tall], [9, 18], [11, 25], [21, 25], [23, 17], [19, tall + 5]], '#d9542e');
+        c.polygon([[16 - sway, tall + 4], [11, 19], [13, 24], [19, 24], [20, 17]], '#f2913a');
+        c.polygon([[16 + sway, tall + 8], [14, 20], [16, 24], [18, 20]], '#ffd76b');
+        c.pixel(16, 23, '#fff4c8');
+      } }
+      : { size: 40, draw: (c) => {
+        // Braseiro do grande fogo: pedestal de pedra, bacia de ferro e chamas altas.
+        c.shadow(20, 37, 15, 3, 115);
+        c.rect(12, 26, 16, 10, STONE[2]);
+        c.rect(12, 26, 4, 10, STONE[3]);
+        c.rect(24, 26, 4, 10, STONE[1]);
+        c.rect(10, 34, 20, 3, STONE[1]);
+        c.forEllipse(20, 24, 12, 5, (x, y) => c.pixel(x, y, y < 23 ? '#5a5f66' : '#3c3f45'));
+        c.rect(8, 22, 24, 1, '#9aa3ab');
+        c.polygon([[20 + sway, tall - 4], [11, 16], [13, 23], [27, 23], [29, 15], [24, tall + 2]], '#d9542e');
+        c.polygon([[20 - sway, tall], [13, 17], [16, 22], [24, 22], [26, 16]], '#f2913a');
+        c.polygon([[20 + sway, tall + 6], [17, 18], [20, 22], [23, 18]], '#ffd76b');
+        c.pixel(20, 20, '#fff4c8');
+        for (const x of [6, 34]) {
+          c.rect(x - 1, 14, 2, 22, WOOD[1]);
+          c.polygon([[x - 2, 10], [x, 6], [x + 2, 10], [x, 13]], '#ffb04a');
+        }
+      } };
+  }
+}
+
 const buildingEntries = [
   {
     name: 'house', width: 64, height: 64,
@@ -1240,6 +1517,11 @@ const buildingEntries = [
     }
   }
 ];
+// Estágios de evolução: house-1/house-8, forge-1/forge-8, ..., campfire4-*, campfire8-*.
+// O estágio 4 dos prédios é a arte "house", "forge", "farm" e "store" acima.
+for (const [name, art] of Object.entries(STAGE_ART)) {
+  buildingEntries.push({ name, width: art.size, height: art.size, draw: art.draw });
+}
 makeAtlas('buildings/camp-atlas.json', buildingEntries);
 
 makeAtlas('ui/panel-atlas.json', [{
