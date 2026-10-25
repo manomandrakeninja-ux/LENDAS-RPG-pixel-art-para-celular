@@ -1,4 +1,5 @@
 import { WORLD } from './config.js';
+import { MAP_SCALE } from './MapRenderer.js';
 import { DUNGEON_CONFIG } from '../data/buildings.js';
 
 export const WORLD_MAP_MARKER_TYPES = Object.freeze({
@@ -114,6 +115,8 @@ function drawMarker(context, marker, toX, toY) {
   context.restore();
 }
 
+const ZOOM_LEVELS = [1, 1.6, 2.6];
+
 export class WorldMapOverlay {
   constructor(scene) {
     this.scene = scene;
@@ -122,10 +125,39 @@ export class WorldMapOverlay {
     this.closeButton = document.getElementById('world-map-close');
     this.context = this.canvas.getContext('2d');
     this.isOpen = false;
+    this.zoomIndex = 0;
     this.lastMarkerCounts = { camp: 0, structures: 0, chests: 0, strongEnemies: 0, player: 0 };
 
     this.handleClose = () => this.close();
     this.closeButton.addEventListener('click', this.handleClose);
+    // Zoom: botões + e − ao lado do FECHAR e roda do mouse no mapa.
+    this.zoomBar = document.getElementById('world-map-zoom') ?? this.createZoomBar();
+    this.handleZoomClick = (event) => {
+      const button = event.target.closest('button[data-zoom]');
+      if (!button) return;
+      this.setZoom(this.zoomIndex + Number(button.dataset.zoom));
+    };
+    this.handleWheel = (event) => {
+      if (!this.isOpen) return;
+      event.preventDefault();
+      this.setZoom(this.zoomIndex + (event.deltaY < 0 ? 1 : -1));
+    };
+    this.zoomBar.addEventListener('click', this.handleZoomClick);
+    this.canvas.addEventListener('wheel', this.handleWheel, { passive: false });
+  }
+
+  createZoomBar() {
+    const bar = document.createElement('div');
+    bar.id = 'world-map-zoom';
+    bar.className = 'world-map__zoom';
+    bar.innerHTML = '<button type="button" data-zoom="-1" aria-label="Afastar">−</button><button type="button" data-zoom="1" aria-label="Aproximar">+</button>';
+    this.closeButton.before(bar);
+    return bar;
+  }
+
+  setZoom(index) {
+    this.zoomIndex = Math.max(0, Math.min(ZOOM_LEVELS.length - 1, index));
+    this.render();
   }
 
   open() {
@@ -144,51 +176,81 @@ export class WorldMapOverlay {
     else this.open();
   }
 
+  /** Área do mundo visível: o mundo todo, ou um recorte centrado no jogador quando há zoom. */
+  view() {
+    const zoom = ZOOM_LEVELS[this.zoomIndex];
+    const width = WORLD.width / zoom;
+    const height = WORLD.height / zoom;
+    const player = this.scene.player ?? WORLD.camp;
+    const left = Math.max(0, Math.min(WORLD.width - width, player.x - width / 2));
+    const top = Math.max(0, Math.min(WORLD.height - height, player.y - height / 2));
+    return { left, top, width, height, zoom };
+  }
+
   render() {
     if (!this.isOpen) return;
     const context = this.context;
     const width = this.canvas.width;
     const height = this.canvas.height;
-    const toX = (x) => (x / WORLD.width) * width;
-    const toY = (y) => (y / WORLD.height) * height;
+    const view = this.view();
+    const scale = width / view.width;
+    const toX = (x) => (x - view.left) * scale;
+    const toY = (y) => (y - view.top) * scale;
+    const renderer = this.scene.ui?.mapRenderer;
 
+    context.save();
     context.clearRect(0, 0, width, height);
-    context.fillStyle = '#07100c';
+    context.fillStyle = '#0b0f0d';
     context.fillRect(0, 0, width, height);
-
-    context.strokeStyle = 'rgba(89, 119, 77, 0.13)';
-    context.lineWidth = 1;
-    for (let x = 0; x <= width; x += 40) {
-      context.beginPath();
-      context.moveTo(x + 0.5, 0);
-      context.lineTo(x + 0.5, height);
-      context.stroke();
-    }
-    for (let y = 0; y <= height; y += 40) {
-      context.beginPath();
-      context.moveTo(0, y + 0.5);
-      context.lineTo(width, y + 0.5);
-      context.stroke();
-    }
-
-    const revealedCells = this.scene.world?.getRevealedCells?.() ?? [];
-    const fogSize = WORLD.tileSize * 2;
-    const columns = Math.ceil(WORLD.width / fogSize);
-    const rows = Math.ceil(WORLD.height / fogSize);
-    const cellWidth = width / columns;
-    const cellHeight = height / rows;
-    context.fillStyle = 'rgba(79, 119, 72, 0.72)';
-    for (const cell of revealedCells) {
-      const x = cell.column * cellWidth;
-      const y = cell.row * cellHeight;
-      if (x < 0 || y < 0 || x >= width || y >= height) continue;
-      context.fillRect(
-        Math.floor(x),
-        Math.floor(y),
-        Math.max(1, Math.ceil(cellWidth)),
-        Math.max(1, Math.ceil(cellHeight))
+    context.imageSmoothingEnabled = false;
+    if (renderer) {
+      renderer.updateFog();
+      const crop = (source) => context.drawImage(
+        source,
+        view.left / MAP_SCALE, view.top / MAP_SCALE, view.width / MAP_SCALE, view.height / MAP_SCALE,
+        0, 0, width, height
       );
+      crop(renderer.terrain);
+      renderer.drawCamp(context, toX, toY, scale);
+      renderer.drawNpcs(context, toX, toY, Math.max(3, 4 * view.zoom));
+      crop(renderer.fog);
     }
+
+    // Grade com coordenadas (A–L, 1–9) para orientar o jogador.
+    context.strokeStyle = 'rgba(244, 230, 198, 0.08)';
+    context.lineWidth = 1;
+    context.font = '8px "Press Start 2P", monospace';
+    context.fillStyle = 'rgba(244, 230, 198, 0.55)';
+    const cellX = WORLD.width / 12;
+    const cellY = WORLD.height / 9;
+    for (let column = 0; column <= 12; column += 1) {
+      const x = Math.round(toX(column * cellX)) + 0.5;
+      context.beginPath();
+      context.moveTo(x, 0);
+      context.lineTo(x, height);
+      context.stroke();
+      if (column < 12) context.fillText(String.fromCharCode(65 + column), toX((column + 0.5) * cellX) - 4, 12);
+    }
+    for (let row = 0; row <= 9; row += 1) {
+      const y = Math.round(toY(row * cellY)) + 0.5;
+      context.beginPath();
+      context.moveTo(0, y);
+      context.lineTo(width, y);
+      context.stroke();
+      if (row < 9) context.fillText(String(row + 1), 4, toY((row + 0.5) * cellY) + 4);
+    }
+
+    // Nomes das regiões já exploradas.
+    context.textAlign = 'center';
+    for (const region of renderer?.regionLabels() ?? []) {
+      context.font = '10px "Press Start 2P", monospace';
+      context.lineWidth = 4;
+      context.strokeStyle = 'rgba(20, 14, 10, 0.85)';
+      context.strokeText(region.name.toUpperCase(), toX(region.x), toY(region.y));
+      context.fillStyle = '#f4e6c6';
+      context.fillText(region.name.toUpperCase(), toX(region.x), toY(region.y));
+    }
+    context.textAlign = 'left';
 
     const markers = collectWorldMapMarkers({
       structures: this.scene.harvestStructures?.state?.structures ?? [],
@@ -203,7 +265,13 @@ export class WorldMapOverlay {
     markers.structures.forEach((marker) => drawMarker(context, marker, toX, toY));
     markers.chests.forEach((marker) => drawMarker(context, marker, toX, toY));
     markers.strongEnemies.forEach((marker) => drawMarker(context, marker, toX, toY));
-    if (markers.player) drawMarker(context, markers.player, toX, toY);
+    renderer?.drawQuestSites(context, toX, toY, { labels: true, size: 7 });
+    if (markers.player && renderer) renderer.drawPlayer(context, toX(markers.player.x), toY(markers.player.y), 9);
+    else if (markers.player) drawMarker(context, markers.player, toX, toY);
+
+    this.drawCompass(context, width - 46, 46);
+    this.drawScaleBar(context, 18, height - 22, scale);
+    context.restore();
 
     this.lastMarkerCounts = {
       camp: 1,
@@ -214,7 +282,51 @@ export class WorldMapOverlay {
     };
   }
 
+  drawCompass(context, x, y) {
+    context.save();
+    context.translate(x, y);
+    context.fillStyle = 'rgba(36, 25, 15, 0.85)';
+    context.strokeStyle = '#c9a76b';
+    context.lineWidth = 2;
+    context.beginPath();
+    context.arc(0, 0, 28, 0, Math.PI * 2);
+    context.fill();
+    context.stroke();
+    for (const [angle, color] of [[0, '#e2463f'], [Math.PI, '#f4e6c6'], [Math.PI / 2, '#c9a76b'], [-Math.PI / 2, '#c9a76b']]) {
+      context.save();
+      context.rotate(angle);
+      context.fillStyle = color;
+      context.beginPath();
+      context.moveTo(0, -22);
+      context.lineTo(5, 0);
+      context.lineTo(-5, 0);
+      context.closePath();
+      context.fill();
+      context.restore();
+    }
+    context.fillStyle = '#ffe08a';
+    context.font = '8px "Press Start 2P", monospace';
+    context.textAlign = 'center';
+    context.fillText('N', 0, -30);
+    context.restore();
+  }
+
+  drawScaleBar(context, x, y, scale) {
+    const steps = 50;
+    const length = steps * 10 * scale;
+    context.fillStyle = 'rgba(36, 25, 15, 0.85)';
+    context.fillRect(x - 6, y - 16, length + 120, 24);
+    context.fillStyle = '#f4e6c6';
+    context.fillRect(x, y - 2, length, 4);
+    context.fillRect(x, y - 6, 2, 12);
+    context.fillRect(x + length - 2, y - 6, 2, 12);
+    context.font = '8px "Press Start 2P", monospace';
+    context.fillText(`${steps} passos`, x + length + 10, y + 4);
+  }
+
   destroy() {
     this.closeButton.removeEventListener('click', this.handleClose);
+    this.zoomBar?.removeEventListener('click', this.handleZoomClick);
+    this.canvas.removeEventListener('wheel', this.handleWheel);
   }
 }

@@ -955,7 +955,7 @@ export class CampaignSystem {
     const trackedIds = new Set(tracked ? tracked.objectives.flatMap((objective) => this.sitesForObjective(tracked, objective)) : []);
     return [...this.sites.values()]
       .filter((site) => site.def.kind !== 'assault')
-      .map((site) => ({ x: site.def.x, y: site.def.y, tracked: trackedIds.has(site.id) }));
+      .map((site) => ({ x: site.def.x, y: site.def.y, name: site.def.name, tracked: trackedIds.has(site.id) }));
   }
 
   /** Chefe de missão mais próximo (para a barra de vida de chefe). */

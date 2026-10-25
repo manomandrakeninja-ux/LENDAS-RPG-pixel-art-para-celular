@@ -179,11 +179,12 @@ export class Camp {
       event?.stopPropagation?.();
       this.scene.openBuilding?.(key);
     });
-    const glow = this.scene.add.image(x, y - 4, 'buildings', 'warm-glow')
-      .setScale(1)
+    const glow = this.scene.add.image(x, y - 14, 'buildings', 'warm-glow')
+      .setScale(key === 'forge' ? 2.6 : 2.2)
       .setBlendMode(Phaser.BlendModes.ADD)
       .setAlpha(0.05)
       .setDepth(4501 + y / 1000);
+    if (key === 'forge') glow.setTint(0xff9a4a);
     this.lightGlows.push(glow);
     const base = BUILDING_FOOTPRINTS[key];
     if (base) this.scene.obstacles?.add(x + base.x, y + base.y, base.width, base.height);
@@ -205,6 +206,7 @@ export class Camp {
       if (!building) continue;
       building.label?.setText(this.labelText(key));
       const durability = this.durability[key];
+      building.glow?.setVisible(durability > 0 && this.isBuilt(key));
       const tint = durability === 0 ? DESTROYED_TINT : durability < MAX_DURABILITY ? DAMAGED_TINT : LEVEL_TINTS[this.levels[key]];
       for (const sprite of building.sprites ?? [building.sprite]) {
         if (!sprite?.setTint) continue;
@@ -318,10 +320,19 @@ export class Camp {
     });
   }
 
+  /** Luzes que abrem a escuridão à noite: fogueira, postes, prédios, torres e portão. */
   getLightSources() {
+    const buildings = Object.keys(ATLAS_FRAMES)
+      .filter((key) => this.buildings[key]?.glow && this.isBuilt(key) && this.durability[key] > 0)
+      .map((key) => {
+        const glow = this.buildings[key].glow;
+        return { object: glow, x: glow.x, y: glow.y, radius: key === 'forge' ? 125 : 100 };
+      });
     return [
       { object: this.fire, x: this.fire.x, y: this.fire.y, radius: 170 },
-      ...this.lampVisuals.map((lamp) => ({ object: lamp, x: lamp.x, y: lamp.y, radius: 105 }))
+      ...this.lampVisuals.map((lamp) => ({ object: lamp, x: lamp.x, y: lamp.y, radius: 105 })),
+      ...buildings,
+      ...(this.defense?.lightSources?.() ?? [])
     ];
   }
 
@@ -329,6 +340,7 @@ export class Camp {
     this.lightLevel = level;
     const glowAlpha = level >= 0.4 ? 0.42 : level >= 0.3 ? 0.34 : level >= 0.15 ? 0.2 : 0.07;
     this.lightGlows.forEach((glow, index) => glow.setAlpha(index === 0 ? glowAlpha + 0.04 : glowAlpha));
+    this.defense?.setLightLevel?.(glowAlpha);
   }
 
   setNight(isNight) {

@@ -116,6 +116,14 @@ function ensureTextures(scene) {
       canvas.polygon([[27, 0], [30, 2], [27, 4]], '#d8463b');
     });
   }
+  drawTexture(scene, 'gate-torch', 10, 24, (canvas) => {
+    canvas.shadow(5, 23, 3, 1, 90);
+    canvas.rect(4, 9, 2, 14, '#6e4628');
+    canvas.rect(4, 9, 1, 14, '#94633a');
+    canvas.rect(2, 7, 6, 3, '#3c3f45');
+    canvas.polygon([[5, 0], [2, 6], [5, 8], [8, 6]], '#e0602a');
+    canvas.polygon([[5, 2], [4, 6], [6, 6]], '#ffd76b');
+  });
   drawTexture(scene, 'tower-archer', 6, 8, (canvas) => {
     canvas.rect(1, 3, 4, 5, '#2f5f38');
     canvas.rect(1, 3, 1, 5, '#4a8a52');
@@ -193,6 +201,22 @@ export class CampDefense {
     list.length = 0;
   }
 
+  // ---------- Luzes (portão e torres) ----------
+
+  lightSources() {
+    const wallUp = this.wallLevel > 0 && this.wallStanding;
+    return [
+      ...(wallUp ? this.gateLights ?? [] : []).map((glow) => ({ object: glow, x: glow.x, y: glow.y, radius: 80 })),
+      ...(this.towerLights ?? []).map((glow) => ({ object: glow, x: glow.x, y: glow.y, radius: 110 }))
+    ];
+  }
+
+  setLightLevel(alpha) {
+    for (const glow of [...(this.gateLights ?? []), ...(this.towerLights ?? [])]) {
+      if (glow.active) glow.setAlpha(alpha);
+    }
+  }
+
   // ---------- Muralha ----------
 
   buildWall() {
@@ -246,6 +270,14 @@ export class CampDefense {
         this.scene.physics.add.existing(post, true);
         this.posts.push(post);
       }
+    }
+    this.gateLights = [];
+    for (const side of [-1, 1]) {
+      const torchX = gateX + side * 30;
+      this.track(this.scene.add.image(torchX, gateY + 2, 'gate-torch').setOrigin(0.5, 1).setDepth(gateY + 4), this.wallObjects);
+      const glow = this.track(this.scene.add.image(torchX, gateY - 20, 'buildings', 'warm-glow')
+        .setScale(1.4).setBlendMode(Phaser.BlendModes.ADD).setAlpha(0.05).setDepth(4502), this.wallObjects);
+      this.gateLights.push(glow);
     }
     if (this.wallStat('gates')) {
       for (const side of [-1, 1]) {
@@ -357,6 +389,7 @@ export class CampDefense {
 
   buildTowers() {
     this.clear(this.towerObjects);
+    this.towerLights = [];
     this.scene.obstacles?.remove(this.towerObstacles);
     this.towerObstacles = [];
     this.towers = [];
@@ -405,6 +438,9 @@ export class CampDefense {
         this.track(this.scene.add.image(x + 12, y - 44, 'tower-cannon').setDepth(y + 12), this.towerObjects);
       }
       sprites.push(sprite);
+      const lantern = this.track(this.scene.add.image(x, y - 46, 'buildings', 'warm-glow')
+        .setScale(1.6).setBlendMode(Phaser.BlendModes.ADD).setAlpha(0.05).setDepth(4502), this.towerObjects);
+      this.towerLights.push(lantern);
       if (this.scene.obstacles) this.towerObstacles.push(this.scene.obstacles.add(x, y - 6, 18, 10));
       this.towers.push({ x, y: y - 50, cooldown: 600 * index, cannonCooldown: TOWER.cannon.intervalMs });
     }

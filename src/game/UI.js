@@ -4,6 +4,7 @@ import { HARVEST_STRUCTURE_TYPES } from '../data/harvestStructures.js';
 import { BOSS_CONFIG } from '../data/boss.js';
 import { INVENTORY_CONFIG, RESOURCE_TYPES, WORLD } from './config.js';
 import { drawIcon } from '../art/icons.js';
+import { MAP_SCALE, MapRenderer } from './MapRenderer.js';
 import { HOTKEY_ITEMS } from '../data/consumables.js';
 
 const TEXT_STYLE = {
@@ -179,31 +180,17 @@ export class GameUI {
     this.mapLabel = this.text(this.mapX, 10, 'MAPA • M', {
       fontSize: '8px', fontStyle: 'bold', color: '#ecd99f'
     }).setOrigin(0.5);
-    this.mapBase = this.scene.add.rectangle(this.mapX, this.mapY, 120, 120, 0x2d493a, 0.95)
-      .setStrokeStyle(2, 0x5f7046)
+    this.mapRenderer = new MapRenderer(this.scene);
+    this.minimapSize = this.metrics.mapSize - 20;
+    if (this.scene.textures.exists('minimap-view')) this.scene.textures.remove('minimap-view');
+    this.minimapTexture = this.scene.textures.createCanvas('minimap-view', 176, 176);
+    this.minimapImage = this.scene.add.image(this.mapX, this.mapY, 'minimap-view')
       .setScrollFactor(0)
       .setDepth(5000);
-    this.mapExplored = this.scene.add.graphics().setScrollFactor(0).setDepth(5000.5);
-    this.mapCampMarker = this.scene.add.rectangle(this.mapX, this.mapY, 10, 10, 0xe1a65f)
-      .setStrokeStyle(1, 0x30261f)
-      .setScrollFactor(0)
-      .setDepth(5001);
-    this.mapMarkers = this.scene.add.graphics().setScrollFactor(0).setDepth(5001.5);
-    this.mapPlayerMarker = this.scene.add.rectangle(this.mapX, this.mapY, 6, 6, 0xffd75a)
-      .setStrokeStyle(1, 0x30261f)
-      .setScrollFactor(0)
-      .setDepth(5002);
-    this.lastExploredCount = -1;
+    this.minimapTimer = 0;
+    this.minimapStats = { rendered: false, kinds: [] };
     this.drawMapBase();
-    this.fixed.push(
-      this.mapBg,
-      this.mapLabel,
-      this.mapBase,
-      this.mapExplored,
-      this.mapCampMarker,
-      this.mapMarkers,
-      this.mapPlayerMarker
-    );
+    this.fixed.push(this.mapBg, this.mapLabel, this.minimapImage);
 
     this.message = this.text(width / 2, 120, '', {
       fontSize: '8px', fontStyle: 'bold', align: 'center', backgroundColor: '#26392ddd',
@@ -285,11 +272,13 @@ export class GameUI {
     else this.hint.setOrigin(0.5, 0).setPosition(width / 2, height - 44);
   }
 
+  /** Ajusta o recorte do minimapa ao tamanho atual da moldura. */
   drawMapBase() {
-    this.mapBase.setPosition(this.mapX, this.mapY).setSize(120, 120);
-    this.mapCampMarker.setPosition(this.mapX, this.mapY);
-    this.mapExplored.clear();
-    this.lastExploredCount = -1;
+    this.minimapSize = this.metrics.mapSize - 20;
+    this.minimapImage.setPosition(this.mapX, this.mapY);
+    this.minimapImage.setCrop(0, 0, this.minimapSize, this.minimapSize);
+    this.minimapImage.setDisplayOrigin(this.minimapSize / 2, this.minimapSize / 2);
+    this.minimapTimer = 0;
   }
 
   resize() {
@@ -391,8 +380,11 @@ export class GameUI {
 
     this.statusLabel.setText(this.statusText(time));
     this.updateRain();
-    this.updateMinimap(player, world);
-    this.updateMinimapMarkers(camp, enemies);
+    this.minimapTimer -= this.scene.game.loop.delta;
+    if (this.minimapTimer <= 0) {
+      this.minimapTimer = 120;
+      this.renderMinimap(player, camp, enemies);
+    }
   }
 
   updateRain() {
@@ -421,84 +413,145 @@ export class GameUI {
     return parts.join(' • ');
   }
 
-  /** Mina (sempre), masmorra (quando revelada) e radar da Torre de Vigia (nível 4+). */
-  updateMinimapMarkers(camp, enemies = []) {
-    const mapLeft = this.mapX - 60;
-    const mapTop = this.mapY - 60;
-    const toX = (x) => mapLeft + (x / WORLD.width) * 120;
-    const toY = (y) => mapTop + (y / WORLD.height) * 120;
-    const graphics = this.mapMarkers;
-    graphics.clear();
+  /**
+   * Minimapa local: mostra o terreno ao redor do jogador (norte para cima), com
+   * névoa de exploração, acampamento, moradores, locais de missão, mina,
+   * masmorra, radar da torre e setas na borda para o acampamento e a missão rastreada.
+   */
+  renderMinimap(player = this.scene.player, camp = this.scene.camp, enemies = this.scene.enemies ?? []) {
+    if (!player) return;
+    const size = this.minimapSize;
+    const context = this.minimapTexture.getContext();
+    const renderer = this.mapRenderer;
+    renderer.updateFog();
+    const span = 1100;
+    const scale = size / span;
+    const left = player.x - span / 2;
+    const top = player.y - span / 2;
+    const toX = (x) => (x - left) * scale;
+    const toY = (y) => (y - top) * scale;
+    const kinds = [];
+    context.save();
+    context.imageSmoothingEnabled = false;
+    context.clearRect(0, 0, 176, 176);
+    context.beginPath();
+    context.rect(0, 0, size, size);
+    context.clip();
+    context.fillStyle = '#0b0f0d';
+    context.fillRect(0, 0, size, size);
+    this.drawCrop(context, renderer.terrain, left, top, span, size);
+    renderer.drawCamp(context, toX, toY, scale);
+    renderer.drawNpcs(context, toX, toY, 2);
+    this.drawCrop(context, renderer.fog, left, top, span, size);
+
+    const inside = (x, y, margin = 0) => x >= -margin && y >= -margin && x <= size + margin && y <= size + margin;
     const mine = this.scene.harvestStructures?.state?.byType('mineMarker')?.[0];
-    if (mine) {
-      graphics.fillStyle(0x1b1b1f, 1).fillRect(toX(mine.x) - 4, toY(mine.y) - 4, 8, 8);
-      graphics.fillStyle(0xc1cbd0, 1).fillRect(toX(mine.x) - 2, toY(mine.y) - 2, 4, 4);
+    if (mine && inside(toX(mine.x), toY(mine.y), 4)) {
+      kinds.push('mine');
+      context.fillStyle = '#1b1b1f';
+      context.fillRect(toX(mine.x) - 4, toY(mine.y) - 4, 8, 8);
+      context.fillStyle = '#c1cbd0';
+      context.fillRect(toX(mine.x) - 2, toY(mine.y) - 2, 4, 4);
     }
     if (camp?.dungeonRevealed || camp?.defense?.dragonRadar) {
-      const dungeon = DUNGEON_CONFIG;
-      graphics.fillStyle(0xe2463f, 1).fillTriangle(
-        toX(dungeon.x), toY(dungeon.y) - 5,
-        toX(dungeon.x) + 5, toY(dungeon.y) + 4,
-        toX(dungeon.x) - 5, toY(dungeon.y) + 4
-      );
-    }
-    for (const point of this.scene.campaign?.mapPoints() ?? []) {
-      graphics.fillStyle(point.tracked ? 0xffd76b : 0xc59cff, 1);
-      const px = Math.round(toX(point.x));
-      const py = Math.round(toY(point.y));
-      graphics.fillTriangle(px, py - 4, px + 4, py, px, py + 4);
-      graphics.fillTriangle(px, py - 4, px - 4, py, px, py + 4);
-    }
-    if (camp?.defense?.radarActive) {
-      graphics.fillStyle(0xff5d4f, 1);
-      for (const enemy of enemies) {
-        if (!enemy.active) continue;
-        const distance = Phaser.Math.Distance.Between(enemy.x, enemy.y, camp.x, camp.y);
-        if (distance > BUILDING_DEFS.tower.radarRange) continue;
-        graphics.fillRect(Math.round(toX(enemy.x)) - 1, Math.round(toY(enemy.y)) - 1, 2, 2);
+      const x = toX(DUNGEON_CONFIG.x);
+      const y = toY(DUNGEON_CONFIG.y);
+      if (inside(x, y, 6)) {
+        kinds.push('dungeon');
+        context.fillStyle = '#e2463f';
+        context.beginPath();
+        context.moveTo(x, y - 5);
+        context.lineTo(x + 5, y + 4);
+        context.lineTo(x - 5, y + 4);
+        context.closePath();
+        context.fill();
       }
     }
+    if (camp?.defense?.radarActive) {
+      context.fillStyle = '#ff5d4f';
+      for (const enemy of enemies) {
+        if (!enemy.active) continue;
+        if (Phaser.Math.Distance.Between(enemy.x, enemy.y, camp.x, camp.y) > BUILDING_DEFS.tower.radarRange) continue;
+        context.fillRect(Math.round(toX(enemy.x)) - 1, Math.round(toY(enemy.y)) - 1, 3, 3);
+      }
+      kinds.push('radar');
+    }
+    for (const enemy of enemies) {
+      if (!enemy.active || !(enemy.isQuestBoss || enemy.isElite)) continue;
+      const x = toX(enemy.x);
+      const y = toY(enemy.y);
+      if (!inside(x, y)) continue;
+      context.fillStyle = enemy.isQuestBoss ? '#ff8a5a' : '#e15950';
+      context.fillRect(Math.round(x) - 2, Math.round(y) - 2, 4, 4);
+    }
+    const quest = renderer.drawQuestSites(context, toX, toY, { size: 4 });
+    if (quest.length > 0) kinds.push('quest');
+
+    // Setas na borda: acampamento (laranja) e alvo da missão rastreada (dourado).
+    const edgeArrow = (x, y, color) => {
+      const cx = size / 2;
+      const angle = Math.atan2(y - cx, x - cx);
+      const radius = size / 2 - 7;
+      const ax = cx + Math.cos(angle) * radius;
+      const ay = cx + Math.sin(angle) * radius;
+      context.save();
+      context.translate(ax, ay);
+      context.rotate(angle);
+      context.fillStyle = color;
+      context.strokeStyle = '#1a120d';
+      context.lineWidth = 2;
+      context.beginPath();
+      context.moveTo(6, 0);
+      context.lineTo(-4, -5);
+      context.lineTo(-4, 5);
+      context.closePath();
+      context.fill();
+      context.stroke();
+      context.restore();
+    };
+    if (camp && !inside(toX(camp.x), toY(camp.y), -4)) {
+      edgeArrow(toX(camp.x), toY(camp.y), '#e1a65f');
+      kinds.push('camp-arrow');
+    } else if (camp) {
+      kinds.push('camp');
+    }
+    const target = this.scene.campaign?.trackedTarget?.();
+    if (target && !inside(toX(target.x), toY(target.y), -4)) {
+      edgeArrow(toX(target.x), toY(target.y), '#ffd76b');
+      kinds.push('quest-arrow');
+    }
+
+    renderer.drawPlayer(context, size / 2, size / 2, 5);
+    // Vinheta e borda interna.
+    const vignette = context.createRadialGradient(size / 2, size / 2, size * 0.32, size / 2, size / 2, size * 0.72);
+    vignette.addColorStop(0, 'rgba(0,0,0,0)');
+    vignette.addColorStop(1, 'rgba(10,6,4,0.55)');
+    context.fillStyle = vignette;
+    context.fillRect(0, 0, size, size);
+    context.strokeStyle = '#2a1d14';
+    context.lineWidth = 2;
+    context.strokeRect(1, 1, size - 2, size - 2);
+    context.fillStyle = '#ffe08a';
+    context.font = '8px "Press Start 2P", monospace';
+    context.textAlign = 'center';
+    context.fillText('N', size / 2, 11);
+    context.restore();
+    this.minimapTexture.refresh();
+    this.minimapStats = { rendered: true, kinds, size, span, playerAtCenter: true };
   }
 
-  updateMinimap(player, world) {
-    const mapLeft = this.mapX - 60;
-    const mapTop = this.mapY - 60;
-    const mapSize = 120;
-    const clamp = (value, minimum, maximum) => Math.max(minimum, Math.min(maximum, value));
-    const playerX = mapLeft + (player.x / WORLD.width) * mapSize;
-    const playerY = mapTop + (player.y / WORLD.height) * mapSize;
-    const campX = mapLeft + (WORLD.camp.x / WORLD.width) * mapSize;
-    const campY = mapTop + (WORLD.camp.y / WORLD.height) * mapSize;
-
-    this.mapCampMarker.setPosition(campX, campY).setVisible(true);
-    this.mapPlayerMarker.setPosition(
-      clamp(playerX, mapLeft + 3, mapLeft + mapSize - 3),
-      clamp(playerY, mapTop + 3, mapTop + mapSize - 3)
-    ).setVisible(true);
-
-    if (!world) return;
-    const revealedCells = world.getRevealedCells();
-    if (revealedCells.length === this.lastExploredCount) return;
-    this.lastExploredCount = revealedCells.length;
-
-    this.mapExplored.clear();
-    this.mapExplored.fillStyle(0x52774d, 0.78);
-    const fogSize = WORLD.tileSize * 2;
-    const columns = Math.ceil(WORLD.width / fogSize);
-    const rows = Math.ceil(WORLD.height / fogSize);
-    const cellWidth = mapSize / columns;
-    const cellHeight = mapSize / rows;
-    for (const cell of revealedCells) {
-      const x = mapLeft + cell.column * cellWidth;
-      const y = mapTop + cell.row * cellHeight;
-      if (x < mapLeft || y < mapTop || x >= mapLeft + mapSize || y >= mapTop + mapSize) continue;
-      this.mapExplored.fillRect(
-        Math.floor(x),
-        Math.floor(y),
-        Math.max(1, Math.ceil(cellWidth)),
-        Math.max(1, Math.ceil(cellHeight))
-      );
-    }
+  /** Desenha um recorte do canvas de mapa (escala MAP_SCALE) cobrindo a área [left, top, span]. */
+  drawCrop(context, source, left, top, span, size) {
+    const sx = left / MAP_SCALE;
+    const sy = top / MAP_SCALE;
+    const sw = span / MAP_SCALE;
+    const cx = Math.max(0, sx);
+    const cy = Math.max(0, sy);
+    const cw = Math.min(source.width, sx + sw) - cx;
+    const ch = Math.min(source.height, sy + sw) - cy;
+    if (cw <= 0 || ch <= 0) return;
+    const ratio = size / sw;
+    context.drawImage(source, cx, cy, cw, ch, (cx - sx) * ratio, (cy - sy) * ratio, cw * ratio, ch * ratio);
   }
 
   updateBossHealth(boss, player) {

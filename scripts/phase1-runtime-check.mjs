@@ -150,25 +150,17 @@ try {
     const scene = window.__LENDAS__.scene.getScene('GameScene');
     scene.player.body.reset(600, 400);
     await new Promise((resolve) => setTimeout(resolve, 260));
-    const mapLeft = scene.ui.mapX - 60;
-    const mapTop = scene.ui.mapY - 60;
-    const expectedPlayerX = mapLeft + (600 / 2880) * 120;
-    const expectedPlayerY = mapTop + (400 / 2160) * 120;
-    const expectedCampX = mapLeft + (1440 / 2880) * 120;
-    const expectedCampY = mapTop + (1080 / 2160) * 120;
+    // Minimapa local: jogador no centro; longe do acampamento aparece a seta para ele.
+    scene.ui.renderMinimap();
+    const context = scene.ui.minimapTexture.getContext();
+    const size = scene.ui.minimapSize;
+    const center = context.getImageData(Math.floor(size / 2), Math.floor(size / 2), 1, 1).data;
     const result = {
-      campVisible: scene.ui.mapCampMarker.visible,
-      playerVisible: scene.ui.mapPlayerMarker.visible,
-      campX: scene.ui.mapCampMarker.x,
-      campY: scene.ui.mapCampMarker.y,
-      playerX: scene.ui.mapPlayerMarker.x,
-      playerY: scene.ui.mapPlayerMarker.y,
-      expectedCampX,
-      expectedCampY,
-      expectedPlayerX,
-      expectedPlayerY,
+      stats: scene.ui.minimapStats,
+      centerColor: [...center],
+      imageVisible: scene.ui.minimapImage.visible,
       revealedCells: scene.world.getRevealedCells().length,
-      exploredDrawCommands: scene.ui.mapExplored.commandBuffer.length,
+      fogUpdated: scene.ui.mapRenderer.lastRevealed > 0,
       fog: {
         tileCount: scene.children.list.filter((child) => child.frame?.name === 'fog-dither').length,
         overlayCount: scene.children.list.filter((child) => child === scene.world.fogOverlay).length,
@@ -182,12 +174,12 @@ try {
     await new Promise((resolve) => setTimeout(resolve, 80));
     return result;
   })()`);
-  if (!minimap.campVisible || !minimap.playerVisible || minimap.revealedCells < 1 || minimap.exploredDrawCommands < 1) {
-    throw new Error(`Minimapa sem marcadores ou exploração: ${JSON.stringify(minimap)}`);
+  if (!minimap.stats.rendered || !minimap.imageVisible || minimap.revealedCells < 1 || !minimap.fogUpdated) {
+    throw new Error(`Minimapa sem desenho ou exploração: ${JSON.stringify(minimap)}`);
   }
-  if (Math.abs(minimap.campX - minimap.expectedCampX) > 1 || Math.abs(minimap.campY - minimap.expectedCampY) > 1 ||
-      Math.abs(minimap.playerX - minimap.expectedPlayerX) > 1 || Math.abs(minimap.playerY - minimap.expectedPlayerY) > 1) {
-    throw new Error(`Minimapa posicionado incorretamente: ${JSON.stringify(minimap)}`);
+  // Seta do jogador (amarela) no centro e seta para o acampamento, que está longe.
+  if (minimap.centerColor[0] < 200 || minimap.centerColor[1] < 180 || !minimap.stats.kinds.includes('camp-arrow')) {
+    throw new Error(`Minimapa sem o jogador no centro ou sem a seta do acampamento: ${JSON.stringify(minimap)}`);
   }
   const fog = minimap.fog;
   if (fog.tileCount !== 0 || fog.overlayCount !== 0 || fog.overlayPresent || fog.texturePresent) {
@@ -320,7 +312,8 @@ try {
   if (nightSpawn.lighting.farPixelAlpha <= 0 || nightSpawn.lighting.visualLightCount < 3) {
     throw new Error(`Máscara de luz não coincide com os objetos do acampamento: ${JSON.stringify(nightSpawn.lighting)}`);
   }
-  if (nightSpawn.lighting.campSources.length !== 3 || nightSpawn.lighting.campSources.some((light) =>
+  // Fogueira + 2 postes + janelas dos prédios (e portão/torres quando construídos).
+  if (nightSpawn.lighting.campSources.length < 7 || nightSpawn.lighting.campSources.some((light) =>
     !light.hasVisualObject || !light.matchesVisualObject
   )) {
     throw new Error(`Luzes do acampamento não estão vinculadas aos sprites: ${JSON.stringify(nightSpawn.lighting.campSources)}`);

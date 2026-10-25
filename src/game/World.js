@@ -11,6 +11,9 @@ export class World {
     this.resources = [];
     this.nightResources = [];
     this.groundDetails = [];
+    // Posições de árvores e arbustos, usadas para desenhar o terreno do mapa e do minimapa.
+    this.trees = [];
+    this.bushes = [];
     this.revealedCells = new Set();
     this.revealedPoints = [];
     this.fogTexture = null;
@@ -95,11 +98,13 @@ export class World {
       } else if (i % 5 === 0) {
         tree.setTexture('nature', 'pine-1').stop();
       }
+      this.trees.push({ x, y, kind: tree.frame.name.startsWith('pine') ? 'pine' : tree.frame.name });
     }
     for (let i = 0; i < 48; i += 1) {
       const x = rand(32, width - 32);
       const y = rand(32, height - 32);
       if (Phaser.Math.Distance.Between(x, y, camp.x, camp.y) < 180) continue;
+      this.bushes.push({ x, y });
       this.scene.add.image(x, y, 'nature', 'bush')
         .setOrigin(0.5, 0.9)
         .setDepth(y + 2);

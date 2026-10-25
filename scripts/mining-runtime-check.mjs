@@ -21,7 +21,15 @@ await runInChrome({ name: 'mining', port: 9353 }, async ({ inScene, capture, fre
       worldVeins: openVeins.length,
       minDistance: Math.round(Math.min(...distances)),
       maxDistance: Math.round(Math.max(...distances)),
-      minimapMine: scene.ui.mapMarkers.commandBuffer.length > 0
+      minimapMine: (() => {
+        // A mina aparece no minimapa (local) quando o jogador está por perto.
+        const back = { x: scene.player.x, y: scene.player.y };
+        scene.player.body.reset(marker.x, marker.y + 160);
+        scene.ui.renderMinimap();
+        const visible = scene.ui.minimapStats.kinds.includes('mine');
+        scene.player.body.reset(back.x, back.y);
+        return visible;
+      })()
     };
   });
   check(mine.iron >= 6 && mine.iron <= 10 && mine.coal >= 2 && mine.coal <= 3 && mine.gold === 1, `Mina: ${JSON.stringify(mine)}`);
