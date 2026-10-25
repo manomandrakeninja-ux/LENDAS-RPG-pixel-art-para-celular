@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { PixelCanvas } from '../art/pixel.js';
 
 const PICKUP_TEXTURE = 'xp-pickup-orb';
 
@@ -12,15 +13,15 @@ export class ExperiencePickups {
   ensureTexture() {
     if (this.scene.textures.exists(PICKUP_TEXTURE)) return;
     const texture = this.scene.textures.createCanvas(PICKUP_TEXTURE, 12, 12);
-    const context = texture.getContext();
-    context.imageSmoothingEnabled = false;
-    context.clearRect(0, 0, 12, 12);
-    context.fillStyle = '#4e2e78';
-    context.fillRect(2, 2, 8, 8);
-    context.fillStyle = '#b78de8';
-    context.fillRect(3, 3, 6, 6);
-    context.fillStyle = '#f1ddff';
-    context.fillRect(4, 3, 3, 2);
+    // Cristal lapidado roxo.
+    const crystal = new PixelCanvas(12, 12);
+    crystal.polygon([[6, 0], [11, 5], [6, 12], [1, 5]], '#8a5fc8');
+    crystal.polygon([[6, 0], [6, 12], [1, 5]], '#b78de8');
+    crystal.polygon([[6, 1], [8, 5], [6, 6], [3, 5]], '#e3ccff');
+    crystal.polygon([[6, 7], [10, 6], [6, 11]], '#5e3a96');
+    crystal.pixel(5, 2, '#ffffff');
+    crystal.outline({ strength: 0.6 });
+    texture.getContext().putImageData(new ImageData(crystal.data, 12, 12), 0, 0);
     texture.setFilter(Phaser.Textures.FilterMode.NEAREST);
     texture.refresh();
   }
@@ -33,7 +34,7 @@ export class ExperiencePickups {
       .setScale(1.25);
     const label = this.scene.add.text(x, y - 18, `${xp} XP`, {
       fontFamily: 'Press Start 2P',
-      fontSize: '7px',
+      fontSize: '8px',
       color: '#e7cfff',
       backgroundColor: '#241737cc',
       padding: { x: 3, y: 2 }

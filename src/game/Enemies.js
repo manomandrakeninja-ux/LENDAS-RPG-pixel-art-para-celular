@@ -16,7 +16,10 @@ export class Enemy extends Phaser.GameObjects.Container {
     this.definition = ENEMY_TYPES[type];
     this.isElite = options.elite ?? false;
     this.isNight = options.isNight ?? false;
-    this.name = `${this.definition.name}${this.isElite ? ` ${ELITE_CONFIG.label}` : ''}`;
+    this.isMineGuard = Boolean(options.mineGuard);
+    this.name = this.isMineGuard
+      ? `Guarda-mina (${this.definition.name})`
+      : `${this.definition.name}${this.isElite ? ` ${ELITE_CONFIG.label}` : ''}`;
 
     const night = this.isNight ? SPAWNING_CONFIG.nightScaling : null;
     this.maxHealth = Math.round(
@@ -30,7 +33,7 @@ export class Enemy extends Phaser.GameObjects.Container {
       (this.isElite ? ELITE_CONFIG.damageMultiplier : 1) *
       (night?.damageMultiplier ?? 1)
     );
-    this.speed = Math.round(
+    this.baseSpeed = Math.round(
       this.definition.speed *
       (this.isElite ? ELITE_CONFIG.speedMultiplier : 1) *
       (night?.speedMultiplier ?? 1)
@@ -66,6 +69,10 @@ export class Enemy extends Phaser.GameObjects.Container {
     this.add(this.healthBar);
 
     this.cooldown = 0;
+    // Efeitos de status: queimadura (dano por segundo), lentidão e atordoamento (muralha, armadilha).
+    this.burn = null;
+    this.slow = null;
+    this.stunMs = 0;
     this.phase = Phaser.Math.FloatBetween(0, Math.PI * 2);
     this.state = 'patrol';
     this.homeX = x;
@@ -78,9 +85,65 @@ export class Enemy extends Phaser.GameObjects.Container {
     this.setDepth(y + 20);
   }
 
+  get speed() {
+    const slowFactor = this.slow ? 1 - this.slow.ratio : 1;
+    return this.baseSpeed * slowFactor * (this.speedFactor ?? 1);
+  }
+
+  applyBurn(dps, ms) {
+    this.burn = { dps, remainingMs: ms, tickMs: 0 };
+  }
+
+  applySlow(ratio, ms) {
+    if (!this.slow || ratio >= this.slow.ratio) this.slow = { ratio, remainingMs: ms };
+    else this.slow.remainingMs = Math.max(this.slow.remainingMs, ms);
+  }
+
+  stun(ms) {
+    this.stunMs = Math.max(this.stunMs, ms);
+  }
+
+  /** Avança os efeitos de status e devolve o dano de queimadura deste quadro (aplicado pela cena). */
+  tickStatus(delta) {
+    this.stunMs = Math.max(0, this.stunMs - delta);
+    if (this.slow) {
+      this.slow.remainingMs -= delta;
+      if (this.slow.remainingMs <= 0) this.slow = null;
+    }
+    let damage = 0;
+    if (this.burn) {
+      this.burn.remainingMs -= delta;
+      this.burn.tickMs += delta;
+      while (this.burn.tickMs >= 1000) {
+        this.burn.tickMs -= 1000;
+        damage += this.burn.dps;
+      }
+      if (this.burn.remainingMs <= 0) this.burn = null;
+    }
+    const tint = this.burn ? 0xffa36b : this.slow ? 0xa9e8ff : null;
+    if (tint !== this.statusTint) {
+      this.statusTint = tint;
+      if (tint) this.sprite.setTint(tint);
+      else this.sprite.clearTint();
+    }
+    return damage;
+  }
+
   update(delta, player, context = {}) {
     this.cooldown = Math.max(0, this.cooldown - delta);
     this.knockbackTimer = Math.max(0, this.knockbackTimer - delta);
+    if (this.stunMs > 0) {
+      this.body.setVelocity(0, 0);
+      this.setDepth(this.y + 20);
+      this.updateHealthBar();
+      return;
+    }
+    if (this.isRaider && context.raid) {
+      context.raid.updateRaider(this, delta, player);
+      this.setDepth(this.y + 20);
+      this.updateHealthBar();
+      return;
+    }
 
     const dx = player.x - this.x;
     const dy = player.y - this.y;
@@ -170,7 +233,8 @@ export class Enemy extends Phaser.GameObjects.Container {
     this.sprite.setTint(0xfff0cf);
     this.scene.time.delayedCall(90, () => {
       if (!this.sprite || !this.active) return;
-      if (this.isElite && this.definition.sprite.texture === 'creatures') {
+      this.statusTint = undefined;
+      if (this.isElite) {
         this.sprite.setTint(ELITE_CONFIG.auraColor);
       } else {
         this.sprite.clearTint();

@@ -18,3 +18,10 @@ A Fase 1 usa placeholders funcionais para validar os sistemas. A arte final pixe
 | `mine-marker-art` | Entrada e interior da mina | Placeholder | Marcador de caveira em canvas com texto “MINA” e concentração de veios ao redor. |
 | `farm-product-art` | Trigo, abóbora, crops e produtos animais | Pendente para a Fase 7 | Painel funcional com representações textuais e temporizadores. |
 | `backpack-slot-art` | Grade final da mochila e ícones de slot | Placeholder funcional | Grade Phaser de 12 slots com ícones existentes e quantidades em canvas/atlas. |
+| `wall-art` | Muralha por material (madeira, pedra, ferro, aço, mítica), portões, fosso | Placeholder | Postes de 10×22 px desenhados em canvas por `CampDefense.js`, com cor por material; fosso é um anel azul. |
+| `tower-art` | Torre de Vigia (madeira e pedra), arqueiros e canhão | Placeholder | Torre 30×58 px, arqueiros 6×8 px e canhão 14×8 px em canvas. |
+| `build-site-art` | Placa de construção para prédios ainda não construídos | Placeholder | Placa 22×26 px em canvas. |
+| `dungeon-entrance-art` | Entrada da Masmorra do Dragão | Placeholder | Arco escuro 40×30 px em canvas com olho vermelho. |
+| `trap-art` | Armadilha armada no chão e ícone | Placeholder | Dentes de metal 14×8 px em canvas. |
+| `new-item-icons` | Ícones de poção de vigor, armadilha e elixir | Placeholder funcional | Ícones 16×16 px desenhados em canvas em `UI.js`. |
+| `rain-art` | Chuva | Placeholder funcional | Riscos azuis desenhados no HUD em dias de chuva. |

@@ -80,10 +80,50 @@
         "h": 56
       }
     },
-    "bush": {
+    "oak-tree": {
       "frame": {
         "x": 178,
         "y": 2,
+        "w": 48,
+        "h": 56
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 48,
+        "h": 56
+      },
+      "sourceSize": {
+        "w": 48,
+        "h": 56
+      }
+    },
+    "fruit-tree": {
+      "frame": {
+        "x": 2,
+        "y": 60,
+        "w": 48,
+        "h": 56
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 48,
+        "h": 56
+      },
+      "sourceSize": {
+        "w": 48,
+        "h": 56
+      }
+    },
+    "bush": {
+      "frame": {
+        "x": 52,
+        "y": 60,
         "w": 32,
         "h": 24
       },
@@ -102,8 +142,8 @@
     },
     "resource-wood": {
       "frame": {
-        "x": 212,
-        "y": 2,
+        "x": 86,
+        "y": 60,
         "w": 28,
         "h": 28
       },
@@ -122,7 +162,7 @@
     },
     "resource-stone": {
       "frame": {
-        "x": 2,
+        "x": 116,
         "y": 60,
         "w": 28,
         "h": 28
@@ -142,7 +182,7 @@
     },
     "resource-herbs": {
       "frame": {
-        "x": 32,
+        "x": 146,
         "y": 60,
         "w": 28,
         "h": 28
@@ -162,7 +202,7 @@
     },
     "resource-moonherb": {
       "frame": {
-        "x": 62,
+        "x": 176,
         "y": 60,
         "w": 28,
         "h": 28
@@ -182,7 +222,7 @@
     },
     "resource-ectoplasm": {
       "frame": {
-        "x": 92,
+        "x": 206,
         "y": 60,
         "w": 28,
         "h": 28
@@ -202,8 +242,8 @@
     },
     "death-backpack": {
       "frame": {
-        "x": 122,
-        "y": 60,
+        "x": 2,
+        "y": 118,
         "w": 28,
         "h": 28
       },
@@ -222,8 +262,8 @@
     },
     "detail-grass": {
       "frame": {
-        "x": 152,
-        "y": 60,
+        "x": 32,
+        "y": 118,
         "w": 20,
         "h": 16
       },
@@ -242,8 +282,8 @@
     },
     "detail-flowers": {
       "frame": {
-        "x": 174,
-        "y": 60,
+        "x": 54,
+        "y": 118,
         "w": 20,
         "h": 16
       },
@@ -262,8 +302,8 @@
     },
     "detail-pebbles": {
       "frame": {
-        "x": 196,
-        "y": 60,
+        "x": 76,
+        "y": 118,
         "w": 20,
         "h": 12
       },
@@ -282,8 +322,8 @@
     },
     "detail-leaves": {
       "frame": {
-        "x": 218,
-        "y": 60,
+        "x": 98,
+        "y": 118,
         "w": 20,
         "h": 12
       },
@@ -302,8 +342,8 @@
     },
     "detail-mushroom": {
       "frame": {
-        "x": 2,
-        "y": 90,
+        "x": 120,
+        "y": 118,
         "w": 16,
         "h": 16
       },
@@ -323,12 +363,12 @@
   },
   "meta": {
     "app": "LENDAS asset generator",
-    "version": "1.0",
+    "version": "2.0",
     "image": "nature-atlas.png",
     "format": "RGBA8888",
     "size": {
       "w": 256,
-      "h": 108
+      "h": 148
     },
     "scale": "1"
   }

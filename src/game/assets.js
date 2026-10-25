@@ -3,8 +3,8 @@ export const ASSET_CONFIG = {
     kind: 'spritesheet',
     key: 'grass',
     file: 'assets/tiles/grass-sheet.png',
-    frameWidth: 16,
-    frameHeight: 16
+    frameWidth: 48,
+    frameHeight: 48
   },
   player: {
     kind: 'spritesheet',

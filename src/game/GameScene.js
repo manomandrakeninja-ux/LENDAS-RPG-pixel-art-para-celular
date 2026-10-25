@@ -1,11 +1,18 @@
 import Phaser from 'phaser';
+import { Obstacles } from './Obstacles.js';
+import { PixelCanvas } from '../art/pixel.js';
 import { COMBAT_CONFIG } from '../data/combat.js';
 import { DAY_NIGHT_CONFIG } from '../data/dayNight.js';
 import { HARVEST_STRUCTURE_TYPES } from '../data/harvestStructures.js';
-import { PERK_EFFECTS, PERKS, PlayerProgression } from '../data/progression.js';
-import { rollCoinDrop } from '../data/economy.js';
+import { LEVEL_CHOICES, PERK_EFFECTS, PERKS, PlayerProgression } from '../data/progression.js';
+import { enemyXp } from '../data/enemies.js';
+import { chestCoins, rollCoinDrop } from '../data/economy.js';
 import { BOSS_CONFIG } from '../data/boss.js';
-import { isConsumable, itemForHotkey, useConsumable } from '../data/consumables.js';
+import { CONSUMABLES, isConsumable, itemForHotkey, useConsumable } from '../data/consumables.js';
+import { ENCHANTMENTS, FARM_CROPS } from '../data/buildingSystems.js';
+import { BUILDING_DEFS, CAMP_COMPLETION_MESSAGE, DUNGEON_CONFIG } from '../data/buildings.js';
+import { isRaining } from '../data/weather.js';
+import { CampfireTravelers, TRAVELER_GOODS } from '../data/travelers.js';
 import { INVENTORY_CONFIG, WORLD, RESOURCE_TYPES } from './config.js';
 import { AudioManager } from './Audio.js';
 import { Camp } from './Camp.js';
@@ -30,7 +37,12 @@ import { EconomySystem } from './EconomySystem.js';
 import { CoinPickups } from './CoinPickups.js';
 import { BiomeBoss } from './BiomeBoss.js';
 import { TouchControls } from './TouchControls.js';
+import { BuffSystem, DAILY_BUFF_IDS } from './BuffSystem.js';
+import { RaidDirector } from './RaidDirector.js';
 import { createGameAnimations, preloadGameAssets } from './assets.js';
+
+export const PICKAXE_MESSAGE = 'Você precisa de uma picareta para minerar isso.';
+const MINING_DURATION_MS = 2200;
 
 export class GameScene extends Phaser.Scene {
   constructor() {
@@ -42,19 +54,31 @@ export class GameScene extends Phaser.Scene {
   }
 
   create() {
+    // scene.restart() reaproveita esta instância: o estado de fim de jogo precisa ser zerado.
+    this.gameOver = false;
+    this.skipSave = false;
+    this.dungeonMarker = null;
+    document.getElementById('game-over').hidden = true;
+    document.getElementById('epic-banner').hidden = true;
     createGameAnimations(this);
     const saveResult = loadSaveDetailed();
     const saved = saveResult.data;
     this.worldBounds = { ...WORLD, camp: WORLD.camp };
     this.inventory = new Inventory(saved?.inventory);
+    this.buffs = new BuffSystem(saved?.buffs);
+    this.travelers = new CampfireTravelers(saved?.travelers);
+    this.traps = [];
+    this.obstacles = new Obstacles(this);
     this.world = new World(this);
     this.world.create();
     this.camp = new Camp(this, saved?.camp);
+    this.raid = new RaidDirector(this, saved?.raid);
     const inventoryOverflow = this.inventory.takeMigrationOverflow();
     this.progression = new PlayerProgression(saved?.progression);
     this.economy = new EconomySystem(saved?.economy);
     this.player = new Player(this, WORLD.camp.x, WORLD.camp.y + 85, saved?.player, this.progression);
     this.player.recalculateEquipment(this.camp.equipment);
+    this.obstacles.collide(this.player);
     this.audio = new AudioManager();
     this.dayNight = new DayNightCycle(saved?.time);
     this.timeState = this.dayNight.getState();
@@ -64,8 +88,12 @@ export class GameScene extends Phaser.Scene {
     });
     this.market = new MarketSystem({
       saved: saved?.market ?? {},
-      day: this.timeState.dayCount
+      day: this.timeState.dayCount,
+      level: this.camp.levels.market,
+      ownedAccessories: () => this.camp.equipment.accessories
     });
+    this.travelers.refresh(this.timeState.dayCount, this.camp.levels.campfire);
+    this.isRaining = isRaining(this.timeState);
     this.harvestStructures = new HarvestStructures(this, {
       saved: saved?.harvestStructures ?? [],
       dayCount: this.timeState.dayCount
@@ -73,6 +101,7 @@ export class GameScene extends Phaser.Scene {
     this.enemies = [];
     this.enemyDirector = new EnemyDirector(this, this.enemies);
     this.enemyDirector.populate(this.timeState);
+    this.camp.defense.setupEnemyCollision(this.enemies);
     this.effects = new PixelEffects(this);
     this.boss = saved?.boss?.defeated
       ? null
@@ -89,6 +118,7 @@ export class GameScene extends Phaser.Scene {
     }
     this.world.setNight(this.timeState.isNight);
     this.harvestStructures.setNight(this.timeState.isNight);
+    this.createDungeonMarker();
 
     this.cameras.main.setBounds(0, 0, WORLD.width, WORLD.height);
     this.cameras.main.startFollow(this.player, true, 0.08, 0.08);
@@ -112,7 +142,7 @@ export class GameScene extends Phaser.Scene {
     this.hudCamera = this.cameras.add(0, 0, this.scale.width, this.scale.height)
       .setName('HUD')
       .setRoundPixels(true);
-    const uiObjects = new Set([...this.ui.fixed, ...this.ui.campPanel]);
+    const uiObjects = new Set(this.ui.fixed);
     this.cameras.main.ignore([...uiObjects]);
     this.hudCamera.ignore(this.children.list.filter((child) => !uiObjects.has(child)));
 
@@ -127,7 +157,6 @@ export class GameScene extends Phaser.Scene {
     this.input.keyboard.on('keydown-ESC', () => {
       if (this.worldMap.isOpen) this.worldMap.close();
       else if (this.buildingMenu.isOpen) this.buildingMenu.close();
-      else this.ui.toggleCamp(false);
     });
     this.input.keyboard.on('keydown-M', () => this.worldMap.toggle());
     this.input.keyboard.on('keydown-C', () => this.toggleCampMenu());
@@ -139,6 +168,16 @@ export class GameScene extends Phaser.Scene {
     this.input.keyboard.on('keydown-ONE', () => this.useHotkey('1'));
     this.input.keyboard.on('keydown-TWO', () => this.useHotkey('2'));
     this.input.keyboard.on('keydown-THREE', () => this.useHotkey('3'));
+    this.input.keyboard.on('keydown-FOUR', () => this.useHotkey('4'));
+    this.input.keyboard.on('keydown-FIVE', () => this.useHotkey('5'));
+    this.gameOverRoot = document.getElementById('game-over');
+    this.gameOverText = document.getElementById('game-over-text');
+    this.gameOverButton = document.getElementById('game-over-restart');
+    this.epicBanner = document.getElementById('epic-banner');
+    this.epicTitle = document.getElementById('epic-banner-title');
+    this.epicText = document.getElementById('epic-banner-text');
+    this.handleGameOverRestart = () => this.restartFromLastSave();
+    this.gameOverButton.addEventListener('click', this.handleGameOverRestart);
 
     this.handleCanvasPointerDown = (event) => {
       if (event.button !== 0) return;
@@ -150,26 +189,16 @@ export class GameScene extends Phaser.Scene {
       const tappedSlot = this.ui.backpackSlots.find(({ background, type }) => type &&
         x >= background.x && x <= background.x + background.width &&
         y >= background.y && y <= background.y + background.height);
-      if (tappedSlot && !this.ui.campOpen) {
+      if (tappedSlot) {
         if (isConsumable(tappedSlot.type)) this.useItem(tappedSlot.type);
         return;
       }
-      if (this.ui.campOpen) {
-        for (const [key, { button }] of Object.entries(this.ui.campButtons)) {
-          const withinButton = Math.abs(x - button.x) <= button.width / 2 &&
-            Math.abs(y - button.y) <= button.height / 2;
-          if (withinButton) {
-            if (key === 'sleep') this.sleepAtCamp();
-            else this.upgradeBuilding(key);
-            break;
-          }
-        }
-        return;
-      }
+      if (this.gameOver) return;
       const worldPoint = this.cameras.main.getWorldPoint(x, y);
       const clickedBuilding = Object.entries(this.camp.buildings).find(([, building]) =>
-        Math.abs(worldPoint.x - building.sprite.x) <= 52 &&
-        Math.abs(worldPoint.y - building.sprite.y) <= 58
+        (building.sprites ?? [building.sprite]).some((sprite) => sprite?.visible &&
+          Math.abs(worldPoint.x - sprite.x) <= 34 &&
+          worldPoint.y <= sprite.y + 10 && worldPoint.y >= sprite.y - 58)
       );
       if (clickedBuilding) {
         this.openBuilding(clickedBuilding[0]);
@@ -200,6 +229,7 @@ export class GameScene extends Phaser.Scene {
     this.events.once('shutdown', () => this.save());
     this.events.once('shutdown', () => {
       this.game.canvas.removeEventListener('pointerdown', this.handleCanvasPointerDown);
+      this.gameOverButton.removeEventListener('click', this.handleGameOverRestart);
       this.touch?.destroy();
       this.worldMap?.destroy();
       this.levelUpOverlay?.destroy();
@@ -213,6 +243,7 @@ export class GameScene extends Phaser.Scene {
       : saved ? 'Bom retorno a LENDAS!' : 'Explore, colete e fortaleça seu lar.';
     this.ui.showMessage(returnMessage);
     if (this.progression.hasPendingChoice) this.showLevelUpChoice();
+    this.raid.checkDay(this.timeState.dayCount);
     this.saveTimer = this.time.addEvent({ delay: 60000, loop: true, callback: () => this.save() });
     this.lastPhase = this.timeState.phase;
     this.warningTriggered = false;
@@ -220,17 +251,22 @@ export class GameScene extends Phaser.Scene {
   }
 
   update(_time, delta) {
+    if (this.gameOver) {
+      this.player.body.setVelocity(0, 0);
+      for (const enemy of this.enemies) enemy.body?.setVelocity(0, 0);
+      return;
+    }
     if (this.player.health <= 0 && !this.isRespawning) this.respawn();
 
-    this.timeState = this.updateDayNight(delta);
-    const autoHarvest = this.farm.update(Date.now(), (bundle) => this.camp.storageCanAccept(bundle));
-    if (autoHarvest) {
-      this.camp.store(autoHarvest);
-      const gained = Object.entries(autoHarvest)
-        .map(([type, amount]) => `+${amount} ${RESOURCE_TYPES[type]?.label.toLowerCase() ?? type}`)
-        .join(', ');
-      this.ui.showMessage(`Colheita automática • ${gained} guardado no armazém`);
-      this.save();
+    // A escolha de nível pausa o relógio do jogo.
+    const paused = this.progression.hasPendingChoice;
+    if (!paused) this.timeState = this.updateDayNight(delta);
+    this.isRaining = isRaining(this.timeState);
+    if (!paused) {
+      if (this.buffs.update(delta, this.timeState.dayCount)) this.player.recalculateEquipment(this.camp.equipment);
+      this.updateFarm(delta);
+      this.updateCampEffects(delta);
+      this.raid.update(delta);
     }
     this.menuRefreshTimer = (this.menuRefreshTimer ?? 0) + delta;
     if (this.menuRefreshTimer >= 500) {
@@ -241,7 +277,7 @@ export class GameScene extends Phaser.Scene {
       this.player.body.setVelocity(0, 0);
       for (const enemy of this.enemies) enemy.body?.setVelocity(0, 0);
       this.boss?.body?.setVelocity(0, 0);
-    } else if (this.ui.campOpen || this.buildingMenu?.isOpen) {
+    } else if (this.buildingMenu?.isOpen) {
       this.player.body.setVelocity(0, 0);
     } else {
       const pointer = this.input.activePointer;
@@ -250,6 +286,9 @@ export class GameScene extends Phaser.Scene {
       this.player.dodge(this.keys, this.touch.consumeDodge());
       this.world.revealAround(this.player.x, this.player.y);
       this.enemyDirector.update(delta, this.player, this.timeState);
+      this.camp.defense.update(delta, this.enemies);
+      this.updateEnemyStatus(delta);
+      this.updateTraps();
       this.boss?.update(delta, this.player);
       if (Phaser.Input.Keyboard.JustDown(this.keys.attack)) this.attackNearby();
       if (Phaser.Input.Keyboard.JustDown(this.keys.special)) this.specialAttack();
@@ -343,13 +382,63 @@ export class GameScene extends Phaser.Scene {
   handleDayAdvance(dayCount) {
     const day = Math.max(1, Math.floor(Number(dayCount) || 1));
     this.harvestStructures.handleDayChange(day);
-    if (this.market.day !== day) this.market.restock(day);
+    if (this.market.day !== day) {
+      const { auctionResult, orders } = this.market.advanceDay(day, this.economy);
+      this.applyAuctionResult(auctionResult);
+      for (const order of orders) {
+        const { remaining } = this.camp.store(order.bundle);
+        if (Object.keys(remaining).length > 0) this.deathBackpacks.create(this.camp.x + 30, this.camp.y + 60, remaining);
+      }
+      if (orders.length > 0) this.ui.showMessage(`Encomenda entregue no armazém (${orders.length}).`);
+    }
+    if (this.travelers.refresh(day, this.camp.levels.campfire)) {
+      this.ui.showMessage('Um viajante chegou à fogueira com uma missão.');
+    }
+    this.raid.checkDay(day);
     this.save();
+  }
+
+  buildingName(key) {
+    return BUILDING_DEFS[key]?.name ?? key;
+  }
+
+  /** Derrota no ataque: congela o jogo e oferece recomeçar do save de antes do ataque. */
+  triggerGameOver(text) {
+    this.gameOver = true;
+    this.skipSave = true;
+    this.buildingMenu.close();
+    this.worldMap.close();
+    this.gameOverText.textContent = text;
+    this.gameOverRoot.hidden = false;
+    this.cameras.main.shake(600, 0.012, true);
+  }
+
+  applyAuctionResult(result) {
+    if (!result) return;
+    if (!result.won) {
+      if (result.refunded > 0) this.ui.showMessage(`Leilão perdido • ${result.refunded} moedas devolvidas.`);
+      return;
+    }
+    if (result.item) {
+      this.camp.equipment.addAccessory(result.item);
+      this.player.recalculateEquipment(this.camp.equipment);
+      this.showEpic('LEILÃO VENCIDO', `Você arrematou: ${this.market.auctionItemLabel}.`);
+    } else if (result.fallback) {
+      this.camp.store(result.fallback);
+      this.ui.showMessage('Leilão vencido • ouro guardado no armazém.');
+    }
   }
 
   updateCampEntry(isNearCamp) {
     if (isNearCamp && !this.wasNearCamp) {
       this.storeAllAvailable = true;
+      if (this.camp.unlocked('house', 'autoStore') && this.inventory.total > 0) {
+        const stored = this.camp.storeAll(this.inventory);
+        if (stored.storedTotal > 0) {
+          this.ui.showMessage(stored.complete ? 'Casa: mochila guardada automaticamente.' : 'Casa: armazém cheio, parte ficou na mochila.');
+          this.save();
+        }
+      }
     } else if (!isNearCamp) {
       this.storeAllAvailable = false;
     }
@@ -359,6 +448,11 @@ export class GameScene extends Phaser.Scene {
   storeAllAtCamp() {
     if (!this.camp.isNear(this.player.x, this.player.y)) {
       const result = { ok: false, message: 'Entre no acampamento para usar o armazém.' };
+      this.ui.showMessage(result.message);
+      return result;
+    }
+    if (!this.camp.storageAccessible()) {
+      const result = { ok: false, message: 'A Casa está destruída. Repare-a para usar o armazém.' };
       this.ui.showMessage(result.message);
       return result;
     }
@@ -390,12 +484,14 @@ export class GameScene extends Phaser.Scene {
   }
 
   attackNearby() {
-    if (this.player.attackCooldown > 0 || this.progression?.hasPendingChoice || this.worldMap?.isOpen || this.ui.campOpen || this.buildingMenu?.isOpen) return;
+    if (this.player.attackCooldown > 0 || this.progression?.hasPendingChoice || this.worldMap?.isOpen || this.buildingMenu?.isOpen || this.gameOver) return;
     this.player.attackCooldown = COMBAT_CONFIG.basicAttackCooldownMs;
     this.player.showAttack();
     const target = this.nearestEnemy(COMBAT_CONFIG.basicAttackRange);
     if (!target) {
       this.comboStep = 0;
+      // Arco Longo: sem inimigo corpo a corpo, dispara uma flecha no mais próximo ao alcance.
+      if (this.camp.equipment.hasBow) this.fireBow();
       return;
     }
     // Combo: golpes encadeados dentro da janela avançam 1 → 2 → 3; o terceiro é o golpe final.
@@ -413,6 +509,7 @@ export class GameScene extends Phaser.Scene {
     this.effects.spawnSlash(target.x, target.y - 10, angle, finisher ? 2 : 1);
     const killed = target.hit(attack, angle);
     this.effects.spawnDamage(target.x, target.y - 18, damage, finisher ? '#ffe28a' : undefined);
+    this.applyWeaponEffects(target, damage, killed);
     const shake = finisher ? COMBAT_CONFIG.screenShake.enemyDefeated : COMBAT_CONFIG.screenShake.enemyHit;
     this.cameras.main.shake(shake.duration, shake.intensity, true);
     if (killed) {
@@ -421,6 +518,70 @@ export class GameScene extends Phaser.Scene {
       if (finisher && !target.isBoss) target.applyKnockback?.(angle, COMBAT_CONFIG.knockback.elite * COMBAT_CONFIG.combo.finisherKnockback);
       this.effects.spawnHit(target.x, target.y - 10, 0xffe0a0, finisher ? 11 : 7);
     }
+  }
+
+  /** Encantamento ativo e desgaste da arma após um golpe que acertou. */
+  applyWeaponEffects(target, damage, killed) {
+    const equipment = this.camp.equipment;
+    const enchant = equipment.activeEnchant;
+    if (enchant === 'vampire') {
+      const healed = Math.max(1, Math.round(damage * ENCHANTMENTS.vampire.lifeStealRatio));
+      this.player.heal(healed);
+    } else if (!killed && !target.isBoss && enchant === 'fire') {
+      target.applyBurn?.(ENCHANTMENTS.fire.burnDamagePerSecond, ENCHANTMENTS.fire.burnMs);
+    } else if (!killed && !target.isBoss && enchant === 'ice') {
+      target.applySlow?.(ENCHANTMENTS.ice.slowRatio, ENCHANTMENTS.ice.slowMs);
+    }
+    if (equipment.wear('weapon')) {
+      this.player.recalculateEquipment(equipment);
+      this.ui.showMessage('Sua arma quebrou! Repare no Ferreiro (nível 4).');
+    }
+  }
+
+  fireBow() {
+    const range = 280;
+    const candidates = [...this.enemies, ...(this.boss && !this.boss.dead ? [this.boss] : [])]
+      .filter((enemy) => enemy.active && Phaser.Math.Distance.Between(enemy.x, enemy.y, this.player.x, this.player.y) <= range)
+      .sort((left, right) => Phaser.Math.Distance.Between(left.x, left.y, this.player.x, this.player.y) -
+        Phaser.Math.Distance.Between(right.x, right.y, this.player.x, this.player.y));
+    const target = candidates[0];
+    if (!target) return false;
+    const arrow = this.add.rectangle(this.player.x, this.player.y - 8, 8, 2, 0xf3e3b0).setDepth(9000);
+    this.hudCamera?.ignore(arrow);
+    arrow.rotation = Phaser.Math.Angle.Between(this.player.x, this.player.y - 8, target.x, target.y - 8);
+    const distance = Phaser.Math.Distance.Between(this.player.x, this.player.y, target.x, target.y);
+    this.tweens.add({
+      targets: arrow,
+      x: target.x,
+      y: target.y - 8,
+      duration: Math.max(80, (distance / 520) * 1000),
+      onComplete: () => {
+        arrow.destroy();
+        if (!target.active || target.dead) return;
+        const damage = Math.max(1, Math.round(this.player.attack * 0.7));
+        this.damageEnemy(target, damage, { weapon: true });
+      }
+    });
+    return true;
+  }
+
+  /**
+   * Dano vindo de fora do golpe corpo a corpo: torres, flechas, armadilhas, queimadura e auras.
+   * options: { color, burn: { dps, ms }, slow: { ratio, ms }, weapon }
+   */
+  damageEnemy(enemy, amount, options = {}) {
+    if (!enemy?.active || enemy.dead || amount <= 0) return false;
+    const damage = Math.min(enemy.health, Math.round(amount));
+    const killed = enemy.hit(Math.round(amount), null);
+    this.effects.spawnDamage(enemy.x, enemy.y - 18, damage, options.color);
+    if (options.weapon) this.applyWeaponEffects(enemy, damage, killed);
+    if (killed) {
+      this.defeatEnemy(enemy);
+      return true;
+    }
+    if (options.burn) enemy.applyBurn?.(options.burn.dps, options.burn.ms);
+    if (options.slow) enemy.applySlow?.(options.slow.ratio, options.slow.ms);
+    return false;
   }
 
   specialAttack() {
@@ -459,7 +620,13 @@ export class GameScene extends Phaser.Scene {
   useHotkey(hotkey) {
     const type = itemForHotkey(hotkey, this.inventory.items);
     if (!type) {
-      const missing = { 1: 'Sem poções de vida.', 2: 'Sem comida na mochila.', 3: 'Sem tochas na mochila.' };
+      const missing = {
+        1: 'Sem poções de vida.',
+        2: 'Sem comida na mochila.',
+        3: 'Sem tochas na mochila.',
+        4: 'Sem poção de vigor ou armadilha.',
+        5: 'Sem elixir na mochila.'
+      };
       this.ui.showMessage(missing[hotkey] ?? 'Nada para usar.');
       return;
     }
@@ -468,21 +635,61 @@ export class GameScene extends Phaser.Scene {
 
   useItem(type) {
     if (this.progression?.hasPendingChoice || this.worldMap?.isOpen || this.buildingMenu?.isOpen ||
-        this.player.health <= 0) return;
+        this.player.health <= 0 || this.gameOver) return;
     const result = useConsumable(type, this.inventory, this.player);
     const label = RESOURCE_TYPES[type]?.label ?? type;
     if (!result.ok) {
       if (result.reason === 'full-health') this.ui.showMessage('A vida já está cheia.');
+      if (result.reason === 'full-stamina') this.ui.showMessage('O vigor já está cheio.');
       return;
     }
     if (result.healed) {
       this.effects.spawnHeal(this.player.x, this.player.y - 8);
       this.ui.showMessage(`${label} • +${result.healed} de vida`);
+    } else if (result.stamina) {
+      this.ui.showMessage(`${label} • vigor restaurado`);
+    } else if (result.trap) {
+      this.placeTrap(this.player.x, this.player.y + 6);
+      this.ui.showMessage('Armadilha armada no chão.');
+    } else if (result.buff) {
+      this.buffs.apply(result.buff);
+      this.player.recalculateEquipment(this.camp.equipment);
+      this.ui.showMessage(`${label} • +20% ATQ e DEF por 5 min`);
     } else {
       this.ui.showMessage(`Tocha acesa • luz ampliada por ${Math.round(result.durationMs / 1000)}s`);
     }
     this.audio.playCollect();
     this.save();
+  }
+
+  placeTrap(x, y) {
+    if (!this.textures.exists('trap-placed')) {
+      const texture = this.textures.createCanvas('trap-placed', 14, 8);
+      const context = texture.getContext();
+      context.fillStyle = '#4b4f53';
+      context.fillRect(0, 4, 14, 4);
+      context.fillStyle = '#c9ced1';
+      for (let tooth = 1; tooth < 14; tooth += 3) context.fillRect(tooth, 0, 1, 4);
+      texture.setFilter(Phaser.Textures.FilterMode.NEAREST);
+      texture.refresh();
+    }
+    const sprite = this.add.image(x, y, 'trap-placed').setDepth(y - 4);
+    this.hudCamera?.ignore(sprite);
+    this.traps.push({ x, y, sprite });
+  }
+
+  updateTraps() {
+    const trapConfig = CONSUMABLES.trap;
+    for (const trap of [...this.traps]) {
+      const victim = this.enemies.find((enemy) => enemy.active && !enemy.dead &&
+        Phaser.Math.Distance.Between(enemy.x, enemy.y, trap.x, trap.y) < 18);
+      if (!victim) continue;
+      this.traps.splice(this.traps.indexOf(trap), 1);
+      trap.sprite.destroy();
+      victim.stun?.(trapConfig.rootMs);
+      this.effects.spawnHit(trap.x, trap.y - 4, 0xc9ced1, 10);
+      this.damageEnemy(victim, trapConfig.damage, { color: '#e6e6e6' });
+    }
   }
 
   collectCoins(amount) {
@@ -493,16 +700,21 @@ export class GameScene extends Phaser.Scene {
   }
 
   collectExperience(amount) {
+    this.grantExperience(amount, true);
+    this.audio.playCollect();
+  }
+
+  grantExperience(amount, announce = true) {
     const result = this.progression.addXp(amount);
-    this.player.maxHealth = this.progression.maxHealth;
+    this.player.recalculateEquipment(this.camp.equipment);
     if (result.leveledUp) {
       this.worldMap.close();
       this.showLevelUpChoice();
-    } else {
+    } else if (announce) {
       this.ui.showMessage(`+${amount} XP`);
     }
-    this.audio.playCollect();
     this.save();
+    return result;
   }
 
   showLevelUpChoice() {
@@ -522,7 +734,7 @@ export class GameScene extends Phaser.Scene {
     const result = this.progression.choosePerk(perk);
     if (!result.applied) return false;
     const previousMax = this.player.maxHealth;
-    this.player.maxHealth = this.progression.maxHealth;
+    this.player.recalculateEquipment(this.camp.equipment);
     this.player.heal(this.player.maxHealth - previousMax);
     if (!this.showLevelUpChoice()) {
       this.ui.showMessage(`Talento obtido • ${PERKS[perk].name}`);
@@ -534,10 +746,11 @@ export class GameScene extends Phaser.Scene {
   chooseLevelUp(attribute) {
     const result = this.progression.choose(attribute);
     if (!result.applied) return false;
-    this.player.maxHealth = this.progression.maxHealth;
+    const previousMax = this.player.maxHealth;
     this.player.recalculateEquipment(this.camp.equipment);
+    this.player.heal(this.player.maxHealth - previousMax);
     if (!this.showLevelUpChoice()) {
-      this.ui.showMessage(`Nível ${this.progression.level} • ${attribute === 'attack' ? 'ATAQUE +2' : 'DEFESA +2'}`);
+      this.ui.showMessage(`Nível ${this.progression.level} • ${LEVEL_CHOICES[attribute].label}`);
     }
     this.save();
     return true;
@@ -571,6 +784,10 @@ export class GameScene extends Phaser.Scene {
       this.defeatBoss(enemy);
       return;
     }
+    // Torres, queimadura e golpe podem acertar o mesmo inimigo no mesmo quadro.
+    if (!enemy || enemy.dead) return;
+    enemy.dead = true;
+    this.travelers.recordKill(enemy.kind);
     const deathColor = enemy.isElite ? 0xffd56b : enemy.kind === 'wolf' ? 0xb9a984 : 0x9fd477;
     this.effects.spawnDeath(enemy.x, enemy.y - 8, deathColor);
     const drops = enemy.rollDrops();
@@ -579,8 +796,10 @@ export class GameScene extends Phaser.Scene {
     }
     if (this.progression.hasPerk('vampirism')) this.player.heal(PERK_EFFECTS.vampirismHealPerKill);
     const result = this.inventory.addBundle(drops);
-    this.experiencePickups.spawn(enemy.x, enemy.y, enemy.definition.xp ?? 0);
-    this.coinPickups.spawn(enemy.x + 9, enemy.y, rollCoinDrop(enemy.definition.period));
+    // Invasores não deixam cristais: o XP deles volta dobrado na recompensa do ataque.
+    if (enemy.isRaider) this.raid.onRaiderDefeated(enemy);
+    else this.experiencePickups.spawn(enemy.x, enemy.y, enemyXp(enemy.kind, enemy.isElite));
+    this.coinPickups.spawn(enemy.x + 9, enemy.y, rollCoinDrop(enemy.definition.period, Math.random, enemy.isElite));
     if (Object.keys(result.remaining).length > 0) {
       this.deathBackpacks.create(enemy.x, enemy.y, result.remaining);
     }
@@ -603,20 +822,44 @@ export class GameScene extends Phaser.Scene {
 
   respawn() {
     this.isRespawning = true;
-    const deathX = this.player.x;
-    const deathY = this.player.y;
-    const lost = this.inventory.removeFraction(COMBAT_CONFIG.death.carriedResourceLossRatio);
-    if (Object.keys(lost).length > 0) {
-      this.deathBackpacks.create(deathX, deathY, lost);
-    }
-    this.player.body.reset(WORLD.camp.x, WORLD.camp.y + 85);
+    const day = this.timeState.dayCount;
+    const camp = this.camp;
+    const raidActive = Boolean(this.raid?.active);
+    let mode = 'normal';
+    if (camp.unlocked('house', 'autoRevive') && camp.lastAutoReviveDay !== day) mode = 'house';
+    else if (camp.unlocked('campfire', 'unlimitedRevive')) mode = 'campfire';
+    else if (camp.unlocked('campfire', 'localRevive') && this.timeState.isNight && camp.lastLocalReviveNight !== day) mode = 'campfire';
+    else if (raidActive) mode = 'raid';
+
     this.player.knockbackTimer = 0;
     this.player.dodgeTimer = 0;
     this.player.knockbackX = 0;
     this.player.knockbackY = 0;
-    this.player.health = this.player.maxHealth;
     this.player.stamina = 100;
     this.player.invulnerable = 1600;
+    let message;
+    if (mode === 'house') {
+      // Casa nível 9: volta no mesmo lugar, sem perder nada.
+      camp.lastAutoReviveDay = day;
+      this.player.health = Math.max(1, Math.round(this.player.maxHealth * BUILDING_DEFS.house.autoReviveHealthRatio));
+      message = 'A proteção da Casa te trouxe de volta (30% de vida).';
+    } else {
+      if (mode === 'normal') {
+        const lost = this.inventory.removeFraction(COMBAT_CONFIG.death.carriedResourceLossRatio);
+        if (Object.keys(lost).length > 0) this.deathBackpacks.create(this.player.x, this.player.y, lost);
+      }
+      if (mode === 'campfire' && !camp.unlocked('campfire', 'unlimitedRevive')) camp.lastLocalReviveNight = day;
+      this.player.body.reset(WORLD.camp.x, WORLD.camp.y + 85);
+      const ratio = mode === 'campfire'
+        ? Math.max(BUILDING_DEFS.campfire.reviveHealthRatio, raidActive ? 0.3 : 0)
+        : mode === 'raid' ? 0.3 : 1;
+      this.player.health = Math.max(1, Math.round(this.player.maxHealth * ratio));
+      message = mode === 'campfire'
+        ? 'A Fogueira te ressuscitou com 50% de vida.'
+        : mode === 'raid'
+          ? 'Você caiu no ataque e voltou à fogueira com 30% de vida.'
+          : 'Você caiu. Parte da mochila foi deixada no local da morte.';
+    }
     this.effects.spawnHeal(this.player.x, this.player.y - 8);
     this.audio.playDeath();
     this.cameras.main.shake(
@@ -624,9 +867,8 @@ export class GameScene extends Phaser.Scene {
       COMBAT_CONFIG.screenShake.playerHit.intensity,
       true
     );
-    this.ui.toggleCamp(false);
     this.buildingMenu?.close();
-    this.ui.showMessage('Você caiu. Parte da mochila foi deixada no local da morte.');
+    this.ui.showMessage(message);
     this.save();
     this.isRespawning = false;
   }
@@ -647,7 +889,7 @@ export class GameScene extends Phaser.Scene {
     }
     if (resource) {
       if (resource.definition?.requiresPickaxe && !this.camp.pickaxeTier) {
-        this.ui.showMessage('Você precisa de uma picareta');
+        this.ui.showMessage(PICKAXE_MESSAGE);
         return;
       }
       const amount = resource.amount ?? Phaser.Math.Between(2, 4);
@@ -682,7 +924,7 @@ export class GameScene extends Phaser.Scene {
     const definition = HARVEST_STRUCTURE_TYPES[structure.type];
     const pickaxeTier = this.camp.pickaxeTier;
     if (definition.requiresPickaxe && !pickaxeTier) {
-      this.ui.showMessage('Você precisa de uma picareta');
+      this.ui.showMessage(PICKAXE_MESSAGE);
       return;
     }
     const reward = this.harvestStructures.previewReward(structure);
@@ -714,6 +956,10 @@ export class GameScene extends Phaser.Scene {
         gained = Object.entries(result.accepted)
           .map(([type, amount]) => `+${amount} ${RESOURCE_TYPES[type]?.label.toLowerCase() ?? type}`)
           .join(', ');
+        // Baús também guardam moedas: elas caem no chão e são atraídas pelo jogador.
+        const coins = chestCoins(structure.id);
+        this.coinPickups.spawn(structure.x, structure.y + 10, coins);
+        gained = `${gained}${gained ? ', ' : ''}+${coins} moedas`;
       } else {
         if (!this.inventory.add(reward.type, reward.amount)) {
           this.harvestStructures.cancelCollection(structure);
@@ -736,7 +982,7 @@ export class GameScene extends Phaser.Scene {
     };
 
     if (definition.requiresPickaxe) {
-      const duration = pickaxeTier === 'iron' ? 1400 : 2200;
+      const duration = pickaxeTier === 'iron' ? MINING_DURATION_MS / 2 : MINING_DURATION_MS;
       this.ui.showMessage(`Minerando ${definition.label.toLowerCase()}...`);
       structure.node?.setTint(0xffc15a);
       this.tweens.add({
@@ -753,84 +999,221 @@ export class GameScene extends Phaser.Scene {
   }
 
   upgradeBuilding(key) {
-    const result = this.camp.upgrade(key, this.inventory);
-    if (result.ok && key === 'farm') this.farm.setLevel(this.camp.levels.farm);
-    this.ui.setCampFeedback(result.message);
+    const result = this.camp.upgrade(key);
+    if (result.ok) {
+      if (key === 'farm') this.farm.setLevel(this.camp.levels.farm);
+      if (key === 'market') this.market.setLevel(this.camp.levels.market);
+      if (key === 'campfire') this.travelers.refresh(this.timeState.dayCount, this.camp.levels.campfire);
+      this.player.recalculateEquipment(this.camp.equipment);
+      if (result.completed) this.completeCamp();
+      this.save();
+    }
     this.ui.showMessage(result.message);
-    if (result.ok) this.save();
     return result;
+  }
+
+  /** Todos os 7 prédios no nível 10: mensagem épica e masmorra marcada no mapa. */
+  completeCamp() {
+    this.camp.dungeonRevealed = true;
+    this.createDungeonMarker();
+    this.showEpic('ACAMPAMENTO LENDÁRIO', CAMP_COMPLETION_MESSAGE, 9000);
+    this.cameras.main.shake(500, 0.01, true);
+    this.audio.playDawn();
+  }
+
+  createDungeonMarker() {
+    if (this.dungeonMarker || !(this.camp.dungeonRevealed || this.camp.defense?.dragonRadar)) return;
+    if (!this.textures.exists('dungeon-entrance')) {
+      const texture = this.textures.createCanvas('dungeon-entrance', 40, 30);
+      // Portal de pedra escura com runas e brilho vermelho do Dragão.
+      const gate = new PixelCanvas(40, 30);
+      const stone = ['#1f1a1d', '#3a3337', '#544a50', '#6f6469', '#8a7f84'];
+      gate.shadow(20, 28, 18, 2, 120);
+      gate.forPolygon([[1, 30], [3, 9], [10, 3], [30, 3], [37, 9], [39, 30]], (x, y) => {
+        const seam = y % 5 === 4 || (x + (Math.floor(y / 5) % 2) * 4) % 8 === 0;
+        gate.pixel(x, y, seam ? stone[0] : x < 12 ? stone[3] : x > 28 ? stone[1] : stone[2]);
+      });
+      gate.forEllipse(20, 18, 9, 12, (x, y) => { if (y >= 9) gate.pixel(x, y, '#0c0809'); });
+      gate.forEllipse(20, 22, 5, 6, (x, y) => gate.pixel(x, y, '#2a0c0c'));
+      gate.rect(18, 18, 4, 3, '#e2463f');
+      gate.pixel(19, 18, '#ffb0a0');
+      for (const [x, y] of [[6, 14], [6, 20], [33, 14], [33, 20], [20, 5]]) {
+        gate.rect(x, y, 2, 2, '#e2463f');
+        gate.pixel(x, y, '#ff9a7a');
+      }
+      gate.outline();
+      texture.getContext().putImageData(new ImageData(gate.data, 40, 30), 0, 0);
+      texture.setFilter(Phaser.Textures.FilterMode.NEAREST);
+      texture.refresh();
+    }
+    const sprite = this.add.image(DUNGEON_CONFIG.x, DUNGEON_CONFIG.y, 'dungeon-entrance').setOrigin(0.5, 1).setDepth(DUNGEON_CONFIG.y);
+    const label = this.add.text(DUNGEON_CONFIG.x, DUNGEON_CONFIG.y - 40, DUNGEON_CONFIG.label.toUpperCase(), {
+      fontFamily: 'Press Start 2P', fontSize: '8px', color: '#ffb0a0', backgroundColor: '#2a1513dd', padding: { x: 5, y: 3 }
+    }).setOrigin(0.5).setDepth(DUNGEON_CONFIG.y + 1);
+    this.hudCamera?.ignore([sprite, label]);
+    this.dungeonMarker = { sprite, label };
+  }
+
+  showEpic(title, text, durationMs = 5000) {
+    this.epicTitle.textContent = title;
+    this.epicText.textContent = text;
+    this.epicBanner.hidden = false;
+    this.epicTimer?.remove(false);
+    this.epicTimer = this.time.delayedCall(durationMs, () => {
+      this.epicBanner.hidden = true;
+    });
   }
 
   openBuilding(key) {
     return this.buildingMenu.open(key);
   }
 
-  // Tecla C ou botão ACAMP. no celular.
+  // Tecla C ou botão ACAMP. no celular: visão geral dos 7 prédios.
   toggleCampMenu() {
-    if (this.ui.campOpen) this.ui.toggleCamp(false);
-    else if (this.camp.isNear(this.player.x, this.player.y)) this.ui.toggleCamp(true);
+    if (this.ui.campOpen) this.buildingMenu.close();
+    else if (this.camp.isNear(this.player.x, this.player.y)) this.buildingMenu.open('camp');
     else this.ui.showMessage('O acampamento está longe. Volte para a fogueira.');
   }
 
   onBuildingMenuStateChanged(open) {
     this.ui.buildingMenuOpen = open;
-    if (open) this.ui.toggleCamp(false);
     this.ui.worldAction.hidden = open;
+  }
+
+  /** Cobra do conjunto mochila + armazém + moedas. */
+  payCost(cost) {
+    return this.camp.pay(cost);
+  }
+
+  giveToBackpack(bundle) {
+    if (!this.inventory.canAddBundle(bundle)) return false;
+    this.inventory.addBundle(bundle);
+    return true;
   }
 
   buildingMenuAction(action, arg, arg2) {
     const wasFull = this.inventory.isFull;
     let result = { ok: false, message: 'Ação inválida.' };
+    const camp = this.camp;
     if (action === 'plant') {
-      const plotId = Number(arg);
       const crop = arg2;
-      if ((this.inventory.items.seeds ?? 0) < 1) {
-        result = { ok: false, message: 'Você precisa de sementes. Compre no mercado.' };
+      if (!this.farm.canPlantCrop(crop)) {
+        result = { ok: false, message: 'Esta semente ainda não está disponível.' };
+      } else if (!camp.canPay(FARM_CROP_COST(crop))) {
+        result = { ok: false, message: 'Faltam sementes. Compre no mercado.' };
       } else {
-        this.inventory.remove({ seeds: 1 });
-        const planted = this.farm.plant(plotId, crop);
+        const planted = this.farm.plant(Number(arg), crop);
         if (planted.ok) {
+          camp.pay(FARM_CROP_COST(crop));
           result = { ok: true, message: 'Semente plantada. Volte quando o crescimento terminar.' };
         } else {
-          this.inventory.restore('seeds', 1);
           result = { ok: false, message: 'Este canteiro não pode receber essa plantação.' };
         }
       }
     } else if (action === 'harvest') {
       const harvested = this.farm.harvestPlot(Number(arg), Date.now(), (bundle) => this.inventory.canAddBundle(bundle));
       if (harvested.ok) {
-        this.inventory.addBundle({ [harvested.type]: harvested.amount });
-        result = {
-          ok: true,
-          message: `Colheita: +${harvested.amount} ${RESOURCE_TYPES[harvested.type]?.label.toLowerCase() ?? harvested.type}.`
-        };
+        this.inventory.addBundle(harvested.bundle);
+        result = { ok: true, message: `Colheita: ${formatGain(harvested.bundle)}.` };
       } else {
         result = { ok: false, message: harvested.reason === 'inventory' ? INVENTORY_CONFIG.fullMessage : 'A colheita ainda não está pronta.' };
       }
     } else if (action === 'collect-animal') {
       const collected = this.farm.collectAnimal(arg, Date.now(), (bundle) => this.inventory.canAddBundle(bundle));
       if (collected.ok) {
-        this.inventory.addBundle({ [collected.type]: collected.amount });
-        result = { ok: true, message: `Produto coletado: +${collected.amount} ${RESOURCE_TYPES[collected.type]?.label.toLowerCase() ?? collected.type}.` };
+        this.inventory.addBundle(collected.bundle);
+        result = { ok: true, message: `Produto coletado: ${formatGain(collected.bundle)}.` };
       } else {
         result = { ok: false, message: collected.reason === 'inventory' ? INVENTORY_CONFIG.fullMessage : 'O produto ainda não está pronto.' };
       }
+    } else if (action === 'barn-take') {
+      const wanted = Math.min(Number(arg) || 5, this.farm.barn);
+      if (wanted > 0 && this.inventory.canAdd('food', wanted)) {
+        this.inventory.add('food', this.farm.withdrawBarn(wanted));
+        result = { ok: true, message: `Celeiro: +${wanted} comida na mochila.` };
+      } else {
+        result = { ok: false, message: INVENTORY_CONFIG.fullMessage };
+      }
+    } else if (action === 'barn-store') {
+      const { stored } = camp.store({ food: this.farm.barn });
+      this.farm.withdrawBarn(stored.food ?? 0);
+      result = stored.food ? { ok: true, message: `Celeiro: ${stored.food} comida movida para o armazém.` } : { ok: false, message: 'Armazém sem espaço.' };
     } else if (action === 'craft') {
-      result = this.camp.craft(arg, this.inventory);
+      result = camp.craft(arg);
+    } else if (action === 'enchant') {
+      camp.equipment.setActiveEnchant(arg);
+      result = { ok: true, message: `Encantamento ativo: ${ENCHANTMENTS[arg]?.name ?? 'nenhum'}.` };
+    } else if (action === 'repair-item') {
+      result = camp.equipment.repair(arg, (cost) => this.payCost(cost));
+      this.player.recalculateEquipment(camp.equipment);
+    } else if (action === 'upgrade-item') {
+      result = camp.equipment.upgrade(arg, (cost) => this.payCost(cost));
+      this.player.recalculateEquipment(camp.equipment);
+    } else if (action === 'dismantle') {
+      result = camp.equipment.dismantle(arg, (bundle) => {
+        const { remaining } = camp.store(bundle);
+        return Object.keys(remaining).length === 0 || this.giveToBackpack(remaining);
+      });
+      if (result.ok) result.message = `${result.message} Materiais guardados: ${formatGain(result.returned)}.`;
+      this.player.recalculateEquipment(camp.equipment);
     } else if (action === 'upgrade') {
       result = this.upgradeBuilding(arg);
+    } else if (action === 'repair') {
+      result = camp.repair(arg);
+    } else if (action === 'repair-wall') {
+      result = camp.defense.repairWall();
     } else if (action === 'store-all') {
       result = this.storeAllAtCamp();
     } else if (action === 'deposit') {
-      result = this.camp.deposit(arg, 1, this.inventory);
+      result = camp.deposit(arg, 1, this.inventory);
     } else if (action === 'withdraw') {
-      result = this.camp.withdraw(arg, 1, this.inventory);
+      result = camp.withdraw(arg, 1, this.inventory);
+    } else if (action === 'secret-deposit') {
+      result = camp.depositSecret(arg, 1, this.inventory);
+    } else if (action === 'secret-withdraw') {
+      result = camp.withdrawSecret(arg, 1, this.inventory);
     } else if (action === 'rest') {
       result = this.restAtHouse();
     } else if (action === 'sleep') {
       result = this.sleepAtHouse();
+    } else if (action === 'sleep-camp') {
+      result = this.sleepAtCamp() ?? { ok: false, message: '' };
+    } else if (action === 'daily-buff') {
+      result = this.chooseDailyBuff(arg);
+    } else if (action === 'rest-fire') {
+      this.restAtCamp();
+      result = { ok: true, message: 'Descansou junto à fogueira.' };
+    } else if (action === 'cook') {
+      const recipe = BUILDING_DEFS.campfire.cookRecipe;
+      if (!camp.unlocked('campfire', 'cook')) result = { ok: false, message: 'Cozinhar requer Fogueira nível 3.' };
+      else if (!this.inventory.canAddBundle(recipe.yield)) result = { ok: false, message: INVENTORY_CONFIG.fullMessage };
+      else if (!camp.pay(recipe.cost)) result = { ok: false, message: 'Faltam 2 comidas.' };
+      else {
+        this.inventory.addBundle(recipe.yield);
+        result = { ok: true, message: 'Você cozinhou uma poção de vida.' };
+      }
+    } else if (action === 'accept-quest') {
+      result = this.travelers.acceptQuest()
+        ? { ok: true, message: 'Missão aceita. Volte à fogueira quando terminar.' }
+        : { ok: false, message: 'Termine a missão atual primeiro.' };
+    } else if (action === 'claim-quest') {
+      const reward = this.travelers.claim(camp.paymentSources(), (cost) => camp.pay(cost));
+      if (reward) {
+        this.economy.addCoins(reward.coins);
+        const { remaining } = camp.store(reward.items);
+        if (Object.keys(remaining).length > 0) this.giveToBackpack(remaining);
+        result = { ok: true, message: `Missão concluída! +${reward.coins} moedas e ${formatGain(reward.items)} no armazém.` };
+      } else {
+        result = { ok: false, message: 'A missão ainda não foi cumprida.' };
+      }
+    } else if (action === 'traveler-buy') {
+      const bought = this.travelers.buy(arg, this.economy, (bundle) => this.giveToBackpack(bundle));
+      const good = TRAVELER_GOODS.find((entry) => entry.id === arg);
+      result = bought.ok
+        ? { ok: true, message: `Comprou ${good.name}: -${bought.spent} moedas.` }
+        : { ok: false, message: bought.reason === 'coins' ? 'Moedas insuficientes.' : bought.reason === 'inventory' ? INVENTORY_CONFIG.fullMessage : 'Esgotado.' };
     } else if (action === 'buy') {
-      const bought = this.market.buy(arg, this.inventory, this.economy);
+      const bought = this.market.buy(arg, this.inventory, this.economy, arg2 === 'traveler' ? 'traveler' : 'daily');
       result = bought.ok
         ? { ok: true, message: `Compra realizada: -${bought.spent} moedas.` }
         : { ok: false, message: bought.reason === 'coins' ? 'Moedas insuficientes.' : bought.reason === 'inventory' ? INVENTORY_CONFIG.fullMessage : 'Produto esgotado.' };
@@ -838,17 +1221,25 @@ export class GameScene extends Phaser.Scene {
       const sold = this.market.sell(arg, this.inventory, this.economy);
       result = sold.ok
         ? { ok: true, message: `Venda concluída: +${sold.coins} ${sold.coins === 1 ? 'moeda' : 'moedas'}.` }
-        : { ok: false, message: sold.reason === 'inventory' ? INVENTORY_CONFIG.fullMessage : 'Item indisponível.' };
+        : { ok: false, message: sold.reason === 'locked' ? 'Vendas exigem Mercado nível 2.' : 'Item indisponível.' };
+    } else if (action === 'order') {
+      const ordered = this.market.placeOrder(arg, this.economy);
+      result = ordered.ok
+        ? { ok: true, message: `Encomenda feita: -${ordered.spent} moedas. Chega no dia ${ordered.order.readyDay}.` }
+        : { ok: false, message: ordered.reason === 'coins' ? 'Moedas insuficientes.' : 'Encomendas exigem Mercado nível 8.' };
+    } else if (action === 'bid') {
+      const bid = this.market.bid(this.economy);
+      result = bid.ok
+        ? { ok: true, message: bid.leading ? `Lance de ${bid.bid} moedas. Você está vencendo!` : `Lance de ${bid.bid}. O rival cobriu!` }
+        : { ok: false, message: bid.reason === 'coins' ? 'Moedas insuficientes para o lance.' : 'Não é possível dar lance agora.' };
     }
     if (!wasFull && this.inventory.isFull) {
       result = { ...result, message: INVENTORY_CONFIG.fullMessage };
     }
+    this.lastBuildingMessage = result.message;
     if (result.ok) {
-      this.lastBuildingMessage = result.message;
       this.ui.showMessage(result.message);
       this.save();
-    } else {
-      this.lastBuildingMessage = result.message;
     }
     return result;
   }
@@ -865,8 +1256,11 @@ export class GameScene extends Phaser.Scene {
       return { ok: false, message: 'Entre no acampamento para descansar.' };
     }
     if (this.restState) return { ok: false, message: 'Você já está descansando.' };
-    this.player.heal(this.player.maxHealth);
-    this.player.stamina = 100;
+    const camp = this.camp;
+    const ratio = camp.stat('house', 'restHealRatio') ?? 0.5;
+    this.player.heal(Math.round(this.player.maxHealth * ratio));
+    if (camp.stat('house', 'restStamina')) this.player.stamina = 100;
+    this.applyWellRested();
     this.effects.spawnHeal(this.player.x, this.player.y - 8);
     const endsAt = Date.now() + 30000;
     this.restState = { endsAt };
@@ -875,16 +1269,47 @@ export class GameScene extends Phaser.Scene {
       this.restTimer = null;
       const state = this.dayNight.advanceGameMinutes(30);
       if (state.rolledOver) this.handleDayAdvance(state.dayCount);
-      this.ui.showMessage('Descanso concluído: vida restaurada e 30 minutos de jogo passaram.');
+      this.ui.showMessage('Descanso concluído: 30 minutos de jogo passaram.');
       this.save();
     });
-    return { ok: true, message: 'Descansando por 30 segundos reais...' };
+    return { ok: true, message: `Descansando... ${Math.round(ratio * 100)}% da vida restaurada.` };
+  }
+
+  /** Casa nível 3: +10% ATQ por 2 min; nível 7: até o fim do dia. */
+  applyWellRested() {
+    if (!this.camp.unlocked('house', 'wellRested')) return;
+    if (this.camp.unlocked('house', 'wellRestedAllDay')) {
+      this.buffs.apply('wellRested', { untilDay: this.dayNight.dayCount });
+    } else {
+      this.buffs.apply('wellRested', { durationMs: BUILDING_DEFS.house.wellRestedBuff.durationMs });
+    }
+    this.player.recalculateEquipment(this.camp.equipment);
+  }
+
+  /** Efeitos ao acordar: Bem Descansado e, na Casa nível 8, a refeição da cozinheira. */
+  applyWakeUp() {
+    this.applyWellRested();
+    if (this.camp.unlocked('house', 'cook')) {
+      const meal = BUILDING_DEFS.house.mealBuff;
+      this.buffs.apply('meal', { durationMs: meal.durationMs });
+      this.camp.store({ food: meal.food });
+      return ' A cozinheira preparou uma refeição.';
+    }
+    return '';
+  }
+
+  canSleepNow() {
+    if (this.raid?.active || this.raid?.warning) return 'Não dá para dormir durante um ataque ao acampamento!';
+    if (!this.camp.unlocked('house', 'sleep')) return 'Melhore a Casa para o nível 2 para dormir e pular a noite.';
+    return null;
   }
 
   sleepAtHouse() {
     if (!this.camp.isNear(this.player.x, this.player.y)) {
       return { ok: false, message: 'Entre no acampamento para dormir.' };
     }
+    const blocked = this.canSleepNow();
+    if (blocked) return { ok: false, message: blocked };
     if (this.restTimer) {
       this.restTimer.remove(false);
       this.restTimer = null;
@@ -900,14 +1325,32 @@ export class GameScene extends Phaser.Scene {
     this.player.health = this.player.maxHealth;
     this.player.stamina = 100;
     this.player.invulnerable = 1000;
+    const extra = this.applyWakeUp();
     this.audio.playDawn();
-    return { ok: true, message: `Você dormiu. Dia ${this.dayNight.dayCount} começou e o progresso foi salvo.` };
+    return { ok: true, message: `Você dormiu. Dia ${this.dayNight.dayCount} começou e o progresso foi salvo.${extra}` };
+  }
+
+  chooseDailyBuff(type) {
+    const camp = this.camp;
+    if (!camp.unlocked('house', 'dailyBuff')) return { ok: false, message: 'O buff diário exige Casa nível 10.' };
+    const day = this.dayNight.dayCount;
+    if (camp.dailyBuffDay === day) return { ok: false, message: 'Você já escolheu o buff de hoje.' };
+    const buffId = DAILY_BUFF_IDS[type];
+    if (!buffId) return { ok: false, message: 'Buff desconhecido.' };
+    camp.dailyBuffDay = day;
+    this.buffs.apply(buffId, { untilDay: day });
+    this.player.recalculateEquipment(camp.equipment);
+    return { ok: true, message: `Buff do dia: ${BUILDING_DEFS.house.dailyBuffs[type].description}` };
   }
 
   recoverAtCamp() {
     this.player.heal(this.player.maxHealth);
     this.player.stamina = 100;
     this.effects.spawnHeal(this.player.x, this.player.y - 8);
+    if (this.camp.unlocked('campfire', 'warmth')) {
+      this.buffs.apply('warmth', { durationMs: BUILDING_DEFS.campfire.warmthBuff.durationMs });
+      this.player.recalculateEquipment(this.camp.equipment);
+    }
     if (this.camp.questKills >= 5 && !this.camp.questClaimed) {
       this.camp.questClaimed = true;
       const reward = this.inventory.addBundle({ food: 8, herbs: 2 });
@@ -918,7 +1361,9 @@ export class GameScene extends Phaser.Scene {
       if (Object.keys(reward.remaining).length > 0) return INVENTORY_CONFIG.fullMessage;
       return 'Missão concluída! Recompensa: 8 comidas e 2 ervas.';
     }
-    return 'Descansou, recuperou a vida e salvou o jogo.';
+    return this.camp.unlocked('campfire', 'warmth')
+      ? 'Descansou e salvou. Calor da Fogueira: +10% ATQ por 3 min.'
+      : 'Descansou, recuperou a vida e salvou o jogo.';
   }
 
   restAtCamp() {
@@ -927,7 +1372,7 @@ export class GameScene extends Phaser.Scene {
       return;
     }
     const phase = this.dayNight.getState().phase;
-    if (phase === 'night' || phase === 'dawn') {
+    if ((phase === 'night' || phase === 'dawn') && !this.canSleepNow()) {
       this.sleepAtCamp();
       return;
     }
@@ -938,12 +1383,17 @@ export class GameScene extends Phaser.Scene {
   sleepAtCamp() {
     if (!this.camp.isNear(this.player.x, this.player.y)) {
       this.ui.showMessage('Só é possível dormir junto à fogueira ou à casa.');
-      return;
+      return { ok: false, message: 'Só é possível dormir junto à fogueira ou à casa.' };
     }
     const phase = this.dayNight.getState().phase;
     if (phase !== 'night' && phase !== 'dawn') {
       this.ui.showMessage('Você só pode pular a noite depois que ela começar.');
-      return;
+      return { ok: false, message: 'Você só pode pular a noite depois que ela começar.' };
+    }
+    const blocked = this.canSleepNow();
+    if (blocked) {
+      this.ui.showMessage(blocked);
+      return { ok: false, message: blocked };
     }
     this.dayNight.skipNight();
     this.enemyDirector.clearNightEnemies();
@@ -954,13 +1404,88 @@ export class GameScene extends Phaser.Scene {
     this.warningTriggered = false;
     this.player.invulnerable = 1000;
     const recoveryMessage = this.recoverAtCamp();
+    const extra = this.applyWakeUp();
     this.audio.playDawn();
-    this.ui.showMessage(`Você dormiu até amanhecer. Dia ${this.dayNight.dayCount} começou. ${recoveryMessage}`);
+    const message = `Você dormiu até amanhecer. Dia ${this.dayNight.dayCount} começou. ${recoveryMessage}${extra}`;
+    this.ui.showMessage(message);
     this.save();
+    return { ok: true, message };
+  }
+
+  // ---------- Efeitos contínuos do acampamento ----------
+
+  updateFarm(delta) {
+    const produced = this.farm.update(Date.now(), delta, {
+      efficiency: this.camp.efficiency('farm'),
+      raining: this.isRaining,
+      store: (bundle) => this.camp.store(bundle),
+      canStore: (bundle) => this.camp.storageCanAccept(bundle)
+    });
+    if (!produced) return;
+    const parts = [];
+    if (produced.barn > 0) parts.push(`+${produced.barn} comida no celeiro`);
+    if (Object.keys(produced.storage).length > 0) parts.push(`${formatGain(produced.storage)} no armazém`);
+    const now = this.time.now;
+    if (now - (this.lastFarmMessageAt ?? -Infinity) > 8000) {
+      this.lastFarmMessageAt = now;
+      this.ui.showMessage(`Fazenda • ${parts.join(' • ')}`);
+    }
+    this.farmSaveTimer = (this.farmSaveTimer ?? 0) + 1;
+    if (this.farmSaveTimer >= 10) {
+      this.farmSaveTimer = 0;
+      this.save();
+    }
+  }
+
+  /** Cura da Fogueira (nível 2+) e da refeição; dano em inimigos dentro do fogo (nível 6+). */
+  updateCampEffects(delta) {
+    const seconds = delta / 1000;
+    const distance = Phaser.Math.Distance.Between(this.player.x, this.player.y, this.camp.x, this.camp.y);
+    let regen = this.buffs.effects.regenPerSecond;
+    if (distance < this.camp.protectRadius) regen += this.camp.campfireRegen;
+    if (regen > 0 && this.player.health > 0 && this.player.health < this.player.maxHealth) {
+      this.player.heal(regen * seconds);
+    }
+  }
+
+  updateEnemyStatus(delta) {
+    const camp = this.camp;
+    const radius = camp.protectRadius;
+    const aura = (camp.stat('campfire', 'auraDamagePerSecond') ?? 0) * (camp.efficiency('campfire') > 0 ? 1 : 0);
+    const flames = this.raid?.active ? (camp.stat('campfire', 'raidFlameDamagePerSecond') ?? 0) * (camp.efficiency('campfire') > 0 ? 1 : 0) : 0;
+    this.auraTimer = (this.auraTimer ?? 0) + delta;
+    const auraTick = this.auraTimer >= 1000;
+    if (auraTick) this.auraTimer -= 1000;
+    for (const enemy of [...this.enemies]) {
+      if (!enemy.active || enemy.dead) continue;
+      const burn = enemy.tickStatus?.(delta) ?? 0;
+      if (burn > 0 && this.damageEnemy(enemy, burn, { color: '#ffb066' })) continue;
+      if (auraTick && (aura + flames) > 0 &&
+          Phaser.Math.Distance.Between(enemy.x, enemy.y, camp.x, camp.y) < radius) {
+        this.damageEnemy(enemy, aura + flames, { color: '#ffcf6b' });
+      }
+    }
+  }
+
+  onPlayerDamaged() {
+    const equipment = this.camp.equipment;
+    const brokeArmor = equipment.wear('armor');
+    const brokeShield = equipment.wear('shield');
+    if (brokeArmor || brokeShield) {
+      this.player.recalculateEquipment(equipment);
+      this.ui.showMessage(`${brokeArmor ? 'Sua armadura' : 'Seu escudo'} quebrou! Repare no Ferreiro (nível 4).`);
+    }
+  }
+
+  restartFromLastSave() {
+    this.gameOverRoot.hidden = true;
+    this.skipSave = true;
+    this.raid?.restoreSnapshot?.();
+    this.scene.restart();
   }
 
   save() {
-    if (!this.inventory || !this.player || !this.camp) return;
+    if (!this.inventory || !this.player || !this.camp || this.skipSave) return;
     saveGame({
       inventory: this.inventory.serialize(),
       player: {
@@ -974,6 +1499,9 @@ export class GameScene extends Phaser.Scene {
       camp: this.camp.serialize(),
       farm: this.farm.serialize(),
       market: this.market.serialize(),
+      buffs: this.buffs.serialize(),
+      travelers: this.travelers.serialize(),
+      raid: this.raid?.serialize?.() ?? this.savedRaid ?? null,
       time: {
         cycleTime: this.dayNight.cycleTime,
         dayCount: this.dayNight.dayCount
@@ -982,4 +1510,14 @@ export class GameScene extends Phaser.Scene {
       harvestStructures: this.harvestStructures.serialize()
     });
   }
+}
+
+function formatGain(bundle = {}) {
+  return Object.entries(bundle)
+    .map(([type, amount]) => `+${amount} ${RESOURCE_TYPES[type]?.label.toLowerCase() ?? type}`)
+    .join(', ');
+}
+
+function FARM_CROP_COST(crop) {
+  return FARM_CROPS[crop]?.cost ?? { seeds: 1 };
 }

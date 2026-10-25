@@ -120,7 +120,7 @@ export class PixelEffects {
     if (!label) {
       const text = this.scene.add.text(0, 0, '0', {
         fontFamily: 'Press Start 2P',
-        fontSize: '10px',
+        fontSize: '8px',
         color: tint,
         stroke: '#2a1d1a',
         strokeThickness: 3

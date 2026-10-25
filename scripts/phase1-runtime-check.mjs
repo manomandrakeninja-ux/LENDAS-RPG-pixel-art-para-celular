@@ -304,7 +304,9 @@ try {
   if (Object.values(enemyVisuals.speciesVisuals).some((visuals) =>
     !visuals.normal.hasFrame0 || !visuals.normal.hasFrame1 || !visuals.normal.animationExists ||
     !visuals.elite.hasFrame0 || !visuals.elite.hasFrame1 || !visuals.elite.animationExists ||
-    visuals.normal.opaquePixels < 30 || visuals.elite.opaquePixels < 40 || visuals.elite.goldPixels < 100
+    visuals.normal.opaquePixels < 30 || visuals.elite.opaquePixels < 40 ||
+    // O elite é marcado só pelo anel no chão: a moldura dourada foi removida.
+    visuals.elite.goldPixels > 0
   )) {
     throw new Error(`Silhuetas canvas incompletas: ${JSON.stringify(enemyVisuals.speciesVisuals)}`);
   }
@@ -326,6 +328,8 @@ try {
   const sleep = await evaluate(`(() => {
     const scene = window.__LENDAS__.scene.getScene('GameScene');
     const before = scene.dayNight.dayCount;
+    // Pular a noite exige Casa nível 2 (LENDAS, Sistema 1).
+    scene.camp.levels.house = 2;
     scene.sleepAtCamp();
     return {
       before,

@@ -164,6 +164,7 @@ try {
     const panel = document.getElementById('level-up-panel');
     const attack = document.getElementById('level-up-attack').getBoundingClientRect();
     const defense = document.getElementById('level-up-defense').getBoundingClientRect();
+    const health = document.getElementById('level-up-health').getBoundingClientRect();
     return {
       level: scene.progression.level,
       xp: scene.progression.xp,
@@ -174,16 +175,27 @@ try {
       panelHidden: panel.hidden,
       title: document.getElementById('level-up-title').textContent,
       attackHeight: attack.height,
-      defenseHeight: defense.height
+      defenseHeight: defense.height,
+      healthHeight: health.height,
+      buttons: [...document.querySelectorAll('#level-up-attributes button')].map((button) => button.textContent.trim()),
+      clock: scene.dayNight.cycleTime
     };
   })()`);
-  if (levelUp.level !== 2 || levelUp.xp !== 0 || levelUp.maxHealth !== 110 ||
+  if (levelUp.level !== 2 || levelUp.xp !== 0 || levelUp.maxHealth !== 100 ||
       levelUp.attack !== 12 || levelUp.defense !== 0 || !levelUp.pending ||
       levelUp.panelHidden || levelUp.title !== 'NÍVEL 2' ||
-      levelUp.attackHeight < 48 || levelUp.defenseHeight < 48) {
+      levelUp.attackHeight < 48 || levelUp.defenseHeight < 48 || levelUp.healthHeight < 48 ||
+      levelUp.buttons.join('|') !== '+15 VIDA MÁXIMA|+3 ATAQUE|+2 DEFESA') {
     throw new Error(`Subida de nível ou escolha ficou incorreta: ${JSON.stringify(levelUp)}`);
   }
   await capture();
+
+  // O jogo fica pausado enquanto a escolha está aberta: o relógio não anda.
+  await delay(600);
+  const pausedClock = await evaluate(`window.__LENDAS__.scene.getScene('GameScene').dayNight.cycleTime`);
+  if (pausedClock !== levelUp.clock) {
+    throw new Error(`O relógio andou com a escolha de nível aberta: ${levelUp.clock} -> ${pausedClock}`);
+  }
 
   const choseAttack = await evaluate(`(async () => {
     document.getElementById('level-up-attack').click();
@@ -196,13 +208,13 @@ try {
       panelHidden: document.getElementById('level-up-panel').hidden
     };
   })()`);
-  if (choseAttack.attack !== 14 || choseAttack.defense !== 0 || choseAttack.pending || !choseAttack.panelHidden) {
+  if (choseAttack.attack !== 15 || choseAttack.defense !== 0 || choseAttack.pending || !choseAttack.panelHidden) {
     throw new Error(`Escolha de ataque falhou: ${JSON.stringify(choseAttack)}`);
   }
 
   await evaluate(`(() => {
     const scene = window.__LENDAS__.scene.getScene('GameScene');
-    scene.experiencePickups.spawn(scene.player.x, scene.player.y, 150);
+    scene.experiencePickups.spawn(scene.player.x, scene.player.y, 200);
   })()`);
   await delay(300);
   await evaluate(`document.getElementById('level-up-defense').click()`);
@@ -216,9 +228,38 @@ try {
       maxHealth: scene.player.maxHealth
     };
   })()`);
-  if (choseDefense.level !== 3 || choseDefense.attack !== 14 || choseDefense.defense !== 2 || choseDefense.maxHealth !== 120) {
+  if (choseDefense.level !== 3 || choseDefense.attack !== 15 || choseDefense.defense !== 2 || choseDefense.maxHealth !== 100) {
     throw new Error(`Escolha de defesa falhou: ${JSON.stringify(choseDefense)}`);
   }
+
+  // Nível 4 (300 XP): escolhe +15 de vida máxima.
+  await evaluate(`(() => {
+    const scene = window.__LENDAS__.scene.getScene('GameScene');
+    scene.experiencePickups.spawn(scene.player.x, scene.player.y, 300);
+  })()`);
+  await delay(300);
+  await evaluate(`document.getElementById('level-up-health').click()`);
+  await delay(120);
+  const choseHealth = await evaluate(`(() => {
+    const scene = window.__LENDAS__.scene.getScene('GameScene');
+    return { level: scene.progression.level, maxHealth: scene.player.maxHealth };
+  })()`);
+  if (choseHealth.level !== 4 || choseHealth.maxHealth !== 115) {
+    throw new Error(`Escolha de vida falhou: ${JSON.stringify(choseHealth)}`);
+  }
+
+  // Elite vale o dobro de XP.
+  const eliteXp = await evaluate(`(async () => {
+    const scene = window.__LENDAS__.scene.getScene('GameScene');
+    const { Enemy } = await import('/src/game/Enemies.js');
+    const wolf = new Enemy(scene, scene.player.x + 300, scene.player.y, 'wolf', { elite: true });
+    scene.enemies.push(wolf);
+    const before = scene.experiencePickups.pickups.length;
+    scene.defeatEnemy(wolf);
+    const pickup = scene.experiencePickups.pickups[before];
+    return pickup?.amount ?? null;
+  })()`);
+  if (eliteXp !== 40) throw new Error(`Lobo elite deveria dar 40 XP: ${eliteXp}`);
 
   await evaluate(`(() => {
     const scene = window.__LENDAS__.scene.getScene('GameScene');
@@ -243,8 +284,8 @@ try {
       saveVersion: save.version
     };
   })()`);
-  if (persisted.level !== 3 || persisted.xp !== 17 || persisted.attack !== 14 ||
-      persisted.defense !== 2 || persisted.maxHealth !== 120 || persisted.savedLevel !== 3 ||
+  if (persisted.level !== 4 || persisted.xp !== 17 || persisted.attack !== 15 ||
+      persisted.defense !== 2 || persisted.maxHealth !== 115 || persisted.savedLevel !== 4 ||
       persisted.savedAttackPoints !== 1 || persisted.savedDefensePoints !== 1 || persisted.saveVersion !== 2) {
     throw new Error(`Persistência da progressão falhou: ${JSON.stringify(persisted)}`);
   }

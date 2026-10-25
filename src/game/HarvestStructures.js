@@ -5,149 +5,172 @@ import {
   HarvestStructureState
 } from '../data/harvestStructures.js';
 import { WORLD } from './config.js';
+import { PixelCanvas, dither, ramp } from '../art/pixel.js';
 
 const TEXTURE_SIZE = 32;
 const TEXTURE_KEY_PREFIX = 'harvest-structure-';
 
-function fillRect(context, x, y, width, height, color) {
-  context.fillStyle = color;
-  context.fillRect(Math.floor(x), Math.floor(y), Math.floor(width), Math.floor(height));
+const STONE = ['#3f454a', '#5d6569', '#7f878a', '#a7aeab', '#cfd0c4'];
+const WOOD = ['#4a2f1e', '#6e4628', '#94633a', '#b98450'];
+
+/** Rocha facetada com luz do alto à esquerda (usada nas rochas e nos veios). */
+function rock(canvas, points, colors = STONE, center = [16, 18], size = [12, 10]) {
+  const [cx, cy] = center;
+  const [width, height] = size;
+  canvas.forPolygon(points, (x, y) => {
+    const value = -((x - cx) / width) * 0.6 - ((y - cy) / height) * 0.9 + (dither(x, y) - 0.5) * 0.3;
+    canvas.pixel(x, y, colors[value > 0.8 ? 4 : value > 0.3 ? 3 : value > -0.35 ? 2 : 1]);
+  });
 }
 
-function fillEllipse(context, centerX, centerY, radiusX, radiusY, color) {
-  context.fillStyle = color;
-  const minimumX = Math.floor(centerX - radiusX);
-  const maximumX = Math.ceil(centerX + radiusX);
-  const minimumY = Math.floor(centerY - radiusY);
-  const maximumY = Math.ceil(centerY + radiusY);
-  for (let y = minimumY; y <= maximumY; y += 1) {
-    for (let x = minimumX; x <= maximumX; x += 1) {
-      const normalizedX = (x + 0.5 - centerX) / radiusX;
-      const normalizedY = (y + 0.5 - centerY) / radiusY;
-      if (normalizedX * normalizedX + normalizedY * normalizedY <= 1) {
-        context.fillRect(x, y, 1, 1);
-      }
-    }
+const ROCK_SHAPE = [[4, 25], [6, 14], [12, 7], [21, 7], [28, 15], [27, 25], [17, 28]];
+
+function oreSpecks(canvas, colors, spots) {
+  for (const [x, y, size] of spots) {
+    canvas.rect(x, y, size, size, colors[1]);
+    canvas.pixel(x, y, colors[2]);
+    canvas.pixel(x + size - 1, y + size - 1, colors[0]);
   }
 }
 
-function fillPolygon(context, points, color) {
-  context.fillStyle = color;
-  const minimumX = Math.floor(Math.min(...points.map(([x]) => x)));
-  const maximumX = Math.ceil(Math.max(...points.map(([x]) => x)));
-  const minimumY = Math.floor(Math.min(...points.map(([, y]) => y)));
-  const maximumY = Math.ceil(Math.max(...points.map(([, y]) => y)));
-  const inside = (x, y) => {
-    let result = false;
-    for (let current = 0, previous = points.length - 1; current < points.length; previous = current, current += 1) {
-      const [currentX, currentY] = points[current];
-      const [previousX, previousY] = points[previous];
-      if (((currentY > y) !== (previousY > y)) &&
-          x < (previousX - currentX) * (y - currentY) / (previousY - currentY) + currentX) {
-        result = !result;
-      }
-    }
-    return result;
-  };
-  for (let y = minimumY; y <= maximumY; y += 1) {
-    for (let x = minimumX; x <= maximumX; x += 1) {
-      if (inside(x + 0.5, y + 0.5)) context.fillRect(x, y, 1, 1);
-    }
+function drawTree(canvas) {
+  canvas.shadow(16, 29, 10, 2.2, 110);
+  canvas.rect(14, 18, 5, 11, WOOD[1]);
+  canvas.rect(14, 18, 2, 11, WOOD[2]);
+  canvas.rect(18, 18, 1, 11, WOOD[0]);
+  const leaves = ramp('#4a8a48');
+  for (const [x, y, rx, ry] of [[16, 13, 11, 9], [10, 15, 6, 5], [22, 15, 6, 5], [16, 7, 7, 5]]) canvas.shadedEllipse(x, y, rx, ry, leaves);
+  for (const [x, y] of [[11, 12], [20, 9], [18, 16]]) {
+    canvas.rect(x, y, 2, 2, '#d8413a');
+    canvas.pixel(x, y, '#ff9a7a');
   }
 }
 
-function drawTree(context) {
-  fillEllipse(context, 16, 29, 9, 2, 'rgba(24, 35, 27, 0.42)');
-  fillRect(context, 14, 17, 5, 12, '#69462f');
-  fillRect(context, 15, 18, 2, 10, '#a36b3f');
-  fillEllipse(context, 16, 13, 12, 11, '#294b34');
-  fillEllipse(context, 16, 12, 10, 9, '#477b43');
-  fillEllipse(context, 13, 9, 5, 4, '#68a653');
-  fillRect(context, 10, 12, 2, 2, '#83bd61');
-  fillRect(context, 19, 8, 2, 2, '#5f9749');
+function drawRock(canvas) {
+  canvas.shadow(16, 28, 12, 2.4, 115);
+  rock(canvas, ROCK_SHAPE);
+  canvas.line(15, 12, 19, 20, STONE[1]);
+  canvas.line(19, 20, 23, 22, STONE[1]);
+  canvas.pixel(9, 23, '#5f9650');
+  canvas.pixel(10, 24, '#4a7b48');
+  canvas.pixel(11, 24, '#5f9650');
 }
 
-function drawRock(context) {
-  fillEllipse(context, 16, 28, 11, 2, 'rgba(24, 35, 27, 0.42)');
-  fillPolygon(context, [[5, 24], [7, 12], [13, 6], [23, 8], [28, 17], [25, 25], [16, 28]], '#4e5954');
-  fillPolygon(context, [[8, 22], [10, 13], [15, 9], [21, 11], [22, 20], [16, 24]], '#7c8880');
-  fillRect(context, 10, 13, 4, 2, '#a8b0a5');
-  fillRect(context, 18, 18, 4, 3, '#606c66');
+function drawStone(canvas) {
+  canvas.shadow(16, 28, 12, 2.4, 115);
+  canvas.forPolygon([[5, 24], [8, 15], [12, 9], [20, 9], [26, 17], [27, 25], [18, 28]], (x, y) => {
+    const value = (dither(x, y) - 0.5) * 0.5;
+    canvas.pixel(x, y, value > 0.2 ? STONE[4] : value > -0.2 ? STONE[2] : STONE[1]);
+  });
 }
 
-function drawHerbBush(context) {
-  fillEllipse(context, 16, 28, 10, 2, 'rgba(24, 35, 27, 0.42)');
-  fillEllipse(context, 16, 20, 12, 8, '#315d38');
-  fillEllipse(context, 16, 18, 10, 7, '#4f8a47');
-  fillEllipse(context, 12, 15, 5, 4, '#70a84f');
-  fillRect(context, 12, 17, 2, 2, '#d6d66f');
-  fillRect(context, 20, 20, 2, 2, '#d6d66f');
-  fillRect(context, 17, 13, 2, 2, '#b6c95e');
+function drawHerbBush(canvas) {
+  canvas.shadow(16, 28, 11, 2.2, 105);
+  const leaves = ['#2f5f36', '#4f8a47', '#76b157', '#a9d77c'];
+  for (const [x, y, rx, ry] of [[16, 20, 12, 7], [11, 16, 6, 5], [21, 16, 6, 5], [16, 13, 6, 5]]) canvas.shadedEllipse(x, y, rx, ry, leaves);
+  for (const [x, y] of [[11, 14], [20, 13], [15, 18], [23, 19], [8, 20]]) {
+    canvas.pixel(x, y, '#f2efb0');
+    canvas.pixel(x + 1, y, '#d9cf6a');
+    canvas.pixel(x, y + 1, '#d9cf6a');
+  }
 }
 
-function drawMushroom(context) {
-  fillEllipse(context, 16, 28, 8, 2, 'rgba(24, 35, 27, 0.42)');
-  fillRect(context, 13, 16, 7, 11, '#d8c5a0');
-  fillRect(context, 14, 17, 2, 8, '#f0dfbc');
-  fillEllipse(context, 16, 15, 11, 8, '#7d2f2d');
-  fillEllipse(context, 16, 14, 10, 7, '#b84a3f');
-  fillRect(context, 9, 12, 3, 2, '#f2d9b5');
-  fillRect(context, 18, 10, 3, 2, '#f2d9b5');
-  fillRect(context, 14, 15, 2, 2, '#f2d9b5');
+function drawMushroom(canvas) {
+  canvas.shadow(16, 28, 9, 2, 105);
+  canvas.rect(13, 16, 7, 11, '#e9dcc0');
+  canvas.rect(13, 16, 2, 11, '#fbf2dc');
+  canvas.rect(18, 16, 2, 11, '#c8b996');
+  canvas.rect(12, 26, 9, 1, '#c8b996');
+  const cap = ['#7d2a26', '#b8433a', '#de6a52', '#f59a7c'];
+  canvas.forEllipse(16, 15, 12, 9, (x, y, nx, ny) => {
+    if (y > 17) return;
+    const value = -nx * 0.5 - ny * 0.9 + (dither(x, y) - 0.5) * 0.25;
+    canvas.pixel(x, y, cap[value > 0.9 ? 3 : value > 0.35 ? 2 : value > -0.3 ? 1 : 0]);
+  });
+  canvas.rect(5, 17, 22, 1, '#7d2a26');
+  for (const [x, y, size] of [[9, 12, 3], [18, 9, 3], [14, 14, 2], [22, 14, 2], [12, 8, 2]]) {
+    canvas.rect(x, y, size, size - 1, '#fbeedd');
+    canvas.pixel(x, y, '#ffffff');
+  }
 }
 
-function drawChest(context) {
-  fillEllipse(context, 16, 28, 11, 2, 'rgba(24, 35, 27, 0.42)');
-  fillRect(context, 5, 11, 22, 16, '#5b3825');
-  fillRect(context, 6, 12, 20, 14, '#8b5832');
-  fillRect(context, 7, 9, 18, 8, '#6b4029');
-  fillRect(context, 8, 10, 16, 6, '#a56a39');
-  fillRect(context, 9, 9, 3, 17, '#d3a84e');
-  fillRect(context, 20, 9, 3, 17, '#d3a84e');
-  fillRect(context, 14, 16, 5, 5, '#f0c85d');
-  fillRect(context, 16, 18, 2, 3, '#55351f');
+function drawChest(canvas) {
+  canvas.shadow(16, 28, 12, 2.2, 115);
+  const wood = ramp('#9a6136');
+  // Corpo.
+  canvas.rect(5, 15, 22, 12, wood[1]);
+  for (let y = 17; y < 27; y += 3) canvas.rect(5, y, 22, 1, wood[0]);
+  canvas.rect(5, 15, 2, 12, wood[2]);
+  // Tampa arredondada.
+  canvas.forEllipse(16, 15, 11, 7, (x, y, nx, ny) => {
+    if (y > 15) return;
+    canvas.pixel(x, y, ny < -0.6 ? wood[2] : ny < -0.2 ? wood[1] : wood[0]);
+  });
+  canvas.rect(5, 15, 22, 2, wood[0]);
+  // Ferragens douradas e fechadura.
+  const gold = ['#8a5e1a', '#d3a03a', '#f2cf65', '#fff2b0'];
+  for (const x of [8, 22]) {
+    canvas.rect(x, 9, 2, 18, gold[1]);
+    canvas.rect(x, 9, 1, 18, gold[2]);
+  }
+  canvas.rect(13, 14, 6, 7, gold[1]);
+  canvas.rect(13, 14, 6, 1, gold[3]);
+  canvas.rect(15, 17, 2, 3, '#3a2414');
+  canvas.pixel(15, 16, gold[0]);
 }
 
-function drawOreVein(context) {
-  fillEllipse(context, 16, 28, 11, 2, 'rgba(24, 35, 27, 0.42)');
-  fillRect(context, 6, 8, 20, 19, '#5c351f');
-  fillRect(context, 8, 10, 16, 15, '#9a5124');
-  fillRect(context, 10, 12, 4, 3, '#d88735');
-  fillRect(context, 18, 15, 4, 3, '#e6a044');
-  fillRect(context, 13, 20, 5, 3, '#bd6827');
-  fillRect(context, 6, 8, 20, 2, '#3a241c');
-  fillRect(context, 6, 25, 20, 2, '#3a241c');
+function drawOreVein(canvas) {
+  canvas.shadow(16, 28, 12, 2.4, 115);
+  rock(canvas, ROCK_SHAPE);
+  oreSpecks(canvas, ['#7a3d1c', '#c46a2e', '#f0a45a'], [[10, 12, 3], [18, 15, 3], [13, 20, 2], [21, 22, 2], [8, 19, 2]]);
+  canvas.pixel(19, 15, '#ffd29a');
 }
 
-function drawCoalVein(context) {
-  fillEllipse(context, 16, 28, 11, 2, 'rgba(24, 35, 27, 0.42)');
-  fillPolygon(context, [[5, 23], [9, 10], [18, 6], [27, 14], [25, 25], [14, 28]], '#1d2023');
-  fillPolygon(context, [[9, 20], [12, 12], [19, 10], [22, 18], [17, 23]], '#34383c');
-  fillRect(context, 13, 15, 3, 2, '#62666a');
+function drawCoalVein(canvas) {
+  canvas.shadow(16, 28, 12, 2.4, 115);
+  rock(canvas, ROCK_SHAPE);
+  const coal = ['#0d0f12', '#1d2126', '#4a5058'];
+  canvas.forPolygon([[9, 21], [11, 13], [18, 10], [23, 17], [18, 23]], (x, y) => {
+    canvas.pixel(x, y, dither(x, y) > 0.8 ? coal[2] : (x + y) % 5 === 0 ? coal[0] : coal[1]);
+  });
+  canvas.pixel(13, 14, '#8a9099');
+  canvas.pixel(19, 18, '#8a9099');
 }
 
-function drawGoldVein(context) {
-  fillEllipse(context, 16, 28, 11, 2, 'rgba(24, 35, 27, 0.42)');
-  fillPolygon(context, [[5, 23], [8, 11], [17, 6], [27, 15], [24, 25], [14, 28]], '#4f4328');
-  fillRect(context, 10, 12, 5, 5, '#c99828');
-  fillRect(context, 18, 14, 5, 5, '#f0c747');
-  fillRect(context, 13, 21, 6, 3, '#d7a82e');
-  fillRect(context, 18, 15, 2, 2, '#fff09a');
+function drawGoldVein(canvas) {
+  canvas.shadow(16, 28, 12, 2.4, 115);
+  rock(canvas, ROCK_SHAPE, ['#3a3226', '#57492f', '#6f5f3e', '#8c7a50', '#a8956a']);
+  oreSpecks(canvas, ['#9a6a12', '#e8b83a', '#fff09a'], [[10, 12, 4], [18, 14, 4], [13, 21, 3], [22, 21, 2]]);
+  // Brilho.
+  canvas.pixel(24, 9, '#fff6c8');
+  canvas.pixel(23, 10, '#fff6c8');
+  canvas.pixel(25, 10, '#fff6c8');
+  canvas.pixel(24, 11, '#fff6c8');
 }
 
-function drawMineMarker(context) {
-  fillEllipse(context, 16, 29, 14, 2, 'rgba(24, 35, 27, 0.5)');
-  fillPolygon(context, [[2, 27], [6, 8], [13, 2], [22, 6], [30, 27]], '#4b504b');
-  fillRect(context, 6, 11, 20, 17, '#252a28');
-  fillRect(context, 8, 14, 16, 14, '#111615');
-  fillRect(context, 14, 4, 4, 19, '#9d633b');
-  fillPolygon(context, [[13, 5], [27, 10], [24, 15], [12, 11]], '#b9b9a8');
-  fillRect(context, 6, 26, 20, 3, '#73766d');
+function drawMineMarker(canvas) {
+  canvas.shadow(16, 29, 15, 2.4, 120);
+  rock(canvas, [[1, 29], [4, 12], [11, 4], [21, 4], [29, 12], [31, 29]], STONE, [16, 16], [15, 13]);
+  // Boca da mina com escoras de madeira.
+  canvas.rect(8, 12, 16, 17, '#0f1312');
+  canvas.rect(9, 14, 14, 15, '#070a09');
+  canvas.rect(7, 11, 3, 18, WOOD[2]);
+  canvas.rect(22, 11, 3, 18, WOOD[1]);
+  canvas.rect(6, 9, 20, 3, WOOD[2]);
+  canvas.rect(6, 9, 20, 1, WOOD[3]);
+  // Trilhos saindo da mina.
+  canvas.rect(11, 27, 1, 3, '#8d9496');
+  canvas.rect(20, 27, 1, 3, '#8d9496');
+  canvas.rect(10, 28, 12, 1, WOOD[1]);
+  // Lanterna.
+  canvas.rect(25, 13, 3, 4, '#f2c45c');
+  canvas.pixel(25, 13, '#fff3c4');
 }
 
 const STRUCTURE_DRAWERS = {
   tree: drawTree,
   rock: drawRock,
+  stone: drawStone,
   herbBush: drawHerbBush,
   mushroom: drawMushroom,
   chest: drawChest,
@@ -178,10 +201,10 @@ export class HarvestStructures {
       const key = `${TEXTURE_KEY_PREFIX}${type}`;
       if (this.scene.textures.exists(key)) continue;
       const texture = this.scene.textures.createCanvas(key, TEXTURE_SIZE, TEXTURE_SIZE);
-      const context = texture.getContext();
-      context.imageSmoothingEnabled = false;
-      context.clearRect(0, 0, TEXTURE_SIZE, TEXTURE_SIZE);
-      (STRUCTURE_DRAWERS[type] ?? drawTree)(context);
+      const pixels = new PixelCanvas(TEXTURE_SIZE, TEXTURE_SIZE);
+      (STRUCTURE_DRAWERS[type] ?? drawTree)(pixels);
+      pixels.outline();
+      texture.getContext().putImageData(new ImageData(pixels.data, TEXTURE_SIZE, TEXTURE_SIZE), 0, 0);
       texture.setFilter(Phaser.Textures.FilterMode.NEAREST);
       texture.refresh();
     }

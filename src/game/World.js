@@ -27,11 +27,12 @@ export class World {
         const pathToCamp = Math.abs(centerX - camp.x) < 42 &&
           centerY > camp.y - 36 && centerY < camp.y + 420;
         const aroundCampfire = Phaser.Math.Distance.Between(centerX, centerY, camp.x, camp.y) < 105;
+        // 4 = metade esquerda do caminho (borda de grama à esquerda), 5 = metade direita.
         const frame = pathToCamp
-          ? Phaser.Math.Between(4, 5)
+          ? (centerX < camp.x ? 4 : 5)
           : aroundCampfire ? Phaser.Math.Between(0, 3) : this.groundVariant();
         this.scene.add.image(centerX, centerY, 'grass', frame)
-          .setScale(tileSize / 16)
+          .setScale(tileSize / 48)
           .setDepth(-1000);
       }
     }
@@ -82,8 +83,14 @@ export class World {
         .setOrigin(0.5, 0.88)
         .setDepth(y + 10)
         .play('pine-sway');
+      // Tronco sólido.
+      this.scene.obstacles?.add(x, y - 2, 10, 7);
       if (i % 7 === 0) {
         tree.setTexture('nature', 'autumn-tree').stop();
+      } else if (i % 4 === 0) {
+        tree.setTexture('nature', 'oak-tree').stop();
+      } else if (i % 11 === 0) {
+        tree.setTexture('nature', 'fruit-tree').stop();
       } else if (i % 5 === 0) {
         tree.setTexture('nature', 'pine-1').stop();
       }

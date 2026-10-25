@@ -18,6 +18,15 @@ export const HARVEST_STRUCTURE_TYPES = {
     nightOnly: false,
     requiresPickaxe: true
   },
+  stone: {
+    label: 'Pedra',
+    count: 24,
+    rewardType: 'stone',
+    rewardAmount: [2, 4],
+    regrowDays: 2,
+    nightOnly: false,
+    requiresPickaxe: false
+  },
   herbBush: {
     label: 'Arbusto de ervas',
     count: 26,
@@ -173,7 +182,9 @@ export class HarvestStructureState {
   generateMineVeins(random) {
     const ironCount = randomInteger(random, MINE_CONFIG.ironVeins[0], MINE_CONFIG.ironVeins[1]);
     const coalCount = randomInteger(random, MINE_CONFIG.coalVeins[0], MINE_CONFIG.coalVeins[1]);
-    const goldCount = random() < MINE_CONFIG.goldChance ? 1 : 0;
+    // O sorteio é mantido para não mudar a posição dos outros veios em saves antigos.
+    random();
+    const goldCount = MINE_CONFIG.goldVeins;
     const groups = [
       { type: 'oreVein', count: ironCount },
       { type: 'coalVein', count: coalCount },

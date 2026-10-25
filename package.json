@@ -22,7 +22,11 @@
     "test:runtime:system3": "node scripts/system3-runtime-check.mjs",
     "test:runtime:gameplay": "node scripts/gameplay-runtime-check.mjs",
     "test:runtime:touch": "node scripts/touch-runtime-check.mjs",
-    "assets:generate": "node scripts/generate-assets.js"
+    "assets:generate": "node scripts/generate-assets.js",
+    "test:runtime:buildings": "node scripts/buildings-runtime-check.mjs",
+    "test:runtime:raid": "node scripts/raid-runtime-check.mjs",
+    "test:runtime:mining": "node scripts/mining-runtime-check.mjs",
+    "test:runtime:visual": "node scripts/visual-runtime-check.mjs"
   },
   "dependencies": {
     "@fontsource/press-start-2p": "^5.2.6",

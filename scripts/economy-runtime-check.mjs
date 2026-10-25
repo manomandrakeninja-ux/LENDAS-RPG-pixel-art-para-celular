@@ -149,6 +149,9 @@ try {
   await evaluate(`(() => {
     const scene = window.__LENDAS__.scene.getScene('GameScene');
     scene.economy.coins = 10;
+    // Vender exige Mercado nível 2.
+    scene.camp.levels.market = 2;
+    scene.market.setLevel(2);
     scene.market.offers = [{ id: 'seeds', quantity: 2 }];
     scene.inventory.items.seeds = 0;
     scene.openBuilding('market');
@@ -164,7 +167,7 @@ try {
       stock: scene.market.offers[0].quantity
     };
   })()`);
-  if (bought.coins !== 7 || bought.seeds !== 1 || bought.stock !== 1) {
+  if (bought.coins !== 5 || bought.seeds !== 1 || bought.stock !== 1) {
     throw new Error(`Compra com moedas falhou: ${JSON.stringify(bought)}`);
   }
   await capture();
@@ -180,7 +183,7 @@ try {
     const scene = window.__LENDAS__.scene.getScene('GameScene');
     return { coins: scene.economy.coins, wood: scene.inventory.items.wood };
   })()`);
-  if (sold.coins !== 8 || sold.wood !== 1) {
+  if (sold.coins !== 6 || sold.wood !== 1) {
     throw new Error(`Venda por moedas falhou: ${JSON.stringify(sold)}`);
   }
 
@@ -201,6 +204,36 @@ try {
   if (insufficient.coins !== 0 || insufficient.seeds !== 1 || insufficient.stock !== 1 ||
       !insufficient.message.includes('Moedas insuficientes')) {
     throw new Error(`Compra sem moedas não foi bloqueada: ${JSON.stringify(insufficient)}`);
+  }
+
+  // Elite: 10–20 moedas; noturno: 3–8; baú: 10–30, que caem no chão.
+  const drops = await evaluate(`(async () => {
+    const scene = window.__LENDAS__.scene.getScene('GameScene');
+    const { Enemy } = await import('/src/game/Enemies.js');
+    const sample = (type, options) => {
+      const enemy = new Enemy(scene, scene.player.x + 400, scene.player.y, type, options);
+      scene.enemies.push(enemy);
+      const before = scene.coinPickups.pickups.length;
+      scene.defeatEnemy(enemy);
+      return scene.coinPickups.pickups[before]?.amount ?? null;
+    };
+    const elite = Array.from({ length: 6 }, () => sample('wolf', { elite: true }));
+    const night = Array.from({ length: 6 }, () => sample('skeleton', { isNight: true }));
+    scene.coinPickups.clear();
+    const chest = scene.harvestStructures.state.structures.find((entry) => entry.type === 'chest' && entry.available);
+    for (const type of Object.keys(scene.inventory.items)) scene.inventory.items[type] = 0;
+    scene.player.body.reset(chest.x + 18, chest.y + 6);
+    const coinsBefore = scene.economy.coins;
+    scene.collectHarvestStructure(chest);
+    const chestPickup = scene.coinPickups.pickups[0]?.amount ?? null;
+    await new Promise((resolve) => setTimeout(resolve, 900));
+    return { elite, night, chestPickup, chestCollected: scene.economy.coins - coinsBefore, message: scene.ui.message.text };
+  })()`);
+  if (!drops.elite.every((value) => value >= 10 && value <= 20) || !drops.night.every((value) => value >= 3 && value <= 8)) {
+    throw new Error(`Faixas de moedas erradas: ${JSON.stringify(drops)}`);
+  }
+  if (!(drops.chestPickup >= 10 && drops.chestPickup <= 30) || drops.chestCollected !== drops.chestPickup || !drops.message.includes('moedas')) {
+    throw new Error(`Moedas do baú: ${JSON.stringify(drops)}`);
   }
 
   await evaluate(`(() => {
@@ -234,6 +267,7 @@ try {
     bought,
     sold,
     insufficient,
+    drops,
     persisted,
     consoleErrors: errors.length,
     screenshotPath

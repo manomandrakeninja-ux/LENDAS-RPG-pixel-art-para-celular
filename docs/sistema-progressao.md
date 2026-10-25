@@ -1,43 +1,40 @@
-# Expansão — progressão do jogador
+# Progressão do jogador (LENDAS, Sistema 4)
 
-## XP e níveis
+## XP por inimigo
 
-- Slime: 10 XP.
-- Lobo: 20 XP.
-- Javali: 25 XP.
-- Esqueleto: 30 XP.
-- Fantasma: 35 XP.
-- Aranha: 40 XP.
-- Lobisomem: 50 XP.
+Os valores ficam em `src/data/enemies.json` (campo `xp` de cada espécie). Elite vale o dobro (`eliteXpMultiplier: 2`).
 
-Inimigos deixam cristais de XP no chão. O jogador os atrai por proximidade e recebe o XP ao entrar no raio de coleta. O HUD mostra `NÍVEL`, XP atual e limite do próximo nível.
+| Inimigo | XP | Elite |
+|---|---:|---:|
+| Gosma | 10 | 20 |
+| Lobo | 20 | 40 |
+| Javali | 25 | 50 |
+| Esqueleto | 30 | 60 |
+| Aranha | 30 | 60 |
+| Fantasma | 35 | 70 |
+| Lobisomem | 50 | 100 |
 
-## Evolução
+Inimigos comuns deixam cristais de XP no chão, atraídos pelo jogador. Invasores de um ataque ao acampamento não deixam cristais: o XP deles é pago em dobro na vitória.
 
-Cada nível:
+## Subir de nível
 
-1. concede **+10 de vida máxima**;
-2. abre uma escolha obrigatória entre **+2 ataque** ou **+2 defesa**.
+- XP necessário: **nível atual × 100** (nível 1 → 2 pede 100, nível 2 → 3 pede 200...).
+- Ao subir, o jogo **pausa** (relógio, fazenda, ataques e inimigos) e abre a escolha: **+15 vida máxima**, **+3 ataque** ou **+2 defesa**.
+- Vários níveis de uma vez criam uma fila de escolhas, aplicadas uma por vez.
+- Nos níveis 5, 10, 15 e 20 vem também a escolha de um talento.
+- Nível máximo: **20**.
 
-A escolha pausa movimento e combate. Um único drop que conceda vários níveis cria uma fila de escolhas, aplicada uma por vez. O limite máximo é **nível 20** e, nele, o jogador para de receber XP.
+A barra de XP fica logo abaixo da barra de vida no HUD.
 
-## Persistência
+## Persistência e saves antigos
 
-O save v2 preserva:
-
-- nível e XP;
-- vida máxima base;
-- pontos de ataque e defesa;
-- escolhas de nível ainda pendentes.
-
-O nível e o XP exibidos no HUD são reconstruídos a partir desses dados ao recarregar.
+O save guarda nível, XP, pontos de cada escolha, escolhas pendentes e talentos. Saves feitos antes desta versão (quando cada nível dava +10 de vida automática e ataque/defesa valiam +2 por ponto) são convertidos em um bônus de "legado" com os mesmos valores: ninguém perde atributos.
 
 ## Arquivos principais
 
-- `src/data/progression.js`: thresholds, limites e estado do jogador;
+- `src/data/enemies.json` e `src/data/enemies.js`: XP por inimigo e `enemyXp()`;
+- `src/data/progression.js`: fórmula, escolhas, limites e migração;
 - `src/game/ExperiencePickups.js`: cristais de XP físicos;
-- `src/game/LevelUpOverlay.js`: modal de escolha;
-- `src/game/Player.js`: vida máxima e atributos;
+- `src/game/LevelUpOverlay.js`: modal com as três escolhas;
 - `src/game/UI.js`: barra de XP;
-- `tests/progression.test.js`: regras de domínio;
-- `scripts/progression-runtime-check.mjs`: teste mobile completo.
+- `tests/progression.test.js` e `scripts/progression-runtime-check.mjs`.

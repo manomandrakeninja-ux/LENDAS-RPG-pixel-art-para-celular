@@ -178,7 +178,7 @@ try {
   }
 
   // 5. Talento no nível 5: atributo primeiro, depois três opções de talento.
-  await evaluate(`(() => { const s = ${scene}; s.player.body.reset(1440, 1165); s.collectExperience(100 + 150 + 200 + 250); })()`);
+  await evaluate(`(() => { const s = ${scene}; s.player.body.reset(1440, 1165); s.collectExperience(100 + 200 + 300 + 400); })()`);
   await delay(150);
   for (let i = 0; i < 4; i += 1) {
     await evaluate(`document.getElementById('level-up-attack').click()`);
@@ -207,7 +207,7 @@ try {
 
   // 6. Venda com preço por item.
   const sale = await evaluate(`(() => { const s = ${scene};
-    s.inventory.add('gold', 1); const before = s.economy.coins;
+    s.camp.levels.market = 2; s.market.setLevel(2); s.inventory.add('gold', 1); const before = s.economy.coins;
     const result = s.buildingMenuAction('sell', 'gold');
     return { ok: result.ok, gained: s.economy.coins - before, message: result.message };
   })()`);

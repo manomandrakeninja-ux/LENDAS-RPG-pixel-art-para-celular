@@ -2,6 +2,9 @@ import Phaser from 'phaser';
 import { COMBAT_CONFIG } from '../data/combat.js';
 import { PERK_EFFECTS } from '../data/progression.js';
 
+const BASE_ATTACK = 12;
+const BASE_DEFENSE = 0;
+
 export class Player extends Phaser.GameObjects.Container {
   constructor(scene, x, y, saved = {}, progression = null) {
     super(scene, x, y);
@@ -19,14 +22,21 @@ export class Player extends Phaser.GameObjects.Container {
     this.maxHealth = progression?.maxHealth ?? saved.maxHealth ?? 100;
     this.health = Math.min(saved.health ?? this.maxHealth, this.maxHealth);
     this.stamina = 100;
-    this.baseAttack = Number.isFinite(Number(saved.baseAttack))
+    // Nada no jogo reduz os atributos base: um valor abaixo do inicial vem de um save
+    // corrompido (o bônus antigo da Ferraria foi descontado várias vezes) e é corrigido aqui.
+    const loadedAttack = Number.isFinite(Number(saved.baseAttack)) && saved.baseAttack !== null
       ? Number(saved.baseAttack)
-      : (Number(saved.attack) || 12) - (scene.camp?.legacyForgeBonus?.attack ?? 0);
-    this.baseDefense = Number.isFinite(Number(saved.baseDefense))
+      : (Number(saved.attack) || BASE_ATTACK) - (scene.camp?.legacyForgeBonus?.attack ?? 0);
+    const loadedDefense = Number.isFinite(Number(saved.baseDefense)) && saved.baseDefense !== null
       ? Number(saved.baseDefense)
-      : (Number(saved.defense) || 0) - (scene.camp?.legacyForgeBonus?.defense ?? 0);
+      : (Number(saved.defense) || BASE_DEFENSE) - (scene.camp?.legacyForgeBonus?.defense ?? 0);
+    this.baseAttack = Math.max(BASE_ATTACK, loadedAttack);
+    this.baseDefense = Math.max(BASE_DEFENSE, loadedDefense);
     this.attack = this.baseAttack;
     this.defense = this.baseDefense;
+    this.speedMultiplier = 1;
+    this.fireResistance = 0;
+    this.dragonShield = 0;
     this.facing = new Phaser.Math.Vector2(1, 0);
     this.attackCooldown = 0;
     this.dodgeCooldown = 0;
@@ -94,7 +104,8 @@ export class Player extends Phaser.GameObjects.Container {
     } else if (this.dodgeTimer > 0) {
       this.body.setVelocity(this.dodgeX, this.dodgeY);
     } else {
-      this.body.setVelocity(movement.x * 130, movement.y * 130);
+      const speed = 130 * this.speedMultiplier;
+      this.body.setVelocity(movement.x * speed, movement.y * speed);
     }
     this.setDepth(this.y + 30);
   }
@@ -121,9 +132,11 @@ export class Player extends Phaser.GameObjects.Container {
     return true;
   }
 
-  damage(amount, source = null) {
+  // options.fire: dano de fogo, reduzido pela resistência ao fogo (Fogueira 8/10, Forja do Dragão).
+  damage(amount, source = null, options = {}) {
     if (this.invulnerable > 0) return false;
-    const dealt = Math.max(1, amount - this.defense);
+    const fireFactor = options.fire ? 1 - this.fireResistance : 1;
+    const dealt = Math.max(1, Math.round(amount * fireFactor) - this.defense);
     this.health = Math.max(0, this.health - dealt);
     this.invulnerable = 450;
     this.sprite.setTint(0xffc2a8);
@@ -148,6 +161,7 @@ export class Player extends Phaser.GameObjects.Container {
     this.scene.time.delayedCall(110, () => {
       if (this.sprite?.active) this.sprite.clearTint();
     });
+    this.scene.onPlayerDamaged?.(dealt);
     return true;
   }
 
@@ -160,9 +174,20 @@ export class Player extends Phaser.GameObjects.Container {
     this.health = Math.min(this.maxHealth, this.health + amount);
   }
 
+  /** Recalcula atributos: base + níveis + equipamento + buffs + efeitos do acampamento. */
   recalculateEquipment(equipment) {
-    const bonuses = equipment?.getBonuses?.() ?? { attack: 0, defense: 0 };
-    this.attack = this.baseAttack + (this.progression?.attackBonus ?? 0) + bonuses.attack;
-    this.defense = this.baseDefense + (this.progression?.defenseBonus ?? 0) + bonuses.defense;
+    const bonuses = { attack: 0, defense: 0, fireResistance: 0, maxHealth: 0, speedPercent: 0, ...(equipment?.getBonuses?.() ?? {}) };
+    const buffs = this.scene.buffs?.effects ?? {};
+    const camp = this.scene.camp;
+    const flatAttack = this.baseAttack + (this.progression?.attackBonus ?? 0) + bonuses.attack + (buffs.attack ?? 0);
+    const flatDefense = this.baseDefense + (this.progression?.defenseBonus ?? 0) + bonuses.defense + (buffs.defense ?? 0);
+    this.attack = Math.round(flatAttack * (1 + (buffs.attackPercent ?? 0)));
+    this.defense = Math.round(flatDefense * (1 + (buffs.defensePercent ?? 0)));
+    const baseMax = this.progression?.maxHealth ?? this.maxHealth;
+    this.maxHealth = baseMax + bonuses.maxHealth + (buffs.maxHealth ?? 0);
+    this.health = Math.min(this.health, this.maxHealth);
+    this.speedMultiplier = 1 + bonuses.speedPercent + (buffs.speedPercent ?? 0);
+    this.fireResistance = Math.min(0.9, bonuses.fireResistance + (camp?.fireResistance ?? 0));
+    this.dragonShield = camp?.dragonShield ?? 0;
   }
 }

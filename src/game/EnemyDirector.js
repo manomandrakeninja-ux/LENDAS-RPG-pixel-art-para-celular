@@ -43,17 +43,17 @@ export class EnemyDirector {
     const nearby = this.enemies.filter((enemy) =>
       Phaser.Math.Distance.Between(enemy.x, enemy.y, mine.x, mine.y) < 240
     );
-    const missing = Math.max(0, 3 - nearby.length);
+    const missing = Math.max(0, 3 - nearby.filter((enemy) => enemy.isMineGuard).length);
     if (missing === 0) return;
     const type = timeState.isNight ? 'werewolf' : 'boar';
     for (let index = 0; index < missing; index += 1) {
-      const angle = this.random() * Math.PI * 2;
-      const distance = 85 + this.random() * 70;
+      // Guardas-mina: sempre elite, parados na entrada (lado sul do marcador).
+      const angle = Math.PI / 2 + (this.random() - 0.5) * 1.4;
+      const distance = 60 + this.random() * 50;
       const x = mine.x + Math.cos(angle) * distance;
       const y = mine.y + Math.sin(angle) * distance;
       if (this.scene.player && Phaser.Math.Distance.Between(x, y, this.scene.player.x, this.scene.player.y) < 300) continue;
-      const elite = this.random() < ELITE_CONFIG.chance[timeState.isNight ? 'night' : 'day'];
-      const enemy = new Enemy(this.scene, x, y, type, { elite, isNight: timeState.isNight });
+      const enemy = new Enemy(this.scene, x, y, type, { elite: true, mineGuard: true, isNight: timeState.isNight });
       this.enemies.push(enemy);
       this.scene.hudCamera?.ignore(enemy);
     }
@@ -65,7 +65,8 @@ export class EnemyDirector {
     const limit = SPAWNING_CONFIG.activeLimit[period];
     if (this.spawnTimer <= 0) {
       this.spawnTimer = SPAWNING_CONFIG.spawnIntervalMs[period];
-      if (this.enemies.length < limit) this.spawnOne(timeState);
+      const regular = this.enemies.filter((enemy) => !enemy.isRaider).length;
+      if (regular < limit) this.spawnOne(timeState);
     }
     this.mineTimer -= delta;
     if (this.mineTimer <= 0) {
@@ -75,12 +76,15 @@ export class EnemyDirector {
 
     const context = {
       camp: this.scene.camp,
-      safeZoneRadius: SPAWNING_CONFIG.safeZoneRadius
+      // O raio protegido pela Fogueira cresce com o nível dela.
+      safeZoneRadius: this.scene.camp?.protectRadius ?? SPAWNING_CONFIG.safeZoneRadius,
+      raid: this.scene.raid
     };
     for (const enemy of [...this.enemies]) enemy.update(delta, player, context);
 
     const despawnDistance = SPAWNING_CONFIG.despawnDistance[period];
     for (const enemy of [...this.enemies]) {
+      if (enemy.isRaider) continue;
       const playerDistance = Phaser.Math.Distance.Between(enemy.x, enemy.y, player.x, player.y);
       const wrongPhase = enemy.definition.period === 'night' && period === 'day';
       const wrongPhaseFar = wrongPhase && playerDistance > 320;

@@ -1,163 +1,176 @@
+// Regras de produção dos prédios. Custos e efeitos por nível ficam em buildings.json;
+// preços do mercado ficam em economy.json.
+
 export const FARM_CROPS = {
   wheat: {
     name: 'Trigo',
     seconds: 60,
-    seedCost: 1,
-    yieldType: 'food',
-    yieldAmount: [2, 3],
+    cost: { seeds: 1 },
+    yield: { food: [2, 3] },
     color: '#d8b75d'
   },
   pumpkin: {
     name: 'Abóbora',
     seconds: 90,
-    seedCost: 1,
-    yieldType: 'food',
-    yieldAmount: [3, 5],
+    cost: { seeds: 1 },
+    yield: { food: [3, 5] },
     color: '#d97932'
   },
   herb: {
     name: 'Erva',
     seconds: 45,
-    seedCost: 1,
-    yieldType: 'herbs',
-    yieldAmount: [2, 3],
+    cost: { seeds: 1 },
+    yield: { herbs: [2, 3] },
     color: '#79b85a'
+  },
+  magic: {
+    name: 'Planta Mágica',
+    seconds: 120,
+    cost: { seeds: 2, moonherb: 1 },
+    yield: { herbs: [2, 3], food: [3, 4] },
+    color: '#a98bf0',
+    rare: true
   }
 };
 
-export const FARM_PLOT_COUNTS = { 1: 4, 2: 6, 3: 8 };
-
+// type: recurso entregue. Galinha = 2 galinhas, por isso 2 ovos.
 export const ANIMAL_PRODUCTS = {
-  egg: { name: 'Ovo', animal: 'Galinha', seconds: 120, amount: 1, color: '#ead8b5' },
-  wool: { name: 'Lã', animal: 'Ovelha', seconds: 120, amount: 1, color: '#eee9d8' },
-  milk: { name: 'Leite', animal: 'Vaca', seconds: 120, amount: 1, color: '#f2ead4' }
+  egg: { name: 'Ovo', animal: 'Galinhas', seconds: 120, type: 'egg', amount: 2 },
+  wool: { name: 'Lã', animal: 'Ovelha', seconds: 120, type: 'wool', amount: 1 },
+  milk: { name: 'Leite', animal: 'Vaca', seconds: 120, type: 'milk', amount: 1 },
+  pork: { name: 'Carne', animal: 'Porco', seconds: 150, type: 'food', amount: 2 }
 };
 
-export const FORGE_RECIPES = {
-  stonePickaxe: {
-    name: 'Picareta de Pedra',
-    description: 'Permite minerar rochas e veios.',
-    level: 1,
-    cost: { stone: 3, wood: 2 },
-    unique: true,
-    effect: { tool: 'stonePickaxe' }
-  },
-  ironSword: {
-    name: 'Espada de Ferro',
-    description: 'Aumenta o ataque em +5.',
-    level: 1,
-    cost: { iron: 3, wood: 1 },
-    unique: true,
-    effect: { attack: 5 }
-  },
-  ironArmor: {
-    name: 'Armadura de Ferro',
-    description: 'Aumenta a defesa em +3.',
-    level: 1,
-    cost: { iron: 5, stone: 2 },
-    unique: true,
-    effect: { defense: 3 }
-  },
-  axe: {
-    name: 'Machado',
-    description: 'Coletas de plantas e minérios rendem +1 unidade.',
-    level: 1,
-    cost: { iron: 2, wood: 2 },
-    unique: true,
-    effect: { tool: 'axe' }
-  },
-  ironPickaxe: {
-    name: 'Picareta de Ferro',
-    description: 'Minera 40% mais rápido e rende +1 unidade.',
-    level: 1,
-    cost: { iron: 5 },
-    unique: true,
-    effect: { tool: 'ironPickaxe' }
-  },
-  steelSword: {
-    name: 'Espada de Aço',
-    description: 'Aumenta o ataque em +9.',
-    level: 2,
-    cost: { iron: 6, coal: 2, wood: 1 },
-    unique: true,
-    effect: { attack: 9 }
-  },
-  steelChestplate: {
-    name: 'Peitoral de Aço',
-    description: 'Aumenta a defesa em +6.',
-    level: 2,
-    cost: { iron: 8, stone: 3 },
-    unique: true,
-    effect: { defense: 6 }
-  },
-  sharpnessEnchantment: {
-    name: 'Encantamento de Nitidez',
-    description: 'Adiciona +2 de ataque à arma equipada.',
-    level: 3,
-    cost: { gold: 1, moonherb: 2, iron: 2 },
-    unique: true,
-    requires: 'ironSword',
-    effect: { attack: 2 }
-  },
-  barrierEnchantment: {
-    name: 'Encantamento de Barreira',
-    description: 'Adiciona +2 de defesa à armadura equipada.',
-    level: 3,
-    cost: { gold: 1, ectoplasm: 2, iron: 2 },
-    unique: true,
-    requires: 'ironArmor',
-    effect: { defense: 2 }
-  },
-  titanBlade: {
-    name: 'Lâmina do Titã',
-    description: 'Espada rara forjada com o Núcleo do Titã. Aumenta o ataque em +12.',
-    level: 1,
-    cost: { titanCore: 1, iron: 4, gold: 1 },
-    unique: true,
-    requiresBoss: 'biomeBoss',
-    effect: { attack: 12 }
-  }
-};
+// Animais cujos produtos são coletados sozinhos a partir da Fazenda nível 7.
+export const AUTO_ANIMAL_PRODUCTS = Object.freeze(['egg', 'milk']);
 
-export const MARKET_CATALOG = [
-  { id: 'seeds', name: 'Sementes', price: 3, yield: { seeds: 1 }, maxStock: 3 },
-  { id: 'healthPotion', name: 'Poção de Vida', price: 8, yield: { potion: 1 }, maxStock: 2 },
-  { id: 'torch', name: 'Tocha', price: 2, yield: { torch: 1 }, maxStock: 3 },
-  { id: 'ironBundle', name: 'Pacote de Ferro', price: 10, yield: { iron: 1 }, maxStock: 2 },
-  { id: 'coalBundle', name: 'Pacote de Carvão', price: 6, yield: { coal: 1 }, maxStock: 2 },
-  { id: 'goldBundle', name: 'Ouro Bruto', price: 15, yield: { gold: 1 }, maxStock: 1 },
-  { id: 'herbBundle', name: 'Pacote de Ervas', price: 4, yield: { herbs: 2 }, maxStock: 3 },
-  { id: 'stoneBundle', name: 'Pacote de Pedra', price: 5, yield: { stone: 2 }, maxStock: 3 },
-  { id: 'woodBundle', name: 'Pacote de Madeira', price: 4, yield: { wood: 2 }, maxStock: 3 }
-];
-
-export const MARKET_STOCK_SIZE = 6;
-
-// Moedas por unidade vendida. Recursos básicos valem 1; itens raros ou noturnos valem mais,
-// sempre abaixo do preço de compra do mercado para não gerar lucro de revenda.
-export const MARKET_SELL_PRICES = Object.freeze({
-  wood: 1,
-  stone: 1,
-  herbs: 1,
-  food: 1,
-  seeds: 1,
-  torch: 1,
-  coal: 2,
-  egg: 2,
-  milk: 2,
-  bone: 2,
-  potion: 3,
-  wool: 3,
-  silk: 3,
-  iron: 4,
-  moonherb: 4,
-  ectoplasm: 4,
-  gold: 6,
-  titanCore: 25
+export const ENCHANTMENTS = Object.freeze({
+  fire: Object.freeze({ name: 'Fogo', burnDamagePerSecond: 4, burnMs: 3000 }),
+  ice: Object.freeze({ name: 'Gelo', slowRatio: 0.4, slowMs: 2000 }),
+  vampire: Object.freeze({ name: 'Vampirismo', lifeStealRatio: 0.15 })
 });
 
-export function sellPriceOf(type) {
-  return MARKET_SELL_PRICES[type] ?? 1;
+// category: weapon/armor/shield usam durabilidade e melhorias; tool/bow/enchant não.
+export const FORGE_RECIPES = {
+  stonePickaxe: {
+    name: 'Picareta Básica', category: 'tool', tool: 'stonePickaxe', level: 1,
+    description: 'Permite minerar rochas e veios.',
+    cost: { stone: 3, wood: 2 }
+  },
+  simpleSword: {
+    name: 'Espada Simples', category: 'weapon', level: 1, attack: 5, durability: 120,
+    description: 'ATQ +5.',
+    cost: { iron: 2 }
+  },
+  shield: {
+    name: 'Escudo', category: 'shield', level: 2, defense: 2, durability: 120,
+    description: 'DEF +2.',
+    cost: { wood: 3, iron: 1 }
+  },
+  axe: {
+    name: 'Machado de Ferro', category: 'tool', tool: 'axe', level: 2,
+    description: 'Coletas de plantas e minérios rendem +1 unidade.',
+    cost: { iron: 2, wood: 2 }
+  },
+  ironSword: {
+    name: 'Espada de Ferro', category: 'weapon', level: 3, attack: 10, durability: 160,
+    description: 'ATQ +10.',
+    cost: { iron: 5 }
+  },
+  ironArmor: {
+    name: 'Armadura de Ferro', category: 'armor', level: 3, defense: 5, durability: 160,
+    description: 'DEF +5.',
+    cost: { iron: 6, stone: 2 }
+  },
+  ironPickaxe: {
+    name: 'Picareta de Ferro', category: 'tool', tool: 'ironPickaxe', level: 5,
+    description: 'Minera 2x mais rápido e rende +1 por veio.',
+    cost: { iron: 5, coal: 1 }
+  },
+  steelSword: {
+    name: 'Espada de Aço', category: 'weapon', level: 5, attack: 18, durability: 200,
+    description: 'ATQ +18.',
+    cost: { iron: 8, coal: 3, wood: 1 }
+  },
+  fireEnchant: {
+    name: 'Encantamento de Fogo', category: 'enchant', enchant: 'fire', level: 6,
+    description: 'Golpes causam queimadura: 4 de dano/s por 3s.',
+    cost: { coal: 4, gold: 1, herbs: 2 }
+  },
+  iceEnchant: {
+    name: 'Encantamento de Gelo', category: 'enchant', enchant: 'ice', level: 6,
+    description: 'Golpes reduzem a velocidade do inimigo em 40% por 2s.',
+    cost: { silk: 2, gold: 1, moonherb: 2 }
+  },
+  steelArmor: {
+    name: 'Armadura de Aço', category: 'armor', level: 7, defense: 10, durability: 220,
+    description: 'DEF +10.',
+    cost: { iron: 12, coal: 4 }
+  },
+  longbow: {
+    name: 'Arco Longo', category: 'bow', level: 7,
+    description: 'Ataque à distância: sem inimigo por perto, o ataque dispara uma flecha (alcance 280).',
+    cost: { wood: 8, silk: 3, iron: 2 }
+  },
+  vampireEnchant: {
+    name: 'Encantamento Vampirismo', category: 'enchant', enchant: 'vampire', level: 8,
+    description: 'Cada golpe recupera 15% do dano causado.',
+    cost: { ectoplasm: 4, bone: 4, gold: 2 }
+  },
+  legendarySword: {
+    name: 'Espada Lendária', category: 'weapon', level: 9, attack: 30, durability: 300,
+    description: 'ATQ +30.',
+    cost: { iron: 20, coal: 10, gold: 4 }
+  },
+  mythicArmor: {
+    name: 'Armadura Mítica', category: 'armor', level: 9, defense: 20, durability: 300,
+    description: 'DEF +20.',
+    cost: { iron: 24, gold: 4, ectoplasm: 4 }
+  },
+  dragonBlade: {
+    name: 'Lâmina da Forja do Dragão', category: 'weapon', level: 10, attack: 40, fireResistance: 0.15, durability: 400,
+    description: 'ATQ +40 e resistência ao fogo +15%.',
+    cost: { iron: 30, coal: 15, gold: 6, bone: 8 }
+  },
+  dragonScaleArmor: {
+    name: 'Armadura de Escamas', category: 'armor', level: 10, defense: 28, fireResistance: 0.25, durability: 400,
+    description: 'DEF +28 e resistência ao fogo +25%.',
+    cost: { iron: 30, gold: 6, silk: 10, ectoplasm: 6 }
+  },
+  titanBlade: {
+    name: 'Lâmina do Titã', category: 'weapon', level: 1, attack: 22, durability: 260, requiresBoss: 'biomeBoss',
+    description: 'Espada rara forjada com o Núcleo do Titã. ATQ +22.',
+    cost: { titanCore: 1, iron: 4, gold: 1 }
+  }
+};
+
+// Acessórios lendários: só vêm do leilão e do mercador viajante; não são forjados.
+export const ACCESSORIES = Object.freeze({
+  kingAmulet: Object.freeze({ name: 'Amuleto do Rei', description: 'ATQ +6 e DEF +6.', attack: 6, defense: 6 }),
+  phoenixRing: Object.freeze({ name: 'Anel da Fênix', description: 'Resistência ao fogo +20% e +30 de vida máxima.', fireResistance: 0.2, maxHealth: 30 }),
+  stormCharm: Object.freeze({ name: 'Talismã da Tempestade', description: 'ATQ +4 e velocidade +10%.', attack: 4, speedPercent: 0.1 })
+});
+
+// Ferreiro nível 4: reparo e desmontagem; nível 8: melhorias +1 a +5.
+export const FORGE_SERVICES = Object.freeze({
+  repairLevel: 4,
+  dismantleLevel: 4,
+  upgradeLevel: 8,
+  maxUpgrade: 5,
+  brokenBonusRatio: 0.5,
+  dismantleReturnRatio: 0.5,
+  upgradeBonusRatio: 0.1
+});
+
+export function repairCostFor(missing) {
+  if (missing <= 0) return {};
+  return { iron: Math.max(1, Math.ceil(missing / 40)) };
+}
+
+export function upgradeCostFor(nextUpgrade) {
+  const cost = { iron: 3 * nextUpgrade, coal: 2 * nextUpgrade, coins: 20 * nextUpgrade };
+  if (nextUpgrade >= 3) cost.gold = nextUpgrade - 2;
+  return cost;
 }
 
 export const MINE_CONFIG = {
@@ -166,10 +179,6 @@ export const MINE_CONFIG = {
   radius: 130,
   ironVeins: [6, 10],
   coalVeins: [2, 3],
-  goldChance: 0.45,
+  goldVeins: 1,
   safeCampDistance: 650
 };
-
-export const BUILDING_STORAGE_CAPACITY = { 1: 320, 2: 480, 3: 640 };
-
-export const EQUIPMENT_COST_LABEL_ORDER = ['wood', 'stone', 'herbs', 'seeds', 'iron', 'coal', 'gold', 'food'];

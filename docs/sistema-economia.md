@@ -1,43 +1,36 @@
-# Expansão — moedas e economia
+# Moedas e economia (LENDAS, Sistema 5)
 
-## Carteira e drops
+Todos os números ficam em `src/data/economy.json`.
 
-- Inimigos comuns deixam **1–3 moedas**.
-- Inimigos noturnos deixam **5–10 moedas**.
-- O chefe do bioma deixa **50 moedas**.
-- As moedas são drops físicos: caem no chão, são atraídas pelo jogador e podem ser coletadas pelo mesmo fluxo dos cristais de XP.
+## De onde vêm as moedas
 
-A carteira é independente da mochila de 12 slots. Moedas não ocupam slots nem capacidade de recursos.
-
-## HUD e mercado
-
-O HUD mostra um ícone dourado e o saldo atual. O mercado usa exclusivamente moedas:
-
-| Item | Preço |
+| Fonte | Moedas |
 |---|---:|
-| Sementes | 3 moedas |
-| Poção de Vida | 8 moedas |
-| Tocha | 2 moedas |
-| Pacote de Ervas | 4 moedas |
-| Pacote de Madeira | 4 moedas |
-| Pacote de Pedra | 5 moedas |
-| Pacote de Carvão | 6 moedas |
-| Pacote de Ferro | 10 moedas |
-| Ouro Bruto | 15 moedas |
+| Inimigo comum (diurno) | 1–3 |
+| Inimigo noturno | 3–8 |
+| Inimigo elite | 10–20 |
+| Baú no mapa | 10–30 (fixo por baú) |
+| Chefe do bioma | 50 |
+| Vitória num ataque ao acampamento | 60 por dezena de dias |
+| Missões dos viajantes da Fogueira | 20–45 |
 
-Cada unidade vendida rende **1 moeda**. Compras e vendas são atômicas: uma compra bloqueada por falta de moedas ou espaço não altera estoque, mochila ou saldo.
+As moedas caem no chão e são atraídas pelo jogador. A carteira é separada da mochila e aparece no HUD com ícone dourado.
 
-## Persistência
+## Onde gastar
 
-O save v2 mantém o campo opcional `economy.coins`. Saves antigos começam com saldo zero e não perdem os demais dados.
+- **Mercado**: compras com moedas. Nível 1 vende sementes (5), poção de vida (10), tocha (3) e madeira (2); cada nível acrescenta itens e descontos (até 50% no nível 10).
+- **Melhorias dos prédios** a partir do nível 5 também pedem moedas.
+- **Encomendas**, **leilão** e **mercador viajante** (Mercado 4, 8 e 9).
+- Melhorias +1 a +5 no Ferreiro.
+
+## Venda
+
+A partir do Mercado nível 2, qualquer recurso pode ser vendido pelo preço de `sellPrices` (madeira 1, ferro 4, ouro 6, Núcleo do Titã 25...). Nenhum desconto deixa o preço de compra abaixo do valor de revenda, então comprar e revender nunca dá lucro.
 
 ## Arquivos principais
 
-- `src/data/economy.js`: faixas de drop;
-- `src/game/EconomySystem.js`: carteira e saldo;
-- `src/game/CoinPickups.js`: drops físicos;
-- `src/game/MarketSystem.js`: compra e venda em moedas;
-- `src/game/BuildingMenu.js`: preços e disponibilidade;
-- `src/game/UI.js`: contador de moedas;
-- `tests/economy.test.js`: drops e carteira;
-- `scripts/economy-runtime-check.mjs`: teste mobile do mercado.
+- `src/data/economy.json` e `src/data/economy.js`: faixas de drop, moedas de baú, catálogo e preços;
+- `src/game/EconomySystem.js`: carteira;
+- `src/game/CoinPickups.js`: moedas no chão;
+- `src/game/MarketSystem.js`: compra, venda, descontos, encomendas e leilão;
+- `tests/economy.test.js`, `tests/buildingSystems.test.js` e `scripts/economy-runtime-check.mjs`.

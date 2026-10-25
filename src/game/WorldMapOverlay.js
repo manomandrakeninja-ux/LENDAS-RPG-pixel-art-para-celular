@@ -1,16 +1,23 @@
 import { WORLD } from './config.js';
+import { DUNGEON_CONFIG } from '../data/buildings.js';
 
 export const WORLD_MAP_MARKER_TYPES = Object.freeze({
   camp: 'camp',
   resource: 'resource',
   chest: 'chest',
   enemy: 'enemy',
-  player: 'player'
+  player: 'player',
+  mine: 'mine',
+  dungeon: 'dungeon'
 });
 
-export function collectWorldMapMarkers({ structures = [], enemies = [], boss = null, player } = {}) {
-  const discoveredStructures = structures.filter((structure) => structure?.discovered);
+// A mina aparece sempre (ícone especial); a masmorra, depois que o acampamento fica completo.
+export function collectWorldMapMarkers({ structures = [], enemies = [], boss = null, player, dungeonRevealed = false } = {}) {
+  const discoveredStructures = structures.filter((structure) => structure?.discovered && structure.type !== 'mineMarker');
+  const mine = structures.find((structure) => structure?.type === 'mineMarker');
   return {
+    mine: mine ? { x: mine.x, y: mine.y, type: WORLD_MAP_MARKER_TYPES.mine } : null,
+    dungeon: dungeonRevealed ? { x: DUNGEON_CONFIG.x, y: DUNGEON_CONFIG.y, type: WORLD_MAP_MARKER_TYPES.dungeon } : null,
     camp: { x: WORLD.camp.x, y: WORLD.camp.y, type: WORLD_MAP_MARKER_TYPES.camp },
     player: player
       ? { x: player.x, y: player.y, type: WORLD_MAP_MARKER_TYPES.player }
@@ -74,6 +81,25 @@ function drawMarker(context, marker, toX, toY) {
     context.fillStyle = '#e15950';
     context.fillRect(-7, -7, 14, 14);
     context.strokeRect(-7, -7, 14, 14);
+  } else if (marker.type === WORLD_MAP_MARKER_TYPES.mine) {
+    context.fillStyle = '#1b1b1f';
+    context.fillRect(-9, -9, 18, 18);
+    context.strokeStyle = '#c1cbd0';
+    context.strokeRect(-9, -9, 18, 18);
+    context.fillStyle = '#c1cbd0';
+    context.fillRect(-5, -1, 10, 2);
+    context.fillRect(-1, -5, 2, 10);
+  } else if (marker.type === WORLD_MAP_MARKER_TYPES.dungeon) {
+    context.beginPath();
+    context.moveTo(0, -12);
+    context.lineTo(11, 9);
+    context.lineTo(-11, 9);
+    context.closePath();
+    context.fillStyle = '#e2463f';
+    context.fill();
+    context.stroke();
+    context.fillStyle = '#120c0e';
+    context.fillRect(-3, 1, 6, 8);
   } else if (marker.type === WORLD_MAP_MARKER_TYPES.chest) {
     context.fillStyle = '#d69b45';
     context.fillRect(-8, -6, 16, 12);
@@ -168,9 +194,12 @@ export class WorldMapOverlay {
       structures: this.scene.harvestStructures?.state?.structures ?? [],
       enemies: this.scene.enemies ?? [],
       boss: this.scene.boss ?? null,
-      player: this.scene.player
+      player: this.scene.player,
+      dungeonRevealed: Boolean(this.scene.camp?.dungeonRevealed || this.scene.camp?.defense?.dragonRadar)
     });
     drawMarker(context, markers.camp, toX, toY);
+    if (markers.mine) drawMarker(context, markers.mine, toX, toY);
+    if (markers.dungeon) drawMarker(context, markers.dungeon, toX, toY);
     markers.structures.forEach((marker) => drawMarker(context, marker, toX, toY));
     markers.chests.forEach((marker) => drawMarker(context, marker, toX, toY));
     markers.strongEnemies.forEach((marker) => drawMarker(context, marker, toX, toY));

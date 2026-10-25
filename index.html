@@ -16,14 +16,18 @@
   </head>
   <body>
     <div id="game">
-      <div id="camp-actions" class="camp-actions" hidden>
-        <button type="button" data-building="forge" aria-label="Melhorar ferraria"></button>
-        <button type="button" data-building="farm" aria-label="Melhorar fazenda"></button>
-        <button type="button" data-building="house" aria-label="Melhorar casa e armazém"></button>
-        <button type="button" data-building="market" aria-label="Melhorar mercado"></button>
-        <button type="button" data-action="sleep" aria-label="Dormir e pular a noite"></button>
-      </div>
-      <div id="camp-feedback" class="camp-feedback" aria-live="polite"></div>
+      <section id="epic-banner" class="epic-banner" role="alert" hidden>
+        <p class="epic-banner__kicker">LENDAS</p>
+        <h2 id="epic-banner-title" class="epic-banner__title"></h2>
+        <p id="epic-banner-text" class="epic-banner__text"></p>
+      </section>
+      <section id="game-over" class="game-over" role="dialog" aria-modal="true" aria-labelledby="game-over-title" hidden>
+        <div class="game-over__card">
+          <h2 id="game-over-title" class="game-over__title">O ACAMPAMENTO CAIU</h2>
+          <p id="game-over-text" class="game-over__text">Todos os prédios foram destruídos.</p>
+          <button id="game-over-restart" type="button">RECOMEÇAR DO ÚLTIMO SAVE</button>
+        </div>
+      </section>
       <section id="boss-health" class="boss-health" aria-label="Vida do chefe do bioma" hidden>
         <div class="boss-health__header">
           <strong id="boss-health-name">TITÃ DO BIOMA</strong>
@@ -35,11 +39,12 @@
         <div class="level-up-panel__card">
           <p class="level-up-panel__kicker">Progressão</p>
           <h2 id="level-up-title" class="level-up-panel__title">NÍVEL 2</h2>
-          <p id="level-up-reward" class="level-up-panel__reward">+10 VIDA MÁXIMA</p>
+          <p id="level-up-reward" class="level-up-panel__reward">O JOGO ESTÁ PAUSADO</p>
           <p id="level-up-question" class="level-up-panel__question">Escolha seu bônus de atributo:</p>
-          <div id="level-up-attributes" class="level-up-panel__choices">
-            <button id="level-up-attack" type="button">ATAQUE +2</button>
-            <button id="level-up-defense" type="button">DEFESA +2</button>
+          <div id="level-up-attributes" class="level-up-panel__choices level-up-panel__choices--three">
+            <button id="level-up-health" type="button">+15 VIDA MÁXIMA</button>
+            <button id="level-up-attack" type="button">+3 ATAQUE</button>
+            <button id="level-up-defense" type="button">+2 DEFESA</button>
           </div>
           <div id="level-up-perks" class="level-up-panel__choices level-up-panel__choices--perks" hidden></div>
         </div>
@@ -60,6 +65,8 @@
             <span><i class="world-map__legend-mark world-map__legend-mark--chest"></i>Baú</span>
             <span><i class="world-map__legend-mark world-map__legend-mark--enemy"></i>Inimigo forte</span>
             <span><i class="world-map__legend-mark world-map__legend-mark--player"></i>Jogador</span>
+            <span><i class="world-map__legend-mark world-map__legend-mark--mine"></i>Mina</span>
+            <span><i class="world-map__legend-mark world-map__legend-mark--dungeon"></i>Masmorra do Dragão</span>
           </aside>
         </div>
       </section>

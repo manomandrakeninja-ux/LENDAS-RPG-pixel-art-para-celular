@@ -33,6 +33,8 @@ Se o celular não abrir o endereço, o Firewall do Windows pode estar bloqueando
 
 Protótipo de RPG top-down em pixel art feito com Phaser 3. A **Fase 1** adiciona ciclo de dia/noite, sono, espécies diurnas e noturnas, elites, recursos lunares, zona segura, drops, mochila de morte e save versionado. O **Sistema 1** acrescenta estruturas coletáveis pelo mundo, com recompensas, regeneração por dias, baús únicos e cogumelos noturnos. O **Sistema 2** implementa os menus de Fazenda, Ferraria, Casa/Armazém e Mercado, além de mineração, veios de ferro, picaretas e uma mina com inimigos fortes. O **Sistema 3** transforma a mochila em uma grade real de 12 slots e adiciona o armazenamento rápido ao entrar no acampamento. A expansão atual acrescenta **mapa fullscreen com neblina**, **progressão por XP**, **economia de moedas** e um **chefe de bioma com três padrões de ataque**.
 
+**Objetivo final:** levar os **7 prédios do acampamento ao nível 10**. Isso revela a localização da Masmorra do Dragão, o chefe final. A cada 10 dias o acampamento sofre um ataque.
+
 ## Build de produção
 
 ```bash
@@ -51,7 +53,7 @@ Aparecem sozinhos em telas de toque (ou com `?toque=1` no computador; `?toque=0`
 - **Botão grande (canto inferior direito)**: atacar, ou coletar/minerar/recuperar a mochila quando houver algo perto. O texto do botão muda conforme a situação.
 - **ESQUIVA** e **ESPECIAL**: acima do botão grande. Funcionam com o outro dedo segurando o joystick.
 - **MAPA** e **TELA** (tela cheia): abaixo do minimapa.
-- **ACAMP.**: aparece perto da fogueira e abre/fecha o menu do acampamento.
+- **ACAMP.**: aparece perto da fogueira e abre a visão geral dos 7 prédios (feche com **FECHAR**).
 - **Prédios**: toque no prédio para abrir o painel. **Slots da mochila**: toque para usar poção, comida ou tocha.
 - **GUARDAR TUDO**: aparece embaixo, no centro, ao entrar no acampamento.
 
@@ -65,19 +67,19 @@ Os controles somem enquanto o mapa, um painel de prédio ou a escolha de nível 
 - **Espaço**: esquivar (consome stamina)
 - **Q**: habilidade especial em área
 - **1**: beber poção de vida (+50) • **2**: comer (comida +12, leite +10, ovo +8) • **3**: acender tocha (luz maior por 2 min)
-- **Toque em um slot da mochila**: usa poção, comida ou tocha
+- **4**: poção de vigor ou armar uma armadilha no chão • **5**: elixir de força (+20% ATQ e DEF por 5 min)
+- **Toque em um slot da mochila**: usa o item
 - **E**: coletar recursos, árvores, ervas, cogumelos e baús próximos; minerar rochas e veios quando houver picareta; ou recuperar uma mochila de morte
-- **Clique ou toque nos prédios**: abrir o painel fullscreen da Fazenda, Ferraria, Casa/Armazém ou Mercado
+- **Clique ou toque nos prédios**: abrir o painel fullscreen do prédio (inclusive Fogueira, Muralha e Torre)
 - **Botão no canto inferior direito**: coletar, minerar, recuperar a mochila ou atacar
 - **Botão Guardar Tudo no canto inferior esquerdo**: aparece ao entrar no acampamento e move a mochila para o armazém da casa
 - **M**: abrir/fechar o mapa fullscreen do mundo
-- **C**: abrir/fechar o menu do acampamento (quando estiver perto)
-- **Clique nos cartões do acampamento**: tentar melhorar a construção ou dormir
-- **F**: descansar durante o dia; à noite, dormir e pular a noite (junto à fogueira)
-- **R**: dormir e pular a noite somente durante a noite
+- **C**: abrir/fechar a visão geral dos 7 prédios (quando estiver perto)
+- **F**: descansar junto à fogueira; à noite, dormir e pular a noite (exige Casa nível 2)
+- **R**: dormir e pular a noite somente durante a noite (exige Casa nível 2)
 - **Esc**: fechar o mapa ou o menu aberto
 
-A cada nível o personagem ganha +10 de vida máxima e escolhe ATAQUE +2 ou DEFESA +2. Nos níveis 5, 10, 15 e 20 também escolhe um **talento** entre três opções (Sede de Sangue, Pés Ligeiros, Golpe Brutal, Ritmo de Batalha, Vigor, Saqueador).
+A cada nível o jogo pausa e o personagem escolhe **+15 de vida máxima**, **+3 de ataque** ou **+2 de defesa**. Nos níveis 5, 10, 15 e 20 também escolhe um **talento** entre três opções (Sede de Sangue, Pés Ligeiros, Golpe Brutal, Ritmo de Batalha, Vigor, Saqueador).
 
 Derrote cinco criaturas para concluir a missão local; volte à fogueira para receber comida e ervas. O ciclo usa **4 minutos reais de dia e 2 minutos reais de noite**. Se a vida acabar, o personagem retorna à fogueira; 40% dos recursos carregados ficam em uma mochila de morte no local da queda e podem ser recuperados com **E**. Recursos guardados no armazém não são perdidos.
 
@@ -94,12 +96,19 @@ Derrote cinco criaturas para concluir a missão local; volte à fogueira para re
 - `src/game/DayNightCycle.js`: relógio da Fase 1, transições, aviso e sono.
 - `src/game/LightingSystem.js`: máscara noturna pixelada com fontes de luz.
 - `src/game/DeathBackpack.js`: mochilas deixadas no local da morte.
-- `src/game/Camp.js`: quatro prédios, níveis, aparência, equipamentos e armazenamento seguro.
-- `src/game/FarmSystem.js`: canteiros, cultivos, produtos animais e colheita automática.
-- `src/game/EquipmentSystem.js`: receitas, ferramentas, equipamentos e atributos derivados.
-- `src/game/MarketSystem.js`: estoque diário, compras e vendas.
-- `src/game/BuildingMenu.js`: painéis fullscreen responsivos dos quatro prédios.
-- `src/data/buildingSystems.js`: tempos de cultivos, animais, receitas, mercado (compra e preços de venda por item), mina e armazenamento.
+- `src/data/buildings.json` e `src/data/buildings.js`: custos, efeitos e textos dos 7 prédios × 10 níveis; pagamento com mochila + armazém + moedas.
+- `src/game/Camp.js`: níveis, durabilidade, visual dos prédios, cercado, armazém por slots e baú secreto.
+- `src/game/CampDefense.js`: Muralha (anel, HP, espinhos, fosso, portões) e Torres de Vigia (flechas, canhão).
+- `src/game/RaidDirector.js` e `src/data/raids.js`: ataques a cada 10 dias, ondas, IA dos invasores, vitória e derrota.
+- `src/game/FarmSystem.js`: canteiros, animais, celeiro, chuva, produção dobrada e auto-colheita.
+- `src/game/EquipmentSystem.js`: melhor arma/armadura/escudo, durabilidade, reparo, desmontagem, melhorias, encantamentos e acessórios.
+- `src/game/MarketSystem.js`: ofertas por nível, descontos, reputação, mercador viajante, encomendas e leilão.
+- `src/game/BuffSystem.js`: buffs temporários (Bem Descansado, Calor da Fogueira, refeição, elixir, buff diário).
+- `src/data/travelers.js`: viajantes da Fogueira (missões e itens). `src/data/weather.js`: dias de chuva.
+- `src/game/BuildingMenu.js`: visão geral do acampamento e painéis fullscreen dos 7 prédios.
+- `src/data/buildingSystems.js`: cultivos, animais, receitas do Ferreiro, encantamentos, acessórios e mina.
+- `src/data/economy.json`: moedas por inimigo e baú, catálogo do mercado e preços de venda.
+- `src/data/enemies.json`: atributos, drops e XP de cada inimigo (elite vale o dobro).
 - `src/data/consumables.js`: efeitos de poção, comida e tocha, e as teclas de uso rápido.
 - `src/data/progression.js`: XP, níveis, atributos e talentos dos níveis 5, 10, 15 e 20.
 - `src/game/Inventory.js`: mochila de 12 slots, capacidade, bundles e perda parcial.
@@ -171,60 +180,64 @@ npm run test:runtime:harvest
 
 As regras detalhadas ficam em `docs/sistema-1-coleta.md`.
 
-## Sistema 2 — menus dos quatro prédios
+## Os 7 prédios do acampamento (níveis 1 a 10)
 
-Cada prédio abre um painel **fullscreen**, com abas e botões de pelo menos 48 px, próprios para toque em smartphones.
+Fogueira, Fazenda, Ferreiro, Casa, Mercado, **Muralha** e **Torre de Vigia**. Custos, efeitos e textos de cada nível ficam em `src/data/buildings.json`. A tecla **C** (ou **ACAMP.** no celular) abre a visão geral, com nível, estado e custo de todos; cada prédio também abre o próprio painel ao ser tocado, com a aba **Níveis** mostrando o roteiro do 1 ao 10.
 
-### Fazenda (A)
+- **Custos** saem da mochila, depois do armazém da Casa e da carteira de moedas.
+- Muralha e Torre começam **não construídas**: aparece uma placa no lugar; o nível 1 é a construção.
+- Quando os 7 chegam ao nível 10: *"O acampamento está completo! O Dragão foi localizado. Prepare-se."* e a **Masmorra do Dragão** aparece no mundo, no minimapa e no mapa.
 
-- Começa com **4 canteiros**; o nível 2 amplia para 6 e o nível 3 para 8.
-- Plantio: trigo em 60 s, abóbora em 90 s e erva em 45 s. Cada plantio usa uma semente.
-- Colheita automática no nível 3: os produtos prontos vão diretamente para o armazém.
-- Animais: galinha, ovelha e vaca produzem ovo, lã e leite a cada 120 s.
+| Prédio | Destaques |
+|---|---|
+| Fogueira | raio de proteção cresce (170 → 340 px); cura 2/s (nível 2); cozinha poções (3); viajantes com missões a cada 4 dias (4); Calor da Fogueira (5); dano em inimigos dentro do fogo (6); ressurreição 1x por noite (7); resistência ao fogo 30% (8) e 60% (10) |
+| Fazenda | 2 → 8 canteiros; galinhas, ovelha, vaca e porco; colheita 20% mais rápida (3); celeiro de 50 comidas (5); irrigação na chuva (6); ovos e leite automáticos (7); planta mágica (8); produção 2x (9); auto-colheita total e 5 comidas/min (10) |
+| Ferreiro | receitas por nível (picareta básica até a Forja do Dragão); reparar e desmontar (4); encantamentos Fogo, Gelo (6) e Vampirismo (8); Arco Longo (7); melhorias +1 a +5 (8) |
+| Casa | armazém de 20 → 120 slots e ilimitado no 10; dormir pula a noite (2); Bem Descansado (3); baú secreto (4); guarda tudo ao chegar (5); cozinheira (8); ressurreição automática 1x por dia (9); buff diário à escolha (10) |
+| Mercado | 4 → 10 itens por dia e todos no 10; venda (2); descontos de 10% a 50%; mercador viajante (4 e 7); reputação (6); encomendas em 2 dias (8); leilão semanal de acessórios lendários (9) |
+| Muralha | 200 → 20000 HP; madeira, pedra, ferro, aço e mítica; portões automáticos (2); espinhos (3 e 4); muralha dupla (5); gosmas e aranhas não escalam (6); fosso (7); campo elétrico (8); reparo automático em ataques (9); só o Dragão destrói (10) |
+| Torre de Vigia | atira sozinha; 1 → 4 arqueiros; flechas de fogo (3), gelo (6), explosivas (8) e raios (9); radar no minimapa (4); segunda torre (5); canhão lendário (10) |
 
-### Ferraria (F)
-
-- Nível 1: Picareta de Pedra, Espada de Ferro, Armadura de Ferro, Machado e Picareta de Ferro.
-- Nível 2: desbloqueia Espada de Aço e Peitoral de Aço.
-- Nível 3: desbloqueia encantamentos simples de ataque e defesa.
-- Atributos de equipamentos são recalculados e persistidos sem duplicação após recarregar.
-
-### Casa / Armazém (B)
-
-- Armazém separado da mochila, com transferência atômica de cada item.
-- Descansar restaura a vida e, após 30 s reais, avança 30 minutos do relógio do jogo.
-- Dormir pula para a manhã do próximo dia e salva.
-- Os upgrades ampliam a capacidade do armazém.
-
-### Mercado
-
-- Sorteia **6 ofertas disponíveis por dia**.
-- Todos os preços usam **moedas**: sementes 3, poção de vida 8, tocha 2 e pacotes entre 4 e 15 moedas.
-- Qualquer recurso pode ser vendido por **1 moeda**.
-- A carteira de moedas é separada dos 12 slots da mochila e permanece salva no navegador.
-
-### Mineração e mina
-
-- **18 veios de ferro** aparecem entre 600 e 1300 px do acampamento; cada um rende 2–4 ferro e renasce em 4 dias.
-- Uma **mina única** contém 6–10 veios de ferro, 2–3 veios de carvão e uma ocorrência rara de ouro.
-- Javais diurnos e lobisomens/esqueletos noturnos patrulham perto da mina.
-- Sem picareta, a mensagem é **“Você precisa de uma picareta”**.
-- A Picareta de Ferro minera mais rápido e rende uma unidade extra.
-
-O teste runtime específico é executado com:
+Prédios danificados num ataque produzem pela metade; destruídos param. O reparo custa **5 madeiras** (Muralha: 5 madeiras a cada 10% de HP). Armadilha (tecla 4), poção de vigor (4) e elixir (5) são os itens novos do Mercado e dos viajantes.
 
 ```bash
-npm run test:runtime:system2
+npm run test:runtime:buildings   # 7 prédios, torre atirando, nível 10 e masmorra
+npm run test:runtime:system2     # menus dos prédios clicando nos botões (celular)
 ```
 
 As regras detalhadas ficam em `docs/sistema-2-predios.md`.
+
+## Ataques ao acampamento (dias 10, 20, 30...)
+
+- No início do dia aparece **"ATAQUE IMINENTE! Prepare o acampamento!"**; o ataque começa **30 s** depois, em 3 ondas que surgem fora da muralha.
+- Dia 10: 10 gosmas + 5 lobos. Dia 20: 15 esqueletos + 8 fantasmas + 3 lobisomens. Do dia 30 em diante o ataque cresce e ganha elites.
+- Os invasores batem primeiro na muralha (fantasmas voam por cima); as torres atiram neles; quem passa ataca os prédios (**-10% por golpe**).
+- Morrer no ataque: volta à fogueira com **30% de vida**, sem perder a mochila. Não dá para dormir durante o ataque.
+- Vencer: **60 moedas por dezena de dias** e o **XP dos invasores em dobro**.
+- Perder (todos os prédios destruídos): tela de fim de jogo com **Recomeçar do último save** (o save feito no início do ataque).
+
+```bash
+npm run test:runtime:raid
+```
+
+## Mineração e ferro
+
+- **18 veios de ferro** entre 600 e 1300 px do acampamento: 2–4 ferro cada, renascem em 4 dias.
+- A **mina** (ícone especial no minimapa e no mapa) tem 6–10 veios de ferro, 2–3 de carvão e 1 de ouro, com **guardas-mina** (elites) na entrada.
+- Sem picareta: **"Você precisa de uma picareta para minerar isso."**
+- Picareta básica (3 pedra, 2 madeira) no Ferreiro nível 1; Picareta de ferro (5 ferro, 1 carvão) no nível 5: **2x mais rápida e +1 por veio**.
+- Ferro e carvão aparecem no HUD, ao lado das moedas, com ícones próprios (mochila + armazém).
+
+```bash
+npm run test:runtime:mining
+```
 
 ## Sistema 3 — mochila pequena de verdade
 
 - O HUD agora exibe uma grade visual de **12 slots**, cada um com ícone e quantidade.
 - Cada tipo de recurso ocupa um slot; a capacidade total é de 144 unidades.
 - Ao ocupar o 12º slot, aparece **“Mochila cheia! Volte ao acampamento”**.
-- Ao entrar no acampamento, aparece o botão mobile **GUARDAR TUDO**, que esvazia a mochila no armazém da Casa/Armazém.
+- Ao entrar no acampamento, aparece o botão mobile **GUARDAR TUDO**, que esvazia a mochila no armazém da Casa (automático a partir da Casa nível 5).
 - O botão reaparece ao sair e voltar ao acampamento; a Casa/Armazém também oferece a mesma ação.
 - Saves antigos com 6 ou 8 slots migram para 12 sem perder os recursos.
 
@@ -242,21 +255,21 @@ As regras detalhadas ficam em `docs/sistema-3-mochila.md`.
 
 - **M** abre um mapa em tela cheia, com botão de fechar e `Esc` como alternativa.
 - A neblina de exploração pertence ao mapa/minimapa; o cenário do mundo não recebe overlay de neblina.
-- Marcadores: acampamento, estruturas de coleta descobertas, baús ainda fechada, inimigos fortes e posição atual do jogador.
+- Marcadores: acampamento, mina, estruturas de coleta descobertas, baús ainda fechados, inimigos fortes, posição atual do jogador e a Masmorra do Dragão (quando revelada).
 - A localização das estruturas descobertas é persistida no save v2.
 
 ### Progressão do jogador
 
-- Inimigos deixam cristais de XP: slime 10, lobo 20, javali 25, esqueleto 30, fantasma 35, aranha 40 e lobisomem 50.
-- O HUD mostra nível, XP atual e limite do próximo nível.
-- Cada nível concede **+10 de vida máxima** e exige uma escolha entre **+2 ataque** ou **+2 defesa**.
-- O nível máximo é **20**; escolhas pendentes e progresso são preservados ao recarregar.
+- Inimigos deixam cristais de XP (valores em `src/data/enemies.json`): gosma 10, lobo 20, javali 25, esqueleto 30, aranha 30, fantasma 35 e lobisomem 50. **Elite vale o dobro.**
+- A barra de XP fica logo abaixo da barra de vida; para subir é preciso **nível atual × 100** de XP.
+- Ao subir, o jogo pausa e oferece **+15 vida máxima**, **+3 ataque** ou **+2 defesa**.
+- O nível máximo é **20**; escolhas pendentes e progresso são preservados ao recarregar. Saves antigos mantêm os bônus que já tinham.
 
 ### Moedas e mercado
 
-- Inimigos comuns deixam **1–3 moedas**; inimigos noturnos deixam **5–10 moedas**.
+- Inimigos comuns deixam **1–3 moedas**, noturnos **3–8** e elites **10–20**; cada baú guarda **10–30 moedas** (valores em `src/data/economy.json`).
 - As moedas caem no chão, são atraídas pelo jogador e ficam separadas da mochila.
-- O HUD exibe o saldo e o mercado compra/vende usando esse saldo.
+- O HUD exibe o saldo; o Mercado compra com moedas e, a partir do nível 2, vende recursos pelos preços de `economy.json`.
 - O chefe deixa **50 moedas** ao ser derrotado.
 
 ### Chefe do bioma
@@ -283,6 +296,7 @@ npm run dev                      # deixe rodando em outro terminal para os teste
 npm run test:runtime:touch       # controles de celular + teclado no computador
 npm run test:runtime:gameplay    # esquiva, consumíveis, combo, talentos
 npm run test:runtime:phase1      # e também: harvest, system2, system3, map, progression, economy, boss
+npm run test:runtime:buildings   # e também: raid, mining
 ```
 
 Os testes de runtime abrem o Chrome escondido e salvam capturas de tela em `.tmp/capturas/` (pasta ignorada pelo git).
@@ -299,6 +313,6 @@ Crie uma entrada em `ENEMY_TYPES` em `src/data/enemies.js` com vida, dano, veloc
 
 ### Adicionar construções
 
-Inclua a construção em `BUILDINGS` em `Camp.js`, com posição e uma lista de custos (um custo por nível). Adicione um frame à atlas de construções e associe sua chave em `drawBuilding`; em `Camp.upgrade`, aplique o efeito da melhoria. O menu de `UI.js` é alimentado por `BUILDINGS`.
+Inclua a construção em `src/data/buildings.json` (nome, ícone, posição, custos por nível, textos e `stats` com 10 valores) e acrescente a chave em `order`. Para o visual, adicione um frame ao atlas e associe-o em `ATLAS_FRAMES` de `Camp.js`. A visão geral e a aba **Níveis** do painel são geradas a partir do JSON.
 
 Para substituir os placeholders por arte final na Fase 7, crie os frames definitivos e registre seus assets em `src/game/assets.js`. Até lá, as silhuetas provisórias permanecem totalmente geradas em canvas por `src/game/EnemyVisual.js`.

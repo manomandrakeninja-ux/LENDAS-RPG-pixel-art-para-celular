@@ -202,7 +202,7 @@ try {
   await evaluate(`document.getElementById('world-map-close').click()`);
   await delay(200);
 
-  // 6. No acampamento aparece o botão ACAMP., que abre e fecha o menu.
+  // 6. No acampamento aparece o botão ACAMP., que abre a visão geral; o FECHAR do painel fecha.
   await evaluate(`(() => { const s = ${scene}; s.player.body.reset(1440, 1165); })()`);
   await delay(300);
   const campVisible = await evaluate(`!document.getElementById('touch-camp').hidden`);
@@ -213,7 +213,8 @@ try {
   await touch('touchEnd', []);
   await delay(150);
   check(await evaluate(`${scene}.ui.campOpen`), 'ACAMP. não abriu o menu do acampamento.');
-  await touch('touchStart', [[campButton.x, campButton.y, 7]]);
+  const closeButton = await rectOf('#building-menu-close');
+  await touch('touchStart', [[closeButton.x, closeButton.y, 7]]);
   await delay(60);
   await touch('touchEnd', []);
   await delay(150);

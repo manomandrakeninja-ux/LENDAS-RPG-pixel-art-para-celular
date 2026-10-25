@@ -9,15 +9,18 @@ export class LevelUpOverlay {
     this.question = document.getElementById('level-up-question');
     this.attributes = document.getElementById('level-up-attributes');
     this.perks = document.getElementById('level-up-perks');
+    this.healthButton = document.getElementById('level-up-health');
     this.attackButton = document.getElementById('level-up-attack');
     this.defenseButton = document.getElementById('level-up-defense');
 
+    this.handleHealth = () => this.scene.chooseLevelUp('health');
     this.handleAttack = () => this.scene.chooseLevelUp('attack');
     this.handleDefense = () => this.scene.chooseLevelUp('defense');
     this.handlePerk = (event) => {
       const perk = event.target.closest('[data-perk]')?.dataset.perk;
       if (perk) this.scene.choosePerk(perk);
     };
+    this.healthButton.addEventListener('click', this.handleHealth);
     this.attackButton.addEventListener('click', this.handleAttack);
     this.defenseButton.addEventListener('click', this.handleDefense);
     this.perks.addEventListener('click', this.handlePerk);
@@ -57,6 +60,7 @@ export class LevelUpOverlay {
   }
 
   destroy() {
+    this.healthButton.removeEventListener('click', this.handleHealth);
     this.attackButton.removeEventListener('click', this.handleAttack);
     this.defenseButton.removeEventListener('click', this.handleDefense);
     this.perks.removeEventListener('click', this.handlePerk);

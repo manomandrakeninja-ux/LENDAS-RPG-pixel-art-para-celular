@@ -303,7 +303,7 @@
   },
   "meta": {
     "app": "LENDAS asset generator",
-    "version": "1.0",
+    "version": "2.0",
     "image": "camp-atlas.png",
     "format": "RGBA8888",
     "size": {

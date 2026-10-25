@@ -3,12 +3,13 @@ import { CONSUMABLES } from '../data/consumables.js';
 
 const MASK_WIDTH = 240;
 const MASK_HEIGHT = 160;
-const BAYER_4X4 = [
-  [0, 8, 2, 10],
-  [12, 4, 14, 6],
-  [3, 11, 1, 9],
-  [15, 7, 13, 5]
-];
+const NIGHT_ALPHA = 226;
+
+// Transição suave (0 no centro da luz, 1 no fim do degradê).
+const smoothstep = (value) => {
+  const t = Math.min(1, Math.max(0, value));
+  return t * t * (3 - 2 * t);
+};
 
 export class LightingSystem {
   constructor(scene, camp) {
@@ -19,10 +20,10 @@ export class LightingSystem {
 
     if (!scene.textures.exists(this.key)) {
       this.texture = scene.textures.createCanvas(this.key, MASK_WIDTH, MASK_HEIGHT);
-      this.texture.setFilter(Phaser.Textures.FilterMode.NEAREST);
     } else {
       this.texture = scene.textures.get(this.key);
     }
+    this.texture.setFilter(Phaser.Textures.FilterMode.LINEAR);
     this.context = this.texture.getContext();
     this.image = scene.add.image(0, 0, this.key)
       .setOrigin(0)
@@ -54,13 +55,13 @@ export class LightingSystem {
         x: player.x,
         y: player.y,
         radius: (76 + (player.torchTimer > 0 ? CONSUMABLES.torch.lightRadiusBonus : 0)) * scaleX,
-        falloff: 26 * scaleX
+        falloff: 46 * scaleX
       },
       ...(this.camp.getLightSources?.() ?? []).map((light) => ({
         x: light.x,
         y: light.y,
         radius: light.radius * scaleX,
-        falloff: 34 * scaleX
+        falloff: 56 * scaleX
       }))
     ];
 
@@ -72,27 +73,24 @@ export class LightingSystem {
       light.screenY = (light.y - camera.worldView.y) * camera.zoom * scaleY;
     }
 
+    const night = NIGHT_ALPHA * Math.min(1, Math.max(0, lightLevel));
     for (let y = 0; y < MASK_HEIGHT; y += 1) {
       for (let x = 0; x < MASK_WIDTH; x += 1) {
-        const threshold = BAYER_4X4[y % 4][x % 4] / 16;
-        let alpha = lightLevel > threshold ? 226 : 0;
-
+        // Escuridão gradual (sem o quadriculado de antes): a intensidade
+        // acompanha o anoitecer e cada luz abre um degradê suave.
+        let alpha = night;
         for (const light of lights) {
-          const dx = x - light.screenX;
-          const dy = y - light.screenY;
-          const distance = Math.hypot(dx, dy);
-          if (distance <= light.radius) {
-            alpha = 0;
-          } else if (distance <= light.radius + light.falloff) {
-            alpha = Math.min(alpha, 112);
-          }
+          const distance = Math.hypot(x - light.screenX, y - light.screenY);
+          if (distance >= light.radius + light.falloff) continue;
+          const shade = distance <= light.radius ? 0 : night * smoothstep((distance - light.radius) / light.falloff);
+          alpha = Math.min(alpha, shade);
         }
 
         const index = (y * MASK_WIDTH + x) * 4;
         pixels[index] = 8;
         pixels[index + 1] = 14;
         pixels[index + 2] = 31;
-        pixels[index + 3] = alpha;
+        pixels[index + 3] = Math.round(alpha);
       }
     }
 

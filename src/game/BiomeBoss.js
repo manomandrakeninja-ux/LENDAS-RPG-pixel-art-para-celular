@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { PixelCanvas } from '../art/pixel.js';
 import { BOSS_CONFIG } from '../data/boss.js';
 
 const BOSS_TEXTURE = 'boss-biome-titan';
@@ -59,31 +60,43 @@ export class BiomeBoss extends Phaser.GameObjects.Container {
   ensureTexture() {
     if (this.scene.textures.exists(BOSS_TEXTURE)) return;
     const texture = this.scene.textures.createCanvas(BOSS_TEXTURE, 64, 64);
-    const context = texture.getContext();
-    context.imageSmoothingEnabled = false;
-    context.clearRect(0, 0, 64, 64);
-    context.fillStyle = 'rgba(20, 15, 13, 0.55)';
-    context.fillRect(10, 55, 44, 6);
-    context.fillStyle = '#3d302b';
-    context.fillRect(17, 25, 30, 29);
-    context.fillRect(10, 32, 44, 12);
-    context.fillStyle = '#6a4b3d';
-    context.fillRect(20, 17, 24, 15);
-    context.fillRect(14, 24, 7, 20);
-    context.fillRect(43, 24, 7, 20);
-    context.fillStyle = '#a86d4e';
-    context.fillRect(22, 20, 20, 6);
-    context.fillStyle = '#f3b45c';
-    context.fillRect(23, 23, 5, 4);
-    context.fillRect(36, 23, 5, 4);
-    context.fillStyle = '#211918';
-    context.fillRect(25, 25, 3, 3);
-    context.fillRect(36, 25, 3, 3);
-    context.fillStyle = '#d8c2a7';
-    context.fillRect(29, 30, 6, 2);
-    context.fillStyle = '#7a5846';
-    context.fillRect(20, 43, 8, 11);
-    context.fillRect(36, 43, 8, 11);
+    // Titã de pedra: blocos de rocha, rachaduras de lava e núcleo brilhando.
+    const golem = new PixelCanvas(64, 64);
+    const rock = ['#2e2624', '#4a3d38', '#6a5850', '#8c776b', '#ad978a'];
+    const lava = ['#8e2a14', '#e0602a', '#ffb04a', '#fff0b0'];
+    golem.shadow(32, 58, 24, 4, 130);
+    const stone = (cx, cy, rx, ry) => golem.shadedEllipse(cx, cy, rx, ry, [rock[1], rock[2], rock[3], rock[4]]);
+    // Pernas.
+    stone(23, 50, 7, 7);
+    stone(41, 50, 7, 7);
+    golem.rect(16, 55, 14, 2, rock[0]);
+    golem.rect(34, 55, 14, 2, rock[0]);
+    // Tronco e ombros.
+    stone(32, 34, 17, 15);
+    stone(14, 26, 8, 8);
+    stone(50, 26, 8, 8);
+    // Braços pesados com punhos.
+    stone(10, 40, 6, 9);
+    stone(54, 40, 6, 9);
+    stone(9, 50, 6, 5);
+    stone(55, 50, 6, 5);
+    // Cabeça encaixada.
+    stone(32, 16, 9, 7);
+    golem.rect(24, 17, 16, 2, rock[1]);
+    // Olhos e núcleo de lava.
+    for (const x of [27, 35]) {
+      golem.rect(x, 14, 3, 2, lava[2]);
+      golem.pixel(x, 14, lava[3]);
+    }
+    golem.shadedEllipse(32, 34, 5, 5, lava);
+    // Rachaduras incandescentes.
+    for (const [x0, y0, x1, y1] of [[32, 29, 26, 23], [32, 39, 28, 46], [36, 33, 44, 30], [28, 34, 21, 38], [10, 36, 12, 43], [54, 36, 52, 43]]) {
+      golem.line(x0, y0, x1, y1, lava[1]);
+    }
+    // Musgo nos ombros.
+    for (const [x, y] of [[11, 20], [13, 19], [15, 20], [49, 19], [51, 20], [30, 10], [33, 9]]) golem.pixel(x, y, '#5f8a48');
+    golem.outline();
+    texture.getContext().putImageData(new ImageData(golem.data, 64, 64), 0, 0);
     texture.setFilter(Phaser.Textures.FilterMode.NEAREST);
     texture.refresh();
   }
@@ -91,15 +104,11 @@ export class BiomeBoss extends Phaser.GameObjects.Container {
   ensureProjectileTexture() {
     if (this.scene.textures.exists('boss-projectile')) return;
     const texture = this.scene.textures.createCanvas('boss-projectile', 10, 10);
-    const context = texture.getContext();
-    context.imageSmoothingEnabled = false;
-    context.clearRect(0, 0, 10, 10);
-    context.fillStyle = '#7d241f';
-    context.fillRect(2, 2, 6, 6);
-    context.fillStyle = '#ff8a54';
-    context.fillRect(3, 3, 4, 4);
-    context.fillStyle = '#ffe3a0';
-    context.fillRect(4, 4, 2, 2);
+    // Bola de magma.
+    const ball = new PixelCanvas(10, 10);
+    ball.shadedEllipse(5, 5, 4, 4, ['#8e2a14', '#e0602a', '#ffb04a', '#fff0b0']);
+    ball.outline({ strength: 0.5 });
+    texture.getContext().putImageData(new ImageData(ball.data, 10, 10), 0, 0);
     texture.setFilter(Phaser.Textures.FilterMode.NEAREST);
     texture.refresh();
   }

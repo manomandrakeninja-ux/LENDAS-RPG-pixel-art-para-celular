@@ -1,121 +1,19 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import zlib from 'node:zlib';
+import { PixelCanvas, darken, dither, hash, lighten, ramp } from '../src/art/pixel.js';
+
+// Gera toda a pixel art do jogo (PNG + atlas da Phaser) em public/assets/.
+// Rode com `npm run assets:generate`. Os tamanhos e nomes dos quadros são usados
+// pelo código do jogo: mude o desenho à vontade, mas mantenha nomes e tamanhos.
 
 const root = path.resolve('public/assets');
-const color = (hex, alpha = 255) => [
-  Number.parseInt(hex.slice(1, 3), 16),
-  Number.parseInt(hex.slice(3, 5), 16),
-  Number.parseInt(hex.slice(5, 7), 16),
-  alpha
-];
 
-class PixelCanvas {
-  constructor(width, height) {
-    this.width = width;
-    this.height = height;
-    this.data = Buffer.alloc(width * height * 4);
-  }
-
-  pixel(x, y, value, alpha = 255) {
-    x = Math.floor(x);
-    y = Math.floor(y);
-    if (x < 0 || y < 0 || x >= this.width || y >= this.height) return;
-    const [red, green, blue, sourceAlpha] = color(value, alpha);
-    const index = (y * this.width + x) * 4;
-    const destinationAlpha = this.data[index + 3];
-    if (sourceAlpha === 255 || destinationAlpha === 0) {
-      this.data[index] = red;
-      this.data[index + 1] = green;
-      this.data[index + 2] = blue;
-      this.data[index + 3] = sourceAlpha;
-      return;
-    }
-    const outAlpha = sourceAlpha + destinationAlpha * (255 - sourceAlpha) / 255;
-    const blend = (source, destination) =>
-      Math.round((source * sourceAlpha + destination * destinationAlpha * (255 - sourceAlpha) / 255) / outAlpha);
-    this.data[index] = blend(red, this.data[index]);
-    this.data[index + 1] = blend(green, this.data[index + 1]);
-    this.data[index + 2] = blend(blue, this.data[index + 2]);
-    this.data[index + 3] = Math.round(outAlpha);
-  }
-
-  rect(x, y, width, height, fill) {
-    for (let py = y; py < y + height; py += 1) {
-      for (let px = x; px < x + width; px += 1) this.pixel(px, py, fill);
-    }
-  }
-
-  line(x0, y0, x1, y1, fill, alpha = 255) {
-    let dx = Math.abs(x1 - x0);
-    let sx = x0 < x1 ? 1 : -1;
-    let dy = -Math.abs(y1 - y0);
-    let sy = y0 < y1 ? 1 : -1;
-    let error = dx + dy;
-    while (true) {
-      this.pixel(x0, y0, fill, alpha);
-      if (x0 === x1 && y0 === y1) break;
-      const twice = 2 * error;
-      if (twice >= dy) {
-        error += dy;
-        x0 += sx;
-      }
-      if (twice <= dx) {
-        error += dx;
-        y0 += sy;
-      }
-    }
-  }
-
-  ellipse(cx, cy, rx, ry, fill, alpha = 255) {
-    for (let y = -ry; y <= ry; y += 1) {
-      for (let x = -rx; x <= rx; x += 1) {
-        if ((x * x) / (rx * rx) + (y * y) / (ry * ry) <= 1) {
-          this.pixel(cx + x, cy + y, fill, alpha);
-        }
-      }
-    }
-  }
-
-  polygon(points, fill, alpha = 255) {
-    const minY = Math.min(...points.map((point) => point[1]));
-    const maxY = Math.max(...points.map((point) => point[1]));
-    for (let y = minY; y <= maxY; y += 1) {
-      const intersections = [];
-      for (let index = 0; index < points.length; index += 1) {
-        const [x1, y1] = points[index];
-        const [x2, y2] = points[(index + 1) % points.length];
-        if ((y1 <= y && y2 > y) || (y2 <= y && y1 > y)) {
-          intersections.push(x1 + ((y - y1) * (x2 - x1)) / (y2 - y1));
-        }
-      }
-      intersections.sort((a, b) => a - b);
-      for (let index = 0; index < intersections.length; index += 2) {
-        for (let x = Math.ceil(intersections[index]); x <= intersections[index + 1]; x += 1) {
-          this.pixel(x, y, fill, alpha);
-        }
-      }
-    }
-  }
-
-  blit(source, x, y) {
-    for (let py = 0; py < source.height; py += 1) {
-      for (let px = 0; px < source.width; px += 1) {
-        const from = (py * source.width + px) * 4;
-        if (source.data[from + 3] > 0) {
-          const to = ((y + py) * this.width + x + px) * 4;
-          source.data.copy(this.data, to, from, from + 4);
-        }
-      }
-    }
-  }
-}
+// ---------- PNG e atlas ----------
 
 const crcTable = Uint32Array.from({ length: 256 }, (_, number) => {
   let value = number;
-  for (let bit = 0; bit < 8; bit += 1) {
-    value = value & 1 ? 0xedb88320 ^ (value >>> 1) : value >>> 1;
-  }
+  for (let bit = 0; bit < 8; bit += 1) value = value & 1 ? 0xedb88320 ^ (value >>> 1) : value >>> 1;
   return value >>> 0;
 });
 
@@ -135,33 +33,34 @@ function chunk(type, data) {
 }
 
 function writePng(file, canvas) {
+  const pixels = Buffer.from(canvas.data.buffer, canvas.data.byteOffset, canvas.data.byteLength);
   const scanlines = Buffer.alloc((canvas.width * 4 + 1) * canvas.height);
   for (let y = 0; y < canvas.height; y += 1) {
     const row = y * (canvas.width * 4 + 1);
     scanlines[row] = 0;
-    canvas.data.copy(scanlines, row + 1, y * canvas.width * 4, (y + 1) * canvas.width * 4);
+    pixels.copy(scanlines, row + 1, y * canvas.width * 4, (y + 1) * canvas.width * 4);
   }
   const header = Buffer.alloc(13);
   header.writeUInt32BE(canvas.width, 0);
   header.writeUInt32BE(canvas.height, 4);
   header[8] = 8;
   header[9] = 6;
-  const png = Buffer.concat([
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  fs.writeFileSync(file, Buffer.concat([
     Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]),
     chunk('IHDR', header),
-    chunk('IDAT', zlib.deflateSync(scanlines)),
+    chunk('IDAT', zlib.deflateSync(scanlines, { level: 9 })),
     chunk('IEND', Buffer.alloc(0))
-  ]);
-  fs.mkdirSync(path.dirname(file), { recursive: true });
-  fs.writeFileSync(file, png);
+  ]));
 }
 
-function makeSheet(file, frameWidth, frameHeight, columns, rows, drawFrame) {
+function makeSheet(file, frameWidth, frameHeight, columns, rows, drawFrame, { outline = true } = {}) {
   const sheet = new PixelCanvas(frameWidth * columns, frameHeight * rows);
   for (let frame = 0; frame < columns * rows; frame += 1) {
-    const x = (frame % columns) * frameWidth;
-    const y = Math.floor(frame / columns) * frameHeight;
-    drawFrame(sheet, x, y, frame);
+    const canvas = new PixelCanvas(frameWidth, frameHeight);
+    drawFrame(canvas, frame);
+    if (outline) canvas.outline();
+    sheet.blit(canvas, (frame % columns) * frameWidth, Math.floor(frame / columns) * frameHeight);
   }
   writePng(path.join(root, file), sheet);
 }
@@ -173,9 +72,7 @@ function makeAtlas(file, entries) {
   let rowHeight = 0;
   const positions = [];
   for (const entry of entries) {
-    if (entry.width + 4 > atlasWidth) {
-      throw new Error(`Atlas frame ${entry.name} exceeds the ${atlasWidth}px atlas width`);
-    }
+    if (entry.width + 4 > atlasWidth) throw new Error(`Atlas frame ${entry.name} exceeds the ${atlasWidth}px atlas width`);
     if (x + entry.width + 2 > atlasWidth) {
       x = 2;
       y += rowHeight + 2;
@@ -185,12 +82,12 @@ function makeAtlas(file, entries) {
     x += entry.width + 2;
     rowHeight = Math.max(rowHeight, entry.height);
   }
-  const atlasHeight = y + rowHeight + 2;
-  const atlas = new PixelCanvas(atlasWidth, atlasHeight);
+  const atlas = new PixelCanvas(atlasWidth, y + rowHeight + 2);
   const frames = {};
   for (const entry of positions) {
     const sprite = new PixelCanvas(entry.width, entry.height);
     entry.draw(sprite);
+    if (entry.outline !== false) sprite.outline();
     atlas.blit(sprite, entry.x, entry.y);
     frames[entry.name] = {
       frame: { x: entry.x, y: entry.y, w: entry.width, h: entry.height },
@@ -200,206 +97,485 @@ function makeAtlas(file, entries) {
       sourceSize: { w: entry.width, h: entry.height }
     };
   }
-  const directory = path.dirname(file);
   const image = path.basename(file, '.json') + '.png';
-  writePng(path.join(root, directory, image), atlas);
+  writePng(path.join(root, path.dirname(file), image), atlas);
   fs.writeFileSync(path.join(root, file), JSON.stringify({
     frames,
     meta: {
       app: 'LENDAS asset generator',
-      version: '1.0',
+      version: '2.0',
       image,
       format: 'RGBA8888',
-      size: { w: atlasWidth, h: atlasHeight },
+      size: { w: atlasWidth, h: atlas.height },
       scale: '1'
     }
   }, null, 2));
 }
 
-const grass = ['#477447', '#4e7d49', '#416b43', '#57804a'];
-function drawGrass(canvas, ox, oy, frame) {
-  const base = grass[frame % grass.length];
-  canvas.rect(ox, oy, 16, 16, base);
-  for (let y = 0; y < 16; y += 1) {
-    for (let x = 0; x < 16; x += 1) {
-      const value = (x * 7 + y * 11 + frame * 5) % 17;
-      if (value === 0 || value === 5) canvas.pixel(ox + x, oy + y, '#3f6940');
-      else if (value === 9) canvas.pixel(ox + x, oy + y, '#5a8750');
+// ---------- Paletas ----------
+
+const GRASS = ['#335c3b', '#3f6d42', '#4a7b48', '#578a4f', '#6c9d59', '#86b265'];
+const DIRT = ['#5e4130', '#74523a', '#8a6647', '#9f7a55', '#b79168'];
+const BARK = ['#3f2a1f', '#5b3d29', '#7a5236', '#9a6c45'];
+const WOOD = ['#5a3b26', '#7c5434', '#a0723f', '#c49556'];
+const STONE = ['#4c5257', '#6c7377', '#8d9496', '#b6bcb8', '#dad9cc'];
+const LEAF = ['#1f4130', '#2b5a3a', '#3d7745', '#5a9650', '#7fb35e'];
+
+// ---------- Chão (48 x 48, 1 pixel da arte = 1 pixel do mundo) ----------
+
+// Ruído suave e periódico em 48 px: o mesmo em todos os quadros, então as
+// emendas entre ladrilhos diferentes não aparecem.
+function smoothNoise(x, y, cell = 12, seed = 7) {
+  const cells = 48 / cell;
+  const gx = x / cell;
+  const gy = y / cell;
+  const x0 = Math.floor(gx);
+  const y0 = Math.floor(gy);
+  const fx = gx - x0;
+  const fy = gy - y0;
+  const corner = (cx, cy) => hash(((cx % cells) + cells) % cells, ((cy % cells) + cells) % cells, seed);
+  const sx = fx * fx * (3 - 2 * fx);
+  const sy = fy * fy * (3 - 2 * fy);
+  const top = corner(x0, y0) + (corner(x0 + 1, y0) - corner(x0, y0)) * sx;
+  const bottom = corner(x0, y0 + 1) + (corner(x0 + 1, y0 + 1) - corner(x0, y0 + 1)) * sx;
+  return top + (bottom - top) * sy;
+}
+
+function grassBase(canvas, ox = 0, oy = 0, width = 48, height = 48) {
+  for (let y = oy; y < oy + height; y += 1) {
+    for (let x = ox; x < ox + width; x += 1) {
+      const n = smoothNoise(x, y) * 0.7 + smoothNoise(x, y, 6, 3) * 0.3;
+      const d = hash(x, y, 71);
+      let tone = 2;
+      if (n > 0.66 && d < (n - 0.62) * 3) tone = 3;
+      else if (n < 0.34 && d < (0.38 - n) * 3) tone = 1;
+      canvas.pixel(x, y, GRASS[tone]);
+      const speck = hash(x, y, 11);
+      if (speck > 0.985) canvas.pixel(x, y, GRASS[4]);
+      else if (speck < 0.012) canvas.pixel(x, y, GRASS[1]);
     }
   }
-  const flecks = [
-    [1, 3, '#629052'], [5, 1, '#578449'], [11, 4, '#3b633d'],
-    [14, 9, '#649052'], [6, 12, '#3d6840'], [2, 14, '#527e47']
-  ];
-  for (const [x, y, shade] of flecks) canvas.pixel(ox + x, oy + y, shade);
+}
+
+function tuft(canvas, x, y, tall = 3) {
+  canvas.pixel(x, y, GRASS[1]);
+  canvas.pixel(x - 1, y, GRASS[1]);
+  for (let step = 1; step <= tall; step += 1) canvas.pixel(x, y - step, step === tall ? GRASS[5] : GRASS[4]);
+  canvas.pixel(x - 2, y - 1, GRASS[3]);
+  canvas.pixel(x - 2, y - 2, GRASS[4]);
+  canvas.pixel(x + 2, y - 1, GRASS[3]);
+  canvas.pixel(x + 2, y - 2, GRASS[5]);
+}
+
+function scatter(seed, count, callback, margin = 4) {
+  for (let index = 0; index < count; index += 1) {
+    const x = margin + Math.floor(hash(index, 1, seed) * (48 - margin * 2));
+    const y = margin + 2 + Math.floor(hash(index, 2, seed) * (48 - margin * 2 - 2));
+    callback(x, y, index);
+  }
+}
+
+function drawGroundTile(canvas, frame) {
+  if (frame === 4 || frame === 5) {
+    drawDirtTile(canvas, frame === 4 ? 'left' : 'right');
+    return;
+  }
+  grassBase(canvas);
+  scatter(frame * 31 + 5, frame === 3 ? 9 : 5, (x, y) => tuft(canvas, x, y, 2 + Math.floor(hash(x, y, 2) * 2)));
   if (frame === 1) {
-    canvas.line(ox + 7, oy + 11, ox + 7, oy + 6, '#a7bf69');
-    canvas.pixel(ox + 6, oy + 5, '#f5d88a');
-    canvas.pixel(ox + 8, oy + 5, '#f5d88a');
-    canvas.pixel(ox + 7, oy + 4, '#fff0bb');
-    canvas.pixel(ox + 7, oy + 5, '#b85650');
+    scatter(91, 3, (x, y, index) => {
+      const petal = index % 2 ? '#f4efe0' : '#f2d36b';
+      canvas.pixel(x, y - 1, petal); canvas.pixel(x - 1, y, petal); canvas.pixel(x + 1, y, petal); canvas.pixel(x, y + 1, petal);
+      canvas.pixel(x, y, index % 2 ? '#e9b949' : '#c8643e');
+    }, 6);
   } else if (frame === 2) {
-    canvas.ellipse(ox + 6, oy + 10, 3, 2, '#827c68');
-    canvas.pixel(ox + 5, oy + 9, '#c7b99a');
-    canvas.pixel(ox + 13, oy + 4, '#b7aa8a');
-  } else if (frame === 3) {
-    canvas.line(ox + 5, oy + 12, ox + 4, oy + 6, '#92ad58');
-    canvas.line(ox + 6, oy + 12, ox + 7, oy + 4, '#b1bd63');
-    canvas.line(ox + 8, oy + 12, ox + 10, oy + 7, '#7a9d4f');
-    canvas.pixel(ox + 3, oy + 5, '#d9c98b');
-  } else if (frame === 4 || frame === 5) {
-    canvas.rect(ox, oy + 4, 16, 12, '#97704b');
-    canvas.rect(ox, oy + 3, 16, 3, '#aa8154');
-    canvas.pixel(ox + 4, oy + 8, '#806344');
-    canvas.pixel(ox + 11, oy + 12, '#b58a5a');
-    if (frame === 5) {
-      canvas.rect(ox + 1, oy + 2, 14, 2, '#a27d52');
-      canvas.pixel(ox + 8, oy + 7, '#69583d');
+    scatter(57, 2, (x, y, index) => {
+      const size = 1 + (index % 2);
+      canvas.ellipse(x, y + 1, size + 1, size, '#2c4a34', 120);
+      canvas.ellipse(x, y, size + 0.5, size, STONE[1]);
+      canvas.pixel(x - 1, y - 1, STONE[3]);
+    }, 6);
+  } else if (frame === 6) {
+    scatter(77, 4, (x, y) => {
+      for (const [dx, dy] of [[0, -1], [-1, 0], [1, 0]]) canvas.ellipse(x + dx * 1.5, y + dy * 1.5, 1.2, 1.2, GRASS[1]);
+      canvas.pixel(x - 1, y - 2, GRASS[3]);
+    }, 6);
+  } else if (frame === 7) {
+    scatter(13, 3, (x, y, index) => canvas.pixel(x, y, index % 2 ? '#e7d47a' : '#d9e3f0'), 5);
+  }
+}
+
+function drawDirtTile(canvas, side) {
+  // Borda irregular de grama, periódica em 48 px para os ladrilhos se encaixarem na vertical.
+  const edgeWidth = (y) => 5 + Math.round(2 * Math.sin((y / 48) * Math.PI * 2) + 1.4 * Math.sin((y / 48) * Math.PI * 6 + 1));
+  for (let y = 0; y < 48; y += 1) {
+    const edge = edgeWidth(y);
+    for (let x = 0; x < 48; x += 1) {
+      const fromEdge = side === 'left' ? x : 47 - x;
+      if (fromEdge < edge) continue;
+      const n = smoothNoise(x, y, 8, 21);
+      const d = hash(x, y, 72);
+      let tone = 2;
+      if (n > 0.64 && d < (n - 0.6) * 3) tone = 3;
+      else if (n < 0.36 && d < (0.4 - n) * 3) tone = 1;
+      if (fromEdge === edge || fromEdge === edge + 1) tone = Math.max(0, tone - 1);
+      canvas.pixel(x, y, DIRT[tone]);
+      const speck = hash(x, y, 33);
+      if (speck > 0.975) canvas.pixel(x, y, DIRT[4]);
+      else if (speck < 0.02) canvas.pixel(x, y, DIRT[1]);
     }
-  } else if (frame === 6) {
-    canvas.rect(ox + 3, oy + 5, 2, 7, '#92ad58');
-    canvas.rect(ox + 6, oy + 3, 2, 9, '#b1bd63');
-    canvas.rect(ox + 9, oy + 6, 2, 6, '#7a9d4f');
-    canvas.rect(ox + 12, oy + 8, 2, 4, '#b1bd63');
-  } else {
-    canvas.pixel(ox + 4, oy + 5, '#8d986f');
-    canvas.pixel(ox + 5, oy + 5, '#a8a486');
-    canvas.pixel(ox + 12, oy + 11, '#ada385');
-    canvas.pixel(ox + 11, oy + 10, '#837e68');
+  }
+  // Grama da borda.
+  for (let y = 0; y < 48; y += 1) {
+    const edge = edgeWidth(y);
+    for (let fromEdge = 0; fromEdge < edge; fromEdge += 1) {
+      const x = side === 'left' ? fromEdge : 47 - fromEdge;
+      const n = smoothNoise(x, y);
+      canvas.pixel(x, y, fromEdge === edge - 1 ? GRASS[3] : n > 0.6 ? GRASS[3] : GRASS[2]);
+    }
+    if (y % 5 === 0) {
+      const x = side === 'left' ? edge : 47 - edge;
+      canvas.pixel(x, y, GRASS[4]);
+      canvas.pixel(x, y + 1, GRASS[2]);
+    }
+  }
+  // Pedrinhas e marcas de passos.
+  scatter(side === 'left' ? 41 : 42, 5, (x, y, index) => {
+    const px = side === 'left' ? Math.max(14, x) : Math.min(33, x);
+    if (index % 2) {
+      canvas.pixel(px, y, DIRT[4]);
+      canvas.pixel(px + 1, y, DIRT[3]);
+      canvas.pixel(px, y + 1, DIRT[0]);
+    } else {
+      canvas.pixel(px, y, DIRT[1]);
+      canvas.pixel(px + 1, y + 1, DIRT[1]);
+    }
+  }, 6);
+}
+
+makeSheet('tiles/grass-sheet.png', 48, 48, 4, 2, drawGroundTile, { outline: false });
+
+// ---------- Personagem (24 x 32, 4 direções x 4 quadros) ----------
+
+const SKIN = ['#b8714c', '#e5a676', '#f5c99a'];
+const HAIR = ['#3a2219', '#5c3624', '#82502f', '#a46a3d'];
+const TUNIC = ['#26426b', '#36609b', '#4f84c4', '#79a7dc'];
+const SCARF = ['#8e2f2c', '#c0483b', '#e06a4f'];
+const PANTS = ['#2f2722', '#463a32', '#5c4c41'];
+const BOOT = ['#24170f', '#4a3020', '#6c4a2f'];
+const LEATHER = ['#3e2618', '#6a4228', '#8d5c36'];
+
+// Quadros: 0 = passo esquerdo, 1 = parado, 2 = passo direito, 3 = parado (balanço).
+function legPose(frame) {
+  if (frame === 0) return { left: 1, right: -1 };
+  if (frame === 2) return { left: -1, right: 1 };
+  return { left: 0, right: 0 };
+}
+
+function drawLegsFront(canvas, frame) {
+  const { left, right } = legPose(frame);
+  for (const [x, lift] of [[8, left], [13, right]]) {
+    const bottom = 28 - (lift < 0 ? 1 : 0);
+    canvas.rect(x, 23, 3, bottom - 23 - 1, PANTS[1]);
+    canvas.pixel(x + 2, 24, PANTS[0]);
+    canvas.pixel(x, 23, PANTS[2]);
+    canvas.rect(x, bottom - 2, 3, 3, BOOT[1]);
+    canvas.pixel(x, bottom - 2, BOOT[2]);
+    canvas.rect(x, bottom, 3, 1, BOOT[0]);
   }
 }
 
-makeSheet('tiles/grass-sheet.png', 16, 16, 4, 2, drawGrass);
-
-function drawPerson(canvas, ox, oy, direction, frame) {
-  const stride = frame === 1 ? -1 : frame === 3 ? 1 : 0;
-  canvas.ellipse(ox + 12, oy + 29, 8, 2, '#28392b', 130);
-  canvas.rect(ox + 5, oy + 6, 14, 13, '#3b2d28');
-  canvas.rect(ox + 5, oy + 17, 14, 10, '#283632');
-  const bootY = oy + (stride ? 27 : 26);
-  canvas.rect(ox + 6, bootY, 4, 3, '#57402f');
-  canvas.rect(ox + 14, bootY - stride, 4, 3, '#57402f');
-  canvas.pixel(ox + 6, bootY, '#8a6543');
-  canvas.pixel(ox + 14, bootY - stride, '#8a6543');
-  canvas.rect(ox + 7, oy + 20, 10, 7, '#5577a0');
-  canvas.rect(ox + 8, oy + 23, 8, 2, '#638bb3');
-  canvas.pixel(ox + 16, oy + 25, '#3e648a');
-  canvas.rect(ox + 5 + stride, oy + 22, 3, 6, '#d7a365');
-  canvas.rect(ox + 16 - stride, oy + 22, 3, 6, '#d7a365');
-  canvas.rect(ox + 7, oy + 18, 10, 3, '#c58a50');
-  canvas.pixel(ox + 11, oy + 19, '#f1c879');
-  if (direction === 3) {
-    canvas.rect(ox + 6, oy + 7, 12, 11, '#754c35');
-    canvas.rect(ox + 8, oy + 9, 8, 8, '#d7a76c');
-    canvas.rect(ox + 6, oy + 7, 12, 4, '#50382d');
-    canvas.rect(ox + 7, oy + 5, 10, 3, '#5c4030');
-    canvas.rect(ox + 7, oy + 2, 10, 4, '#47734e');
-    canvas.pixel(ox + 8, oy + 2, '#9b7146');
-  } else if (direction === 1 || direction === 2) {
-    canvas.rect(ox + 6, oy + 7, 12, 11, '#754c35');
-    canvas.rect(ox + 7, oy + 9, 10, 8, '#d7a76c');
-    canvas.rect(ox + 6, oy + 7, 12, 4, '#50382d');
-    canvas.rect(ox + (direction === 1 ? 7 : 8), oy + 12, 3, 2, '#312a26');
-    canvas.rect(ox + 7, oy + 5, 10, 3, '#5c4030');
-    canvas.rect(ox + 7, oy + 2, 10, 4, '#47734e');
-    canvas.pixel(ox + 8, oy + 2, '#9b7146');
+function drawTorsoFront(canvas, top, back = false) {
+  // Túnica com volume: luz à esquerda, sombra à direita.
+  canvas.rect(7, top, 10, 7, TUNIC[1]);
+  canvas.rect(7, top, 2, 7, TUNIC[2]);
+  canvas.rect(15, top, 2, 7, TUNIC[0]);
+  canvas.pixel(8, top + 1, TUNIC[3]);
+  // Cinto com fivela.
+  canvas.rect(7, top + 5, 10, 2, LEATHER[1]);
+  canvas.rect(7, top + 6, 10, 1, LEATHER[0]);
+  if (!back) {
+    canvas.rect(11, top + 5, 2, 2, '#e8c15a');
+    canvas.pixel(11, top + 5, '#fff0a6');
+    // Lenço vermelho.
+    canvas.rect(8, top, 8, 2, SCARF[1]);
+    canvas.pixel(8, top, SCARF[2]);
+    canvas.rect(13, top + 2, 2, 2, SCARF[0]);
   } else {
-    canvas.rect(ox + 6, oy + 7, 12, 11, '#754c35');
-    canvas.rect(ox + 7, oy + 9, 10, 8, '#e1b87d');
-    canvas.rect(ox + 6, oy + 7, 12, 3, '#50382d');
-    canvas.rect(ox + 8, oy + 12, 2, 2, '#332923');
-    canvas.rect(ox + 14, oy + 12, 2, 2, '#332923');
-    canvas.rect(ox + 7, oy + 5, 10, 3, '#5c4030');
-    canvas.rect(ox + 7, oy + 2, 10, 4, '#47734e');
-    canvas.rect(ox + 6, oy + 2, 3, 2, '#d1a052');
+    // Capa curta nas costas.
+    canvas.rect(8, top, 8, 5, SCARF[1]);
+    canvas.rect(8, top, 2, 5, SCARF[2]);
+    canvas.rect(14, top, 2, 5, SCARF[0]);
+    canvas.rect(9, top + 5, 6, 1, SCARF[0]);
   }
-  canvas.pixel(ox + 8, oy + 6, '#8b6545');
-  canvas.pixel(ox + 16, oy + 6, '#443129');
+  // Barra da túnica.
+  canvas.rect(7, top + 7, 10, 1, TUNIC[0]);
 }
 
-makeSheet('characters/player-sheet.png', 24, 32, 4, 4, (canvas, x, y, frame) => {
-  drawPerson(canvas, x, y, Math.floor(frame / 4), frame % 4);
+function drawArmsFront(canvas, top, frame) {
+  const swing = frame === 0 ? 1 : frame === 2 ? -1 : 0;
+  for (const [x, offset, shade] of [[5, -swing, 2], [17, swing, 0]]) {
+    canvas.rect(x, top + 1 + offset, 2, 4, TUNIC[shade === 2 ? 2 : 0]);
+    canvas.rect(x, top + 5 + offset, 2, 2, SKIN[1]);
+    canvas.pixel(x + (shade === 2 ? 0 : 1), top + 6 + offset, SKIN[0]);
+  }
+}
+
+function drawHeadFront(canvas, top) {
+  // Rosto.
+  canvas.rect(8, top + 4, 8, 7, SKIN[1]);
+  canvas.rect(8, top + 4, 2, 6, SKIN[2]);
+  canvas.rect(8, top + 10, 8, 1, SKIN[0]);
+  canvas.pixel(15, top + 9, SKIN[0]);
+  // Olhos com brilho.
+  canvas.rect(9, top + 6, 2, 2, '#1c1822');
+  canvas.rect(13, top + 6, 2, 2, '#1c1822');
+  canvas.pixel(9, top + 6, '#e9f1ff');
+  canvas.pixel(13, top + 6, '#e9f1ff');
+  canvas.pixel(8, top + 8, '#e98a77');
+  canvas.pixel(15, top + 8, '#e98a77');
+  canvas.pixel(11, top + 9, SKIN[0]);
+  canvas.pixel(12, top + 9, SKIN[0]);
+  // Cabelo com franja.
+  canvas.rect(7, top, 10, 4, HAIR[1]);
+  canvas.rect(8, top - 1, 8, 1, HAIR[1]);
+  canvas.rect(9, top - 1, 4, 1, HAIR[2]);
+  canvas.rect(8, top, 4, 2, HAIR[2]);
+  canvas.pixel(9, top, HAIR[3]);
+  canvas.pixel(10, top, HAIR[3]);
+  canvas.rect(7, top + 4, 1, 5, HAIR[1]);
+  canvas.rect(16, top + 4, 1, 5, HAIR[0]);
+  canvas.pixel(8, top + 4, HAIR[1]);
+  canvas.pixel(11, top + 4, HAIR[1]);
+  canvas.pixel(12, top + 4, HAIR[0]);
+  canvas.pixel(15, top + 4, HAIR[0]);
+  canvas.rect(13, top, 4, 3, HAIR[0]);
+  canvas.rect(13, top, 2, 1, HAIR[1]);
+}
+
+function drawHeadBack(canvas, top) {
+  canvas.rect(7, top, 10, 10, HAIR[1]);
+  canvas.rect(8, top - 1, 8, 1, HAIR[1]);
+  canvas.rect(8, top, 4, 3, HAIR[2]);
+  canvas.pixel(9, top, HAIR[3]);
+  canvas.rect(14, top, 3, 10, HAIR[0]);
+  canvas.rect(8, top + 10, 8, 1, SKIN[0]);
+  canvas.line(10, top + 4, 10, top + 8, HAIR[0]);
+  canvas.line(13, top + 3, 13, top + 8, HAIR[0]);
+}
+
+function drawPersonFront(canvas, frame, back) {
+  const bob = frame === 1 || frame === 3 ? 0 : 1;
+  canvas.shadow(12, 29, 7, 2, 110);
+  drawLegsFront(canvas, frame);
+  drawTorsoFront(canvas, 15 + bob, back);
+  drawArmsFront(canvas, 15 + bob, frame);
+  if (back) drawHeadBack(canvas, 5 + bob);
+  else drawHeadFront(canvas, 5 + bob);
+}
+
+function drawPersonSide(canvas, frame) {
+  // Virado para a esquerda; o lado direito é o espelho deste desenho.
+  const bob = frame === 1 || frame === 3 ? 0 : 1;
+  const stride = frame === 0 ? 2 : frame === 2 ? -2 : 0;
+  canvas.shadow(12, 29, 6, 2, 110);
+  // Perna de trás (mais escura) e da frente.
+  for (const [offset, back] of [[-stride, true], [stride, false]]) {
+    const x = 10 + offset;
+    canvas.rect(x, 23, 3, 4, back ? PANTS[0] : PANTS[1]);
+    canvas.rect(x - 1, 26, 4, 2, back ? BOOT[0] : BOOT[1]);
+    canvas.pixel(x - 1, 26, back ? BOOT[1] : BOOT[2]);
+    canvas.rect(x - 1, 28, 4, 1, BOOT[0]);
+  }
+  const top = 15 + bob;
+  // Braço de trás.
+  canvas.rect(13 + Math.sign(stride), top + 1, 2, 5, TUNIC[0]);
+  // Tronco.
+  canvas.rect(8, top, 8, 7, TUNIC[1]);
+  canvas.rect(8, top, 2, 7, TUNIC[2]);
+  canvas.rect(14, top, 2, 7, TUNIC[0]);
+  canvas.rect(8, top + 5, 8, 2, LEATHER[1]);
+  canvas.rect(8, top + 6, 8, 1, LEATHER[0]);
+  canvas.rect(8, top + 7, 8, 1, TUNIC[0]);
+  canvas.rect(9, top, 7, 2, SCARF[1]);
+  canvas.rect(15, top + 1, 2, 3, SCARF[0]);
+  // Braço da frente balançando.
+  const arm = -Math.sign(stride);
+  canvas.rect(10 + arm, top + 1, 2, 4, TUNIC[2]);
+  canvas.rect(10 + arm, top + 5, 2, 2, SKIN[1]);
+  // Cabeça de perfil.
+  const head = 5 + bob;
+  canvas.rect(7, head + 4, 8, 7, SKIN[1]);
+  canvas.rect(7, head + 4, 2, 6, SKIN[2]);
+  canvas.pixel(6, head + 7, SKIN[1]);
+  canvas.pixel(6, head + 8, SKIN[0]);
+  canvas.rect(8, head + 10, 6, 1, SKIN[0]);
+  canvas.rect(8, head + 6, 2, 2, '#1c1822');
+  canvas.pixel(8, head + 6, '#e9f1ff');
+  canvas.pixel(8, head + 9, '#e98a77');
+  // Cabelo cobrindo a nuca.
+  canvas.rect(8, head, 9, 4, HAIR[1]);
+  canvas.rect(9, head - 1, 7, 1, HAIR[1]);
+  canvas.rect(9, head, 4, 2, HAIR[2]);
+  canvas.pixel(10, head, HAIR[3]);
+  canvas.rect(12, head + 4, 5, 6, HAIR[1]);
+  canvas.rect(15, head + 2, 2, 8, HAIR[0]);
+  canvas.pixel(12, head + 4, HAIR[2]);
+  canvas.rect(7, head + 3, 3, 1, HAIR[1]);
+  canvas.pixel(11, head + 6, SKIN[0]);
+}
+
+makeSheet('characters/player-sheet.png', 24, 32, 4, 4, (canvas, frameIndex) => {
+  const direction = Math.floor(frameIndex / 4);
+  const frame = frameIndex % 4;
+  if (direction === 0) drawPersonFront(canvas, frame, false);
+  else if (direction === 3) drawPersonFront(canvas, frame, true);
+  else {
+    const side = new PixelCanvas(24, 32);
+    drawPersonSide(side, frame);
+    canvas.blit(side, 0, 0, { flipX: direction === 2 });
+  }
 });
 
-function drawLivestock(canvas, ox, oy, species, frame) {
-  const step = frame === 1 ? -1 : frame === 3 ? 1 : 0;
-  canvas.ellipse(ox + 12, oy + 21, 9, 2, '#26382a', 120);
-  if (species === 0) {
-    canvas.ellipse(ox + 12, oy + 12, 8, 6, '#e4dfca');
-    canvas.ellipse(ox + 17, oy + 10, 4, 4, '#d9d1b9');
-    canvas.rect(ox + 7 + step, oy + 16, 2, 5, '#574a3d');
-    canvas.rect(ox + 15 - step, oy + 16, 2, 5, '#574a3d');
-    canvas.pixel(ox + 18, oy + 10, '#292824');
-  } else if (species === 1) {
-    canvas.ellipse(ox + 12, oy + 13, 8, 6, '#d58c8a');
-    canvas.ellipse(ox + 17, oy + 12, 4, 4, '#e0a09b');
-    canvas.rect(ox + 8 + step, oy + 17, 2, 4, '#735345');
-    canvas.rect(ox + 15 - step, oy + 17, 2, 4, '#735345');
-    canvas.rect(ox + 19, oy + 12, 3, 2, '#ba6f6e');
-    canvas.pixel(ox + 18, oy + 11, '#2b2622');
-  } else {
-    canvas.ellipse(ox + 12, oy + 14, 5, 5, '#f5ead0');
-    canvas.ellipse(ox + 16, oy + 10, 3, 3, '#fff3dd');
-    canvas.polygon([[ox + 15, oy + 7], [ox + 14, oy + 3], [ox + 18, oy + 7]], '#dba34e');
-    canvas.rect(ox + 10 + step, oy + 17, 2, 3, '#a27d54');
-    canvas.rect(ox + 15 - step, oy + 17, 2, 3, '#a27d54');
-    canvas.pixel(ox + 18, oy + 10, '#302922');
-  }
+// ---------- Animais da fazenda (24 x 24, virados para a direita) ----------
+
+function legs(canvas, positions, top, height, colors, frame) {
+  const step = frame === 1 ? 1 : frame === 3 ? -1 : 0;
+  positions.forEach((x, index) => {
+    const lift = index % 2 ? step : -step;
+    canvas.rect(x, top, 2, height - Math.max(0, lift), colors[1]);
+    canvas.pixel(x, top + height - 1 - Math.max(0, lift), colors[0]);
+  });
 }
 
-makeSheet('animals/livestock-sheet.png', 24, 24, 4, 3, (canvas, x, y, frame) => {
-  drawLivestock(canvas, x, y, Math.floor(frame / 4), frame % 4);
+function drawSheep(canvas, frame) {
+  canvas.shadow(12, 21, 9, 2, 100);
+  legs(canvas, [6, 9, 13, 16], 16, 5, ['#1f1a1e', '#3b3236'], frame);
+  const wool = ['#b3ab98', '#e3dccb', '#f4efe2', '#ffffff'];
+  canvas.shadedEllipse(11, 13, 8, 5.5, wool);
+  for (const [x, y, r] of [[6, 10, 3], [10, 8.5, 3.2], [14, 9, 3], [5, 14, 2.6], [17, 13, 2.4]]) canvas.shadedEllipse(x, y, r, r * 0.9, wool);
+  // Cabeça escura com orelha.
+  canvas.shadedEllipse(19, 11.5, 3.2, 3.8, ['#241e22', '#3b3236', '#574a4f', '#6e5f64']);
+  canvas.rect(15, 9, 2, 2, '#3b3236');
+  canvas.pixel(15, 10, '#241e22');
+  canvas.pixel(20, 10, '#f4efe2');
+  canvas.pixel(20, 11, '#141014');
+  canvas.rect(17, 7, 4, 2, wool[2]);
+  canvas.pixel(18, 7, wool[3]);
+}
+
+function drawPig(canvas, frame) {
+  canvas.shadow(12, 21, 9, 2, 100);
+  const skin = ['#b8605f', '#e2928c', '#f2b2a8', '#ffd4c8'];
+  legs(canvas, [6, 9, 13, 16], 17, 4, ['#8e4848', '#c97470'], frame);
+  canvas.shadedEllipse(11, 14, 8, 5.5, skin);
+  canvas.shadedEllipse(18, 13, 4, 4.2, skin);
+  // Focinho, narinas, orelha e rabo enrolado.
+  canvas.rect(21, 13, 2, 3, '#d97d7a');
+  canvas.pixel(22, 13, '#f2b2a8');
+  canvas.pixel(22, 14, '#7a3b3c');
+  canvas.pixel(22, 15, '#7a3b3c');
+  canvas.polygon([[15, 10], [17, 7], [19, 10]], '#c97470');
+  canvas.pixel(17, 8, '#e2928c');
+  canvas.pixel(19, 12, '#1a1214');
+  canvas.pixel(19, 11, '#ffffff');
+  canvas.pixel(3, 12, '#c97470');
+  canvas.pixel(3, 11, '#c97470');
+  canvas.pixel(4, 10, '#c97470');
+  canvas.pixel(2, 11, '#c97470');
+  canvas.pixel(19, 15, '#c97470');
+}
+
+function drawChicken(canvas, frame) {
+  canvas.shadow(12, 21, 6, 2, 100);
+  const step = frame === 1 ? 1 : frame === 3 ? -1 : 0;
+  canvas.line(10 + step, 18, 10 + step, 21, '#d9952f');
+  canvas.line(13 - step, 18, 13 - step, 21, '#d9952f');
+  canvas.pixel(9 + step, 21, '#d9952f');
+  canvas.pixel(14 - step, 21, '#d9952f');
+  const feather = ['#c7bba5', '#efe7d6', '#fbf7ec', '#ffffff'];
+  // Cauda.
+  canvas.polygon([[4, 9], [8, 13], [5, 16]], feather[1]);
+  canvas.pixel(5, 10, feather[0]);
+  canvas.shadedEllipse(11, 15, 6, 4.5, feather);
+  canvas.shadedEllipse(15, 10, 3.2, 3.5, feather);
+  // Asa.
+  canvas.ellipse(10, 15, 3, 2, feather[0]);
+  canvas.line(8, 15, 12, 15, darken(feather[0], 0.15));
+  // Crista, bico, barbela e olho.
+  canvas.rect(14, 5, 3, 2, '#d23b32');
+  canvas.pixel(15, 4, '#e8564a');
+  canvas.rect(18, 10, 2, 1, '#f0a531');
+  canvas.pixel(18, 11, '#c9781f');
+  canvas.pixel(17, 12, '#d23b32');
+  canvas.pixel(16, 9, '#141014');
+}
+
+makeSheet('animals/livestock-sheet.png', 24, 24, 4, 3, (canvas, frame) => {
+  const species = Math.floor(frame / 4);
+  if (species === 0) drawSheep(canvas, frame % 4);
+  else if (species === 1) drawPig(canvas, frame % 4);
+  else drawChicken(canvas, frame % 4);
 });
 
-function drawIcon(canvas, x, y, frame) {
+// ---------- Ícones de recursos (16 x 16) ----------
+
+function drawIcon(canvas, frame) {
   if (frame === 0) {
-    canvas.rect(x + 2, y + 7, 12, 7, '#885737');
-    canvas.rect(x + 4, y + 5, 8, 2, '#d1a26a');
-    canvas.rect(x + 5, y + 8, 2, 4, '#d4a86d');
-    canvas.pixel(x + 10, y + 10, '#4f3929');
+    // Tora de madeira com anéis.
+    canvas.polygon([[2, 7], [11, 3], [14, 8], [5, 13]], WOOD[1]);
+    canvas.line(3, 8, 11, 4, WOOD[2]);
+    canvas.line(5, 12, 13, 8, WOOD[0]);
+    canvas.ellipse(12, 6, 2.6, 3, '#d9b07a');
+    canvas.pixel(12, 6, '#a77a48');
+    canvas.pixel(11, 5, '#f0cf9a');
   } else if (frame === 1) {
-    canvas.polygon([[x + 2, y + 12], [x + 4, y + 5], [x + 9, y + 3], [x + 14, y + 7], [x + 13, y + 13], [x + 7, y + 15]], '#818c83');
-    canvas.pixel(x + 5, y + 6, '#d2d0b6');
-    canvas.pixel(x + 10, y + 9, '#d2d0b6');
+    canvas.polygon([[2, 12], [3, 7], [7, 3], [12, 4], [14, 9], [12, 13], [6, 14]], STONE[1]);
+    canvas.polygon([[4, 7], [7, 4], [11, 5], [9, 8], [5, 9]], STONE[3]);
+    canvas.pixel(6, 5, STONE[4]);
+    canvas.line(9, 9, 12, 11, STONE[0]);
   } else if (frame === 2) {
-    canvas.line(x + 8, y + 14, x + 8, y + 5, '#a5be68');
-    canvas.line(x + 8, y + 9, x + 4, y + 6, '#78a859');
-    canvas.line(x + 8, y + 11, x + 12, y + 7, '#78a859');
-    canvas.pixel(x + 8, y + 4, '#e8d682');
+    canvas.line(8, 14, 8, 5, '#5f8f3e');
+    for (const [x, y, flip] of [[5, 8, -1], [11, 6, 1], [5, 11, -1], [11, 10, 1]]) {
+      canvas.ellipse(x, y, 2.4, 1.4, '#7cb350');
+      canvas.pixel(x - flip, y - 1, '#b5dc78');
+    }
+    canvas.pixel(8, 4, '#d9e88c');
   } else if (frame === 3) {
-    canvas.ellipse(x + 8, y + 9, 6, 5, '#c9774d');
-    canvas.pixel(x + 5, y + 7, '#edc06d');
-    canvas.pixel(x + 10, y + 10, '#f1d38b');
-    canvas.line(x + 11, y + 5, x + 13, y + 3, '#728d4f');
+    // Maçã.
+    canvas.shadedEllipse(8, 9, 5.5, 5, ['#8e2a2a', '#cc3f37', '#ec6a4e', '#ffc7a0']);
+    canvas.line(8, 5, 9, 2, '#5a3b26');
+    canvas.ellipse(11, 3, 2, 1, '#6aa548');
   } else if (frame === 4) {
-    canvas.line(x + 8, y + 14, x + 8, y + 5, '#7e9ed3');
-    canvas.line(x + 8, y + 10, x + 4, y + 6, '#667fc0');
-    canvas.line(x + 8, y + 8, x + 12, y + 4, '#a8bdf2');
-    canvas.pixel(x + 7, y + 4, '#e4ebff');
-    canvas.pixel(x + 12, y + 3, '#e4ebff');
+    canvas.line(8, 14, 8, 5, '#5c74c4');
+    for (const [x, y] of [[5, 8], [11, 6], [5, 11], [11, 10]]) canvas.ellipse(x, y, 2.4, 1.4, '#8aa0e8');
+    canvas.pixel(8, 3, '#ffffff');
+    canvas.pixel(4, 7, '#dfe7ff');
+    canvas.pixel(12, 5, '#dfe7ff');
   } else if (frame === 5) {
-    canvas.ellipse(x + 8, y + 9, 6, 6, '#55b9b1');
-    canvas.ellipse(x + 7, y + 7, 3, 3, '#a4eee0');
-    canvas.pixel(x + 10, y + 11, '#d2fff3');
+    canvas.shadedEllipse(8, 9, 5, 5.5, ['#2b7d7a', '#45b2aa', '#82e3d4', '#e4fff7']);
+    canvas.pixel(8, 3, '#82e3d4');
+    canvas.pixel(7, 2, '#45b2aa');
   } else if (frame === 6) {
-    canvas.rect(x + 5, y + 3, 3, 9, '#e2dcc2');
-    canvas.rect(x + 3, y + 5, 7, 3, '#e2dcc2');
-    canvas.rect(x + 4, y + 11, 5, 3, '#e2dcc2');
-    canvas.pixel(x + 4, y + 5, '#f8f2d9');
-    canvas.pixel(x + 8, y + 11, '#aaa487');
+    canvas.line(4, 12, 11, 5, '#e6dfc6');
+    canvas.line(5, 12, 12, 5, '#cfc6a6');
+    for (const [x, y] of [[3, 12], [4, 13], [12, 4], [13, 5]]) canvas.ellipse(x, y, 1.6, 1.6, '#f4eedb');
   } else {
-    canvas.ellipse(x + 8, y + 8, 6, 5, '#a38aba');
-    canvas.line(x + 3, y + 7, x + 12, y + 11, '#d9c2e5');
-    canvas.line(x + 4, y + 11, x + 12, y + 6, '#c5a9d4');
-    canvas.pixel(x + 4, y + 7, '#f2e6f7');
+    // Carretel de seda.
+    canvas.shadedEllipse(8, 8, 5, 5, ['#6f5a86', '#a28ab8', '#cdb9df', '#f3e9fb']);
+    canvas.line(4, 6, 12, 10, '#e2d3ef');
+    canvas.line(4, 9, 11, 5, '#e2d3ef');
+    canvas.line(12, 11, 14, 14, '#cdb9df');
   }
 }
 
 makeSheet('ui/resource-icons.png', 16, 16, 8, 1, drawIcon);
 
+// ---------- Efeitos ----------
+
 const vfxEntries = [
   {
-    name: 'slash-0', width: 32, height: 24,
+    name: 'slash-0', width: 32, height: 24, outline: false,
     draw: (canvas) => {
       canvas.line(4, 19, 27, 4, '#70483b', 150);
       canvas.line(5, 18, 26, 5, '#f5c86f');
@@ -407,15 +583,16 @@ const vfxEntries = [
     }
   },
   {
-    name: 'slash-1', width: 32, height: 24,
+    name: 'slash-1', width: 32, height: 24, outline: false,
     draw: (canvas) => {
       canvas.polygon([[2, 18], [8, 9], [22, 2], [29, 4], [22, 10], [7, 22]], '#70483b', 150);
       canvas.polygon([[3, 17], [9, 10], [22, 3], [27, 5], [21, 9], [8, 20]], '#f4bd5f');
+      canvas.polygon([[6, 16], [11, 10], [22, 4], [25, 5], [20, 8], [9, 17]], '#ffe39a');
       canvas.line(7, 16, 23, 6, '#fff5cf');
     }
   },
   {
-    name: 'slash-2', width: 32, height: 24,
+    name: 'slash-2', width: 32, height: 24, outline: false,
     draw: (canvas) => {
       canvas.line(5, 18, 26, 5, '#f4c66c', 185);
       canvas.line(8, 16, 23, 8, '#fff4c4', 105);
@@ -424,7 +601,7 @@ const vfxEntries = [
     }
   },
   {
-    name: 'spark-0', width: 12, height: 12,
+    name: 'spark-0', width: 12, height: 12, outline: false,
     draw: (canvas) => {
       canvas.rect(5, 1, 2, 10, '#ffe08a');
       canvas.rect(1, 5, 10, 2, '#ffe08a');
@@ -434,7 +611,7 @@ const vfxEntries = [
     }
   },
   {
-    name: 'spark-1', width: 12, height: 12,
+    name: 'spark-1', width: 12, height: 12, outline: false,
     draw: (canvas) => {
       canvas.rect(4, 3, 4, 6, '#ffb84f');
       canvas.rect(3, 4, 6, 4, '#ffb84f');
@@ -442,7 +619,7 @@ const vfxEntries = [
     }
   },
   {
-    name: 'ember-0', width: 6, height: 6,
+    name: 'ember-0', width: 6, height: 6, outline: false,
     draw: (canvas) => {
       canvas.rect(2, 1, 2, 4, '#e96d3e');
       canvas.pixel(2, 2, '#ffd46b');
@@ -450,7 +627,7 @@ const vfxEntries = [
     }
   },
   {
-    name: 'ember-1', width: 6, height: 6,
+    name: 'ember-1', width: 6, height: 6, outline: false,
     draw: (canvas) => {
       canvas.rect(2, 2, 2, 3, '#f08b42');
       canvas.pixel(2, 3, '#ffe488');
@@ -471,35 +648,35 @@ const vfxEntries = [
     }
   },
   {
-    name: 'dust-0', width: 8, height: 6,
+    name: 'dust-0', width: 8, height: 6, outline: false,
     draw: (canvas) => {
-      canvas.rect(1, 3, 3, 2, '#b8a982');
-      canvas.rect(4, 2, 3, 2, '#d2c49c');
+      canvas.ellipse(2.5, 4, 2, 1.5, '#b8a982', 200);
+      canvas.ellipse(5.5, 3, 2, 1.5, '#d2c49c', 200);
     }
   },
   {
-    name: 'dust-1', width: 8, height: 6,
+    name: 'dust-1', width: 8, height: 6, outline: false,
     draw: (canvas) => {
-      canvas.rect(2, 2, 4, 2, '#cdbf98');
-      canvas.pixel(1, 3, '#9f906e');
+      canvas.ellipse(4, 3, 2.5, 1.5, '#cdbf98', 170);
+      canvas.pixel(1, 3, '#9f906e', 170);
     }
   },
   {
-    name: 'firefly-0', width: 4, height: 4,
+    name: 'firefly-0', width: 4, height: 4, outline: false,
     draw: (canvas) => {
       canvas.rect(1, 1, 2, 2, '#fff39a');
       canvas.pixel(0, 2, '#d9e86c');
     }
   },
   {
-    name: 'firefly-1', width: 4, height: 4,
+    name: 'firefly-1', width: 4, height: 4, outline: false,
     draw: (canvas) => {
       canvas.pixel(1, 1, '#d9e86c');
       canvas.pixel(2, 2, '#fff39a');
     }
   },
   {
-    name: 'ring-0', width: 40, height: 32,
+    name: 'ring-0', width: 40, height: 32, outline: false,
     draw: (canvas) => {
       for (let y = 0; y < 32; y += 1) {
         for (let x = 0; x < 40; x += 1) {
@@ -511,7 +688,7 @@ const vfxEntries = [
     }
   },
   {
-    name: 'ring-1', width: 40, height: 32,
+    name: 'ring-1', width: 40, height: 32, outline: false,
     draw: (canvas) => {
       for (let y = 0; y < 32; y += 1) {
         for (let x = 0; x < 40; x += 1) {
@@ -522,17 +699,11 @@ const vfxEntries = [
     }
   },
   {
-    name: 'fog-dither', width: 32, height: 32,
+    name: 'fog-dither', width: 32, height: 32, outline: false,
     draw: (canvas) => {
-      const bayer = [
-        [0, 8, 2, 10],
-        [12, 4, 14, 6],
-        [3, 11, 1, 9],
-        [15, 7, 13, 5]
-      ];
       for (let y = 0; y < 32; y += 1) {
         for (let x = 0; x < 32; x += 1) {
-          const threshold = bayer[y % 4][x % 4] / 16;
+          const threshold = dither(x, y);
           if (threshold < 0.5) canvas.pixel(x, y, '#dbe8e5', 235);
           else if (threshold < 0.75) canvas.pixel(x, y, '#dbe8e5', 115);
         }
@@ -542,273 +713,481 @@ const vfxEntries = [
 ];
 makeAtlas('vfx/vfx-atlas.json', vfxEntries);
 
+// ---------- Natureza ----------
+
+function drawPine(canvas, shift) {
+  canvas.shadow(20, 52, 15, 3.5, 105);
+  // Tronco.
+  canvas.rect(17, 40, 6, 12, BARK[1]);
+  canvas.rect(17, 40, 2, 12, BARK[2]);
+  canvas.rect(21, 40, 2, 12, BARK[0]);
+  canvas.pixel(16, 51, BARK[1]);
+  canvas.pixel(23, 51, BARK[0]);
+  // Camadas de galhos, de baixo para cima; as de cima balançam mais.
+  const tiers = [
+    { apex: 18, base: 45, half: 17, sway: 0 },
+    { apex: 9, base: 34, half: 14, sway: shift * 0.5 },
+    { apex: 1, base: 23, half: 10, sway: shift }
+  ];
+  for (const tier of tiers) {
+    const cx = 20 + tier.sway;
+    const points = [[cx, tier.apex]];
+    // Base em zigue-zague.
+    const teeth = 5;
+    for (let index = 0; index <= teeth; index += 1) {
+      const t = index / teeth;
+      const x = cx + tier.half - t * tier.half * 2;
+      points.push([x, tier.base - (index % 2 ? 3 : 0)]);
+    }
+    canvas.forPolygon(points, (x, y) => {
+      const across = (x + 0.5 - cx) / tier.half;
+      const down = (y - tier.apex) / (tier.base - tier.apex);
+      const value = -across * 0.8 + (1 - down) * 0.35 + (dither(x, y) - 0.5) * 0.35;
+      const tone = value > 0.55 ? 4 : value > 0.15 ? 3 : value > -0.35 ? 2 : 1;
+      canvas.pixel(x, y, LEAF[tone]);
+    });
+    // Sombra irregular da camada de cima sobre a de baixo.
+    for (let x = Math.round(cx - tier.half * 0.5); x <= Math.round(cx + tier.half * 0.7); x += 1) {
+      const y = tier.base + 1 + (hash(x, tier.base, 8) > 0.5 ? 1 : 0);
+      if (canvas.alphaAt(x, y) > 0 && hash(x, y, 9) > 0.35) canvas.pixel(x, y, LEAF[1]);
+    }
+  }
+  canvas.pixel(14 + shift, 13, LEAF[4]);
+  canvas.pixel(12, 27, LEAF[4]);
+  canvas.pixel(26, 38, LEAF[1]);
+}
+
+function drawRoundTree(canvas, palette, fruit = null) {
+  canvas.shadow(24, 51, 17, 4, 105);
+  canvas.rect(21, 30, 7, 21, BARK[1]);
+  canvas.rect(21, 30, 2, 21, BARK[2]);
+  canvas.rect(26, 30, 2, 21, BARK[0]);
+  canvas.line(23, 34, 15, 26, BARK[1]);
+  canvas.line(26, 36, 34, 26, BARK[1]);
+  canvas.rect(19, 49, 3, 2, BARK[1]);
+  canvas.rect(27, 49, 3, 2, BARK[0]);
+  const colors = ramp(palette);
+  for (const [x, y, rx, ry] of [[24, 22, 16, 13], [13, 26, 9, 8], [35, 26, 9, 8], [18, 13, 9, 8], [31, 13, 9, 8], [24, 8, 8, 6]]) {
+    canvas.shadedEllipse(x, y, rx, ry, colors);
+  }
+  // Folhas soltas na borda.
+  for (let index = 0; index < 14; index += 1) {
+    const angle = hash(index, 3, palette.length) * Math.PI * 2;
+    const x = 24 + Math.cos(angle) * 17;
+    const y = 20 + Math.sin(angle) * 14;
+    if (canvas.alphaAt(Math.round(x), Math.round(y)) > 200) canvas.pixel(x, y, colors[index % 2 ? 2 : 0]);
+  }
+  if (fruit) {
+    for (const [x, y] of [[16, 24], [30, 18], [26, 29], [20, 14], [35, 26]]) {
+      canvas.rect(x, y, 2, 2, fruit);
+      canvas.pixel(x, y, lighten(fruit, 0.4));
+    }
+  }
+}
+
+function drawRock(canvas, cx, cy, width, height, colors = STONE) {
+  const points = [
+    [cx - width, cy + height * 0.5], [cx - width * 0.8, cy - height * 0.4], [cx - width * 0.2, cy - height],
+    [cx + width * 0.5, cy - height * 0.8], [cx + width, cy - height * 0.1], [cx + width * 0.8, cy + height * 0.6],
+    [cx, cy + height * 0.8]
+  ];
+  canvas.forPolygon(points, (x, y) => {
+    const nx = (x - cx) / width;
+    const ny = (y - cy) / height;
+    const value = -nx * 0.6 - ny * 0.9 + (dither(x, y) - 0.5) * 0.3;
+    canvas.pixel(x, y, colors[value > 0.75 ? 4 : value > 0.3 ? 3 : value > -0.3 ? 2 : 1]);
+  });
+  // Faceta de cima e rachaduras.
+  canvas.line(Math.round(cx - width * 0.2), Math.round(cy - height * 0.2), Math.round(cx + width * 0.4), Math.round(cy + height * 0.3), colors[1]);
+  canvas.pixel(cx - width * 0.5, cy - height * 0.3, colors[4]);
+}
+
 const natureEntries = [
   ...[0, 1, 2].map((frame) => ({
     name: `pine-${frame}`, width: 40, height: 56,
-    draw: (canvas) => {
-      const shift = frame === 1 ? -1 : frame === 2 ? 1 : 0;
-      canvas.ellipse(20, 51, 16, 4, '#25382a', 150);
-      canvas.rect(17, 32, 7, 18, '#735033');
-      canvas.rect(18, 35, 2, 12, '#a17345');
-      canvas.polygon([[20 + shift, 1], [5 + shift, 30], [13 + shift, 28], [3 + shift, 39], [18 + shift, 36], [13 + shift, 48], [28 + shift, 42], [37 + shift, 43], [28 + shift, 31], [35 + shift, 31]], '#2e533c');
-      canvas.polygon([[20 + shift, 5], [9 + shift, 27], [17 + shift, 24], [8 + shift, 34], [20 + shift, 31], [16 + shift, 39], [27 + shift, 35], [32 + shift, 32]], '#42764b');
-      canvas.line(20 + shift, 8, 19 + shift, 35, '#719258');
-      canvas.pixel(16 + shift, 15, '#81a15f');
-      canvas.pixel(28 + shift, 27, '#688b53');
-    }
+    draw: (canvas) => drawPine(canvas, frame === 1 ? -1 : frame === 2 ? 1 : 0)
   })),
-  {
-    name: 'autumn-tree', width: 48, height: 56,
-    draw: (canvas) => {
-      canvas.ellipse(24, 51, 17, 4, '#25382a', 145);
-      canvas.rect(21, 27, 7, 24, '#704b34');
-      canvas.line(23, 31, 14, 22, '#704b34');
-      canvas.line(25, 34, 34, 21, '#704b34');
-      canvas.ellipse(24, 20, 16, 14, '#9d5546');
-      canvas.ellipse(14, 24, 9, 9, '#b76a4b');
-      canvas.ellipse(34, 24, 9, 9, '#c1844b');
-      canvas.pixel(20, 8, '#d39b56');
-      canvas.pixel(30, 13, '#dcaa5d');
-      canvas.pixel(13, 19, '#d88a55');
-      canvas.pixel(35, 25, '#d9a85c');
-      canvas.pixel(25, 28, '#8f4a40');
-    }
-  },
+  { name: 'autumn-tree', width: 48, height: 56, draw: (canvas) => drawRoundTree(canvas, '#c56a3f') },
+  { name: 'oak-tree', width: 48, height: 56, draw: (canvas) => drawRoundTree(canvas, '#4c8b49') },
+  { name: 'fruit-tree', width: 48, height: 56, draw: (canvas) => drawRoundTree(canvas, '#5a9650', '#d8413a') },
   {
     name: 'bush', width: 32, height: 24,
     draw: (canvas) => {
-      canvas.ellipse(16, 21, 13, 3, '#26382a', 145);
-      canvas.ellipse(10, 13, 7, 7, '#376541');
-      canvas.ellipse(19, 11, 8, 9, '#477a49');
-      canvas.ellipse(25, 15, 5, 6, '#639052');
-      canvas.pixel(10, 8, '#7eaa5b');
-      canvas.pixel(20, 7, '#87ad61');
-      canvas.pixel(15, 12, '#a5584c');
-      canvas.pixel(23, 13, '#b8664b');
+      canvas.shadow(16, 21, 13, 3, 105);
+      const colors = ramp('#4a8448');
+      for (const [x, y, rx, ry] of [[10, 14, 7, 6], [21, 13, 8, 8], [16, 9, 6, 5], [25, 16, 5, 4.5]]) canvas.shadedEllipse(x, y, rx, ry, colors);
+      for (const [x, y] of [[9, 12], [19, 10], [24, 15], [14, 16]]) {
+        canvas.rect(x, y, 2, 2, '#c8453c');
+        canvas.pixel(x, y, '#f28a6c');
+      }
     }
   },
   {
     name: 'resource-wood', width: 28, height: 28,
     draw: (canvas) => {
-      canvas.ellipse(14, 24, 12, 3, '#26382a', 135);
-      canvas.rect(5, 9, 17, 12, '#754b31');
-      canvas.rect(5, 7, 16, 4, '#ad7950');
-      canvas.rect(8, 11, 3, 9, '#d0a16a');
-      canvas.rect(15, 12, 2, 8, '#563a2a');
-      canvas.pixel(19, 8, '#e0b175');
+      // Toco de árvore com anéis e raízes.
+      canvas.shadow(14, 24, 12, 3, 110);
+      canvas.rect(6, 12, 16, 10, BARK[1]);
+      canvas.rect(6, 12, 4, 10, BARK[2]);
+      canvas.rect(18, 12, 4, 10, BARK[0]);
+      for (const x of [9, 13, 16]) canvas.line(x, 14, x, 21, BARK[0]);
+      canvas.polygon([[3, 23], [7, 18], [9, 23]], BARK[1]);
+      canvas.polygon([[19, 23], [21, 18], [25, 23]], BARK[0]);
+      canvas.ellipse(14, 12, 8, 3.5, '#c99a62');
+      canvas.ellipse(14, 12, 5.5, 2.3, '#dcb27b');
+      canvas.ellipse(14, 12, 3, 1.3, '#c99a62');
+      canvas.pixel(14, 12, '#a77a48');
+      canvas.pixel(10, 11, '#f0cf9a');
+      // Machadinha cravada.
+      canvas.line(19, 4, 15, 11, '#7c5434');
+      canvas.polygon([[17, 3], [22, 2], [22, 6], [19, 6]], STONE[3]);
+      canvas.pixel(21, 3, STONE[4]);
     }
   },
   {
     name: 'resource-stone', width: 28, height: 28,
     draw: (canvas) => {
-      canvas.ellipse(14, 24, 12, 3, '#26382a', 135);
-      canvas.polygon([[3, 20], [5, 10], [12, 5], [17, 8], [23, 14], [21, 22], [12, 24]], '#737e7b');
-      canvas.polygon([[6, 12], [12, 7], [14, 13], [10, 16]], '#c0c1ae');
-      canvas.pixel(18, 15, '#9fa698');
-      canvas.pixel(14, 20, '#555f5e');
+      canvas.shadow(14, 23, 12, 3, 110);
+      drawRock(canvas, 13, 15, 10, 8);
+      drawRock(canvas, 21, 19, 4, 3);
+      canvas.pixel(6, 19, '#5f9650');
+      canvas.pixel(7, 20, '#4a7b48');
     }
   },
   {
     name: 'resource-herbs', width: 28, height: 28,
     draw: (canvas) => {
-      canvas.ellipse(14, 24, 11, 3, '#26382a', 130);
-      canvas.line(14, 22, 13, 9, '#85a956');
-      canvas.line(13, 17, 7, 11, '#75a957');
-      canvas.line(13, 14, 19, 8, '#95bb62');
-      canvas.line(14, 20, 21, 15, '#67984a');
-      canvas.pixel(12, 7, '#d7d77c');
-      canvas.pixel(20, 6, '#d7d77c');
-      canvas.pixel(6, 10, '#c3cf72');
+      canvas.shadow(14, 24, 10, 3, 100);
+      const leaf = ['#3d7a3a', '#5f9e45', '#8cc55c', '#c3e88a'];
+      for (const [x, y, angle] of [[9, 15, -0.6], [19, 14, 0.6], [11, 10, -0.3], [17, 9, 0.3], [14, 17, 0]]) {
+        canvas.line(14, 23, x, y, leaf[0]);
+        canvas.shadedEllipse(x, y, 3, 2 + Math.abs(angle), leaf);
+      }
+      for (const [x, y] of [[10, 7], [18, 6], [14, 5]]) {
+        canvas.pixel(x, y, '#f2efb0');
+        canvas.pixel(x, y + 1, '#d9cf6a');
+      }
     }
   },
   {
     name: 'resource-moonherb', width: 28, height: 28,
     draw: (canvas) => {
-      canvas.ellipse(14, 24, 11, 3, '#26382a', 130);
-      canvas.line(14, 22, 13, 8, '#758bd0');
-      canvas.line(13, 17, 6, 11, '#5f74bd');
-      canvas.line(13, 13, 20, 7, '#9aaeea');
-      canvas.line(14, 20, 21, 14, '#687dc6');
-      canvas.pixel(12, 6, '#dbe3ff');
-      canvas.pixel(20, 5, '#f1f3ff');
-      canvas.pixel(6, 9, '#c4d0fb');
+      canvas.shadow(14, 24, 10, 3, 100);
+      canvas.ellipse(14, 13, 10, 9, '#9fb6ff', 45);
+      const leaf = ['#3b4f98', '#5c74c4', '#8aa0e8', '#dfe7ff'];
+      for (const [x, y] of [[9, 15], [19, 14], [11, 10], [17, 9], [14, 17]]) {
+        canvas.line(14, 23, x, y, leaf[0]);
+        canvas.shadedEllipse(x, y, 3, 2, leaf);
+      }
+      for (const [x, y] of [[14, 4], [9, 6], [19, 5]]) {
+        canvas.pixel(x, y, '#ffffff');
+        canvas.pixel(x - 1, y, '#c9d6ff', 160);
+        canvas.pixel(x + 1, y, '#c9d6ff', 160);
+      }
     }
   },
   {
     name: 'resource-ectoplasm', width: 28, height: 28,
     draw: (canvas) => {
-      canvas.ellipse(14, 24, 10, 3, '#26382a', 130);
-      canvas.polygon([[14, 3], [22, 10], [20, 22], [14, 25], [8, 21], [7, 10]], '#3f9f9a');
-      canvas.polygon([[14, 6], [19, 11], [17, 20], [13, 22], [10, 19], [10, 12]], '#7ed3c6');
-      canvas.pixel(12, 10, '#d8fff1');
-      canvas.pixel(16, 15, '#b7f4df');
+      canvas.shadow(14, 24, 9, 3, 100);
+      canvas.ellipse(14, 15, 10, 10, '#7ff0d8', 40);
+      canvas.shadedEllipse(14, 16, 7, 7, ['#2b7d7a', '#45b2aa', '#82e3d4', '#e4fff7']);
+      canvas.shadedEllipse(14, 9, 4, 4, ['#2b7d7a', '#45b2aa', '#82e3d4', '#e4fff7']);
+      canvas.pixel(14, 4, '#82e3d4');
+      canvas.pixel(12, 20, '#e4fff7');
     }
   },
   {
     name: 'death-backpack', width: 28, height: 28,
     draw: (canvas) => {
-      canvas.ellipse(14, 24, 12, 3, '#26382a', 150);
-      canvas.rect(5, 8, 18, 15, '#3b3028');
-      canvas.rect(7, 10, 14, 11, '#765338');
-      canvas.rect(9, 6, 10, 4, '#9a7048');
-      canvas.rect(11, 3, 6, 4, '#b78955');
-      canvas.rect(12, 13, 4, 6, '#d2ad6b');
-      canvas.pixel(13, 15, '#f3d68b');
-      canvas.rect(4, 10, 3, 9, '#4b392d');
-      canvas.rect(21, 10, 3, 9, '#4b392d');
+      canvas.shadow(14, 24, 11, 3, 110);
+      canvas.rect(6, 8, 16, 15, LEATHER[1]);
+      canvas.rect(6, 8, 3, 15, LEATHER[2]);
+      canvas.rect(19, 8, 3, 15, LEATHER[0]);
+      canvas.rect(8, 5, 12, 5, LEATHER[2]);
+      canvas.rect(8, 9, 12, 1, LEATHER[0]);
+      canvas.rect(12, 13, 4, 5, '#8d5c36');
+      canvas.rect(13, 11, 2, 3, '#e8c15a');
+      canvas.pixel(13, 11, '#fff0a6');
+      canvas.rect(4, 12, 2, 8, LEATHER[0]);
+      canvas.rect(22, 12, 2, 8, LEATHER[0]);
+      canvas.rect(11, 2, 6, 3, '#c7b089');
     }
   },
   {
-    name: 'detail-grass', width: 20, height: 16,
+    name: 'detail-grass', width: 20, height: 16, outline: false,
     draw: (canvas) => {
-      canvas.line(4, 14, 3, 8, '#5f914f');
-      canvas.line(5, 14, 6, 7, '#79a556');
-      canvas.line(13, 14, 15, 9, '#4f8248');
-      canvas.pixel(10, 6, '#93b762');
+      tuft(canvas, 5, 14, 4);
+      tuft(canvas, 13, 14, 3);
+      canvas.pixel(9, 10, GRASS[5]);
     }
   },
   {
-    name: 'detail-flowers', width: 20, height: 16,
+    name: 'detail-flowers', width: 20, height: 16, outline: false,
     draw: (canvas) => {
-      canvas.line(6, 14, 6, 8, '#6d9b4d');
-      canvas.line(14, 14, 14, 9, '#7da557');
-      canvas.rect(5, 6, 3, 2, '#f1e5a4');
-      canvas.pixel(6, 5, '#fff4c3');
-      canvas.rect(13, 7, 3, 2, '#e9a45d');
-      canvas.pixel(14, 6, '#ffd58a');
+      canvas.line(6, 14, 6, 8, GRASS[3]);
+      canvas.line(14, 14, 14, 9, GRASS[3]);
+      canvas.pixel(7, 11, GRASS[4]);
+      for (const [x, y, petal, heart] of [[6, 7, '#f6f0dd', '#e9b949'], [14, 8, '#e98a5c', '#ffd58a']]) {
+        canvas.pixel(x - 1, y, petal); canvas.pixel(x + 1, y, petal); canvas.pixel(x, y - 1, petal); canvas.pixel(x, y + 1, petal);
+        canvas.pixel(x, y, heart);
+      }
     }
   },
   {
     name: 'detail-pebbles', width: 20, height: 12,
     draw: (canvas) => {
-      canvas.ellipse(5, 8, 3, 2, '#7d8277');
-      canvas.pixel(4, 7, '#b6b7a3');
-      canvas.ellipse(13, 7, 4, 2, '#696f67');
-      canvas.pixel(12, 6, '#9da193');
+      drawRock(canvas, 6, 7, 3, 2);
+      drawRock(canvas, 13, 6, 2.5, 2);
     }
   },
   {
-    name: 'detail-leaves', width: 20, height: 12,
+    name: 'detail-leaves', width: 20, height: 12, outline: false,
     draw: (canvas) => {
-      canvas.polygon([[2, 7], [6, 3], [10, 6], [6, 9]], '#8b7846');
-      canvas.polygon([[11, 5], [15, 2], [18, 5], [14, 8]], '#a07843');
-      canvas.pixel(5, 5, '#c09b58');
+      canvas.polygon([[2, 7], [6, 4], [10, 6], [6, 9]], '#9a7a43');
+      canvas.line(3, 7, 9, 6, '#7a5c33');
+      canvas.polygon([[11, 5], [15, 2], [18, 5], [14, 8]], '#b8823f');
+      canvas.line(12, 6, 17, 4, '#8e6130');
     }
   },
   {
     name: 'detail-mushroom', width: 16, height: 16,
     draw: (canvas) => {
-      canvas.ellipse(8, 14, 5, 2, '#26382a', 110);
-      canvas.rect(6, 8, 4, 6, '#d8c9a4');
-      canvas.rect(3, 5, 10, 4, '#b95045');
-      canvas.pixel(5, 6, '#f0cf92');
-      canvas.pixel(10, 6, '#f0cf92');
+      canvas.shadow(8, 14, 5, 1.5, 90);
+      canvas.rect(6, 9, 4, 5, '#e8dcc0');
+      canvas.rect(8, 9, 2, 5, '#c8b996');
+      canvas.forEllipse(8, 8, 5.5, 3.6, (x, y) => { if (y <= 8) canvas.pixel(x, y, '#c43f35'); });
+      canvas.forEllipse(7, 6, 3, 1.6, (x, y) => canvas.pixel(x, y, '#e2584a'));
+      canvas.pixel(5, 6, '#fbeedd');
+      canvas.pixel(9, 5, '#fbeedd');
+      canvas.pixel(11, 7, '#fbeedd');
     }
   }
 ];
 makeAtlas('nature/nature-atlas.json', natureEntries);
 
-const buildingEntries = [];
-for (const [name, roof, wall, accent] of [
-  ['house', '#554856', '#936947', '#d8a855'],
-  ['forge', '#515050', '#77736a', '#e49b4b'],
-  ['farm', '#557649', '#a27b4e', '#d6b758'],
-  ['store', '#8b4b43', '#9b734d', '#dbb46b']
-]) {
-  buildingEntries.push({
-    name, width: 64, height: 64,
-    draw: (canvas) => {
-      canvas.ellipse(32, 59, 27, 4, '#24352a', 155);
-      canvas.rect(11, 29, 42, 25, wall);
-      canvas.rect(14, 31, 36, 3, accent);
-      canvas.rect(10, 49, 44, 4, '#654830');
-      canvas.polygon([[5, 31], [32, 7], [59, 31], [53, 35], [32, 17], [11, 35]], roof);
-      canvas.line(11, 30, 32, 12, '#b08058');
-      canvas.line(32, 12, 54, 30, '#b08058');
-      canvas.rect(28, 38, 10, 16, '#49342b');
-      canvas.rect(30, 41, 2, 9, '#865b3b');
-      canvas.rect(15, 36, 8, 8, '#44382f');
-      canvas.rect(16, 37, 6, 6, '#f4ce70');
-      canvas.pixel(19, 37, '#fff0ac');
-      canvas.rect(42, 36, 8, 8, '#44382f');
-      canvas.rect(43, 37, 6, 6, '#f4ce70');
-      canvas.pixel(46, 37, '#fff0ac');
-      canvas.rect(9, 52, 46, 2, '#c99a62');
-      canvas.rect(12, 55, 4, 3, '#654830');
-      canvas.rect(49, 55, 4, 3, '#654830');
-      if (name === 'forge') {
-        canvas.rect(45, 6, 9, 20, '#52585a');
-        canvas.rect(43, 4, 13, 4, '#717776');
-        canvas.rect(47, 10, 3, 13, '#383b3b');
-        canvas.pixel(46, 24, '#a44e36');
-        canvas.rect(26, 47, 14, 6, '#806044');
-        canvas.pixel(32, 48, '#f6aa4f');
-      }
-      if (name === 'farm') {
-        canvas.rect(3, 24, 14, 29, '#b7ad82');
-        canvas.rect(5, 27, 10, 23, '#d1c69a');
-        canvas.polygon([[1, 25], [10, 15], [19, 25]], '#6b4936');
-        canvas.rect(8, 38, 4, 15, '#7d6849');
-        for (let row = 0; row < 3; row += 1) {
-          canvas.rect(23 + row * 7, 49 - row * 3, 4, 5, '#6c984f');
-          canvas.rect(39 + row * 5, 49 - row * 3, 4, 5, '#83aa55');
-        }
-      }
-      if (name === 'store') {
-        canvas.rect(25, 31, 17, 4, '#e2c06e');
-        canvas.rect(27, 35, 4, 7, '#b65345');
-        canvas.rect(34, 35, 4, 7, '#e2c06e');
-        canvas.rect(43, 46, 14, 10, '#765238');
-        canvas.rect(45, 48, 5, 6, '#b18455');
-        canvas.rect(51, 48, 5, 6, '#b18455');
-        canvas.line(45, 48, 50, 54, '#5f422f');
-      }
+// ---------- Prédios (64 x 64) ----------
+
+function planks(canvas, x, y, width, height, base, vertical = false) {
+  const colors = ramp(base);
+  for (let py = y; py < y + height; py += 1) {
+    for (let px = x; px < x + width; px += 1) {
+      const along = vertical ? px - x : py - y;
+      const seam = along % 4 === 3;
+      const grain = hash(vertical ? px : Math.floor(px / 7) + py * 3, vertical ? Math.floor(py / 7) : py, 5) > 0.82;
+      canvas.pixel(px, py, seam ? colors[0] : grain ? darken(base, 0.12) : base);
     }
+  }
+  // Luz na esquerda e sombra na direita.
+  canvas.rect(x, y, 1, height, colors[2]);
+  canvas.rect(x + width - 1, y, 1, height, colors[0]);
+}
+
+function bricks(canvas, x, y, width, height, base) {
+  const colors = ramp(base);
+  for (let py = y; py < y + height; py += 1) {
+    const row = Math.floor((py - y) / 4);
+    for (let px = x; px < x + width; px += 1) {
+      const mortarRow = (py - y) % 4 === 3;
+      const mortarCol = (px - x + (row % 2) * 4) % 8 === 7;
+      const tone = hash(Math.floor((px - x + (row % 2) * 4) / 8), row, 9);
+      const brick = tone > 0.7 ? colors[2] : tone < 0.25 ? darken(base, 0.12) : base;
+      canvas.pixel(px, py, mortarRow || mortarCol ? colors[0] : brick);
+    }
+  }
+}
+
+function roof(canvas, points, base, apexY, baseY) {
+  const colors = ramp(base);
+  canvas.forPolygon(points, (x, y) => {
+    const row = Math.floor((y - apexY) / 3);
+    const seam = (y - apexY) % 3 === 2;
+    const notch = (x + (row % 2) * 3) % 6 === 0;
+    const light = 1 - (y - apexY) / Math.max(1, baseY - apexY);
+    let color = seam ? colors[0] : notch ? darken(base, 0.15) : base;
+    if (!seam && !notch && light > 0.7 && dither(x, y) < 0.5) color = colors[2];
+    canvas.pixel(x, y, color);
   });
 }
-buildingEntries.push(
+
+function windowLight(canvas, x, y, width = 8, height = 8) {
+  canvas.rect(x - 1, y - 1, width + 2, height + 2, WOOD[0]);
+  canvas.rect(x, y, width, height, '#f2c45c');
+  canvas.rect(x, y + height / 2, width, height / 2, '#e09a3f');
+  canvas.rect(x + width / 2 - 1, y, 1, height, WOOD[1]);
+  canvas.rect(x, y + height / 2 - 1, width, 1, WOOD[1]);
+  canvas.pixel(x + 1, y + 1, '#fff3c4');
+  canvas.pixel(x + 2, y + 1, '#fff3c4');
+  canvas.rect(x - 1, y + height + 1, width + 2, 1, WOOD[2]);
+}
+
+function door(canvas, x, y, width, height) {
+  canvas.rect(x - 1, y - 1, width + 2, height + 1, WOOD[0]);
+  planks(canvas, x, y, width, height, '#6e4a2c', true);
+  canvas.rect(x + width - 3, y + Math.floor(height / 2), 1, 1, '#e8c15a');
+  canvas.rect(x, y + 3, width, 1, '#4a3020');
+  canvas.rect(x, y + height - 4, width, 1, '#4a3020');
+}
+
+function foundation(canvas, x, y, width) {
+  for (let px = x; px < x + width; px += 4) {
+    const shade = hash(px, y, 4) > 0.5 ? STONE[2] : STONE[1];
+    canvas.rect(px, y, 4, 3, shade);
+    canvas.pixel(px, y, STONE[3]);
+    canvas.pixel(px + 3, y + 2, STONE[0]);
+  }
+}
+
+function drawHouseBody(canvas, { wall, roofColor, timber = true }) {
+  canvas.shadow(32, 58, 28, 4, 120);
+  planks(canvas, 11, 30, 42, 22, wall);
+  if (timber) {
+    for (const x of [11, 31, 52]) canvas.rect(x, 30, 2, 22, WOOD[0]);
+    canvas.rect(11, 30, 42, 2, WOOD[0]);
+  }
+  foundation(canvas, 10, 52, 44);
+  roof(canvas, [[4, 33], [32, 7], [60, 33], [54, 35], [32, 15], [10, 35]], roofColor, 7, 35);
+  roof(canvas, [[10, 35], [32, 15], [54, 35]], darken(wall, 0.3), 15, 35);
+  // Frontão com janelinha redonda.
+  canvas.shadedEllipse(32, 25, 3, 3, ['#9a5f2a', '#f2c45c', '#ffe39a', '#fff6d0']);
+  canvas.line(4, 33, 32, 7, lighten(roofColor, 0.35));
+  canvas.line(32, 7, 60, 33, darken(roofColor, 0.25));
+}
+
+const buildingEntries = [
   {
-    name: 'campfire-0', width: 24, height: 30,
+    name: 'house', width: 64, height: 64,
     draw: (canvas) => {
-      canvas.ellipse(12, 27, 10, 2, '#26382a', 150);
-      canvas.line(4, 23, 20, 19, '#754a30');
-      canvas.line(5, 19, 19, 24, '#9b6638');
-      canvas.polygon([[12, 6], [7, 17], [10, 22], [15, 21], [18, 15]], '#df7543');
-      canvas.polygon([[12, 11], [9, 18], [13, 20], [15, 15]], '#f5c75f');
+      drawHouseBody(canvas, { wall: '#a8794a', roofColor: '#4f6286' });
+      // Chaminé de pedra.
+      bricks(canvas, 42, 10, 7, 14, '#8a8580');
+      canvas.rect(41, 9, 9, 2, STONE[3]);
+      door(canvas, 28, 39, 9, 13);
+      windowLight(canvas, 16, 37);
+      windowLight(canvas, 41, 37);
+      // Floreiras.
+      for (const x of [15, 40]) {
+        canvas.rect(x, 47, 10, 2, WOOD[1]);
+        for (let index = 0; index < 4; index += 1) canvas.pixel(x + 1 + index * 2, 46, index % 2 ? '#f2d36b' : '#e05a4f');
+      }
     }
   },
   {
-    name: 'campfire-1', width: 24, height: 30,
+    name: 'forge', width: 64, height: 64,
     draw: (canvas) => {
-      canvas.ellipse(12, 27, 10, 2, '#26382a', 150);
-      canvas.line(4, 23, 20, 19, '#754a30');
-      canvas.line(5, 19, 19, 24, '#9b6638');
-      canvas.polygon([[12, 4], [8, 14], [9, 21], [15, 22], [18, 13]], '#e17b41');
-      canvas.polygon([[12, 9], [10, 17], [13, 20], [16, 13]], '#ffdb70');
+      canvas.shadow(32, 58, 28, 4, 120);
+      bricks(canvas, 11, 30, 42, 22, '#7f7b74');
+      foundation(canvas, 10, 52, 44);
+      roof(canvas, [[4, 33], [30, 9], [56, 33], [50, 35], [30, 17], [10, 35]], '#4a4648', 9, 35);
+      roof(canvas, [[10, 35], [30, 17], [50, 35]], '#3a3436', 17, 35);
+      // Chaminé alta (a fumaça sai daqui).
+      bricks(canvas, 45, 4, 9, 30, '#6c6862');
+      canvas.rect(44, 3, 11, 2, STONE[3]);
+      canvas.rect(46, 5, 7, 1, '#2a2426');
+      // Fornalha acesa.
+      canvas.rect(15, 37, 14, 15, '#2a2426');
+      canvas.polygon([[15, 39], [22, 34], [29, 39]], '#2a2426');
+      canvas.rect(17, 41, 10, 11, '#c2452c');
+      canvas.rect(18, 44, 8, 8, '#f08a3a');
+      canvas.rect(19, 47, 6, 5, '#ffd36b');
+      canvas.pixel(21, 43, '#ffe9a6');
+      // Bigorna e martelo.
+      canvas.rect(36, 46, 12, 3, '#3c3f45');
+      canvas.rect(34, 45, 16, 2, '#5a5f66');
+      canvas.pixel(35, 45, '#9aa3ab');
+      canvas.rect(39, 49, 6, 4, '#2f3237');
+      canvas.line(44, 40, 47, 44, WOOD[2]);
+      canvas.rect(42, 39, 4, 2, '#7d858c');
+      windowLight(canvas, 38, 33, 7, 6);
     }
   },
   {
-    name: 'campfire-2', width: 24, height: 30,
+    name: 'farm', width: 64, height: 64,
     draw: (canvas) => {
-      canvas.ellipse(12, 27, 10, 2, '#26382a', 150);
-      canvas.line(4, 23, 20, 19, '#754a30');
-      canvas.line(5, 19, 19, 24, '#9b6638');
-      canvas.polygon([[12, 7], [6, 15], [10, 22], [16, 20], [19, 14]], '#dc6c3c');
-      canvas.polygon([[13, 10], [10, 16], [12, 20], [16, 16]], '#f8cf63');
+      canvas.shadow(32, 58, 28, 4, 120);
+      // Silo.
+      canvas.rect(2, 24, 14, 29, '#c9bd94');
+      for (let y = 26; y < 52; y += 4) canvas.rect(2, y, 14, 1, '#a69a74');
+      canvas.rect(2, 24, 3, 29, '#e3d8b0');
+      canvas.rect(13, 24, 3, 29, '#9a8f6a');
+      canvas.forEllipse(9, 24, 7.5, 7, (x, y) => { if (y <= 24) canvas.pixel(x, y, y < 20 ? '#a24a3c' : '#86382f'); });
+      // Celeiro vermelho com friso branco.
+      planks(canvas, 18, 30, 36, 22, '#a83f33', true);
+      canvas.rect(18, 30, 36, 2, '#efe6d2');
+      foundation(canvas, 17, 52, 38);
+      roof(canvas, [[13, 33], [36, 10], [59, 33], [54, 35], [36, 18], [18, 35]], '#5b3a2e', 10, 35);
+      canvas.line(13, 33, 36, 10, '#efe6d2');
+      canvas.line(36, 10, 59, 33, '#d4c9b0');
+      // Portão com X.
+      canvas.rect(29, 38, 14, 14, '#efe6d2');
+      canvas.rect(30, 39, 12, 12, '#7d2c25');
+      canvas.line(30, 39, 41, 50, '#efe6d2');
+      canvas.line(41, 39, 30, 50, '#efe6d2');
+      canvas.rect(33, 22, 6, 5, '#efe6d2');
+      canvas.rect(34, 23, 4, 3, '#3a1e1a');
+      // Feno e abóboras na frente.
+      canvas.rect(46, 47, 7, 5, '#e2bf5a');
+      canvas.line(46, 49, 52, 49, '#b8913c');
+      canvas.shadedEllipse(23, 53, 3, 2.5, ['#a3471e', '#e07a2c', '#f5a24a', '#ffd38a']);
+      canvas.pixel(23, 50, '#4a7b48');
     }
   },
   {
-    name: 'campfire-3', width: 24, height: 30,
+    name: 'store', width: 64, height: 64,
     draw: (canvas) => {
-      canvas.ellipse(12, 27, 10, 2, '#26382a', 150);
-      canvas.line(4, 23, 20, 19, '#754a30');
-      canvas.line(5, 19, 19, 24, '#9b6638');
-      canvas.polygon([[13, 5], [8, 14], [10, 21], [15, 22], [18, 12]], '#ed8a47');
-      canvas.polygon([[12, 11], [10, 17], [14, 20], [15, 14]], '#ffe184');
+      drawHouseBody(canvas, { wall: '#b08451', roofColor: '#9a3e35' });
+      // Toldo listrado.
+      for (let x = 12; x < 52; x += 1) {
+        const stripe = Math.floor((x - 12) / 4) % 2 === 0;
+        canvas.rect(x, 33, 1, 5, stripe ? '#d8463b' : '#f3ead4');
+        // Borda recortada do toldo.
+        if (x % 4 < 2) canvas.pixel(x, 38, stripe ? '#a8342c' : '#d6cbb0');
+      }
+      canvas.rect(12, 33, 40, 1, '#f9f3e6');
+      // Balcão com mercadorias.
+      planks(canvas, 13, 44, 38, 8, '#7c5434');
+      canvas.rect(13, 43, 38, 2, WOOD[3]);
+      for (const [x, color] of [[16, '#d8413a'], [20, '#e9a13b'], [24, '#6fa84b'], [41, '#d8413a'], [45, '#f2d36b']]) {
+        canvas.shadedEllipse(x, 41, 2, 1.8, ramp(color));
+      }
+      canvas.rect(28, 39, 8, 5, '#8d6440');
+      canvas.rect(28, 39, 8, 1, '#c49556');
+      // Placa com moeda.
+      canvas.rect(27, 22, 10, 7, WOOD[1]);
+      canvas.rect(28, 23, 8, 5, WOOD[2]);
+      canvas.shadedEllipse(32, 25.5, 2.5, 2.5, ['#a8761c', '#e8b83a', '#ffe07a', '#fff6c8']);
+      // Caixotes.
+      planks(canvas, 54, 45, 8, 7, '#9a6c45');
+      canvas.line(54, 45, 61, 51, WOOD[0]);
+      canvas.line(61, 45, 54, 51, WOOD[0]);
     }
   },
   ...[0, 1, 2, 3].map((frame) => ({
-    name: `smoke-${frame}`, width: 16, height: 24,
+    name: `campfire-${frame}`, width: 24, height: 30,
+    draw: (canvas) => {
+      canvas.shadow(12, 26, 10, 2.5, 110);
+      // Pedras em volta.
+      for (const [x, y] of [[4, 24], [8, 26], [13, 26], [18, 25], [20, 22], [3, 21]]) {
+        canvas.shadedEllipse(x, y, 2.2, 1.7, STONE.slice(1));
+      }
+      // Lenha cruzada.
+      canvas.line(5, 24, 19, 19, BARK[1]);
+      canvas.line(5, 23, 19, 18, BARK[2]);
+      canvas.line(6, 18, 19, 24, BARK[1]);
+      canvas.line(6, 19, 19, 25, BARK[0]);
+      // Chamas em três camadas, mudando a cada quadro.
+      const sway = [0, 1, -1, 1][frame];
+      const tall = [6, 4, 7, 5][frame];
+      canvas.polygon([[12 + sway, tall], [6, 16], [8, 22], [16, 22], [18, 15], [15, tall + 5]], '#d9542e');
+      canvas.polygon([[12 - sway, tall + 4], [8, 17], [10, 21], [15, 21], [16, 15]], '#f2913a');
+      canvas.polygon([[12 + sway, tall + 8], [10, 18], [12, 21], [14, 18]], '#ffd76b');
+      canvas.pixel(12, 20, '#fff4c8');
+      if (frame % 2) canvas.pixel(16 + sway, tall + 2, '#f2913a');
+      else canvas.pixel(8 - sway, tall + 5, '#ffd76b');
+    }
+  })),
+  ...[0, 1, 2, 3].map((frame) => ({
+    name: `smoke-${frame}`, width: 16, height: 24, outline: false,
     draw: (canvas) => {
       const puffX = frame % 2 ? 8 : 7;
       const alpha = 180 - frame * 34;
@@ -820,32 +1199,36 @@ buildingEntries.push(
   {
     name: 'fence', width: 32, height: 16,
     draw: (canvas) => {
-      canvas.ellipse(16, 15, 15, 2, '#26382a', 115);
-      canvas.rect(2, 5, 28, 3, '#815837');
-      canvas.rect(2, 11, 28, 3, '#68482f');
-      canvas.rect(5, 2, 3, 13, '#a97748');
-      canvas.rect(16, 2, 3, 13, '#a97748');
-      canvas.rect(26, 2, 3, 13, '#a97748');
-      canvas.pixel(6, 4, '#d09b60');
-      canvas.pixel(17, 4, '#d09b60');
-      canvas.pixel(27, 4, '#d09b60');
+      canvas.shadow(16, 15, 15, 1.5, 90);
+      planks(canvas, 1, 5, 30, 3, '#8a5e38');
+      planks(canvas, 1, 10, 30, 3, '#7a5232');
+      for (const x of [4, 15, 26]) {
+        canvas.rect(x, 2, 3, 13, WOOD[2]);
+        canvas.rect(x, 2, 1, 13, WOOD[3]);
+        canvas.rect(x + 2, 2, 1, 13, WOOD[1]);
+        canvas.pixel(x + 1, 1, WOOD[2]);
+      }
     }
   },
   {
     name: 'lamp', width: 20, height: 36,
     draw: (canvas) => {
-      canvas.ellipse(10, 34, 8, 2, '#26382a', 135);
-      canvas.rect(9, 12, 3, 21, '#68492e');
-      canvas.rect(4, 7, 12, 3, '#755235');
-      canvas.rect(6, 10, 8, 12, '#41382b');
-      canvas.rect(7, 11, 6, 9, '#f4b94d');
-      canvas.pixel(8, 12, '#fff0a0');
-      canvas.pixel(11, 18, '#d9793f');
-      canvas.rect(8, 4, 4, 3, '#987043');
+      canvas.shadow(10, 34, 6, 1.5, 100);
+      canvas.rect(9, 12, 3, 21, WOOD[1]);
+      canvas.rect(9, 12, 1, 21, WOOD[2]);
+      canvas.rect(7, 31, 7, 2, WOOD[0]);
+      canvas.rect(4, 7, 12, 2, '#3c3f45');
+      canvas.rect(6, 9, 8, 12, '#2f3237');
+      canvas.rect(7, 10, 6, 10, '#f4b94d');
+      canvas.rect(7, 15, 6, 5, '#e08a3a');
+      canvas.rect(9, 12, 2, 4, '#fff0a0');
+      canvas.rect(6, 21, 8, 1, '#3c3f45');
+      canvas.rect(8, 4, 4, 3, '#3c3f45');
+      canvas.pixel(9, 3, '#5a5f66');
     }
   },
   {
-    name: 'warm-glow', width: 48, height: 48,
+    name: 'warm-glow', width: 48, height: 48, outline: false,
     draw: (canvas) => {
       for (let y = 0; y < 48; y += 1) {
         for (let x = 0; x < 48; x += 1) {
@@ -856,13 +1239,11 @@ buildingEntries.push(
       }
     }
   }
-);
+];
 makeAtlas('buildings/camp-atlas.json', buildingEntries);
 
 makeAtlas('ui/panel-atlas.json', [{
-  name: 'panel',
-  width: 24,
-  height: 24,
+  name: 'panel', width: 24, height: 24, outline: false,
   draw: (canvas) => {
     canvas.rect(0, 0, 24, 24, '#1b2a22');
     canvas.rect(0, 0, 24, 2, '#e7cf8b');
@@ -882,4 +1263,4 @@ makeAtlas('ui/panel-atlas.json', [{
   }
 }]);
 
-console.log('Generated pixel art PNG sheets and Phaser atlases in assets/.');
+console.log('Pixel art gerada em public/assets/.');

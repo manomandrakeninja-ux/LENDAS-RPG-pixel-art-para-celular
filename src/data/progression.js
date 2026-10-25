@@ -1,9 +1,14 @@
+// XP para subir: nível atual × 100. A cada nível, uma escolha entre três bônus.
 export const PROGRESSION_CONFIG = Object.freeze({
   maxLevel: 20,
-  healthPerLevel: 10,
-  attributePerLevel: 2,
-  baseXpToLevel: 100,
-  xpLevelStep: 50
+  xpPerLevel: 100,
+  version: 2
+});
+
+export const LEVEL_CHOICES = Object.freeze({
+  health: Object.freeze({ amount: 15, label: '+15 VIDA MÁXIMA' }),
+  attack: Object.freeze({ amount: 3, label: '+3 ATAQUE' }),
+  defense: Object.freeze({ amount: 2, label: '+2 DEFESA' })
 });
 
 export const PERK_LEVELS = Object.freeze([5, 10, 15, 20]);
@@ -30,8 +35,7 @@ export const PERK_EFFECTS = Object.freeze({
 
 export function xpRequiredForLevel(level) {
   const normalizedLevel = Math.max(1, Math.floor(Number(level) || 1));
-  return PROGRESSION_CONFIG.baseXpToLevel +
-    (normalizedLevel - 1) * PROGRESSION_CONFIG.xpLevelStep;
+  return normalizedLevel * PROGRESSION_CONFIG.xpPerLevel;
 }
 
 export class PlayerProgression {
@@ -42,8 +46,27 @@ export class PlayerProgression {
       Math.max(1, Math.floor(Number(saved.level) || 1))
     );
     this.xp = Math.max(0, Math.floor(Number(saved.xp) || 0));
-    this.attackPoints = Math.max(0, Math.floor(Number(saved.attackPoints) || 0));
-    this.defensePoints = Math.max(0, Math.floor(Number(saved.defensePoints) || 0));
+    const points = (value) => Math.max(0, Math.floor(Number(value) || 0));
+    this.attackPoints = points(saved.attackPoints);
+    this.defensePoints = points(saved.defensePoints);
+    this.healthPoints = points(saved.healthPoints);
+    // Saves antigos: +10 de vida automático por nível e +2 por ponto de ATQ/DEF.
+    // Esses bônus são preservados como "legado" para ninguém perder atributos.
+    this.legacy = {
+      health: points(saved.legacy?.health),
+      attack: points(saved.legacy?.attack),
+      defense: points(saved.legacy?.defense)
+    };
+    if (Number(saved.version) !== PROGRESSION_CONFIG.version && Object.keys(saved).length > 0) {
+      this.legacy = {
+        health: (this.level - 1) * 10,
+        attack: this.attackPoints * 2,
+        defense: this.defensePoints * 2
+      };
+      this.attackPoints = 0;
+      this.defensePoints = 0;
+      this.healthPoints = 0;
+    }
     this.pendingLevels = Array.isArray(saved.pendingLevels)
       ? saved.pendingLevels
         .map((level) => Math.floor(Number(level)))
@@ -63,7 +86,7 @@ export class PlayerProgression {
   }
 
   get maxHealth() {
-    return this.baseMaxHealth + (this.level - 1) * PROGRESSION_CONFIG.healthPerLevel +
+    return this.baseMaxHealth + this.legacy.health + this.healthPoints * LEVEL_CHOICES.health.amount +
       (this.hasPerk('vitality') ? PERK_EFFECTS.vitalityHealth : 0);
   }
 
@@ -104,11 +127,11 @@ export class PlayerProgression {
   }
 
   get attackBonus() {
-    return this.attackPoints * PROGRESSION_CONFIG.attributePerLevel;
+    return this.legacy.attack + this.attackPoints * LEVEL_CHOICES.attack.amount;
   }
 
   get defenseBonus() {
-    return this.defensePoints * PROGRESSION_CONFIG.attributePerLevel;
+    return this.legacy.defense + this.defensePoints * LEVEL_CHOICES.defense.amount;
   }
 
   get hasPendingAttribute() {
@@ -144,22 +167,26 @@ export class PlayerProgression {
 
   choose(attribute) {
     if (!this.hasPendingAttribute) return { applied: false, attribute: null };
-    if (attribute !== 'attack' && attribute !== 'defense') {
+    if (!Object.hasOwn(LEVEL_CHOICES, attribute)) {
       return { applied: false, attribute: null };
     }
     if (attribute === 'attack') this.attackPoints += 1;
-    else this.defensePoints += 1;
+    else if (attribute === 'defense') this.defensePoints += 1;
+    else this.healthPoints += 1;
     this.pendingLevels.shift();
     return { applied: true, attribute };
   }
 
   serialize() {
     return {
+      version: PROGRESSION_CONFIG.version,
       baseMaxHealth: this.baseMaxHealth,
       level: this.level,
       xp: this.xp,
       attackPoints: this.attackPoints,
       defensePoints: this.defensePoints,
+      healthPoints: this.healthPoints,
+      legacy: { ...this.legacy },
       pendingLevels: [...this.pendingLevels],
       perks: [...this.perks],
       pendingPerks: [...this.pendingPerks]

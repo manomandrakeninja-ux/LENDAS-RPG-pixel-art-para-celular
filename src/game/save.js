@@ -5,6 +5,8 @@ export const SAVE_VERSION = 2;
 export const SAVE_KEY_V1 = 'brumavale-save-v1';
 export const SAVE_KEY_V2 = 'lendas-save-v2';
 export const SAVE_KEY_CORRUPT = 'lendas-save-v2-corrupt';
+// Cópia do save feita no início de um ataque ao acampamento; usada no "recomeçar" após a derrota.
+export const SAVE_KEY_PRE_RAID = 'lendas-save-v2-pre-raid';
 // Chave usada quando o jogo ainda se chamava Brumavale; lida só se a nova não existir.
 export const LEGACY_SAVE_KEY_V2 = 'brumavale-save-v2';
 
@@ -145,6 +147,31 @@ export function saveGame(data) {
     return true;
   } catch (error) {
     console.error('Não foi possível salvar o progresso local.', error);
+    return false;
+  }
+}
+
+export function savePreRaidSnapshot() {
+  if (!storageAvailable()) return false;
+  const current = localStorage.getItem(SAVE_KEY_V2);
+  if (current === null) return false;
+  try {
+    localStorage.setItem(SAVE_KEY_PRE_RAID, current);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Volta ao save de antes do ataque. Sem cópia, mantém o save atual. */
+export function restorePreRaidSnapshot() {
+  if (!storageAvailable()) return false;
+  const snapshot = localStorage.getItem(SAVE_KEY_PRE_RAID);
+  if (snapshot === null) return false;
+  try {
+    localStorage.setItem(SAVE_KEY_V2, snapshot);
+    return true;
+  } catch {
     return false;
   }
 }

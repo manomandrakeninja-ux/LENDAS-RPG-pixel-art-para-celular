@@ -1,0 +1,1230 @@
+{
+  "maxLevel": 10,
+  "order": [
+    "campfire",
+    "farm",
+    "forge",
+    "house",
+    "market",
+    "wall",
+    "tower"
+  ],
+  "repairCost": {
+    "wood": 5
+  },
+  "hitDurabilityLoss": 10,
+  "completionMessage": "O acampamento está completo! O Dragão foi localizado. Prepare-se.",
+  "dungeon": {
+    "x": 2580,
+    "y": 1880,
+    "label": "Masmorra do Dragão"
+  },
+  "buildings": {
+    "campfire": {
+      "name": "Fogueira",
+      "icon": "FG",
+      "startLevel": 1,
+      "position": {
+        "x": 0,
+        "y": 16
+      },
+      "levels": {
+        "1": "Raio pequeno de proteção: inimigos comuns se afastam. Permite salvar.",
+        "2": "Restaura 2 de vida por segundo perto do fogo. Raio maior.",
+        "3": "Cozinha: 2 comidas viram 1 poção de vida básica.",
+        "4": "Atrai viajantes a cada 4 dias, com missões e itens.",
+        "5": "Buff Calor da Fogueira: +10% ATQ por 3 min após descansar.",
+        "6": "Proteção cobre metade do acampamento; inimigos dentro tomam 2 de dano/s.",
+        "7": "Ressurreição local 1x por noite, com 50% de vida.",
+        "8": "Resistência ao fogo passiva +30%.",
+        "9": "Chamas sagradas: 5 de dano/s em inimigos durante ataques ao acampamento.",
+        "10": "Lendária: cobre todo o acampamento, ressurreição ilimitada, resistência ao fogo +60%, escudo absorve 50% do dano do Dragão."
+      },
+      "stats": {
+        "protectRadius": [
+          170,
+          210,
+          210,
+          210,
+          210,
+          250,
+          250,
+          250,
+          250,
+          340
+        ],
+        "regenPerSecond": [
+          0,
+          2,
+          2,
+          2,
+          2,
+          2,
+          2,
+          2,
+          2,
+          3
+        ],
+        "auraDamagePerSecond": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          2,
+          2,
+          2,
+          2,
+          2
+        ],
+        "raidFlameDamagePerSecond": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          5,
+          5
+        ],
+        "fireResistance": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0.3,
+          0.3,
+          0.6
+        ],
+        "dragonShield": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0.5
+        ]
+      },
+      "unlocks": {
+        "cook": 3,
+        "travelers": 4,
+        "warmth": 5,
+        "localRevive": 7,
+        "unlimitedRevive": 10
+      },
+      "travelerEveryDays": 4,
+      "warmthBuff": {
+        "attackPercent": 0.1,
+        "durationMs": 180000
+      },
+      "cookRecipe": {
+        "cost": {
+          "food": 2
+        },
+        "yield": {
+          "potion": 1
+        }
+      },
+      "reviveHealthRatio": 0.5,
+      "costs": {
+        "2": {
+          "wood": 8,
+          "stone": 4
+        },
+        "3": {
+          "wood": 14,
+          "stone": 8,
+          "food": 6
+        },
+        "4": {
+          "wood": 20,
+          "stone": 12,
+          "iron": 4
+        },
+        "5": {
+          "wood": 28,
+          "stone": 18,
+          "iron": 8,
+          "coins": 20
+        },
+        "6": {
+          "wood": 36,
+          "stone": 24,
+          "iron": 12,
+          "coal": 4,
+          "coins": 40,
+          "moonherb": 3
+        },
+        "7": {
+          "wood": 45,
+          "stone": 32,
+          "iron": 18,
+          "coal": 8,
+          "gold": 1,
+          "coins": 70
+        },
+        "8": {
+          "wood": 55,
+          "stone": 40,
+          "iron": 24,
+          "coal": 12,
+          "gold": 2,
+          "coins": 110,
+          "ectoplasm": 4
+        },
+        "9": {
+          "wood": 70,
+          "stone": 50,
+          "iron": 32,
+          "coal": 16,
+          "gold": 3,
+          "coins": 160,
+          "moonherb": 6
+        },
+        "10": {
+          "wood": 90,
+          "stone": 65,
+          "iron": 45,
+          "coal": 24,
+          "gold": 4,
+          "coins": 250,
+          "ectoplasm": 8,
+          "moonherb": 8
+        }
+      }
+    },
+    "farm": {
+      "name": "Fazenda",
+      "icon": "FZ",
+      "startLevel": 1,
+      "position": {
+        "x": 65,
+        "y": 50
+      },
+      "levels": {
+        "1": "2 canteiros, sem cercado.",
+        "2": "+2 canteiros. Cercado com 2 galinhas.",
+        "3": "Colheita 20% mais rápida. Adiciona ovelha.",
+        "4": "+2 canteiros. Adiciona vaca.",
+        "5": "Celeiro: guarda até 50 comidas colhidas automaticamente.",
+        "6": "Irrigação: plantas crescem 40% mais rápido na chuva.",
+        "7": "+2 canteiros. Adiciona porco. Ovos e leite vão sozinhos para o armazém.",
+        "8": "Sementes raras: planta mágica rende ervas e comida.",
+        "9": "Animais e canteiros produzem 2x mais.",
+        "10": "Auto-colheita total e produção passiva de 5 comidas por minuto."
+      },
+      "stats": {
+        "plots": [
+          2,
+          4,
+          4,
+          6,
+          6,
+          6,
+          8,
+          8,
+          8,
+          8
+        ],
+        "growthMultiplier": [
+          1,
+          1,
+          0.8,
+          0.8,
+          0.8,
+          0.8,
+          0.8,
+          0.8,
+          0.8,
+          0.8
+        ],
+        "rainGrowthBonus": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0.4,
+          0.4,
+          0.4,
+          0.4,
+          0.4
+        ],
+        "productionMultiplier": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          2,
+          2
+        ],
+        "barnCapacity": [
+          0,
+          0,
+          0,
+          0,
+          50,
+          50,
+          50,
+          50,
+          50,
+          50
+        ],
+        "passiveFoodPerMinute": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          5
+        ]
+      },
+      "animals": {
+        "egg": 2,
+        "wool": 3,
+        "milk": 4,
+        "pork": 7
+      },
+      "unlocks": {
+        "autoAnimals": 7,
+        "rareSeeds": 8,
+        "autoHarvestAll": 10
+      },
+      "costs": {
+        "2": {
+          "wood": 8,
+          "stone": 4,
+          "seeds": 4
+        },
+        "3": {
+          "wood": 14,
+          "stone": 8,
+          "herbs": 4,
+          "seeds": 6
+        },
+        "4": {
+          "wood": 20,
+          "stone": 12,
+          "iron": 4,
+          "herbs": 6
+        },
+        "5": {
+          "wood": 28,
+          "stone": 18,
+          "iron": 8,
+          "coins": 20,
+          "food": 10
+        },
+        "6": {
+          "wood": 36,
+          "stone": 24,
+          "iron": 12,
+          "coal": 4,
+          "coins": 40
+        },
+        "7": {
+          "wood": 45,
+          "stone": 32,
+          "iron": 18,
+          "coal": 8,
+          "gold": 1,
+          "coins": 70,
+          "wool": 4
+        },
+        "8": {
+          "wood": 55,
+          "stone": 40,
+          "iron": 24,
+          "coal": 12,
+          "gold": 2,
+          "coins": 110,
+          "seeds": 12
+        },
+        "9": {
+          "wood": 70,
+          "stone": 50,
+          "iron": 32,
+          "coal": 16,
+          "gold": 3,
+          "coins": 160,
+          "egg": 6,
+          "milk": 6
+        },
+        "10": {
+          "wood": 90,
+          "stone": 65,
+          "iron": 45,
+          "coal": 24,
+          "gold": 4,
+          "coins": 250,
+          "wool": 10,
+          "food": 30
+        }
+      }
+    },
+    "forge": {
+      "name": "Ferreiro",
+      "icon": "FR",
+      "startLevel": 1,
+      "position": {
+        "x": -76,
+        "y": -30
+      },
+      "levels": {
+        "1": "Picareta básica e Espada Simples.",
+        "2": "Escudo e Machado de ferro.",
+        "3": "Espada de Ferro e Armadura de Ferro.",
+        "4": "Reparar e desmontar equipamentos.",
+        "5": "Picareta de ferro e Espada de Aço.",
+        "6": "Encantamentos de Fogo (queimadura) e Gelo (lentidão).",
+        "7": "Armadura de Aço e Arco Longo (ataque à distância).",
+        "8": "Encantamento Vampirismo e melhorias de +1 a +5 em qualquer item.",
+        "9": "Espada Lendária e Armadura Mítica.",
+        "10": "Forja do Dragão: armas com resistência a fogo e armadura de escamas."
+      },
+      "stats": {},
+      "costs": {
+        "2": {
+          "wood": 8,
+          "stone": 4,
+          "iron": 2
+        },
+        "3": {
+          "wood": 14,
+          "stone": 8,
+          "herbs": 4,
+          "iron": 3
+        },
+        "4": {
+          "wood": 20,
+          "stone": 12,
+          "iron": 4
+        },
+        "5": {
+          "wood": 28,
+          "stone": 18,
+          "iron": 8,
+          "coins": 20,
+          "coal": 3
+        },
+        "6": {
+          "wood": 36,
+          "stone": 24,
+          "iron": 12,
+          "coal": 4,
+          "coins": 40
+        },
+        "7": {
+          "wood": 45,
+          "stone": 32,
+          "iron": 18,
+          "coal": 8,
+          "gold": 1,
+          "coins": 70,
+          "bone": 4
+        },
+        "8": {
+          "wood": 55,
+          "stone": 40,
+          "iron": 24,
+          "coal": 12,
+          "gold": 2,
+          "coins": 110
+        },
+        "9": {
+          "wood": 70,
+          "stone": 50,
+          "iron": 32,
+          "coal": 24,
+          "gold": 3,
+          "coins": 160
+        },
+        "10": {
+          "wood": 90,
+          "stone": 65,
+          "iron": 60,
+          "coal": 36,
+          "gold": 4,
+          "coins": 250
+        }
+      }
+    },
+    "house": {
+      "name": "Casa",
+      "icon": "CS",
+      "startLevel": 1,
+      "position": {
+        "x": -28,
+        "y": -118
+      },
+      "levels": {
+        "1": "Armazém com 20 slots. Descanso restaura 50% da vida.",
+        "2": "Armazém com 30 slots. Dormir pula a noite e salva.",
+        "3": "Armazém com 40 slots. Buff Bem Descansado: +10% ATQ por 2 min.",
+        "4": "Armazém com 50 slots. Baú secreto com 5 slots para itens valiosos.",
+        "5": "Armazém com 60 slots. Guarda tudo automaticamente ao entrar no acampamento.",
+        "6": "Armazém com 70 slots. Descanso restaura vida e vigor por completo.",
+        "7": "Armazém com 80 slots. Bem Descansado dura o dia inteiro.",
+        "8": "Armazém com 100 slots. A cozinheira prepara uma refeição ao acordar.",
+        "9": "Armazém com 120 slots. Ressurreição automática 1x por dia (30% de vida).",
+        "10": "Armazém ilimitado. Buff diário à escolha: +ATQ, +DEF, +vida ou +velocidade."
+      },
+      "stats": {
+        "storageSlots": [
+          20,
+          30,
+          40,
+          50,
+          60,
+          70,
+          80,
+          100,
+          120,
+          null
+        ],
+        "restHealRatio": [
+          0.5,
+          0.5,
+          0.5,
+          0.5,
+          0.5,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "restStamina": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          true,
+          true,
+          true,
+          true,
+          true
+        ],
+        "secretChestSlots": [
+          0,
+          0,
+          0,
+          5,
+          5,
+          5,
+          5,
+          5,
+          5,
+          5
+        ]
+      },
+      "storageStackSize": 25,
+      "unlocks": {
+        "sleep": 2,
+        "wellRested": 3,
+        "secretChest": 4,
+        "autoStore": 5,
+        "wellRestedAllDay": 7,
+        "cook": 8,
+        "autoRevive": 9,
+        "dailyBuff": 10
+      },
+      "wellRestedBuff": {
+        "attackPercent": 0.1,
+        "durationMs": 120000
+      },
+      "mealBuff": {
+        "regenPerSecond": 1,
+        "durationMs": 180000,
+        "food": 2
+      },
+      "autoReviveHealthRatio": 0.3,
+      "dailyBuffs": {
+        "attack": {
+          "label": "+ATQ",
+          "description": "+6 de ataque até o próximo amanhecer.",
+          "attack": 6
+        },
+        "defense": {
+          "label": "+DEF",
+          "description": "+5 de defesa até o próximo amanhecer.",
+          "defense": 5
+        },
+        "health": {
+          "label": "+VIDA",
+          "description": "+40 de vida máxima até o próximo amanhecer.",
+          "maxHealth": 40
+        },
+        "speed": {
+          "label": "+VELOCIDADE",
+          "description": "+20% de velocidade até o próximo amanhecer.",
+          "speedPercent": 0.2
+        }
+      },
+      "costs": {
+        "2": {
+          "wood": 8,
+          "stone": 4
+        },
+        "3": {
+          "wood": 14,
+          "stone": 8,
+          "herbs": 4,
+          "wool": 2
+        },
+        "4": {
+          "wood": 20,
+          "stone": 12,
+          "iron": 4
+        },
+        "5": {
+          "wood": 28,
+          "stone": 18,
+          "iron": 8,
+          "coins": 20,
+          "wool": 4
+        },
+        "6": {
+          "wood": 36,
+          "stone": 24,
+          "iron": 12,
+          "coal": 4,
+          "coins": 40
+        },
+        "7": {
+          "wood": 45,
+          "stone": 32,
+          "iron": 18,
+          "coal": 8,
+          "gold": 1,
+          "coins": 70,
+          "silk": 4
+        },
+        "8": {
+          "wood": 55,
+          "stone": 40,
+          "iron": 24,
+          "coal": 12,
+          "gold": 2,
+          "coins": 110
+        },
+        "9": {
+          "wood": 70,
+          "stone": 50,
+          "iron": 32,
+          "coal": 16,
+          "gold": 3,
+          "coins": 160,
+          "silk": 8
+        },
+        "10": {
+          "wood": 90,
+          "stone": 65,
+          "iron": 45,
+          "coal": 24,
+          "gold": 4,
+          "coins": 250,
+          "wool": 12,
+          "silk": 12
+        }
+      }
+    },
+    "market": {
+      "name": "Mercado",
+      "icon": "MC",
+      "startLevel": 1,
+      "position": {
+        "x": 76,
+        "y": -48
+      },
+      "levels": {
+        "1": "4 itens por dia: sementes, poção de vida, tocha e madeira.",
+        "2": "6 itens por dia. Venda de recursos por moedas.",
+        "3": "Preços 10% menores. Ferro e pedra disponíveis.",
+        "4": "8 itens por dia. Mercador viajante a cada 5 dias.",
+        "5": "Preços 20% menores. Itens raros: poção de vigor e armadilha.",
+        "6": "10 itens por dia. Reputação melhora os preços com o tempo.",
+        "7": "Mercador viajante a cada 3 dias com itens épicos. Preços 30% menores.",
+        "8": "Encomendas: peça um item específico e receba em 2 dias.",
+        "9": "Leilão semanal: item lendário para quem der mais moedas.",
+        "10": "Todos os itens sempre disponíveis. Preços 50% menores."
+      },
+      "stats": {
+        "offersPerDay": [
+          4,
+          6,
+          6,
+          8,
+          8,
+          10,
+          10,
+          10,
+          10,
+          null
+        ],
+        "discount": [
+          0,
+          0,
+          0.1,
+          0.1,
+          0.2,
+          0.2,
+          0.3,
+          0.3,
+          0.3,
+          0.5
+        ],
+        "travelerEveryDays": [
+          0,
+          0,
+          0,
+          5,
+          5,
+          5,
+          3,
+          3,
+          3,
+          3
+        ]
+      },
+      "unlocks": {
+        "sell": 2,
+        "reputation": 6,
+        "epicTraveler": 7,
+        "orders": 8,
+        "auction": 9,
+        "everything": 10
+      },
+      "reputation": {
+        "coinsPerPoint": 10,
+        "discountPerPoint": 0.002,
+        "maxDiscount": 0.1
+      },
+      "orderDelayDays": 2,
+      "orderSurcharge": 1.25,
+      "auctionEveryDays": 7,
+      "costs": {
+        "2": {
+          "wood": 8,
+          "stone": 4
+        },
+        "3": {
+          "wood": 14,
+          "stone": 8,
+          "herbs": 4,
+          "coins": 15
+        },
+        "4": {
+          "wood": 20,
+          "stone": 12,
+          "iron": 4,
+          "coins": 25
+        },
+        "5": {
+          "wood": 28,
+          "stone": 18,
+          "iron": 8,
+          "coins": 40
+        },
+        "6": {
+          "wood": 36,
+          "stone": 24,
+          "iron": 12,
+          "coal": 4,
+          "coins": 120
+        },
+        "7": {
+          "wood": 45,
+          "stone": 32,
+          "iron": 18,
+          "coal": 8,
+          "gold": 1,
+          "coins": 200
+        },
+        "8": {
+          "wood": 55,
+          "stone": 40,
+          "iron": 24,
+          "coal": 12,
+          "gold": 2,
+          "coins": 300
+        },
+        "9": {
+          "wood": 70,
+          "stone": 50,
+          "iron": 32,
+          "coal": 16,
+          "gold": 3,
+          "coins": 450
+        },
+        "10": {
+          "wood": 90,
+          "stone": 65,
+          "iron": 45,
+          "coal": 24,
+          "gold": 4,
+          "coins": 700
+        }
+      }
+    },
+    "wall": {
+      "name": "Muralha",
+      "icon": "MU",
+      "startLevel": 0,
+      "position": {
+        "x": 0,
+        "y": 320
+      },
+      "radius": 320,
+      "levels": {
+        "1": "Madeira, 200 HP. Retarda inimigos por 2s ao tentar passar.",
+        "2": "400 HP. Portões que abrem e fecham sozinhos para o jogador.",
+        "3": "Pedra, 800 HP. Espinhos causam 5 de dano a quem bater na muralha.",
+        "4": "1200 HP. Espinhos causam 10 de dano.",
+        "5": "Ferro, 2000 HP. Muralha dupla: a camada externa retarda.",
+        "6": "3000 HP. Inimigos pequenos (gosma, aranha) não conseguem escalar.",
+        "7": "Aço, 5000 HP. Fosso: inimigos que caem perdem 30% da vida.",
+        "8": "8000 HP. Campo elétrico: dano de relâmpago a quem tocar.",
+        "9": "12000 HP. Reparo automático durante ataques (100 HP/s).",
+        "10": "Mítica, 20000 HP. Indestrutível em ataques normais; só o Dragão a destrói."
+      },
+      "stats": {
+        "hp": [
+          200,
+          400,
+          800,
+          1200,
+          2000,
+          3000,
+          5000,
+          8000,
+          12000,
+          20000
+        ],
+        "material": [
+          "wood",
+          "wood",
+          "stone",
+          "stone",
+          "iron",
+          "iron",
+          "steel",
+          "steel",
+          "steel",
+          "mythic"
+        ],
+        "contactDelayMs": [
+          2000,
+          2000,
+          2000,
+          2000,
+          2000,
+          2000,
+          2000,
+          2000,
+          2000,
+          2000
+        ],
+        "gates": [
+          false,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true
+        ],
+        "spikeDamage": [
+          0,
+          0,
+          5,
+          10,
+          10,
+          10,
+          10,
+          10,
+          10,
+          10
+        ],
+        "outerSlow": [
+          0,
+          0,
+          0,
+          0,
+          0.5,
+          0.5,
+          0.5,
+          0.5,
+          0.5,
+          0.5
+        ],
+        "smallBlocked": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          true,
+          true,
+          true,
+          true,
+          true
+        ],
+        "moatDamageRatio": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0.3,
+          0.3,
+          0.3,
+          0.3
+        ],
+        "electricDamage": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          15,
+          15,
+          15
+        ],
+        "autoRepairPerSecond": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          100,
+          100
+        ],
+        "indestructible": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          true
+        ]
+      },
+      "smallEnemies": [
+        "slime",
+        "spider"
+      ],
+      "costs": {
+        "1": {
+          "wood": 20,
+          "stone": 6
+        },
+        "2": {
+          "wood": 8,
+          "stone": 4
+        },
+        "3": {
+          "wood": 14,
+          "stone": 16,
+          "herbs": 4
+        },
+        "4": {
+          "wood": 20,
+          "stone": 12,
+          "iron": 4
+        },
+        "5": {
+          "wood": 28,
+          "stone": 18,
+          "iron": 12,
+          "coins": 20
+        },
+        "6": {
+          "wood": 36,
+          "stone": 24,
+          "iron": 12,
+          "coal": 4,
+          "coins": 40
+        },
+        "7": {
+          "wood": 45,
+          "stone": 32,
+          "iron": 26,
+          "coal": 8,
+          "gold": 1,
+          "coins": 70
+        },
+        "8": {
+          "wood": 55,
+          "stone": 40,
+          "iron": 24,
+          "coal": 12,
+          "gold": 2,
+          "coins": 110,
+          "bone": 6
+        },
+        "9": {
+          "wood": 70,
+          "stone": 50,
+          "iron": 32,
+          "coal": 16,
+          "gold": 3,
+          "coins": 160
+        },
+        "10": {
+          "wood": 90,
+          "stone": 100,
+          "iron": 60,
+          "coal": 24,
+          "gold": 4,
+          "coins": 250
+        }
+      }
+    },
+    "tower": {
+      "name": "Torre de Vigia",
+      "icon": "TV",
+      "startLevel": 0,
+      "position": {
+        "x": -260,
+        "y": 0
+      },
+      "secondPosition": {
+        "x": 260,
+        "y": 0
+      },
+      "thirdPosition": {
+        "x": 0,
+        "y": -260
+      },
+      "fourthPosition": {
+        "x": 0,
+        "y": 260
+      },
+      "levels": {
+        "1": "1 arqueiro: flecha a cada 3s, 5 de dano, alcance pequeno.",
+        "2": "2 arqueiros: flechas a cada 2s, alcance médio.",
+        "3": "Flechas de fogo: 10 de dano + 3 de queimadura por 3s.",
+        "4": "3 arqueiros. Mostra inimigos próximos no minimapa.",
+        "5": "Segunda torre em outro ponto do acampamento.",
+        "6": "Flechas de gelo: 12 de dano e reduz a velocidade em 50% por 2s.",
+        "7": "4 arqueiros por torre. Alcance cobre todo o acampamento.",
+        "8": "Flechas explosivas: 20 de dano em área.",
+        "9": "Raios mágicos: 30 de dano, propagam para 2 inimigos próximos.",
+        "10": "Canhão lendário: 80 de dano em área a cada 5s. Detecta o Dragão no mapa."
+      },
+      "stats": {
+        "archers": [
+          1,
+          2,
+          2,
+          3,
+          3,
+          3,
+          4,
+          4,
+          4,
+          4
+        ],
+        "intervalMs": [
+          3000,
+          2000,
+          2000,
+          2000,
+          2000,
+          2000,
+          2000,
+          2000,
+          2000,
+          2000
+        ],
+        "damage": [
+          5,
+          5,
+          10,
+          10,
+          10,
+          12,
+          12,
+          20,
+          30,
+          30
+        ],
+        "range": [
+          170,
+          240,
+          240,
+          240,
+          240,
+          240,
+          380,
+          380,
+          380,
+          380
+        ],
+        "arrow": [
+          "normal",
+          "normal",
+          "fire",
+          "fire",
+          "fire",
+          "ice",
+          "ice",
+          "explosive",
+          "lightning",
+          "lightning"
+        ],
+        "towers": [
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4
+        ],
+        "radar": [
+          false,
+          false,
+          false,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true
+        ]
+      },
+      "arrows": {
+        "fire": {
+          "burnDamagePerSecond": 3,
+          "burnMs": 3000
+        },
+        "ice": {
+          "slowRatio": 0.5,
+          "slowMs": 2000
+        },
+        "explosive": {
+          "splashRadius": 56
+        },
+        "lightning": {
+          "chainTargets": 2,
+          "chainRadius": 120
+        }
+      },
+      "cannon": {
+        "level": 10,
+        "damage": 80,
+        "intervalMs": 5000,
+        "splashRadius": 72
+      },
+      "radarRange": 760,
+      "costs": {
+        "1": {
+          "wood": 14,
+          "stone": 8
+        },
+        "2": {
+          "wood": 8,
+          "stone": 4
+        },
+        "3": {
+          "wood": 14,
+          "stone": 8,
+          "herbs": 4,
+          "bone": 3
+        },
+        "4": {
+          "wood": 20,
+          "stone": 12,
+          "iron": 4,
+          "silk": 3
+        },
+        "5": {
+          "wood": 28,
+          "stone": 18,
+          "iron": 8,
+          "coins": 20
+        },
+        "6": {
+          "wood": 36,
+          "stone": 24,
+          "iron": 12,
+          "coal": 4,
+          "coins": 40,
+          "bone": 6
+        },
+        "7": {
+          "wood": 45,
+          "stone": 32,
+          "iron": 18,
+          "coal": 8,
+          "gold": 1,
+          "coins": 70
+        },
+        "8": {
+          "wood": 55,
+          "stone": 40,
+          "iron": 24,
+          "coal": 12,
+          "gold": 2,
+          "coins": 110,
+          "silk": 6
+        },
+        "9": {
+          "wood": 70,
+          "stone": 50,
+          "iron": 32,
+          "coal": 16,
+          "gold": 3,
+          "coins": 160,
+          "ectoplasm": 6
+        },
+        "10": {
+          "wood": 90,
+          "stone": 65,
+          "iron": 45,
+          "coal": 24,
+          "gold": 4,
+          "coins": 250,
+          "bone": 12,
+          "silk": 10
+        }
+      }
+    }
+  }
+}

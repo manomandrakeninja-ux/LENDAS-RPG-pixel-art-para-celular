@@ -1,9 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { ENEMY_TYPES } from '../src/data/enemies.js';
-import { PlayerProgression, xpRequiredForLevel } from '../src/data/progression.js';
+import { ENEMY_TYPES, enemyXp } from '../src/data/enemies.js';
+import { LEVEL_CHOICES, PlayerProgression, xpRequiredForLevel } from '../src/data/progression.js';
 
-test('XP levels the player and queues one attribute choice per level', () => {
+test('XP levels the player and queues one choice per level (+15 vida, +3 ataque, +2 defesa)', () => {
   const progression = new PlayerProgression();
   const result = progression.addXp(100);
 
@@ -11,24 +11,30 @@ test('XP levels the player and queues one attribute choice per level', () => {
   assert.equal(result.levelsGained, 1);
   assert.equal(progression.level, 2);
   assert.equal(progression.xp, 0);
-  assert.equal(progression.maxHealth, 110);
+  assert.equal(progression.maxHealth, 100, 'a vida só sobe se o jogador escolher');
   assert.equal(progression.hasPendingChoice, true);
   assert.equal(progression.nextChoiceLevel, 2);
 
-  const choice = progression.choose('attack');
-  assert.equal(choice.applied, true);
-  assert.equal(progression.attackBonus, 2);
-  assert.equal(progression.defenseBonus, 0);
-  assert.equal(progression.hasPendingChoice, false);
+  assert.equal(progression.choose('attack').applied, true);
+  assert.equal(progression.attackBonus, 3);
+  progression.addXp(200);
+  assert.equal(progression.choose('health').applied, true);
+  assert.equal(progression.maxHealth, 115);
+  progression.addXp(300);
+  assert.equal(progression.choose('defense').applied, true);
+  assert.equal(progression.defenseBonus, 2);
+  assert.equal(progression.choose('speed').applied, false);
+  assert.deepEqual(Object.fromEntries(Object.entries(LEVEL_CHOICES).map(([key, choice]) => [key, choice.amount])),
+    { health: 15, attack: 3, defense: 2 });
 });
 
-test('XP thresholds increase by level and progression never exceeds level 20', () => {
+test('XP to level up is current level × 100 and progression stops at level 20', () => {
   assert.equal(xpRequiredForLevel(1), 100);
-  assert.equal(xpRequiredForLevel(2), 150);
-  assert.equal(xpRequiredForLevel(20), 1050);
+  assert.equal(xpRequiredForLevel(2), 200);
+  assert.equal(xpRequiredForLevel(19), 1900);
 
   const progression = new PlayerProgression();
-  progression.addXp(100000);
+  progression.addXp(1_000_000);
   assert.equal(progression.level, 20);
   assert.equal(progression.xp, 0);
   assert.equal(progression.xpToNext, 0);
@@ -41,22 +47,26 @@ test('XP thresholds increase by level and progression never exceeds level 20', (
 });
 
 test('progression state survives serialization including pending choices', () => {
-  const progression = new PlayerProgression({
-    baseMaxHealth: 100,
-    level: 3,
-    xp: 25,
-    attackPoints: 1,
-    defensePoints: 2,
-    pendingLevels: [4]
-  });
+  const progression = new PlayerProgression({ version: 2, level: 3, xp: 25, attackPoints: 1, defensePoints: 2, healthPoints: 1, pendingLevels: [4] });
   const restored = new PlayerProgression(progression.serialize());
 
   assert.equal(restored.level, 3);
   assert.equal(restored.xp, 25);
-  assert.equal(restored.attackBonus, 2);
+  assert.equal(restored.attackBonus, 3);
   assert.equal(restored.defenseBonus, 4);
-  assert.equal(restored.maxHealth, 120);
+  assert.equal(restored.maxHealth, 115);
   assert.deepEqual(restored.pendingLevels, [4]);
+});
+
+test('saves from the old progression keep every bonus they had', () => {
+  // Antes: +10 de vida automático por nível e +2 por ponto de ataque/defesa.
+  const legacy = new PlayerProgression({ level: 4, xp: 10, attackPoints: 2, defensePoints: 1, pendingLevels: [], perks: [] });
+  assert.equal(legacy.maxHealth, 130);
+  assert.equal(legacy.attackBonus, 4);
+  assert.equal(legacy.defenseBonus, 2);
+  const restored = new PlayerProgression(legacy.serialize());
+  assert.equal(restored.maxHealth, 130);
+  assert.equal(restored.attackBonus, 4);
 });
 
 test('milestone levels queue a perk choice after the attribute choice', () => {
@@ -78,8 +88,8 @@ test('milestone levels queue a perk choice after the attribute choice', () => {
 });
 
 test('vitality perk raises max health and perks survive serialization', () => {
-  const progression = new PlayerProgression({ level: 5, perks: ['vitality'], pendingPerks: [] });
-  assert.equal(progression.maxHealth, 100 + 4 * 10 + 25);
+  const progression = new PlayerProgression({ version: 2, level: 5, perks: ['vitality'], pendingPerks: [] });
+  assert.equal(progression.maxHealth, 100 + 25);
   const restored = new PlayerProgression(progression.serialize());
   assert.deepEqual(restored.perks, ['vitality']);
   assert.equal(restored.hasPendingPerk, false);
@@ -91,12 +101,14 @@ test('saves from before perks receive the milestone choices they already passed'
   assert.equal(legacy.hasPendingChoice, true);
 });
 
-test('enemy XP values follow the requested day and night progression', () => {
+test('enemy XP values come from enemies.json and elites give double', () => {
   assert.equal(ENEMY_TYPES.slime.xp, 10);
   assert.equal(ENEMY_TYPES.wolf.xp, 20);
   assert.equal(ENEMY_TYPES.boar.xp, 25);
   assert.equal(ENEMY_TYPES.skeleton.xp, 30);
+  assert.equal(ENEMY_TYPES.spider.xp, 30);
   assert.equal(ENEMY_TYPES.ghost.xp, 35);
-  assert.equal(ENEMY_TYPES.spider.xp, 40);
   assert.equal(ENEMY_TYPES.werewolf.xp, 50);
+  assert.equal(enemyXp('wolf', true), 40);
+  assert.equal(enemyXp('werewolf', false), 50);
 });

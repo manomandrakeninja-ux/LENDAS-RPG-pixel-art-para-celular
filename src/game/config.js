@@ -30,5 +30,8 @@ export const RESOURCE_TYPES = {
   ectoplasm: { label: 'Ectoplasma', color: 0x58b8b0, accent: 0x9ef0df, icon: 5 },
   bone: { label: 'Ossos', color: 0xd1c9aa, accent: 0xf4edcf, icon: 6 },
   silk: { label: 'Seda', color: 0xa28ab8, accent: 0xdac6e5, icon: 7 },
-  titanCore: { label: 'Núcleo do Titã', color: 0x8e4939, accent: 0xf0a05d, icon: null, codeIcon: 'titanCore' }
+  titanCore: { label: 'Núcleo do Titã', color: 0x8e4939, accent: 0xf0a05d, icon: null, codeIcon: 'titanCore' },
+  staminaPotion: { label: 'Poção de Vigor', color: 0x3f8f5b, accent: 0x9be08f, icon: null, codeIcon: 'staminaPotion' },
+  trap: { label: 'Armadilha', color: 0x6b6f73, accent: 0xc9ced1, icon: null, codeIcon: 'trap' },
+  elixir: { label: 'Elixir de Força', color: 0x8b3fb1, accent: 0xf0a6ff, icon: null, codeIcon: 'elixir' }
 };

@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { PixelCanvas } from '../art/pixel.js';
 
 const COIN_TEXTURE = 'coin-pickup';
 
@@ -12,16 +13,14 @@ export class CoinPickups {
   ensureTexture() {
     if (this.scene.textures.exists(COIN_TEXTURE)) return;
     const texture = this.scene.textures.createCanvas(COIN_TEXTURE, 12, 12);
-    const context = texture.getContext();
-    context.imageSmoothingEnabled = false;
-    context.clearRect(0, 0, 12, 12);
-    context.fillStyle = '#8b641b';
-    context.fillRect(2, 2, 8, 8);
-    context.fillStyle = '#f0c743';
-    context.fillRect(3, 2, 6, 8);
-    context.fillRect(2, 3, 8, 6);
-    context.fillStyle = '#fff09a';
-    context.fillRect(4, 3, 3, 2);
+    // Moeda com borda, relevo e brilho.
+    const coin = new PixelCanvas(12, 12);
+    coin.shadedEllipse(6, 6, 5, 5, ['#9a6a12', '#e8b83a', '#ffe07a', '#fff6c8']);
+    coin.ellipse(6, 6, 2.6, 2.6, '#c9932a');
+    coin.rect(5, 4, 2, 4, '#ffe07a');
+    coin.pixel(3, 3, '#ffffff');
+    coin.outline({ strength: 0.6 });
+    texture.getContext().putImageData(new ImageData(coin.data, 12, 12), 0, 0);
     texture.setFilter(Phaser.Textures.FilterMode.NEAREST);
     texture.refresh();
   }
@@ -32,7 +31,7 @@ export class CoinPickups {
     const image = this.scene.add.image(x, y - 5, COIN_TEXTURE).setDepth(y + 12);
     const label = this.scene.add.text(x, y - 18, `${coins}`, {
       fontFamily: 'Press Start 2P',
-      fontSize: '7px',
+      fontSize: '8px',
       color: '#ffe987',
       backgroundColor: '#39270edd',
       padding: { x: 3, y: 2 }

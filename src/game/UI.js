@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { BUILDINGS } from './Camp.js';
+import { BUILDING_DEFS, DUNGEON_CONFIG } from '../data/buildings.js';
 import { HARVEST_STRUCTURE_TYPES } from '../data/harvestStructures.js';
 import { BOSS_CONFIG } from '../data/boss.js';
 import { INVENTORY_CONFIG, RESOURCE_TYPES, WORLD } from './config.js';
@@ -14,13 +14,9 @@ export class GameUI {
   constructor(scene) {
     this.scene = scene;
     this.fixed = [];
-    this.campPanel = [];
-    this.campOpen = false;
     this.buildingMenuOpen = false;
     this.storeAllAvailable = false;
     this.messageTimer = null;
-    this.campActions = document.getElementById('camp-actions');
-    this.campFeedback = document.getElementById('camp-feedback');
     this.worldAction = document.getElementById('world-action');
     this.storeAllAction = document.getElementById('store-all-action');
     this.bossHealth = document.getElementById('boss-health');
@@ -29,25 +25,21 @@ export class GameUI {
     this.bossHealthFill = document.getElementById('boss-health-fill');
     this.lastBackpackFull = scene.inventory.isFull;
     this.metrics = this.getMetrics();
-    this.campActions.addEventListener('click', (event) => {
-      const button = event.target.closest('button');
-      if (!button) return;
-      if (button.dataset.action === 'sleep') this.scene.sleepAtCamp();
-      else if (button.dataset.building) this.scene.upgradeBuilding(button.dataset.building);
-    });
     this.worldAction.addEventListener('click', () => this.scene.performContextAction());
     this.storeAllAction.addEventListener('click', () => this.scene.storeAllAtCamp());
     this.ensureResourceIconTextures();
     this.ensureCoinIconTexture();
     this.makeHud();
-    this.makeCampPanel();
+  }
+
+  // O menu do acampamento (tecla C) é a visão geral dentro do painel de prédios.
+  get campOpen() {
+    return this.scene.buildingMenu?.isOpen === true && this.scene.buildingMenu.building === 'camp';
   }
 
   getMetrics() {
     const { width, height } = this.scene.scale;
     const compact = width < 700 || height < 520;
-    const panelWidth = Math.min(compact ? 288 : 456, Math.floor((width - 24) / 12) * 12);
-    const panelHeight = Math.min(compact ? 288 : 420, Math.floor((height - 24) / 12) * 12);
     return {
       compact,
       hudWidth: compact ? 262 : 348,
@@ -55,13 +47,7 @@ export class GameUI {
       // Centro do fundo do HUD: sempre colado à esquerda, junto dos textos (x = 22).
       // Antes, em telas baixas (celular deitado), o fundo ia para o meio e cobria o personagem.
       hudX: compact ? 140 : 183,
-      mapSize: compact ? 156 : 168,
-      panelWidth,
-      panelHeight,
-      buttonWidth: Math.max(216, panelWidth - 48),
-      buttonHeight: compact ? 42 : 56,
-      buttonGap: compact ? 50 : 70,
-      buttonTop: -Math.floor(panelHeight / 2) + (compact ? 78 : 132)
+      mapSize: compact ? 156 : 168
     };
   }
 
@@ -112,6 +98,22 @@ export class GameUI {
         context.fillStyle = '#f2f4e8'; context.fillRect(6, 6, 5, 6);
         context.fillStyle = '#9eb4c0'; context.fillRect(6, 2, 5, 2);
       },
+      staminaPotion: (context) => {
+        context.fillStyle = '#a4a08b'; context.fillRect(7, 2, 3, 3);
+        context.fillStyle = '#3f8f5b'; context.fillRect(5, 5, 7, 8);
+        context.fillStyle = '#9be08f'; context.fillRect(6, 7, 2, 3);
+      },
+      trap: (context) => {
+        context.fillStyle = '#4b4f53'; context.fillRect(2, 9, 12, 3);
+        context.fillStyle = '#c9ced1';
+        for (let x = 3; x < 14; x += 3) context.fillRect(x, 5, 1, 4);
+        context.fillStyle = '#8b2f2f'; context.fillRect(7, 10, 2, 1);
+      },
+      elixir: (context) => {
+        context.fillStyle = '#d6c27a'; context.fillRect(7, 1, 2, 3);
+        context.fillStyle = '#8b3fb1'; context.fillRect(5, 4, 6, 9);
+        context.fillStyle = '#f0a6ff'; context.fillRect(6, 6, 2, 4);
+      },
       titanCore: (context) => {
         context.fillStyle = '#3b201c'; context.fillRect(4, 4, 8, 8);
         context.fillStyle = '#9e4d38'; context.fillRect(5, 5, 6, 6);
@@ -159,6 +161,15 @@ export class GameUI {
 
   makeHud() {
     const { width } = this.scene.scale;
+    // Chuva em dias chuvosos (afeta a irrigação da Fazenda nível 6+): riscos em pixel por cima do mundo.
+    this.rain = this.scene.add.graphics().setScrollFactor(0).setDepth(4990);
+    this.rainDrops = Array.from({ length: 90 }, () => ({
+      x: Math.random() * 1600,
+      y: Math.random() * 1000,
+      speed: 7 + Math.random() * 5,
+      length: 6 + Math.floor(Math.random() * 6)
+    }));
+    this.fixed.push(this.rain);
     this.hudBg = this.scene.add.nineslice(
       this.metrics.hudX,
       130,
@@ -181,14 +192,14 @@ export class GameUI {
       .setOrigin(0).setScrollFactor(0).setDepth(5001);
     this.healthShine = this.scene.add.rectangle(24, 42, 212, 2, 0xffe0b4)
       .setOrigin(0).setScrollFactor(0).setDepth(5002).setAlpha(0.35);
-    this.staminaBar = this.scene.add.rectangle(22, 62, 216, 8, 0x42513c)
+    this.staminaBar = this.scene.add.rectangle(22, 66, 216, 8, 0x42513c)
       .setOrigin(0).setScrollFactor(0).setDepth(5000);
-    this.staminaFill = this.scene.add.rectangle(24, 64, 216, 4, 0xe6c66b)
+    this.staminaFill = this.scene.add.rectangle(24, 68, 216, 4, 0xe6c66b)
       .setOrigin(0).setScrollFactor(0).setDepth(5001);
-    this.xpLabel = this.text(22, 78, '', { fontSize: '7px', color: '#d8c6ff' });
-    this.xpBar = this.scene.add.rectangle(22, 89, 216, 7, 0x3b2b50)
+    this.xpLabel = this.text(22, 78, '', { fontSize: '8px', color: '#d8c6ff' });
+    this.xpBar = this.scene.add.rectangle(22, 55, 216, 5, 0x3b2b50)
       .setOrigin(0).setScrollFactor(0).setDepth(5000);
-    this.xpFill = this.scene.add.rectangle(24, 91, 212, 3, 0xa77bdc)
+    this.xpFill = this.scene.add.rectangle(24, 56, 212, 3, 0xa77bdc)
       .setOrigin(0).setScrollFactor(0).setDepth(5001);
     this.fixed.push(
       this.healthBar,
@@ -200,7 +211,7 @@ export class GameUI {
       this.xpBar,
       this.xpFill
     );
-    this.inventoryLabel = this.text(22, 100, '', { fontSize: '7px' });
+    this.inventoryLabel = this.text(22, 100, '', { fontSize: '8px' });
     this.backpackSlots = [];
     this.resourceCounts = [];
     for (let index = 0; index < INVENTORY_CONFIG.maxSlots; index += 1) {
@@ -214,25 +225,38 @@ export class GameUI {
         .setScrollFactor(0)
         .setDepth(5001)
         .setVisible(false);
-      const count = this.text(49, 121, '', { fontSize: '7px' });
+      const count = this.text(49, 121, '', { fontSize: '8px' });
       count.setOrigin(0).setDepth(5002);
       const slot = { background, icon, count, type: null };
       this.backpackSlots.push(slot);
       this.resourceCounts.push({ type: null, label: count });
       this.fixed.push(background, icon);
     }
-    this.dayLabel = this.text(22, 181, '', { fontSize: '7px' });
+    this.dayLabel = this.text(22, 181, '', { fontSize: '8px' });
     this.coinIcon = this.scene.add.image(26, 240, 'coin-hud-icon')
       .setDisplaySize(12, 12)
       .setScrollFactor(0)
       .setDepth(5001);
-    this.coinLabel = this.text(42, 236, '', { fontSize: '7px', color: '#ffe987' });
+    this.coinLabel = this.text(42, 236, '', { fontSize: '8px', color: '#ffe987' });
+    this.statusLabel = this.text(22, 252, '', { fontSize: '8px', color: '#9fe0ff' });
+    // Ferro e carvão ficam sempre visíveis (mochila + armazém), com ícones próprios.
+    this.oreCounters = ['iron', 'coal'].map((type, index) => {
+      const x = 152 + index * 56;
+      const icon = this.scene.add.image(x, 240, `resource-code-${type}`)
+        .setDisplaySize(14, 14)
+        .setScrollFactor(0)
+        .setDepth(5001);
+      this.fixed.push(icon);
+      const label = this.text(x + 10, 236, '', { fontSize: '8px', color: type === 'iron' ? '#d7e0e4' : '#a9adb1' });
+      return { type, icon, label };
+    });
     this.fixed.push(this.coinIcon);
     this.layoutBackpackSlots();
     this.hint = this.text(22, this.scene.scale.height - 34, '', {
-      fontSize: '7px', backgroundColor: '#1d2b24dd', padding: { x: 8, y: 5 }
+      fontSize: '8px', backgroundColor: '#1d2b24dd', padding: { x: 8, y: 5 }
     }).setScrollFactor(0);
     this.hint.setDepth(5000);
+    this.layoutHint();
 
     this.mapX = width - this.metrics.mapSize / 2 - 12;
     this.mapY = 91;
@@ -249,7 +273,7 @@ export class GameUI {
       6
     ).setScrollFactor(0).setDepth(4999);
     this.mapLabel = this.text(this.mapX, 10, 'MAPA • M', {
-      fontSize: '7px', fontStyle: 'bold', color: '#ecd99f'
+      fontSize: '8px', fontStyle: 'bold', color: '#ecd99f'
     }).setOrigin(0.5);
     this.mapBase = this.scene.add.rectangle(this.mapX, this.mapY, 120, 120, 0x2d493a, 0.95)
       .setStrokeStyle(2, 0x5f7046)
@@ -260,6 +284,7 @@ export class GameUI {
       .setStrokeStyle(1, 0x30261f)
       .setScrollFactor(0)
       .setDepth(5001);
+    this.mapMarkers = this.scene.add.graphics().setScrollFactor(0).setDepth(5001.5);
     this.mapPlayerMarker = this.scene.add.rectangle(this.mapX, this.mapY, 6, 6, 0xffd75a)
       .setStrokeStyle(1, 0x30261f)
       .setScrollFactor(0)
@@ -272,6 +297,7 @@ export class GameUI {
       this.mapBase,
       this.mapExplored,
       this.mapCampMarker,
+      this.mapMarkers,
       this.mapPlayerMarker
     );
 
@@ -309,7 +335,8 @@ export class GameUI {
   layoutHint() {
     const { width, height } = this.scene.scale;
     if (this.scene.touch?.enabled) this.hint.setOrigin(0.5, 0).setPosition(width / 2, height - 96);
-    else this.hint.setOrigin(0, 0).setPosition(18, height - 44);
+    // No centro, entre o botão Guardar Tudo (esquerda) e o botão de ação (direita).
+    else this.hint.setOrigin(0.5, 0).setPosition(width / 2, height - 44);
   }
 
   drawMapBase() {
@@ -319,92 +346,8 @@ export class GameUI {
     this.lastExploredCount = -1;
   }
 
-  makeCampPanel() {
-    const { width, height } = this.scene.scale;
-    const metrics = this.metrics;
-    const panelTop = height / 2 - metrics.panelHeight / 2;
-    this.panelBg = this.scene.add.nineslice(
-      width / 2,
-      height / 2,
-      'panel',
-      'panel',
-      metrics.panelWidth,
-      metrics.panelHeight,
-      6,
-      6,
-      6,
-      6
-    ).setScrollFactor(0).setDepth(5200).setVisible(false);
-    this.campPanel.push(this.panelBg);
-    this.panelTitle = this.text(width / 2, panelTop + 28, 'ACAMPAMENTO', {
-      fontSize: metrics.compact ? '9px' : '11px', fontStyle: 'bold', color: '#f4d88f'
-    }).setOrigin(0.5);
-    this.panelTitle.setDepth(5201).setVisible(false);
-    this.campPanel.push(this.panelTitle);
-    this.panelInfo = this.text(width / 2, panelTop + 54, '', {
-      fontSize: '6px', align: 'center', color: '#c7d0b1', lineSpacing: 5
-    }).setOrigin(0.5, 0);
-    this.panelInfo.setDepth(5201).setVisible(false);
-    this.campPanel.push(this.panelInfo);
-    this.campButtons = {};
-    const entries = Object.entries(BUILDINGS);
-    entries.forEach(([key, building], index) => {
-      const y = height / 2 + metrics.buttonTop + index * metrics.buttonGap;
-      const button = this.scene.add.rectangle(
-        width / 2,
-        y,
-        metrics.buttonWidth,
-        metrics.buttonHeight,
-        0x314638
-      ).setStrokeStyle(1, 0x9caf72).setScrollFactor(0).setDepth(5201);
-      const label = this.text(width / 2, y, '', {
-        fontSize: metrics.compact ? '6px' : '7px', align: 'center', color: '#fff1ce', lineSpacing: 5
-      }).setOrigin(0.5);
-      label.setDepth(5202);
-      this.campPanel.push(button, label);
-      this.campButtons[key] = { button, label };
-    });
-
-    const sleepY = height / 2 + metrics.buttonTop + entries.length * metrics.buttonGap;
-    const sleepButton = this.scene.add.rectangle(
-      width / 2,
-      sleepY,
-      metrics.buttonWidth,
-      metrics.buttonHeight,
-      0x314638
-    ).setStrokeStyle(1, 0x9caf72).setScrollFactor(0).setDepth(5201);
-    const sleepLabel = this.text(width / 2, sleepY, 'DORMIR  •  SOMENTE À NOITE', {
-      fontSize: metrics.compact ? '6px' : '7px', align: 'center', color: '#fff1ce'
-    }).setOrigin(0.5);
-    sleepLabel.setDepth(5202);
-    this.campPanel.push(sleepButton, sleepLabel);
-    this.campButtons.sleep = { button: sleepButton, label: sleepLabel };
-
-    this.closeLabel = this.text(width / 2, panelTop + metrics.panelHeight - 24, 'C / ESC  •  Fechar', {
-      fontSize: '7px', color: '#d5c8a6'
-    }).setOrigin(0.5);
-    this.closeLabel.setDepth(5202).setVisible(false);
-    this.campPanel.push(this.closeLabel);
-    this.campPanel.forEach((item) => item.setVisible(false));
-    this.syncDomLayout();
-  }
-
-  syncDomLayout() {
-    const { height } = this.scene.scale;
-    const metrics = this.metrics;
-    const firstButtonTop = height / 2 + metrics.buttonTop - metrics.buttonHeight / 2;
-    this.campActions.style.setProperty('--camp-button-top', `${firstButtonTop}px`);
-    this.campActions.style.setProperty('--camp-button-width', `${metrics.buttonWidth}px`);
-    this.campActions.style.setProperty('--camp-button-height', `${metrics.buttonHeight}px`);
-    this.campActions.style.setProperty('--camp-row-step', `${metrics.buttonGap}px`);
-    this.campFeedback.style.setProperty(
-      '--camp-feedback-top',
-      `${height / 2 + metrics.panelHeight / 2 - 52}px`
-    );
-  }
-
   resize() {
-    const { width, height } = this.scene.scale;
+    const { width } = this.scene.scale;
     this.metrics = this.getMetrics();
     this.layoutBackpackSlots();
     this.hudBg.setSize(this.metrics.hudWidth, this.metrics.hudHeight)
@@ -417,24 +360,9 @@ export class GameUI {
     this.message.setPosition(width / 2, 120);
     this.message.setWordWrapWidth(Math.min(520, width - 32));
     this.warning.setPosition(width / 2, 178);
-
-    const panelTop = height / 2 - this.metrics.panelHeight / 2;
-    this.panelBg.setSize(this.metrics.panelWidth, this.metrics.panelHeight)
-      .setPosition(width / 2, height / 2);
-    this.panelTitle.setPosition(width / 2, panelTop + 28)
-      .setFontSize(this.metrics.compact ? '9px' : '11px');
-    this.panelInfo.setPosition(width / 2, panelTop + 54);
-    this.closeLabel.setPosition(width / 2, panelTop + this.metrics.panelHeight - 24);
-    Object.entries(this.campButtons).forEach(([key, { button, label }], index) => {
-      const y = height / 2 + this.metrics.buttonTop + index * this.metrics.buttonGap;
-      button.setSize(this.metrics.buttonWidth, this.metrics.buttonHeight).setPosition(width / 2, y);
-      label.setPosition(width / 2, y).setFontSize(this.metrics.compact ? '6px' : '7px');
-    });
-    this.syncDomLayout();
   }
 
   update(player, inventory, progression, economy, camp, time, nearestResource, nearestStructure, nearestBackpack, nearestEnemy, isNearCamp, enemies, world, storeAllAvailable = false) {
-    const { width } = this.scene.scale;
     this.healthLabel.setText(`VIDA  ${Math.ceil(player.health)} / ${player.maxHealth}    DEF ${player.defense}`);
     const healthWidth = Math.max(0, Math.round((212 * (player.health / player.maxHealth)) / 4) * 4);
     const staminaWidth = Math.max(0, Math.round((212 * (player.stamina / 100)) / 4) * 4);
@@ -447,6 +375,9 @@ export class GameUI {
       : `NÍVEL ${progression.level} • XP ${progression.xp}/${progression.xpToNext}`);
     this.xpFill.setDisplaySize(Math.max(0, Math.round(212 * progression.xpRatio)), 3);
     this.coinLabel.setText(`${economy.coins} MOEDAS`);
+    for (const counter of this.oreCounters) {
+      counter.label.setText(String((inventory.items[counter.type] ?? 0) + (camp?.storage?.[counter.type] ?? 0)));
+    }
     this.inventoryLabel.setText(`MOCHILA ${inventory.usedSlots}/${inventory.maxSlots}  •  ${inventory.total}/${inventory.totalCapacity}`);
     const occupied = Object.entries(inventory.items)
       .filter(([, amount]) => amount > 0)
@@ -492,13 +423,13 @@ export class GameUI {
     if (this.scene.touch?.enabled) {
       // No celular o botão de ação já mostra o que fazer; a dica só aparece no acampamento.
       hint = isNearCamp && !nearestStructure && !nearestResource && !nearestBackpack
-        ? 'Toque num prédio para abrir  •  ACAMP. para melhorias'
+        ? 'Toque num prédio para abrir  •  ACAMP. para a visão geral'
         : '';
     }
     this.hint.setText(hint).setVisible(hint !== '');
-    this.worldAction.hidden = this.campOpen || this.buildingMenuOpen;
+    this.worldAction.hidden = this.buildingMenuOpen;
     this.storeAllAvailable = storeAllAvailable;
-    this.storeAllAction.hidden = !storeAllAvailable || this.campOpen || this.buildingMenuOpen;
+    this.storeAllAction.hidden = !storeAllAvailable || this.buildingMenuOpen;
     this.storeAllAction.disabled = inventory.total === 0;
     this.storeAllAction.textContent = inventory.total > 0 ? 'GUARDAR TUDO' : 'MOCHILA VAZIA';
     this.worldAction.textContent = nearestStructure
@@ -509,8 +440,68 @@ export class GameUI {
           ? 'RECUPERAR MOCHILA'
           : 'ATACAR';
 
+    this.statusLabel.setText(this.statusText(time));
+    this.updateRain();
     this.updateMinimap(player, world);
-    if (this.campOpen) this.updateCampPanel(camp, inventory, player, enemies, time);
+    this.updateMinimapMarkers(camp, enemies);
+  }
+
+  updateRain() {
+    this.rain.clear();
+    if (!this.scene.isRaining || this.buildingMenuOpen) return;
+    const { width, height } = this.scene.scale;
+    this.rain.lineStyle(1, 0xa9d4ff, 0.45);
+    for (const drop of this.rainDrops) {
+      drop.y += drop.speed;
+      drop.x -= drop.speed * 0.25;
+      if (drop.y > height) {
+        drop.y = -drop.length;
+        drop.x = Math.random() * (width + 80);
+      }
+      if (drop.x < -10) drop.x = width + Math.random() * 40;
+      this.rain.lineBetween(drop.x, drop.y, drop.x - drop.length * 0.25, drop.y + drop.length);
+    }
+  }
+
+  statusText(time) {
+    const parts = [];
+    const raid = this.scene.raid;
+    if (raid?.statusText) parts.push(raid.statusText);
+    if (this.scene.isRaining) parts.push('CHUVA');
+    for (const buff of this.scene.buffs?.list() ?? []) parts.push(buff.name.toUpperCase());
+    return parts.join(' • ');
+  }
+
+  /** Mina (sempre), masmorra (quando revelada) e radar da Torre de Vigia (nível 4+). */
+  updateMinimapMarkers(camp, enemies = []) {
+    const mapLeft = this.mapX - 60;
+    const mapTop = this.mapY - 60;
+    const toX = (x) => mapLeft + (x / WORLD.width) * 120;
+    const toY = (y) => mapTop + (y / WORLD.height) * 120;
+    const graphics = this.mapMarkers;
+    graphics.clear();
+    const mine = this.scene.harvestStructures?.state?.byType('mineMarker')?.[0];
+    if (mine) {
+      graphics.fillStyle(0x1b1b1f, 1).fillRect(toX(mine.x) - 4, toY(mine.y) - 4, 8, 8);
+      graphics.fillStyle(0xc1cbd0, 1).fillRect(toX(mine.x) - 2, toY(mine.y) - 2, 4, 4);
+    }
+    if (camp?.dungeonRevealed || camp?.defense?.dragonRadar) {
+      const dungeon = DUNGEON_CONFIG;
+      graphics.fillStyle(0xe2463f, 1).fillTriangle(
+        toX(dungeon.x), toY(dungeon.y) - 5,
+        toX(dungeon.x) + 5, toY(dungeon.y) + 4,
+        toX(dungeon.x) - 5, toY(dungeon.y) + 4
+      );
+    }
+    if (camp?.defense?.radarActive) {
+      graphics.fillStyle(0xff5d4f, 1);
+      for (const enemy of enemies) {
+        if (!enemy.active) continue;
+        const distance = Phaser.Math.Distance.Between(enemy.x, enemy.y, camp.x, camp.y);
+        if (distance > BUILDING_DEFS.tower.radarRange) continue;
+        graphics.fillRect(Math.round(toX(enemy.x)) - 1, Math.round(toY(enemy.y)) - 1, 2, 2);
+      }
+    }
   }
 
   updateMinimap(player, world) {
@@ -554,46 +545,6 @@ export class GameUI {
     }
   }
 
-  updateCampPanel(camp, inventory, player, enemies, time) {
-    const stored = Object.values(camp.storage ?? {}).reduce((sum, amount) => sum + amount, 0);
-    this.panelInfo.setText([
-      `Ferreiro: ${camp.levels.forge ? 'disponível' : 'melhore a ferraria'}   •   Fazendeiro: ${camp.levels.farm ? 'disponível' : 'melhore a fazenda'}`,
-      `Missão: derrote 5 criaturas   (${Math.min(camp.questKills, 5)}/5)`,
-      `Mochila: ${inventory.total}/${inventory.totalCapacity}   •   Armazém: ${stored}/${camp.storageCapacity}   •   Dia ${time.dayCount ?? 1}`
-    ].join('\n'));
-    for (const [key, building] of Object.entries(BUILDINGS)) {
-      const next = camp.levels[key] + 1;
-      const cost = building.costs[next - 2];
-      const costText = cost
-        ? Object.entries(cost).map(([type, amount]) => `${amount} ${RESOURCE_TYPES[type].label.toLowerCase()}`).join('  ·  ')
-        : 'nível máximo';
-      const ready = cost && inventory.has(cost);
-      const label = this.campButtons[key].label;
-      label.setText(`${building.name}  •  Nível ${camp.levels[key]} / 3\n${costText}${ready ? '   ✓' : ''}`);
-      this.campButtons[key].button.setFillStyle(ready ? 0x425f43 : 0x314638);
-    }
-    const canSleep = time.isNight;
-    this.campButtons.sleep.label.setText(canSleep
-      ? 'DORMIR  •  PULAR A NOITE'
-      : 'DORMIR  •  SOMENTE À NOITE');
-    this.campButtons.sleep.button.setFillStyle(canSleep ? 0x425f43 : 0x314638);
-    const reward = camp.questKills >= 5 && !camp.questClaimed ? '  •  Recompensa: F para resgatar' : '';
-    this.panelTitle.setText(`ACAMPAMENTO${reward}`);
-  }
-
-  toggleCamp(open) {
-    this.campOpen = open;
-    this.campActions.hidden = !open;
-    this.worldAction.hidden = open;
-    this.storeAllAction.hidden = open || !this.storeAllAvailable;
-    if (open) this.campFeedback.textContent = '';
-    this.campPanel.forEach((item) => item.setVisible(open));
-  }
-
-  setCampFeedback(text) {
-    this.campFeedback.textContent = text;
-  }
-
   updateBossHealth(boss, player) {
     const visible = Boolean(boss && !boss.dead && player &&
       Phaser.Math.Distance.Between(boss.x, boss.y, player.x, player.y) <= BOSS_CONFIG.healthBarRange);
@@ -607,16 +558,8 @@ export class GameUI {
   showMessage(text) {
     if (this.messageTimer) this.messageTimer.remove(false);
     this.message.setText(text).setAlpha(1);
-    if (this.campOpen) {
-      this.message.setPosition(
-        this.scene.scale.width / 2,
-        this.scene.scale.height / 2 + this.metrics.panelHeight / 2 - 52
-      );
-      this.message.setDepth(5300);
-    } else {
-      this.message.setPosition(this.scene.scale.width / 2, 120);
-      this.message.setDepth(5100);
-    }
+    this.message.setPosition(this.scene.scale.width / 2, 120);
+    this.message.setDepth(5100);
     this.messageTimer = this.scene.time.delayedCall(1900, () => {
       this.scene.tweens.add({ targets: this.message, alpha: 0, duration: 300 });
     });
