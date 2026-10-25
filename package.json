@@ -26,7 +26,8 @@
     "test:runtime:buildings": "node scripts/buildings-runtime-check.mjs",
     "test:runtime:raid": "node scripts/raid-runtime-check.mjs",
     "test:runtime:mining": "node scripts/mining-runtime-check.mjs",
-    "test:runtime:visual": "node scripts/visual-runtime-check.mjs"
+    "test:runtime:visual": "node scripts/visual-runtime-check.mjs",
+    "test:runtime:campaign": "node scripts/campaign-runtime-check.mjs"
   },
   "dependencies": {
     "@fontsource/press-start-2p": "^5.2.6",

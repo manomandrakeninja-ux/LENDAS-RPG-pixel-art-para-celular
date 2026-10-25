@@ -11,9 +11,9 @@ await runInChrome({ name: 'raid', port: 9352 }, async ({ inScene, capture, fresh
     scene.player.body.reset(scene.camp.x, scene.camp.y + 85);
     for (const type of Object.keys(scene.camp.storage)) scene.camp.storage[type] = 500;
     scene.economy.coins = 5000;
-    // Muralha nível 3 (pedra, espinhos 5) e torre nível 1.
+    // Muralha nível 3 (pedra, espinhos 5) e sem torre: com as 4 torres do nível 1
+    // os invasores morreriam antes de chegar à muralha, e aqui o alvo é a muralha.
     for (let index = 0; index < 3; index += 1) scene.upgradeBuilding('wall');
-    scene.upgradeBuilding('tower');
     scene.economy.coins = 100;
     const started = scene.raid.checkDay(10);
     return {
@@ -51,8 +51,13 @@ await runInChrome({ name: 'raid', port: 9352 }, async ({ inScene, capture, fresh
   check(started.kinds.slime === 10 && started.kinds.wolf === 5, `Onda do dia 10 errada: ${JSON.stringify(started.kinds)}`);
   check(started.outside, 'Os invasores deveriam surgir fora da muralha.');
 
-  // Eles atacam a muralha; os espinhos devolvem dano.
-  await delay(9000);
+  // Eles atacam a muralha; os espinhos devolvem dano. Espera até 25 s: o tempo
+  // até chegar varia com o ponto onde cada invasor aparece.
+  for (let waited = 0; waited < 25000; waited += 1000) {
+    await delay(1000);
+    const hit = await inScene((scene) => scene.camp.defense.wallHp < scene.camp.defense.wallMaxHp);
+    if (hit && waited >= 3000) break;
+  }
   const atWall = await inScene((scene) => {
     const raiders = scene.enemies.filter((enemy) => enemy.isRaider);
     return {
@@ -102,7 +107,7 @@ await runInChrome({ name: 'raid', port: 9352 }, async ({ inScene, capture, fresh
   check(victory.coinsGained >= 60 && victory.leveled && victory.banner === 'ATAQUE REPELIDO!', `Recompensa: ${JSON.stringify(victory)}`);
   await capture('raid-victory.png');
 
-  // Dia 20 sem muralha: prédios levam 10% por golpe e o reparo custa 5 madeiras.
+  // Dia 20 sem muralha: prédios levam 2% por golpe e o reparo custa 5 madeiras.
   const buildings = await inScene(async (scene) => {
     scene.levelUpOverlay.hide();
     scene.progression.pendingLevels = [];
@@ -134,7 +139,9 @@ await runInChrome({ name: 'raid', port: 9352 }, async ({ inScene, capture, fresh
       efficiencyWhenDamaged: damaged < 100 && damaged > 0 ? 0.5 : null
     };
   });
-  check(buildings.damaged <= 90 && buildings.damaged % 10 === 0, `Prédio não perdeu 10% por golpe: ${JSON.stringify(buildings)}`);
+  // 2% por golpe e golpes mais lentos contra estruturas: em 2,6 s cai pouco.
+  check(buildings.damaged < 100 && buildings.damaged >= 94 && buildings.damaged % 2 === 0,
+    `Prédio deveria perder 2% por golpe: ${JSON.stringify(buildings)}`);
   check(buildings.afterRepair === 100 && buildings.woodSpent === 5, `Reparo: ${JSON.stringify(buildings)}`);
 
   // Derrota: todos os prédios destruídos → fim de jogo e recomeço do último save.

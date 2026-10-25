@@ -147,15 +147,18 @@ export class RaidDirector {
     }
 
     if (blockedByWall) {
-      if (toCamp > wallRadius + 8) {
+      // Os postes seguram o corpo do invasor um pouco antes do raio da muralha;
+      // encostar num poste também conta como chegar.
+      const touchingWall = scene.time.now - (enemy.lastWallTouch ?? -Infinity) < 250;
+      if (toCamp > wallRadius + 8 && !touchingWall) {
         this.moveTowards(enemy, camp.x, camp.y);
         return;
       }
       enemy.body.setVelocity(0, 0);
       defense.handleContact(enemy);
       if (!defense.canClimb(enemy) || enemy.stunMs > 0 || enemy.cooldown > 0) return;
-      const result = defense.damageWall(enemy.damage, enemy);
-      enemy.cooldown = enemy.definition.attackCooldown;
+      const result = defense.damageWall(Math.max(1, Math.round(enemy.damage * RAID_CONFIG.wallDamageMultiplier)), enemy);
+      enemy.cooldown = enemy.definition.attackCooldown * RAID_CONFIG.structureCooldownMultiplier;
       if (result.retaliation > 0) scene.damageEnemy?.(enemy, result.retaliation, { color: '#9ee7ff' });
       if (result.broken) {
         scene.ui.showMessage('A muralha caiu! Os inimigos estão entrando.');
@@ -176,10 +179,14 @@ export class RaidDirector {
     }
     enemy.body.setVelocity(0, 0);
     if (enemy.cooldown > 0) return;
-    enemy.cooldown = enemy.definition.attackCooldown;
+    // Limite de golpes por prédio: um bando inteiro não derruba um prédio de uma vez.
+    this.lastBuildingHit ??= {};
+    const now = scene.time.now;
+    if (now - (this.lastBuildingHit[target.key] ?? -Infinity) < RAID_CONFIG.buildingHitIntervalMs) return;
+    this.lastBuildingHit[target.key] = now;
+    enemy.cooldown = enemy.definition.attackCooldown * RAID_CONFIG.structureCooldownMultiplier;
     const destroyed = camp.damageBuilding(target.key);
     scene.effects?.spawnHit(target.x, target.y - 12, 0xff8a6b, 6);
-    const now = scene.time.now;
     if (destroyed) {
       scene.ui.showMessage(`${scene.buildingName(target.key)} foi destruído!`);
     } else if (now - this.lastBuildingAlertAt > 4000) {

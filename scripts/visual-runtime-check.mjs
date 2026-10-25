@@ -92,8 +92,30 @@ await runInChrome({ name: 'visual', port: 9357, width: 1280, height: 800 }, asyn
   });
   check(darkness.levels > 20, `Escuridão sem degradê: ${JSON.stringify(darkness)}`);
 
+  // Barra rápida: Mochila (abre o painel), Comer e Poção.
+  const quick = await inScene((scene) => {
+    scene.inventory.items.food = 3;
+    scene.inventory.items.potion = 1;
+    scene.player.health = 40;
+    const ids = scene.ui.quickButtons.map((button) => button.id);
+    scene.useHotkey('2');
+    const afterEat = { health: scene.player.health, food: scene.inventory.items.food };
+    scene.toggleBackpack();
+    const open = scene.backpackPanel.isOpen;
+    const useButtons = document.querySelectorAll('#backpack-grid [data-bag="use"]').length;
+    document.querySelector('#backpack-grid [data-type="potion"]').click();
+    const afterPotion = { health: scene.player.health, potion: scene.inventory.items.potion };
+    scene.toggleBackpack();
+    return { ids, afterEat, open, useButtons, afterPotion, closed: !scene.backpackPanel.isOpen, splash: Boolean(document.getElementById('splash')) };
+  });
+  check(quick.ids.join() === 'backpack,eat,potion,journal', `Barra rápida: ${JSON.stringify(quick)}`);
+  check(quick.afterEat.health === 52 && quick.afterEat.food === 2, `Comer pela barra rápida: ${JSON.stringify(quick)}`);
+  check(quick.open && quick.closed && quick.useButtons === 2, `Painel da mochila: ${JSON.stringify(quick)}`);
+  check(quick.afterPotion.potion === 0 && quick.afterPotion.health > 52, `Poção pelo painel: ${JSON.stringify(quick)}`);
+  check(!quick.splash, 'A tela de início não deveria aparecer nos testes automáticos.');
+
   await inScene((scene) => { scene.player.body.reset(scene.camp.x - 60, scene.camp.y + 40); });
   await delay(600);
   const screenshot = await capture('visual-acampamento.png');
-  return { texts, elite, stats, collision, darkness, screenshot };
+  return { texts, elite, stats, collision, darkness, quick, screenshot };
 });

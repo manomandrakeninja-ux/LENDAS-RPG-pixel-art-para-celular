@@ -35,6 +35,8 @@ Protótipo de RPG top-down em pixel art feito com Phaser 3. A **Fase 1** adicion
 
 **Objetivo final:** levar os **7 prédios do acampamento ao nível 10**. Isso revela a localização da Masmorra do Dragão, o chefe final. A cada 10 dias o acampamento sofre um ataque.
 
+**Campanha "As Cinzas do Primeiro Mundo":** 100 missões em 10 capítulos, com moradores, diálogos, cinco selos elementais, regiões que exigem preparo, chefes, missões diárias e o Golem de Fogo no fim. Tecla **L** (ou botão DIÁRIO) abre o Diário de Missões. Detalhes em [docs/campanha.md](docs/campanha.md).
+
 ## Build de produção
 
 ```bash
@@ -68,12 +70,15 @@ Os controles somem enquanto o mapa, um painel de prédio ou a escolha de nível 
 - **Q**: habilidade especial em área
 - **1**: beber poção de vida (+50) • **2**: comer (comida +12, leite +10, ovo +8) • **3**: acender tocha (luz maior por 2 min)
 - **4**: poção de vigor ou armar uma armadilha no chão • **5**: elixir de força (+20% ATQ e DEF por 5 min)
-- **Toque em um slot da mochila**: usa o item
+- **B** (ou **I**): abrir/fechar a mochila; no painel, os botões COMER/BEBER usam o item
+- **Barra rápida** (abaixo do painel de vida): clique na mochila para abrir, em **COMER** (tecla 2) ou em **POÇÃO** (tecla 1)
 - **E**: coletar recursos, árvores, ervas, cogumelos e baús próximos; minerar rochas e veios quando houver picareta; ou recuperar uma mochila de morte
 - **Clique ou toque nos prédios**: abrir o painel fullscreen do prédio (inclusive Fogueira, Muralha e Torre)
 - **Botão no canto inferior direito**: coletar, minerar, recuperar a mochila ou atacar
 - **Botão Guardar Tudo no canto inferior esquerdo**: aparece ao entrar no acampamento e move a mochila para o armazém da casa
 - **M**: abrir/fechar o mapa fullscreen do mundo
+- **L**: abrir/fechar o Diário de Missões (campanha, diárias e registros)
+- **E** perto de um morador ou local de missão: conversar, investigar, resgatar ou ativar
 - **C**: abrir/fechar a visão geral dos 7 prédios (quando estiver perto)
 - **F**: descansar junto à fogueira; à noite, dormir e pular a noite (exige Casa nível 2)
 - **R**: dormir e pular a noite somente durante a noite (exige Casa nível 2)

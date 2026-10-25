@@ -19,7 +19,7 @@ O texto completo de cada nível aparece no jogo, na aba **Níveis** do painel de
 ## Regras gerais
 
 - **Pagamento**: mochila primeiro, depois armazém da Casa e, quando o custo pede, moedas.
-- **Durabilidade**: só cai em ataques ao acampamento (10% por golpe). Danificado = produção pela metade; destruído = sem função. Reparo: 5 madeiras. É preciso reparar antes de melhorar.
+- **Durabilidade**: só cai em ataques ao acampamento (2% por golpe, no máximo 2 golpes por segundo em cada prédio). Na muralha, cada golpe vale 15% do dano normal do monstro, e contra estruturas os monstros atacam na metade da velocidade (valores em `src/data/raids.js`). Danificado = produção pela metade; destruído = sem função. Reparo: 5 madeiras. É preciso reparar antes de melhorar.
 - **Armazém da Casa**: slots de 25 unidades por tipo (20 slots no nível 1, ilimitado no 10). O baú secreto (nível 4) tem 5 slots separados.
 - **Conclusão**: com os 7 prédios no nível 10 aparece a mensagem *"O acampamento está completo! O Dragão foi localizado. Prepare-se."* e a Masmorra do Dragão é marcada no mundo e no mapa.
 

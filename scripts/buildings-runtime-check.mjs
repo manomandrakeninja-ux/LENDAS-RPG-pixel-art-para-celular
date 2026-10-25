@@ -72,9 +72,10 @@ await runInChrome({ name: 'buildings', port: 9351 }, async ({ inScene, capture, 
     scene.enemies.push(target);
     scene.hudCamera.ignore(target);
     scene.__towerTarget = target;
-    return { level: scene.camp.levels.tower, towers: scene.camp.defense.towers.length, health: target.health };
+    return { level: scene.camp.levels.tower, towers: scene.camp.defense.towers.length, expected: scene.camp.defense.towerStat('towers'), health: target.health };
   });
-  check(towerHit.level === 1 && towerHit.towers === 1, `Torre não foi construída: ${JSON.stringify(towerHit)}`);
+  // O número de torres vem de buildings.json (hoje 4 já no nível 1).
+  check(towerHit.level === 1 && towerHit.towers === towerHit.expected && towerHit.towers >= 1, `Torre não foi construída: ${JSON.stringify(towerHit)}`);
   await delay(3800);
   const afterArrow = await inScene((scene) => ({ health: scene.__towerTarget.health, active: scene.__towerTarget.active }));
   check(!afterArrow.active || afterArrow.health < towerHit.health, `A torre não atirou: ${JSON.stringify(afterArrow)}`);
@@ -116,7 +117,7 @@ await runInChrome({ name: 'buildings', port: 9351 }, async ({ inScene, capture, 
   check(complete.banner && complete.bannerText === 'O acampamento está completo! O Dragão foi localizado. Prepare-se.',
     `Mensagem épica ausente: ${complete.bannerText}`);
   check(complete.dungeon && complete.dungeonSprite, 'A masmorra não foi marcada.');
-  check(complete.plots === 8 && complete.storageSlots === null && complete.wallHp === 20000 && complete.towers === 2,
+  check(complete.plots === 8 && complete.storageSlots === null && complete.wallHp === 20000 && complete.towers === 4,
     `Efeitos do nível 10 errados: ${JSON.stringify(complete)}`);
   check(complete.fireRadius === 340 && complete.fireResistance >= 0.6, `Fogueira lendária: ${JSON.stringify(complete)}`);
 

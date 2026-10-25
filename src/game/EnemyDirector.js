@@ -65,7 +65,7 @@ export class EnemyDirector {
     const limit = SPAWNING_CONFIG.activeLimit[period];
     if (this.spawnTimer <= 0) {
       this.spawnTimer = SPAWNING_CONFIG.spawnIntervalMs[period];
-      const regular = this.enemies.filter((enemy) => !enemy.isRaider).length;
+      const regular = this.enemies.filter((enemy) => !enemy.isRaider && !enemy.isQuestEnemy).length;
       if (regular < limit) this.spawnOne(timeState);
     }
     this.mineTimer -= delta;
@@ -84,7 +84,8 @@ export class EnemyDirector {
 
     const despawnDistance = SPAWNING_CONFIG.despawnDistance[period];
     for (const enemy of [...this.enemies]) {
-      if (enemy.isRaider) continue;
+      // Invasores e inimigos de missão são controlados pelos seus próprios sistemas.
+      if (enemy.isRaider || enemy.isQuestEnemy) continue;
       const playerDistance = Phaser.Math.Distance.Between(enemy.x, enemy.y, player.x, player.y);
       const wrongPhase = enemy.definition.period === 'night' && period === 'day';
       const wrongPhaseFar = wrongPhase && playerDistance > 320;
@@ -157,7 +158,7 @@ export class EnemyDirector {
 
   clearNightEnemies() {
     for (const enemy of [...this.enemies]) {
-      if (enemy.definition.period === 'night') this.remove(enemy);
+      if (enemy.definition.period === 'night' && !enemy.isQuestEnemy) this.remove(enemy);
     }
   }
 

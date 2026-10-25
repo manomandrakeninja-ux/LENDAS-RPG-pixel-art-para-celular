@@ -33,5 +33,14 @@ export const RESOURCE_TYPES = {
   titanCore: { label: 'Núcleo do Titã', color: 0x8e4939, accent: 0xf0a05d, icon: null, codeIcon: 'titanCore' },
   staminaPotion: { label: 'Poção de Vigor', color: 0x3f8f5b, accent: 0x9be08f, icon: null, codeIcon: 'staminaPotion' },
   trap: { label: 'Armadilha', color: 0x6b6f73, accent: 0xc9ced1, icon: null, codeIcon: 'trap' },
-  elixir: { label: 'Elixir de Força', color: 0x8b3fb1, accent: 0xf0a6ff, icon: null, codeIcon: 'elixir' }
+  elixir: { label: 'Elixir de Força', color: 0x8b3fb1, accent: 0xf0a6ff, icon: null, codeIcon: 'elixir' },
+  // Itens da campanha "As Cinzas do Primeiro Mundo" (src/data/campaign.js).
+  water: { label: 'Água', color: 0x4f84c4, accent: 0xa9d4ff, icon: null, codeIcon: 'water' },
+  fabric: { label: 'Tecido', color: 0xb8473b, accent: 0xe8b0a0, icon: null, codeIcon: 'fabric' },
+  leather: { label: 'Couro', color: 0x8a5a32, accent: 0xc98d55, icon: null, codeIcon: 'leather' },
+  fish: { label: 'Peixe', color: 0x6c9cc4, accent: 0xd4e8f7, icon: null, codeIcon: 'fish' },
+  crystal: { label: 'Cristal Azul', color: 0x4fa8d8, accent: 0xc8f0ff, icon: null, codeIcon: 'crystal' },
+  magmaCore: { label: 'Núcleo de Magma', color: 0xb8401e, accent: 0xffb04a, icon: null, codeIcon: 'magmaCore' },
+  book: { label: 'Livro Antigo', color: 0x6b3a2a, accent: 0xe8c15a, icon: null, codeIcon: 'book' },
+  mapPiece: { label: 'Parte do Mapa', color: 0xd9c08c, accent: 0xf4e6c6, icon: null, codeIcon: 'mapPiece' }
 };

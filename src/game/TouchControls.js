@@ -102,6 +102,8 @@ export class TouchControls {
     if (action === 'dodge') this.dodgeQueued = true;
     else if (action === 'special') this.scene.specialAttack();
     else if (action === 'map') this.scene.worldMap.toggle();
+    else if (action === 'bag') this.scene.toggleBackpack();
+    else if (action === 'journal') this.scene.toggleJournal();
     else if (action === 'camp') this.scene.toggleCampMenu();
     else if (action === 'fullscreen') this.toggleFullscreen();
   }

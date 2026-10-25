@@ -97,7 +97,7 @@ try {
       const started = Date.now();
       const check = () => {
         const scene = window.__LENDAS__?.scene?.getScene('GameScene');
-        if (scene?.inventory && scene?.ui?.backpackSlots) return resolve(true);
+        if (scene?.inventory && scene?.ui?.quickButtons) return resolve(true);
         if (Date.now() - started > 12000) return reject(new Error('GameScene não iniciou.'));
         setTimeout(check, 100);
       };
@@ -129,10 +129,16 @@ try {
     return {
       maxSlots: scene.inventory.maxSlots,
       totalCapacity: scene.inventory.totalCapacity,
-      visualSlots: scene.ui.backpackSlots.length,
-      resourceCounts: scene.ui.resourceCounts.length,
-      occupiedIcons: scene.ui.backpackSlots.filter((slot) => slot.icon.visible).length,
-      slotRight: Math.max(...scene.ui.backpackSlots.map((slot) => slot.background.x + slot.background.width)),
+      // Os 12 espaços aparecem no painel da mochila (botão no HUD ou tecla B).
+      ...(() => {
+        scene.toggleBackpack();
+        const slots = document.querySelectorAll('#backpack-grid .bag-slot');
+        const filled = document.querySelectorAll('#backpack-grid .bag-slot:not(.bag-slot--empty)');
+        const result = { visualSlots: slots.length, resourceCounts: slots.length, occupiedIcons: filled.length };
+        scene.backpackPanel.close();
+        return result;
+      })(),
+      slotRight: Math.max(...scene.ui.quickButtons.map((button) => button.x + button.size)),
       mapLeft: scene.ui.mapX - scene.ui.metrics.mapSize / 2,
       storeButton: {
         hidden: button.hidden,
@@ -189,11 +195,20 @@ try {
     const scene = window.__LENDAS__.scene.getScene('GameScene');
     return {
       message: scene.ui.message.text,
-      visibleIcons: scene.ui.backpackSlots.filter((slot) => slot.icon.visible).length,
-      visibleCounts: scene.ui.backpackSlots.filter((slot) => slot.count.text.length > 0).length,
-      slotTypes: scene.ui.backpackSlots.map((slot) => slot.type),
-      counts: scene.ui.backpackSlots.map((slot) => slot.count.text),
-      label: scene.ui.inventoryLabel.text
+      ...(() => {
+        scene.backpackPanel.open();
+        const filled = [...document.querySelectorAll('#backpack-grid .bag-slot:not(.bag-slot--empty)')];
+        const result = {
+          visibleIcons: filled.filter((slot) => slot.querySelector('img')).length,
+          visibleCounts: filled.filter((slot) => slot.querySelector('.bag-slot__count')?.textContent.length > 0).length,
+          slotTypes: filled.map((slot) => slot.title),
+          counts: filled.map((slot) => slot.querySelector('.bag-slot__count')?.textContent),
+          label: document.getElementById('backpack-summary').textContent,
+          hudCount: scene.ui.quickButtons[0].count.text
+        };
+        scene.backpackPanel.close();
+        return result;
+      })()
     };
   })()`);
   if (fillResult.used !== 11 || !acceptedValue(fullResult.accepted) || fullResult.used !== 12 || !fullResult.full ||

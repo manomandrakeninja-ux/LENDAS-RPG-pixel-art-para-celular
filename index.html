@@ -13,8 +13,116 @@
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="manifest" href="./manifest.webmanifest" />
     <title>LENDAS — RPG de exploração</title>
+    <style>
+      html, body { margin: 0; background: #0b0d10; }
+      /* ---------- Tela de início ---------- */
+      .splash {
+        position: fixed;
+        inset: 0;
+        z-index: 100;
+        overflow: hidden;
+        background: #0b0d10;
+        transition: opacity 1.1s ease, transform 1.2s ease, filter 1.1s ease;
+      }
+      
+      .splash__art {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        animation: splash-drift 18s ease-in-out infinite alternate;
+      }
+      
+      .splash__shade {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(180deg, rgba(0, 0, 0, 0) 55%, rgba(8, 6, 4, 0.82) 100%);
+      }
+      
+      .splash__bottom {
+        position: absolute;
+        left: 50%;
+        bottom: max(28px, env(safe-area-inset-bottom));
+        display: grid;
+        gap: 14px;
+        width: min(520px, calc(100% - 48px));
+        transform: translateX(-50%);
+        text-align: center;
+      }
+      
+      .splash__bar {
+        height: 14px;
+        padding: 3px;
+        border: 2px solid #e8c779;
+        border-radius: 8px;
+        background: rgba(20, 13, 8, 0.85);
+        box-shadow: 0 0 0 2px #2a1a0e, 0 6px 18px rgba(0, 0, 0, 0.5);
+        transition: opacity 0.5s ease;
+      }
+      
+      .splash__fill {
+        width: 10%;
+        height: 100%;
+        border-radius: 4px;
+        background: linear-gradient(90deg, #d97a2b, #f2c45c 60%, #fff0b0);
+        box-shadow: 0 0 10px rgba(242, 196, 92, 0.7);
+        transition: width 0.35s ease;
+      }
+      
+      .splash__status {
+        margin: 0;
+        color: #fff1ce;
+        font: 10px/1.6 'Press Start 2P', monospace;
+        letter-spacing: 2px;
+        text-shadow: 2px 2px 0 #1a120d, 0 0 12px rgba(0, 0, 0, 0.9);
+      }
+      
+      .splash--ready {
+        cursor: pointer;
+      }
+      
+      .splash--ready .splash__bar {
+        opacity: 0;
+      }
+      
+      .splash--ready .splash__status {
+        color: #ffe08a;
+        font-size: clamp(10px, 1.4vw, 14px);
+        animation: splash-pulse 1.4s ease-in-out infinite;
+      }
+      
+      .splash--leaving {
+        opacity: 0;
+        transform: scale(1.06);
+        filter: blur(6px) brightness(1.3);
+        pointer-events: none;
+      }
+      
+      @keyframes splash-pulse {
+        50% { opacity: 0.35; }
+      }
+      
+      @keyframes splash-drift {
+        from { transform: scale(1.02); }
+        to { transform: scale(1.07) translate(-1%, -1%); }
+      }
+    </style>
   </head>
   <body>
+    <!-- Tela de início: aparece antes do jogo carregar e some com um degradê. -->
+    <section id="splash" class="splash" aria-label="LENDAS carregando">
+      <img id="splash-art" class="splash__art" alt="LENDAS: evolua, melhore, sobreviva" />
+      <div class="splash__shade"></div>
+      <div class="splash__bottom">
+        <div class="splash__bar"><div id="splash-fill" class="splash__fill"></div></div>
+        <p id="splash-status" class="splash__status">CARREGANDO...</p>
+      </div>
+    </section>
+    <script>
+      // Caminho relativo à página: funciona no PC e no GitHub Pages.
+      document.getElementById('splash-art').src = 'assets/ui/splash.webp';
+    </script>
     <div id="game">
       <section id="epic-banner" class="epic-banner" role="alert" hidden>
         <p class="epic-banner__kicker">LENDAS</p>
@@ -71,17 +179,33 @@
         </div>
       </section>
       <section id="building-menu" class="building-menu" role="dialog" aria-modal="true" aria-labelledby="building-menu-title" hidden>
-        <header class="building-menu__header">
-          <div>
-            <p id="building-menu-kicker" class="building-menu__kicker">LENDAS</p>
-            <h1 id="building-menu-title" class="building-menu__title">Prédio</h1>
-          </div>
-          <button id="building-menu-close" class="building-menu__close" type="button" aria-label="Fechar painel">FECHAR</button>
-        </header>
-        <nav id="building-menu-tabs" class="building-menu__tabs" aria-label="Abas do prédio"></nav>
-        <div id="building-menu-content" class="building-menu__content"></div>
-        <footer id="building-menu-footer" class="building-menu__footer"></footer>
+        <div class="building-menu__window">
+          <header class="building-menu__header">
+            <div class="building-menu__portrait-frame"><img id="building-menu-portrait" class="building-menu__portrait pixel-icon" alt="" /></div>
+            <div class="building-menu__heading">
+              <p id="building-menu-kicker" class="building-menu__kicker">LENDAS</p>
+              <h1 id="building-menu-title" class="building-menu__title">Prédio</h1>
+              <div id="building-menu-levelbar" class="building-menu__levelbar" aria-hidden="true"></div>
+            </div>
+            <button id="building-menu-close" class="building-menu__close" type="button" aria-label="Fechar painel">FECHAR</button>
+          </header>
+          <nav id="building-menu-tabs" class="building-menu__tabs" aria-label="Abas do prédio"></nav>
+          <div id="building-menu-content" class="building-menu__content"></div>
+          <footer id="building-menu-footer" class="building-menu__footer"></footer>
+        </div>
       </section>
+      <aside id="backpack-panel" class="backpack-panel" aria-labelledby="backpack-title" hidden>
+        <header class="backpack-panel__header">
+          <img id="backpack-icon" class="backpack-panel__icon pixel-icon" alt="" width="48" height="48" />
+          <div>
+            <h2 id="backpack-title" class="backpack-panel__title">Mochila</h2>
+            <p id="backpack-summary" class="backpack-panel__summary"></p>
+          </div>
+          <button id="backpack-close" class="panel-close" type="button" aria-label="Fechar mochila">✕</button>
+        </header>
+        <div id="backpack-grid" class="backpack-panel__grid"></div>
+        <footer id="backpack-footer" class="backpack-panel__footer"></footer>
+      </aside>
       <!-- Controles de toque: aparecem sozinhos no celular (ou com ?toque=1 no computador). -->
       <div id="touch-controls" class="touch-controls" hidden>
         <div id="touch-stick-zone" class="touch-stick-zone" aria-label="Joystick: arraste para mover">
@@ -91,6 +215,8 @@
         </div>
         <div class="touch-top">
           <button type="button" id="touch-camp" class="touch-small touch-camp" data-touch="camp" aria-label="Menu do acampamento" hidden>ACAMP.</button>
+          <button type="button" class="touch-small" data-touch="bag" aria-label="Abrir mochila">MOCHILA</button>
+          <button type="button" class="touch-small" data-touch="journal" aria-label="Abrir diário de missões">DIÁRIO</button>
           <button type="button" class="touch-small" data-touch="map" aria-label="Abrir mapa">MAPA</button>
           <button type="button" class="touch-small" data-touch="fullscreen" aria-label="Tela cheia">TELA</button>
         </div>

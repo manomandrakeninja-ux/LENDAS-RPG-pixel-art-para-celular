@@ -318,6 +318,8 @@ export class CampDefense {
   setupEnemyCollision(enemies) {
     if (this.wallCollider) this.wallCollider.destroy();
     this.wallCollider = this.scene.physics.add.collider(this.posts, enemies, (post, enemy) => {
+      // Marca o encosto: o invasor parado no poste já está "na muralha".
+      enemy.lastWallTouch = this.scene.time.now;
       this.handleContact(enemy);
     });
   }

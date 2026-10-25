@@ -44,7 +44,9 @@ export class Enemy extends Phaser.GameObjects.Container {
     this.body.setCollideWorldBounds(true);
     if (this.definition.ignoresObstacles) this.body.checkCollision.none = true;
 
-    const visual = resolveEnemyVisual(scene, type, this.isElite);
+    // A campanha cria inimigos com desenho e nome próprios sobre uma espécie base.
+    if (options.name) this.name = options.name;
+    const visual = resolveEnemyVisual(scene, options.visual ?? type, this.isElite);
     const texture = visual.texture;
     const frame = visual.frame;
     this.usingPlaceholder = visual.isPlaceholder;
@@ -148,7 +150,8 @@ export class Enemy extends Phaser.GameObjects.Container {
     const dx = player.x - this.x;
     const dy = player.y - this.y;
     const distance = Math.hypot(dx, dy);
-    const camp = context.camp;
+    // Invasores das missões de defesa atacam dentro do acampamento.
+    const camp = this.ignoresSafeZone ? null : context.camp;
     const safeRadius = context.safeZoneRadius ?? SPAWNING_CONFIG.safeZoneRadius;
     const campDistance = camp ? Phaser.Math.Distance.Between(this.x, this.y, camp.x, camp.y) : Infinity;
     const playerInSafeZone = camp
@@ -170,11 +173,11 @@ export class Enemy extends Phaser.GameObjects.Container {
       this.patrolAroundHome(delta);
     } else {
       const healthRatio = this.health / this.maxHealth;
-      if (healthRatio <= this.definition.fleeHealthRatio && this.definition.fleeHealthRatio > 0) {
+      if (!this.noFlee && healthRatio <= this.definition.fleeHealthRatio && this.definition.fleeHealthRatio > 0) {
         this.state = 'flee';
         const fleeAngle = Math.atan2(this.y - player.y, this.x - player.x);
         this.body.setVelocity(Math.cos(fleeAngle) * this.speed, Math.sin(fleeAngle) * this.speed);
-      } else if (distance <= this.definition.perception) {
+      } else if (distance <= (this.perception ?? this.definition.perception)) {
         this.state = 'chase';
         const targetX = distance > 0 ? dx / distance : 0;
         const targetY = distance > 0 ? dy / distance : 0;

@@ -11,6 +11,19 @@ import {
 import { MARKET_CATALOG, findCatalogEntry, sellPriceOf } from '../data/economy.js';
 import { TRAVELER_GOODS, questById } from '../data/travelers.js';
 import { RESOURCE_TYPES } from './config.js';
+import { resourceIconHtml, textureUrl } from './iconUrls.js';
+
+// Desenho de cada prédio no cabeçalho e nos cartões (textura, quadro).
+const PORTRAITS = {
+  camp: ['buildings', 'campfire-0'],
+  campfire: ['buildings', 'campfire-0'],
+  farm: ['buildings', 'farm'],
+  forge: ['buildings', 'forge'],
+  house: ['buildings', 'house'],
+  market: ['buildings', 'store'],
+  wall: ['wall-door'],
+  tower: ['tower-wood']
+};
 
 const UPGRADES_TAB = { id: 'upgrades', label: 'Níveis' };
 
@@ -48,6 +61,8 @@ export class BuildingMenu {
     this.content = document.getElementById('building-menu-content');
     this.footer = document.getElementById('building-menu-footer');
     this.closeButton = document.getElementById('building-menu-close');
+    this.portrait = document.getElementById('building-menu-portrait');
+    this.levelbar = document.getElementById('building-menu-levelbar');
     this.building = null;
     this.tab = null;
 
@@ -168,11 +183,16 @@ export class BuildingMenu {
       this.title.textContent = BUILDING_DEFS[this.building].name;
       this.kicker.textContent = level === 0 ? 'Não construído • LENDAS' : `Nível ${level}/${MAX_BUILDING_LEVEL} • LENDAS`;
     }
+    this.portrait.src = this.portraitUrl(this.building);
+    const level = this.building === 'camp' ? null : this.camp.levels[this.building];
+    this.levelbar.innerHTML = level === null ? '' : Array.from({ length: MAX_BUILDING_LEVEL }, (_, index) =>
+      `<span class="${index < level ? 'is-done' : index === level ? 'is-next' : ''}"></span>`).join('');
     this.tabs.innerHTML = tabs.map((tab) => `
       <button type="button" data-tab="${tab.id}" aria-selected="${tab.id === this.tab}">${escapeHtml(tab.label)}</button>
     `).join('');
     const scrollTop = this.content.scrollTop;
     this.content.innerHTML = this.renderContent();
+    this.decorate();
     this.content.scrollTop = scrollTop;
     this.footer.textContent = this.scene.lastBuildingMessage || 'Toque em um botão grande para executar a ação.';
   }
@@ -197,8 +217,24 @@ export class BuildingMenu {
     return Object.entries(cost).map(([type, amount]) => {
       const have = availableFor(type, sources);
       const ok = have >= amount;
-      return `<span class="${ok ? 'cost-ok' : 'cost-missing'}">${amount} ${escapeHtml(resourceLabel(type))} (${Math.min(have, 9999)})</span>`;
-    }).join(' · ');
+      return `<span class="cost-chip ${ok ? 'cost-ok' : 'cost-missing'}" title="${escapeHtml(resourceLabel(type))}">${resourceIconHtml(this.scene, type, 16)}${amount} ${escapeHtml(resourceLabel(type))} <small>(${Math.min(have, 9999)})</small></span>`;
+    }).join('');
+  }
+
+  portraitUrl(key) {
+    const [texture, frame] = PORTRAITS[key] ?? PORTRAITS.camp;
+    return textureUrl(this.scene, texture, frame);
+  }
+
+  /** Transforma "Rótulo: valor" das fichas em rótulo pequeno + valor destacado. */
+  decorate() {
+    for (const stat of this.content.querySelectorAll('.building-menu__stat')) {
+      const html = stat.innerHTML;
+      const split = html.indexOf(': ');
+      const tag = html.indexOf('<');
+      if (split <= 0 || (tag >= 0 && tag < split)) continue;
+      stat.innerHTML = `<span class="stat__label">${html.slice(0, split)}</span><span class="stat__value">${html.slice(split + 2)}</span>`;
+    }
   }
 
   durabilityText(key) {
@@ -220,7 +256,7 @@ export class BuildingMenu {
       const canUpgrade = cost && camp.canPay(cost) && !repair;
       return `
         <article class="building-menu__card">
-          <h2>${escapeHtml(definition.name)} • ${level === 0 ? 'não construído' : `nível ${level}/${MAX_BUILDING_LEVEL}`}</h2>
+          <h2><img class="building-menu__card-art pixel-icon" src="${this.portraitUrl(key)}" alt="">${escapeHtml(definition.name)} • ${level === 0 ? 'não construído' : `nível ${level}/${MAX_BUILDING_LEVEL}`}</h2>
           <p>${escapeHtml(level === 0 ? levelDescription(key, 1) : levelDescription(key, level))}</p>
           ${level > 0 ? `<div class="building-menu__stat">${this.durabilityText(key)}</div>` : ''}
           <div class="building-menu__stat">${cost ? `Próximo: ${this.costHtml(cost)}` : 'NÍVEL MÁXIMO'}</div>
@@ -311,6 +347,14 @@ export class BuildingMenu {
           <h2>Descansar junto ao fogo</h2>
           <p>Recupera a vida e salva.${camp.unlocked('campfire', 'warmth') ? ' Concede Calor da Fogueira: +10% ATQ por 3 min.' : ''}</p>
           <div class="building-menu__actions"><button type="button" class="button--primary" data-action="rest-fire">DESCANSAR</button></div>
+        </article>
+        <article class="building-menu__card">
+          <h2>Fabricar tocha</h2>
+          <p>2 madeiras + 1 tecido → 1 tocha (tecla 3 acende e amplia a luz).</p>
+          <div class="building-menu__stat">${this.costHtml({ wood: 2, fabric: 1 })}</div>
+          <div class="building-menu__actions">
+            <button type="button" data-action="craft-torch" ${disabled(!camp.canPay({ wood: 2, fabric: 1 }))}>FABRICAR TOCHA</button>
+          </div>
         </article>
         <article class="building-menu__card">
           <h2>Cozinhar</h2>
@@ -525,6 +569,7 @@ export class BuildingMenu {
     if (this.tab === 'secret') {
       const rows = Object.entries(RESOURCE_TYPES).filter(([type]) => scene.inventory.items[type] > 0 || camp.secretChest[type] > 0).map(([type, resource]) => `
         <div class="building-menu__resource">
+          ${resourceIconHtml(this.scene, type, 24)}
           <span>${escapeHtml(resource.label)}</span>
           <span>Mochila: ${scene.inventory.items[type]}</span>
           <span>Baú: ${camp.secretChest[type]}</span>
@@ -540,6 +585,7 @@ export class BuildingMenu {
     }
     const rows = Object.entries(RESOURCE_TYPES).filter(([type]) => scene.inventory.items[type] > 0 || camp.storage[type] > 0).map(([type, resource]) => `
       <div class="building-menu__resource">
+        ${resourceIconHtml(this.scene, type, 24)}
         <span>${escapeHtml(resource.label)}</span>
         <span>Mochila: ${scene.inventory.items[type]}</span>
         <span>Armazém: ${camp.storage[type]}</span>
@@ -623,6 +669,7 @@ export class BuildingMenu {
     if (this.tab === 'sell') {
       const rows = Object.entries(RESOURCE_TYPES).filter(([type]) => scene.inventory.items[type] > 0).map(([type, resource]) => `
         <div class="building-menu__resource">
+          ${resourceIconHtml(this.scene, type, 24)}
           <span>${escapeHtml(resource.label)}</span>
           <span>Quantidade: ${scene.inventory.items[type]}</span>
           <span>Preço: ${sellPriceOf(type)} ${sellPriceOf(type) === 1 ? 'moeda' : 'moedas'}</span>

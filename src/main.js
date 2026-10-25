@@ -1,7 +1,10 @@
 import Phaser from 'phaser';
 import '@fontsource/press-start-2p/400.css';
 import { GameScene } from './game/GameScene.js';
+import { setupSplash } from './game/Splash.js';
 import './style.css';
+import './visual.css';
+import './quest.css';
 
 // A fonte Press Start 2P só fica nítida em múltiplos de 8 px e sem suavização.
 // Os textos do mundo são ampliados 2x pela câmera: renderizá-los em resolução 2
@@ -15,6 +18,8 @@ Phaser.GameObjects.GameObjectFactory.prototype.text = function text(x, y, conten
   const fontFamily = quoteFamily(style.fontFamily ?? 'Press Start 2P');
   return createText.call(this, x, y, content, { resolution: TEXT_RESOLUTION, ...style, fontFamily });
 };
+
+setupSplash();
 
 document.fonts.load('10px "Press Start 2P"').then(() => {
   const game = new Phaser.Game({

@@ -1,5 +1,7 @@
 import Phaser from 'phaser';
 import { Obstacles } from './Obstacles.js';
+import { BackpackPanel } from './BackpackPanel.js';
+import { CampaignSystem } from './CampaignSystem.js';
 import { PixelCanvas } from '../art/pixel.js';
 import { COMBAT_CONFIG } from '../data/combat.js';
 import { DAY_NIGHT_CONFIG } from '../data/dayNight.js';
@@ -8,7 +10,7 @@ import { LEVEL_CHOICES, PERK_EFFECTS, PERKS, PlayerProgression } from '../data/p
 import { enemyXp } from '../data/enemies.js';
 import { chestCoins, rollCoinDrop } from '../data/economy.js';
 import { BOSS_CONFIG } from '../data/boss.js';
-import { CONSUMABLES, isConsumable, itemForHotkey, useConsumable } from '../data/consumables.js';
+import { CONSUMABLES, itemForHotkey, useConsumable } from '../data/consumables.js';
 import { ENCHANTMENTS, FARM_CROPS } from '../data/buildingSystems.js';
 import { BUILDING_DEFS, CAMP_COMPLETION_MESSAGE, DUNGEON_CONFIG } from '../data/buildings.js';
 import { isRaining } from '../data/weather.js';
@@ -50,6 +52,8 @@ export class GameScene extends Phaser.Scene {
   }
 
   preload() {
+    // A tela de início (Splash.js) acompanha o carregamento por este evento.
+    this.load.on('progress', (value) => window.dispatchEvent(new CustomEvent('lendas:progress', { detail: value })));
     preloadGameAssets(this);
   }
 
@@ -122,7 +126,7 @@ export class GameScene extends Phaser.Scene {
 
     this.cameras.main.setBounds(0, 0, WORLD.width, WORLD.height);
     this.cameras.main.startFollow(this.player, true, 0.08, 0.08);
-    this.cameras.main.setZoom(2).setRoundPixels(true);
+    this.cameras.main.setZoom(this.worldZoom()).setRoundPixels(true);
 
     this.duskTint = this.add.rectangle(0, 0, this.scale.width, this.scale.height, 0xd88952, 0)
       .setOrigin(0).setScrollFactor(0).setDepth(3997);
@@ -134,6 +138,7 @@ export class GameScene extends Phaser.Scene {
     this.levelUpOverlay = new LevelUpOverlay(this);
     this.worldMap = new WorldMapOverlay(this);
     this.buildingMenu = new BuildingMenu(this);
+    this.backpackPanel = new BackpackPanel(this);
     this.touch = new TouchControls(this);
     this.restState = null;
     this.storeAllAvailable = false;
@@ -145,6 +150,9 @@ export class GameScene extends Phaser.Scene {
     const uiObjects = new Set(this.ui.fixed);
     this.cameras.main.ignore([...uiObjects]);
     this.hudCamera.ignore(this.children.list.filter((child) => !uiObjects.has(child)));
+    // Campanha "As Cinzas do Primeiro Mundo": 100 missões, moradores, regiões e diárias.
+    this.campaign = new CampaignSystem(this, saved?.campaign);
+    this.campaign.state.refreshDaily(this.timeState.dayCount);
 
     this.keys = this.input.keyboard.addKeys({
       up: 'W', down: 'S', left: 'A', right: 'D',
@@ -154,11 +162,17 @@ export class GameScene extends Phaser.Scene {
     });
     this.cursors = this.input.keyboard.createCursorKeys();
     this.input.keyboard.on('keydown', () => this.audio.unlock());
+    this.input.keyboard.on('keydown-L', () => this.toggleJournal());
     this.input.keyboard.on('keydown-ESC', () => {
       if (this.worldMap.isOpen) this.worldMap.close();
       else if (this.buildingMenu.isOpen) this.buildingMenu.close();
+      else if (this.campaign?.ui.isOpen) this.campaign.ui.toggleJournal(false);
+      else if (this.campaign?.ui.dialog && !this.campaign.ui.dialog.hidden) this.campaign.ui.closeDialogue();
+      else if (this.backpackPanel.isOpen) this.backpackPanel.close();
     });
     this.input.keyboard.on('keydown-M', () => this.worldMap.toggle());
+    this.input.keyboard.on('keydown-B', () => this.toggleBackpack());
+    this.input.keyboard.on('keydown-I', () => this.toggleBackpack());
     this.input.keyboard.on('keydown-C', () => this.toggleCampMenu());
     this.input.keyboard.on('keydown-F', () => this.restAtCamp());
     this.input.keyboard.on('keydown-R', () => this.sleepAtCamp());
@@ -186,11 +200,12 @@ export class GameScene extends Phaser.Scene {
       const x = (event.clientX - rect.left) * (this.scale.width / rect.width);
       const y = (event.clientY - rect.top) * (this.scale.height / rect.height);
       if (this.worldMap?.isOpen || this.buildingMenu?.isOpen) return;
-      const tappedSlot = this.ui.backpackSlots.find(({ background, type }) => type &&
-        x >= background.x && x <= background.x + background.width &&
-        y >= background.y && y <= background.y + background.height);
-      if (tappedSlot) {
-        if (isConsumable(tappedSlot.type)) this.useItem(tappedSlot.type);
+      // Barra rápida do HUD: Mochila, Comer (tecla 2) e Poção (tecla 1).
+      const quick = this.ui.quickButtonAt(x, y);
+      if (quick) {
+        if (quick === 'backpack') this.toggleBackpack();
+        else if (quick === 'journal') this.toggleJournal();
+        else this.useHotkey(quick === 'eat' ? '2' : '1');
         return;
       }
       if (this.gameOver) return;
@@ -217,6 +232,7 @@ export class GameScene extends Phaser.Scene {
       this.lighting.resize();
       this.hudCamera.setViewport(0, 0, this.scale.width, this.scale.height);
       this.ui.resize();
+      this.cameras.main.setZoom(this.worldZoom());
     });
 
     this.handleVisibilityChange = () => {
@@ -248,6 +264,24 @@ export class GameScene extends Phaser.Scene {
     this.lastPhase = this.timeState.phase;
     this.warningTriggered = false;
     this.isRespawning = false;
+    // Atrás da tela de início o mundo fica parado; ele volta quando o jogador começa.
+    window.dispatchEvent(new CustomEvent('lendas:ready', { detail: this }));
+    if (window.__lendasSplash?.active) this.scene.pause();
+  }
+
+  /** Zoom do mundo: 2 em telas até ~1440 px de altura, mais em telas maiores (2K/4K). */
+  worldZoom() {
+    return Math.max(2, Math.round(this.scale.height / 540));
+  }
+
+  toggleJournal() {
+    if (this.worldMap?.isOpen || this.buildingMenu?.isOpen || this.gameOver) return;
+    this.campaign?.ui.toggleJournal();
+  }
+
+  toggleBackpack() {
+    if (this.worldMap?.isOpen || this.buildingMenu?.isOpen || this.gameOver) return;
+    this.backpackPanel.toggle();
   }
 
   update(_time, delta) {
@@ -290,6 +324,7 @@ export class GameScene extends Phaser.Scene {
       this.updateEnemyStatus(delta);
       this.updateTraps();
       this.boss?.update(delta, this.player);
+      this.campaign?.update(delta);
       if (Phaser.Input.Keyboard.JustDown(this.keys.attack)) this.attackNearby();
       if (Phaser.Input.Keyboard.JustDown(this.keys.special)) this.specialAttack();
     }
@@ -341,7 +376,7 @@ export class GameScene extends Phaser.Scene {
       warningActive: this.timeState.warningActive,
       secondsUntilNight: this.timeState.secondsUntilNight
     }, resource, nearestStructure, backpack, enemy, isNearCamp, this.enemies, this.world, this.storeAllAvailable);
-    this.ui.updateBossHealth(this.boss, this.player);
+    this.ui.updateBossHealth(this.campaign?.nearestBoss() ?? this.boss, this.player);
   }
 
   updateDayNight(delta) {
@@ -395,6 +430,7 @@ export class GameScene extends Phaser.Scene {
       this.ui.showMessage('Um viajante chegou à fogueira com uma missão.');
     }
     this.raid.checkDay(day);
+    this.campaign?.onDayAdvance(day);
     this.save();
   }
 
@@ -796,6 +832,8 @@ export class GameScene extends Phaser.Scene {
     }
     if (this.progression.hasPerk('vampirism')) this.player.heal(PERK_EFFECTS.vampirismHealPerKill);
     const result = this.inventory.addBundle(drops);
+    this.campaign?.onGathered(result.accepted);
+    this.campaign?.onEnemyDefeated(enemy);
     // Invasores não deixam cristais: o XP deles volta dobrado na recompensa do ataque.
     if (enemy.isRaider) this.raid.onRaiderDefeated(enemy);
     else this.experiencePickups.spawn(enemy.x, enemy.y, enemyXp(enemy.kind, enemy.isElite));
@@ -874,6 +912,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   interact() {
+    if (this.campaign?.interact()) return;
     const resource = this.world.nearbyResource(this.player.x, this.player.y);
     const structure = this.harvestStructures.nearest(this.player.x, this.player.y);
     const backpack = this.deathBackpacks.nearest(this.player.x, this.player.y);
@@ -898,6 +937,7 @@ export class GameScene extends Phaser.Scene {
         return;
       }
       this.effects.spawnHarvest(resource.x, resource.y - 8, RESOURCE_TYPES[resource.type]?.accent ?? 0x9ed36e);
+      this.campaign?.onGathered({ [resource.type]: amount });
       this.world.harvest(resource);
       this.audio.playCollect();
       this.ui.showMessage(`Coletou ${amount} ${RESOURCE_TYPES[resource.type]?.label.toLowerCase() ?? resource.type}!`);
@@ -949,6 +989,7 @@ export class GameScene extends Phaser.Scene {
       let leftover = {};
       if (reward.loot) {
         const result = this.inventory.addBundle(reward.loot);
+        this.campaign?.onGathered(result.accepted);
         leftover = result.remaining;
         if (Object.keys(leftover).length > 0) {
           this.deathBackpacks.create(structure.x, structure.y, leftover);
@@ -967,7 +1008,9 @@ export class GameScene extends Phaser.Scene {
           return;
         }
         gained = `+${reward.amount} ${RESOURCE_TYPES[reward.type]?.label.toLowerCase() ?? reward.type}`;
+        this.campaign?.onGathered({ [reward.type]: reward.amount });
       }
+      this.campaign?.emit({ type: 'structure', target: structure.type });
       if (!this.harvestStructures.collect(structure)) return;
       const accent = reward.loot
         ? 0xe2b64d
@@ -1105,15 +1148,19 @@ export class GameScene extends Phaser.Scene {
         const planted = this.farm.plant(Number(arg), crop);
         if (planted.ok) {
           camp.pay(FARM_CROP_COST(crop));
+          this.campaign?.emit({ type: 'plant', target: crop });
           result = { ok: true, message: 'Semente plantada. Volte quando o crescimento terminar.' };
         } else {
           result = { ok: false, message: 'Este canteiro não pode receber essa plantação.' };
         }
       }
     } else if (action === 'harvest') {
+      const harvestedCrop = this.farm.plots[Number(arg)]?.crop ?? null;
       const harvested = this.farm.harvestPlot(Number(arg), Date.now(), (bundle) => this.inventory.canAddBundle(bundle));
       if (harvested.ok) {
         this.inventory.addBundle(harvested.bundle);
+        this.campaign?.onGathered(harvested.bundle);
+        this.campaign?.emit({ type: 'harvest', target: harvestedCrop });
         result = { ok: true, message: `Colheita: ${formatGain(harvested.bundle)}.` };
       } else {
         result = { ok: false, message: harvested.reason === 'inventory' ? INVENTORY_CONFIG.fullMessage : 'A colheita ainda não está pronta.' };
@@ -1122,6 +1169,7 @@ export class GameScene extends Phaser.Scene {
       const collected = this.farm.collectAnimal(arg, Date.now(), (bundle) => this.inventory.canAddBundle(bundle));
       if (collected.ok) {
         this.inventory.addBundle(collected.bundle);
+        this.campaign?.onGathered(collected.bundle);
         result = { ok: true, message: `Produto coletado: ${formatGain(collected.bundle)}.` };
       } else {
         result = { ok: false, message: collected.reason === 'inventory' ? INVENTORY_CONFIG.fullMessage : 'O produto ainda não está pronto.' };
@@ -1140,6 +1188,16 @@ export class GameScene extends Phaser.Scene {
       result = stored.food ? { ok: true, message: `Celeiro: ${stored.food} comida movida para o armazém.` } : { ok: false, message: 'Armazém sem espaço.' };
     } else if (action === 'craft') {
       result = camp.craft(arg);
+      if (result.ok) this.campaign?.emit({ type: 'craft', target: arg });
+    } else if (action === 'craft-torch') {
+      // Fogueira: 2 madeiras + 1 tecido = 1 tocha.
+      if (!this.inventory.canAdd('torch', 1) && this.inventory.items.torch === 0) result = { ok: false, message: INVENTORY_CONFIG.fullMessage };
+      else if (!camp.pay({ wood: 2, fabric: 1 })) result = { ok: false, message: 'A tocha precisa de 2 madeiras e 1 tecido.' };
+      else {
+        this.inventory.restore('torch', 1);
+        this.campaign?.emit({ type: 'craft', target: 'torch' });
+        result = { ok: true, message: 'Você fabricou uma tocha.' };
+      }
     } else if (action === 'enchant') {
       camp.equipment.setActiveEnchant(arg);
       result = { ok: true, message: `Encantamento ativo: ${ENCHANTMENTS[arg]?.name ?? 'nenhum'}.` };
@@ -1209,16 +1267,19 @@ export class GameScene extends Phaser.Scene {
     } else if (action === 'traveler-buy') {
       const bought = this.travelers.buy(arg, this.economy, (bundle) => this.giveToBackpack(bundle));
       const good = TRAVELER_GOODS.find((entry) => entry.id === arg);
+      if (bought.ok) this.campaign?.emit({ type: 'buy', amount: 1 });
       result = bought.ok
         ? { ok: true, message: `Comprou ${good.name}: -${bought.spent} moedas.` }
         : { ok: false, message: bought.reason === 'coins' ? 'Moedas insuficientes.' : bought.reason === 'inventory' ? INVENTORY_CONFIG.fullMessage : 'Esgotado.' };
     } else if (action === 'buy') {
       const bought = this.market.buy(arg, this.inventory, this.economy, arg2 === 'traveler' ? 'traveler' : 'daily');
+      if (bought.ok) this.campaign?.emit({ type: 'buy', amount: 1 });
       result = bought.ok
         ? { ok: true, message: `Compra realizada: -${bought.spent} moedas.` }
         : { ok: false, message: bought.reason === 'coins' ? 'Moedas insuficientes.' : bought.reason === 'inventory' ? INVENTORY_CONFIG.fullMessage : 'Produto esgotado.' };
     } else if (action === 'sell') {
       const sold = this.market.sell(arg, this.inventory, this.economy);
+      if (sold.ok) this.campaign?.emit({ type: 'sell', amount: 1 });
       result = sold.ok
         ? { ok: true, message: `Venda concluída: +${sold.coins} ${sold.coins === 1 ? 'moeda' : 'moedas'}.` }
         : { ok: false, message: sold.reason === 'locked' ? 'Vendas exigem Mercado nível 2.' : 'Item indisponível.' };
@@ -1245,6 +1306,10 @@ export class GameScene extends Phaser.Scene {
   }
 
   performContextAction() {
+    if (this.campaign?.nearestInteraction()) {
+      this.interact();
+      return;
+    }
     if (this.world.nearbyResource(this.player.x, this.player.y) ||
         this.harvestStructures.nearest(this.player.x, this.player.y) ||
         this.deathBackpacks.nearest(this.player.x, this.player.y)) this.interact();
@@ -1502,6 +1567,7 @@ export class GameScene extends Phaser.Scene {
       buffs: this.buffs.serialize(),
       travelers: this.travelers.serialize(),
       raid: this.raid?.serialize?.() ?? this.savedRaid ?? null,
+      campaign: this.campaign?.serialize() ?? this.savedCampaign ?? undefined,
       time: {
         cycleTime: this.dayNight.cycleTime,
         dayCount: this.dayNight.dayCount

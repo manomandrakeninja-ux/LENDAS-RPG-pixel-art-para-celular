@@ -137,16 +137,16 @@ try {
     throw new Error(`Consumíveis falharam: ${JSON.stringify(consumables)}`);
   }
 
-  // 3. Toque no slot da comida também consome.
+  // 3. Toque no botão COMER da barra rápida também consome.
   const tapped = await evaluate(`(() => {
     const s = ${scene};
     s.player.health = 50;
     s.ui.update(s.player, s.inventory, s.progression, s.economy, s.camp, {
       isNight: false, label: '', dayCount: 1, phase: 'day', warningActive: false, secondsUntilNight: 0
     }, null, null, null, null, true, s.enemies, s.world, false);
-    const slot = s.ui.backpackSlots.find((entry) => entry.type === 'food');
+    const button = s.ui.quickButtons.find((entry) => entry.id === 'eat');
     const rect = s.game.canvas.getBoundingClientRect();
-    const bx = slot.background.x + 10, by = slot.background.y + 10;
+    const bx = button.x + 10, by = button.y + 10;
     return { x: rect.left + bx * rect.width / s.scale.width, y: rect.top + by * rect.height / s.scale.height };
   })()`);
   await send('Input.dispatchMouseEvent', { type: 'mousePressed', x: tapped.x, y: tapped.y, button: 'left', clickCount: 1 });

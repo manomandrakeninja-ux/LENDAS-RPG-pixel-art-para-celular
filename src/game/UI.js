@@ -3,6 +3,8 @@ import { BUILDING_DEFS, DUNGEON_CONFIG } from '../data/buildings.js';
 import { HARVEST_STRUCTURE_TYPES } from '../data/harvestStructures.js';
 import { BOSS_CONFIG } from '../data/boss.js';
 import { INVENTORY_CONFIG, RESOURCE_TYPES, WORLD } from './config.js';
+import { drawIcon } from '../art/icons.js';
+import { HOTKEY_ITEMS } from '../data/consumables.js';
 
 const TEXT_STYLE = {
   fontFamily: 'Press Start 2P',
@@ -42,114 +44,36 @@ export class GameUI {
     const compact = width < 700 || height < 520;
     return {
       compact,
-      hudWidth: compact ? 262 : 348,
-      hudHeight: 260,
+      hudWidth: compact ? 262 : 300,
+      hudHeight: 150,
       // Centro do fundo do HUD: sempre colado à esquerda, junto dos textos (x = 22).
       // Antes, em telas baixas (celular deitado), o fundo ia para o meio e cobria o personagem.
-      hudX: compact ? 140 : 183,
+      hudX: compact ? 140 : 159,
       mapSize: compact ? 156 : 168
     };
   }
 
+  /** Cria uma textura a partir de um ícone de src/art/icons.js. */
+  iconTexture(key, name) {
+    if (this.scene.textures.exists(key)) return;
+    const pixels = drawIcon(name);
+    const texture = this.scene.textures.createCanvas(key, pixels.width, pixels.height);
+    texture.getContext().putImageData(new ImageData(pixels.data, pixels.width, pixels.height), 0, 0);
+    texture.setFilter(Phaser.Textures.FilterMode.NEAREST);
+    texture.refresh();
+  }
+
   ensureResourceIconTextures() {
-    const draw = {
-      seeds: (context) => {
-        context.fillStyle = '#6f9d3e'; context.fillRect(4, 7, 3, 5);
-        context.fillStyle = '#d6d65b'; context.fillRect(9, 5, 3, 6);
-        context.fillStyle = '#87b44e'; context.fillRect(5, 3, 2, 4);
-      },
-      iron: (context) => {
-        context.fillStyle = '#4f5d64'; context.fillRect(3, 7, 10, 5);
-        context.fillStyle = '#c1cbd0'; context.fillRect(4, 5, 8, 4);
-        context.fillStyle = '#e1e5e2'; context.fillRect(5, 5, 4, 1);
-      },
-      coal: (context) => {
-        context.fillStyle = '#202225'; context.fillRect(3, 5, 10, 7);
-        context.fillStyle = '#45494d'; context.fillRect(5, 4, 6, 3);
-        context.fillStyle = '#6a6e72'; context.fillRect(5, 6, 2, 1);
-      },
-      gold: (context) => {
-        context.fillStyle = '#9c721d'; context.fillRect(3, 7, 10, 5);
-        context.fillStyle = '#f0c747'; context.fillRect(4, 5, 8, 4);
-        context.fillStyle = '#fff09a'; context.fillRect(5, 5, 3, 1);
-      },
-      potion: (context) => {
-        context.fillStyle = '#a4a08b'; context.fillRect(7, 2, 3, 3);
-        context.fillStyle = '#b13f57'; context.fillRect(5, 5, 7, 8);
-        context.fillStyle = '#ff7b8f'; context.fillRect(6, 7, 2, 3);
-      },
-      torch: (context) => {
-        context.fillStyle = '#8d4d27'; context.fillRect(7, 7, 3, 7);
-        context.fillStyle = '#ff8b2b'; context.fillRect(6, 3, 5, 5);
-        context.fillStyle = '#ffe06a'; context.fillRect(7, 4, 3, 3);
-      },
-      egg: (context) => {
-        context.fillStyle = '#ead8b5'; context.fillRect(5, 3, 6, 9);
-        context.fillRect(4, 5, 8, 5);
-        context.fillStyle = '#fff3d3'; context.fillRect(6, 4, 3, 3);
-      },
-      wool: (context) => {
-        context.fillStyle = '#f1eddf'; context.fillRect(3, 5, 10, 7);
-        context.fillRect(5, 3, 6, 3);
-        context.fillStyle = '#bdb9a8'; context.fillRect(4, 10, 8, 1);
-      },
-      milk: (context) => {
-        context.fillStyle = '#d7e1e5'; context.fillRect(5, 4, 7, 9);
-        context.fillStyle = '#f2f4e8'; context.fillRect(6, 6, 5, 6);
-        context.fillStyle = '#9eb4c0'; context.fillRect(6, 2, 5, 2);
-      },
-      staminaPotion: (context) => {
-        context.fillStyle = '#a4a08b'; context.fillRect(7, 2, 3, 3);
-        context.fillStyle = '#3f8f5b'; context.fillRect(5, 5, 7, 8);
-        context.fillStyle = '#9be08f'; context.fillRect(6, 7, 2, 3);
-      },
-      trap: (context) => {
-        context.fillStyle = '#4b4f53'; context.fillRect(2, 9, 12, 3);
-        context.fillStyle = '#c9ced1';
-        for (let x = 3; x < 14; x += 3) context.fillRect(x, 5, 1, 4);
-        context.fillStyle = '#8b2f2f'; context.fillRect(7, 10, 2, 1);
-      },
-      elixir: (context) => {
-        context.fillStyle = '#d6c27a'; context.fillRect(7, 1, 2, 3);
-        context.fillStyle = '#8b3fb1'; context.fillRect(5, 4, 6, 9);
-        context.fillStyle = '#f0a6ff'; context.fillRect(6, 6, 2, 4);
-      },
-      titanCore: (context) => {
-        context.fillStyle = '#3b201c'; context.fillRect(4, 4, 8, 8);
-        context.fillStyle = '#9e4d38'; context.fillRect(5, 5, 6, 6);
-        context.fillStyle = '#ffb06a'; context.fillRect(6, 5, 3, 2);
-        context.fillStyle = '#ffe0a0'; context.fillRect(6, 6, 2, 2);
-      }
-    };
     for (const definition of Object.values(RESOURCE_TYPES)) {
-      if (!definition.codeIcon) continue;
-      const key = `resource-code-${definition.codeIcon}`;
-      if (this.scene.textures.exists(key)) continue;
-      const texture = this.scene.textures.createCanvas(key, 16, 16);
-      const context = texture.getContext();
-      context.imageSmoothingEnabled = false;
-      context.clearRect(0, 0, 16, 16);
-      draw[definition.codeIcon]?.(context);
-      texture.setFilter(Phaser.Textures.FilterMode.NEAREST);
-      texture.refresh();
+      if (definition.codeIcon) this.iconTexture(`resource-code-${definition.codeIcon}`, definition.codeIcon);
     }
+    this.iconTexture('hud-backpack', 'backpack');
+    this.iconTexture('hud-journal', 'journal');
+    for (const seal of ['sealEarth', 'sealWater', 'sealWind', 'sealLight', 'sealFire']) this.iconTexture(`resource-code-${seal}`, seal);
   }
 
   ensureCoinIconTexture() {
-    if (this.scene.textures.exists('coin-hud-icon')) return;
-    const texture = this.scene.textures.createCanvas('coin-hud-icon', 12, 12);
-    const context = texture.getContext();
-    context.imageSmoothingEnabled = false;
-    context.clearRect(0, 0, 12, 12);
-    context.fillStyle = '#8b641b';
-    context.fillRect(2, 2, 8, 8);
-    context.fillStyle = '#f0c743';
-    context.fillRect(3, 2, 6, 8);
-    context.fillRect(2, 3, 8, 6);
-    context.fillStyle = '#fff09a';
-    context.fillRect(4, 3, 3, 2);
-    texture.setFilter(Phaser.Textures.FilterMode.NEAREST);
-    texture.refresh();
+    this.iconTexture('coin-hud-icon', 'coin');
   }
 
   text(x, y, content, style = {}) {
@@ -172,7 +96,7 @@ export class GameUI {
     this.fixed.push(this.rain);
     this.hudBg = this.scene.add.nineslice(
       this.metrics.hudX,
-      130,
+      12 + this.metrics.hudHeight / 2,
       'panel',
       'panel',
       this.metrics.hudWidth,
@@ -211,47 +135,27 @@ export class GameUI {
       this.xpBar,
       this.xpFill
     );
-    this.inventoryLabel = this.text(22, 100, '', { fontSize: '8px' });
-    this.backpackSlots = [];
-    this.resourceCounts = [];
-    for (let index = 0; index < INVENTORY_CONFIG.maxSlots; index += 1) {
-      const background = this.scene.add.rectangle(22, 113, 50, 24, 0x17251f, 0.92)
-        .setOrigin(0)
-        .setStrokeStyle(1, 0x526447)
-        .setScrollFactor(0)
-        .setDepth(5000.2);
-      const icon = this.scene.add.image(35, 125, 'resource-icons', 0)
-        .setDisplaySize(16, 16)
-        .setScrollFactor(0)
-        .setDepth(5001)
-        .setVisible(false);
-      const count = this.text(49, 121, '', { fontSize: '8px' });
-      count.setOrigin(0).setDepth(5002);
-      const slot = { background, icon, count, type: null };
-      this.backpackSlots.push(slot);
-      this.resourceCounts.push({ type: null, label: count });
-      this.fixed.push(background, icon);
-    }
-    this.dayLabel = this.text(22, 181, '', { fontSize: '8px' });
-    this.coinIcon = this.scene.add.image(26, 240, 'coin-hud-icon')
-      .setDisplaySize(12, 12)
+    this.makeQuickBar();
+    this.dayLabel = this.text(22, 98, '', { fontSize: '8px' });
+    this.coinIcon = this.scene.add.image(28, 124, 'coin-hud-icon')
+      .setDisplaySize(16, 16)
       .setScrollFactor(0)
       .setDepth(5001);
-    this.coinLabel = this.text(42, 236, '', { fontSize: '8px', color: '#ffe987' });
-    this.statusLabel = this.text(22, 252, '', { fontSize: '8px', color: '#9fe0ff' });
+    this.coinLabel = this.text(42, 120, '', { fontSize: '8px', color: '#ffe987' });
+    this.statusLabel = this.text(22, 140, '', { fontSize: '8px', color: '#9fe0ff' });
     // Ferro e carvão ficam sempre visíveis (mochila + armazém), com ícones próprios.
     this.oreCounters = ['iron', 'coal'].map((type, index) => {
-      const x = 152 + index * 56;
-      const icon = this.scene.add.image(x, 240, `resource-code-${type}`)
-        .setDisplaySize(14, 14)
+      const x = 160 + index * 56;
+      const icon = this.scene.add.image(x, 124, `resource-code-${type}`)
+        .setDisplaySize(16, 16)
         .setScrollFactor(0)
         .setDepth(5001);
       this.fixed.push(icon);
-      const label = this.text(x + 10, 236, '', { fontSize: '8px', color: type === 'iron' ? '#d7e0e4' : '#a9adb1' });
+      const label = this.text(x + 12, 120, '', { fontSize: '8px', color: type === 'iron' ? '#d7e0e4' : '#a9adb1' });
       return { type, icon, label };
     });
     this.fixed.push(this.coinIcon);
-    this.layoutBackpackSlots();
+    this.layoutQuickBar();
     this.hint = this.text(22, this.scene.scale.height - 34, '', {
       fontSize: '8px', backgroundColor: '#1d2b24dd', padding: { x: 8, y: 5 }
     }).setScrollFactor(0);
@@ -314,22 +218,64 @@ export class GameUI {
     this.warning.setDepth(5150);
   }
 
-  layoutBackpackSlots() {
+  /**
+   * Barra rápida abaixo do painel: botão da Mochila (abre o painel com todos os
+   * itens), Comer (tecla 2) e Poção de vida (tecla 1).
+   */
+  makeQuickBar() {
+    const make = (id, texture, frame, size, iconScale, key, label) => {
+      const frameBg = this.scene.add.nineslice(0, 0, 'panel', 'panel', size, size, 6, 6, 6, 6)
+        .setOrigin(0).setScrollFactor(0).setDepth(5000);
+      const icon = this.scene.add.image(0, 0, texture, frame)
+        .setScale(iconScale).setScrollFactor(0).setDepth(5001);
+      const count = this.text(0, 0, '', { fontSize: '8px', color: '#fff1ce', stroke: '#140f14', strokeThickness: 3 })
+        .setOrigin(1, 1).setDepth(5002);
+      const keyLabel = this.text(0, 0, key, { fontSize: '8px', color: '#f4d88f', stroke: '#140f14', strokeThickness: 3 })
+        .setOrigin(0, 0).setDepth(5002);
+      const caption = this.text(0, 0, label, { fontSize: '8px', color: '#e9dcb8', stroke: '#140f14', strokeThickness: 3 })
+        .setOrigin(0.5, 0).setDepth(5002);
+      this.fixed.push(frameBg, icon);
+      return { id, frameBg, icon, count, keyLabel, caption, size, x: 0, y: 0 };
+    };
+    this.quickButtons = [
+      make('backpack', 'hud-backpack', undefined, 60, 2, 'B', 'MOCHILA'),
+      make('eat', 'resource-icons', RESOURCE_TYPES.food.icon, 48, 2, '2', 'COMER'),
+      make('potion', 'resource-code-potion', undefined, 48, 2, '1', 'POÇÃO'),
+      make('journal', 'hud-journal', undefined, 56, 2, 'L', 'DIÁRIO')
+    ];
+  }
+
+  layoutQuickBar() {
+    const top = 12 + this.metrics.hudHeight + 10;
     const compact = this.metrics.compact;
-    const columns = compact ? 3 : 4;
-    const spacing = compact ? 54 : 64;
-    const rowSpacing = compact ? 24 : 28;
-    const slotWidth = compact ? 48 : 50;
-    this.backpackSlots.forEach((slot, index) => {
-      const column = index % columns;
-      const row = Math.floor(index / columns);
-      const x = 22 + column * spacing;
-      const y = 113 + row * rowSpacing;
-      slot.background.setSize(slotWidth, 22).setPosition(x, y);
-      slot.icon.setPosition(x + 13, y + 11);
-      slot.count.setPosition(x + 26, y + 7);
-    });
-    this.dayLabel.setPosition(22, compact ? 215 : 199);
+    // Em telas pequenas os botões encolhem para não encostar no minimapa.
+    const sizes = compact
+      ? { backpack: 52, eat: 40, potion: 40, journal: 40 }
+      : { backpack: 60, eat: 48, potion: 48, journal: 56 };
+    const iconScales = compact ? { backpack: 2, eat: 2, potion: 2, journal: 1.5 } : { backpack: 2, eat: 2, potion: 2, journal: 2 };
+    const gap = compact ? 8 : 14;
+    let x = 14;
+    for (const button of this.quickButtons) {
+      button.size = sizes[button.id];
+      button.frameBg.setSize(button.size, button.size);
+      button.icon.setScale(iconScales[button.id]);
+      button.caption.setVisible(!compact);
+      const y = top + (60 - button.size) / 2;
+      button.x = x;
+      button.y = y;
+      button.frameBg.setPosition(x, y);
+      button.icon.setPosition(x + button.size / 2, y + button.size / 2);
+      button.count.setPosition(x + button.size - 4, y + button.size - 3);
+      button.keyLabel.setPosition(x + 5, y + 5);
+      button.caption.setPosition(x + button.size / 2, top + 64);
+      x += button.size + gap;
+    }
+  }
+
+  /** Botão da barra rápida na posição de tela (x, y), ou null. */
+  quickButtonAt(x, y) {
+    return this.quickButtons.find((button) =>
+      x >= button.x && x <= button.x + button.size && y >= button.y && y <= button.y + button.size)?.id ?? null;
   }
 
   layoutHint() {
@@ -349,9 +295,9 @@ export class GameUI {
   resize() {
     const { width } = this.scene.scale;
     this.metrics = this.getMetrics();
-    this.layoutBackpackSlots();
     this.hudBg.setSize(this.metrics.hudWidth, this.metrics.hudHeight)
-      .setPosition(this.metrics.hudX, 130);
+      .setPosition(this.metrics.hudX, 12 + this.metrics.hudHeight / 2);
+    this.layoutQuickBar();
     this.mapX = width - this.metrics.mapSize / 2 - 12;
     this.mapBg.setSize(this.metrics.mapSize, this.metrics.mapSize).setPosition(this.mapX, 91);
     this.mapLabel.setPosition(this.mapX, 10);
@@ -378,39 +324,38 @@ export class GameUI {
     for (const counter of this.oreCounters) {
       counter.label.setText(String((inventory.items[counter.type] ?? 0) + (camp?.storage?.[counter.type] ?? 0)));
     }
-    this.inventoryLabel.setText(`MOCHILA ${inventory.usedSlots}/${inventory.maxSlots}  •  ${inventory.total}/${inventory.totalCapacity}`);
-    const occupied = Object.entries(inventory.items)
-      .filter(([, amount]) => amount > 0)
-      .slice(0, inventory.maxSlots);
-    this.backpackSlots.forEach((slot, index) => {
-      const type = occupied[index]?.[0] ?? null;
-      if (slot.type !== type) {
-        slot.type = type;
-        if (type) {
-          const definition = RESOURCE_TYPES[type];
-          const texture = definition.codeIcon ? `resource-code-${definition.codeIcon}` : 'resource-icons';
-          const frame = definition.codeIcon ? '__BASE' : definition.icon;
-          slot.icon.setTexture(texture, frame).setVisible(true);
-        } else {
-          slot.icon.setVisible(false);
-        }
+    const edible = HOTKEY_ITEMS[2].reduce((sum, type) => sum + (inventory.items[type] ?? 0), 0);
+    const potions = inventory.items.potion ?? 0;
+    for (const button of this.quickButtons) {
+      if (button.id === 'journal') {
+        const campaign = this.scene.campaign?.state;
+        button.count.setText(campaign ? `${campaign.completedCount}` : '');
+      } else if (button.id === 'backpack') {
+        button.count.setText(`${inventory.usedSlots}/${inventory.maxSlots}`)
+          .setColor(inventory.isFull ? '#ff9f8a' : '#fff1ce');
+      } else {
+        const amount = button.id === 'eat' ? edible : potions;
+        button.count.setText(String(amount));
+        button.icon.setAlpha(amount > 0 ? 1 : 0.35);
       }
-      slot.count.setText(type ? String(inventory.items[type]) : '');
-      this.resourceCounts[index].type = type;
-    });
+    }
+    this.scene.backpackPanel?.refresh();
     if (inventory.isFull && !this.lastBackpackFull) {
       this.showMessage(INVENTORY_CONFIG.fullMessage);
     }
     this.lastBackpackFull = inventory.isFull;
-    this.dayLabel.setText(`DIA ${time.dayCount ?? 1}  •  ${time.isNight ? 'NOITE' : 'DIA'}  •  ${time.label}   |   ATQ ${player.attack}`);
+    this.dayLabel.setText(`DIA ${time.dayCount ?? 1} • ${time.isNight ? 'NOITE' : 'DIA'} • ${time.label} • ATQ ${player.attack}`);
 
     this.warning.setVisible(Boolean(time.warningActive));
     if (time.warningActive) {
       this.warning.setText(`A NOITE CHEGA EM ${time.secondsUntilNight ?? 0}s  •  F no acampamento para dormir`);
     }
 
+    const questTarget = this.scene.campaign?.nearestInteraction() ?? null;
     let hint = 'WASD mover   •   M mapa   •   Clique / J atacar   •   Espaço esquivar   •   Q especial';
-    if (nearestStructure) {
+    if (questTarget) {
+      hint = `E  •  ${questTarget.label}`;
+    } else if (nearestStructure) {
       const definition = HARVEST_STRUCTURE_TYPES[nearestStructure.type];
       hint = `E  •  ${definition.requiresPickaxe ? 'Minerar' : 'Coletar'} ${definition.label}`;
     } else if (nearestResource) hint = `E  •  ${nearestResource.type === 'stone' ? 'Minerar' : 'Coletar'} ${RESOURCE_TYPES[nearestResource.type].label}`;
@@ -422,9 +367,11 @@ export class GameUI {
     } else if (nearestEnemy) hint = 'J ou clique  •  Atacar   |   Q  •  Golpe especial';
     if (this.scene.touch?.enabled) {
       // No celular o botão de ação já mostra o que fazer; a dica só aparece no acampamento.
-      hint = isNearCamp && !nearestStructure && !nearestResource && !nearestBackpack
-        ? 'Toque num prédio para abrir  •  ACAMP. para a visão geral'
-        : '';
+      hint = questTarget
+        ? questTarget.label
+        : isNearCamp && !nearestStructure && !nearestResource && !nearestBackpack
+          ? 'Toque num prédio para abrir  •  ACAMP. para a visão geral'
+          : '';
     }
     this.hint.setText(hint).setVisible(hint !== '');
     this.worldAction.hidden = this.buildingMenuOpen;
@@ -432,7 +379,9 @@ export class GameUI {
     this.storeAllAction.hidden = !storeAllAvailable || this.buildingMenuOpen;
     this.storeAllAction.disabled = inventory.total === 0;
     this.storeAllAction.textContent = inventory.total > 0 ? 'GUARDAR TUDO' : 'MOCHILA VAZIA';
-    this.worldAction.textContent = nearestStructure
+    this.worldAction.textContent = questTarget
+      ? questTarget.label.split(' ')[0].toUpperCase()
+      : nearestStructure
       ? `${HARVEST_STRUCTURE_TYPES[nearestStructure.type].requiresPickaxe ? 'MINERAR' : 'COLETAR'} ${HARVEST_STRUCTURE_TYPES[nearestStructure.type].label.toUpperCase()}`
       : nearestResource
         ? `${nearestResource.type === 'stone' ? 'MINERAR' : 'COLETAR'} ${RESOURCE_TYPES[nearestResource.type].label.toUpperCase()}`
@@ -492,6 +441,13 @@ export class GameUI {
         toX(dungeon.x) + 5, toY(dungeon.y) + 4,
         toX(dungeon.x) - 5, toY(dungeon.y) + 4
       );
+    }
+    for (const point of this.scene.campaign?.mapPoints() ?? []) {
+      graphics.fillStyle(point.tracked ? 0xffd76b : 0xc59cff, 1);
+      const px = Math.round(toX(point.x));
+      const py = Math.round(toY(point.y));
+      graphics.fillTriangle(px, py - 4, px + 4, py, px, py + 4);
+      graphics.fillTriangle(px, py - 4, px - 4, py, px, py + 4);
     }
     if (camp?.defense?.radarActive) {
       graphics.fillStyle(0xff5d4f, 1);

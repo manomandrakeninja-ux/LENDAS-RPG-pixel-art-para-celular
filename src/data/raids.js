@@ -9,6 +9,13 @@ export const RAID_CONFIG = Object.freeze({
   xpMultiplier: 2,
   buildingAttackRange: 30,
   playerAggroRange: 130,
+  // Equilíbrio contra estruturas (sem isso, 15 invasores derrubavam a muralha em ~2 s):
+  // na muralha cada golpe vale 15% do dano normal do monstro,
+  wallDamageMultiplier: 0.15,
+  // contra muralha e prédios eles atacam na metade da velocidade,
+  structureCooldownMultiplier: 2,
+  // e cada prédio leva no máximo um golpe a cada 500 ms, por mais monstros que haja em volta.
+  buildingHitIntervalMs: 500,
   warningText: 'ATAQUE IMINENTE! Prepare o acampamento!'
 });
 

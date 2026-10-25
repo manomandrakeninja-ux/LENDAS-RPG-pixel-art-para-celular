@@ -12,7 +12,7 @@
   "repairCost": {
     "wood": 5
   },
-  "hitDurabilityLoss": 10,
+  "hitDurabilityLoss": 2,
   "completionMessage": "O acampamento está completo! O Dragão foi localizado. Prepare-se.",
   "dungeon": {
     "x": 2580,

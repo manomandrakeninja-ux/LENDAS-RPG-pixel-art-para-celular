@@ -97,7 +97,7 @@ try {
       const started = Date.now();
       const check = () => {
         const scene = window.__LENDAS__?.scene?.getScene('GameScene');
-        if (scene?.inventory && scene?.worldMap && scene?.ui?.backpackSlots) return resolve(true);
+        if (scene?.inventory && scene?.worldMap && scene?.ui?.quickButtons) return resolve(true);
         if (Date.now() - started > 12000) return reject(new Error('GameScene não iniciou.'));
         setTimeout(check, 100);
       };

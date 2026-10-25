@@ -117,7 +117,8 @@ try {
       enemyTypes: scene.enemies.map((enemy) => enemy.kind),
       nightResources: scene.world.nightResources.length,
       visibleNightResources: scene.world.nightResources.filter((entry) => entry.node.visible).length,
-      resourceSlots: scene.ui.resourceCounts.length,
+      // A mochila virou um botão no HUD; os 12 espaços ficam no painel da mochila.
+      resourceSlots: scene.ui.quickButtons.length,
       backpackSlots: scene.inventory.maxSlots,
       backpackTotalCapacity: scene.inventory.totalCapacity,
       safeRadius: 300,
@@ -141,7 +142,7 @@ try {
   if (initial.enemies < 1) throw new Error('Nenhum inimigo inicial foi criado.');
   if (initial.nightResources !== 18) throw new Error(`Recursos noturnos inesperados: ${initial.nightResources}`);
   if (initial.visibleNightResources !== 0) throw new Error('Recursos noturnos ficaram visíveis durante o dia.');
-  if (initial.resourceSlots !== 12 || initial.backpackSlots !== 12 || initial.backpackTotalCapacity !== 144) {
+  if (initial.resourceSlots !== 4 || initial.backpackSlots !== 12 || initial.backpackTotalCapacity !== 144) {
     throw new Error(`HUD/mochila não recebeu 12 slots reais: ${JSON.stringify(initial)}`);
   }
 

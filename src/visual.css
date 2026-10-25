@@ -1,0 +1,624 @@
+/* =====================================================================
+   Visual 2.0: tela de início, mochila e menus dos prédios
+   (madeira escura, pergaminho e dourado no lugar do verde de planilha).
+   Carregado depois de style.css, então estas regras têm prioridade.
+   ===================================================================== */
+:root {
+  --wood-900: #1a120d;
+  --wood-800: #24190f;
+  --wood-700: #33241a;
+  --wood-600: #4a3424;
+  --wood-500: #6b4a30;
+  --parchment: #f4e6c6;
+  --parchment-2: #ead6ab;
+  --parchment-edge: #c9a76b;
+  --ink: #3b2717;
+  --ink-soft: #6b5038;
+  --gold: #f2c45c;
+  --gold-2: #d99a2b;
+  --gold-dark: #8a5a14;
+  --ok: #3f7a2e;
+  --bad: #b03a2e;
+}
+
+.pixel-icon {
+  image-rendering: pixelated;
+}
+
+/* A tela de início fica num <style> dentro do index.html: precisa aparecer antes do jogo baixar. */
+
+/* ---------- Botão de fechar compartilhado ---------- */
+.panel-close,
+.building-menu .building-menu__close {
+  min-width: 0;
+  min-height: 40px;
+  padding: 10px 14px;
+  border: 2px solid #e8c779;
+  border-radius: 8px;
+  background: linear-gradient(#5a3e2a, #3b2819);
+  box-shadow: 0 3px 0 #120c08;
+  color: #fff1ce;
+  font: 9px/1 var(--pixel-font);
+  cursor: pointer;
+}
+
+.panel-close:hover,
+.building-menu .building-menu__close:hover,
+.building-menu .building-menu__close:focus-visible {
+  background: linear-gradient(#7a5236, #4d3421);
+  outline: none;
+}
+
+/* ---------- Mochila (painel lateral) ---------- */
+.backpack-panel {
+  position: absolute;
+  z-index: 18;
+  top: 50%;
+  left: max(14px, env(safe-area-inset-left));
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 12px;
+  width: min(420px, calc(100% - 28px));
+  max-height: calc(100dvh - 28px);
+  padding: 16px;
+  transform: translateY(-50%);
+  border: 3px solid #c9a76b;
+  border-radius: 14px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05), transparent 30%),
+    repeating-linear-gradient(90deg, var(--wood-700) 0 22px, #2e2017 22px 24px);
+  box-shadow: 0 0 0 3px var(--wood-900), 0 18px 40px rgba(0, 0, 0, 0.55);
+  color: var(--parchment);
+  animation: panel-in 0.22s ease-out;
+}
+
+.backpack-panel[hidden] {
+  display: none;
+}
+
+.backpack-panel__header {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 12px;
+  align-items: center;
+}
+
+.backpack-panel__icon {
+  width: 48px;
+  height: 48px;
+}
+
+.backpack-panel__title {
+  margin: 0 0 6px;
+  color: var(--gold);
+  font: 14px/1.2 var(--pixel-font);
+  text-shadow: 2px 2px 0 var(--wood-900);
+}
+
+.backpack-panel__summary {
+  margin: 0;
+  color: #e3cfa5;
+  font: 8px/1.5 var(--pixel-font);
+}
+
+.backpack-panel__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 2px;
+}
+
+.bag-slot {
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  gap: 4px;
+  min-height: 92px;
+  padding: 8px 6px;
+  border: 2px solid var(--parchment-edge);
+  border-radius: 10px;
+  background: linear-gradient(var(--parchment), var(--parchment-2));
+  box-shadow: inset 0 -3px 0 rgba(120, 80, 30, 0.25), 0 3px 0 var(--wood-900);
+  color: var(--ink);
+  text-align: center;
+}
+
+.bag-slot--empty {
+  border-style: dashed;
+  border-color: #6b5038;
+  background: rgba(20, 13, 8, 0.35);
+  box-shadow: none;
+}
+
+.bag-slot--usable {
+  border-color: var(--gold-2);
+}
+
+.bag-slot__icon {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0) 70%);
+}
+
+.bag-slot__count {
+  position: absolute;
+  right: -6px;
+  bottom: -4px;
+  min-width: 20px;
+  padding: 3px 4px;
+  border-radius: 6px;
+  background: var(--wood-800);
+  color: #fff1ce;
+  font: 8px/1 var(--pixel-font);
+}
+
+.bag-slot__name {
+  font: 8px/1.3 var(--pixel-font);
+}
+
+.bag-slot__info {
+  color: var(--ink-soft);
+  font: 6px/1.4 var(--pixel-font);
+}
+
+.bag-slot button,
+.backpack-panel__footer button {
+  width: 100%;
+  min-height: 30px;
+  margin-top: 2px;
+  border: 2px solid var(--gold-dark);
+  border-radius: 7px;
+  background: linear-gradient(#ffd977, var(--gold-2));
+  box-shadow: 0 2px 0 var(--gold-dark);
+  color: var(--ink);
+  font: 8px/1 var(--pixel-font);
+  cursor: pointer;
+}
+
+.bag-slot button:hover,
+.backpack-panel__footer button:hover {
+  filter: brightness(1.08);
+}
+
+.backpack-panel__footer button {
+  min-height: 42px;
+}
+
+.backpack-panel__footer button:disabled {
+  border-color: #6b5038;
+  background: #4a3424;
+  box-shadow: none;
+  color: #a08868;
+  cursor: not-allowed;
+}
+
+.backpack-panel__footer p {
+  margin: 0;
+  color: #d7c39a;
+  font: 7px/1.7 var(--pixel-font);
+}
+
+@keyframes panel-in {
+  from { opacity: 0; transform: translateY(-50%) translateX(-12px); }
+}
+
+/* ---------- Menus dos prédios ---------- */
+.building-menu {
+  display: grid;
+  place-items: center;
+  grid-template-rows: none;
+  padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  background: radial-gradient(circle at 50% 40%, rgba(30, 20, 12, 0.55), rgba(8, 5, 3, 0.82));
+  backdrop-filter: blur(3px);
+}
+
+.building-menu__window {
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  width: min(1100px, 100%);
+  height: min(780px, 100%);
+  overflow: hidden;
+  border: 3px solid #c9a76b;
+  border-radius: 16px;
+  background:
+    linear-gradient(180deg, rgba(255, 220, 160, 0.06), transparent 120px),
+    repeating-linear-gradient(90deg, var(--wood-700) 0 30px, #2d2016 30px 32px);
+  box-shadow: 0 0 0 4px var(--wood-900), 0 24px 60px rgba(0, 0, 0, 0.6);
+  animation: window-in 0.22s ease-out;
+}
+
+@keyframes window-in {
+  from { opacity: 0; transform: translateY(10px) scale(0.98); }
+}
+
+.building-menu .building-menu__header {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 16px;
+  align-items: center;
+  padding: 16px 18px 14px;
+  border-bottom: 3px solid #120c08;
+  background: linear-gradient(#4a3424, #33241a);
+}
+
+.building-menu__portrait-frame {
+  display: grid;
+  place-items: center;
+  width: 84px;
+  height: 84px;
+  border: 3px solid #e8c779;
+  border-radius: 14px;
+  background: radial-gradient(circle at 50% 35%, #8fc0d8 0%, #5d93ad 55%, #3f6b52 56%, #2f5a3c 100%);
+  box-shadow: inset 0 -6px 0 rgba(0, 0, 0, 0.25), 0 3px 0 #120c08;
+}
+
+.building-menu__portrait {
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+}
+
+.building-menu .building-menu__kicker {
+  margin: 0 0 8px;
+  color: #e3cfa5;
+  font-size: 8px;
+}
+
+.building-menu .building-menu__title {
+  color: var(--gold);
+  font-size: clamp(16px, 2.4vw, 24px);
+  text-shadow: 3px 3px 0 #120c08;
+}
+
+.building-menu__levelbar {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 4px;
+  max-width: 340px;
+  margin-top: 10px;
+}
+
+.building-menu__levelbar:empty {
+  display: none;
+}
+
+.building-menu__levelbar span {
+  height: 10px;
+  border: 2px solid #120c08;
+  border-radius: 3px;
+  background: #2a1c12;
+}
+
+.building-menu__levelbar span.is-done {
+  background: linear-gradient(#ffe08a, #e0a43a);
+}
+
+.building-menu__levelbar span.is-next {
+  background: repeating-linear-gradient(45deg, #6b4a30 0 3px, #8a6440 3px 6px);
+}
+
+.building-menu .building-menu__tabs {
+  gap: 6px;
+  padding: 10px 18px 0;
+  border-bottom: 3px solid #120c08;
+  background: #2a1d14;
+}
+
+.building-menu .building-menu__tabs button {
+  flex: 0 0 auto;
+  min-width: 0;
+  min-height: 40px;
+  padding: 11px 16px;
+  border: 2px solid #120c08;
+  border-bottom: 0;
+  border-radius: 10px 10px 0 0;
+  background: linear-gradient(#5a3e2a, #45301f);
+  box-shadow: none;
+  color: #e3cfa5;
+  font-size: 8px;
+}
+
+.building-menu .building-menu__tabs button[aria-selected="true"] {
+  background: linear-gradient(var(--parchment), var(--parchment-2));
+  color: var(--ink);
+}
+
+.building-menu .building-menu__tabs button:hover,
+.building-menu .building-menu__tabs button:focus-visible {
+  outline: none;
+  filter: brightness(1.12);
+}
+
+.building-menu .building-menu__content {
+  padding: 18px;
+  background: linear-gradient(rgba(244, 230, 198, 0.07), rgba(0, 0, 0, 0.12));
+}
+
+.building-menu .building-menu__grid {
+  grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr));
+  gap: 14px;
+}
+
+.building-menu .building-menu__card {
+  position: relative;
+  padding: 16px;
+  border: 2px solid var(--parchment-edge);
+  border-radius: 12px;
+  background: linear-gradient(var(--parchment), var(--parchment-2));
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.35), 0 4px 0 #120c08;
+  color: var(--ink);
+}
+
+.building-menu .building-menu__card h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #5a2f12;
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.building-menu .building-menu__card h3 {
+  color: var(--ink);
+}
+
+.building-menu .building-menu__card p {
+  color: var(--ink-soft);
+  font-size: 8px;
+  line-height: 1.8;
+}
+
+.building-menu .building-menu__card--locked {
+  opacity: 0.55;
+  filter: grayscale(0.6);
+}
+
+.building-menu__card-art {
+  width: 48px;
+  height: 48px;
+  margin: -6px 0 -8px;
+}
+
+/* Estatísticas como fichas: rótulo pequeno em cima, valor embaixo. */
+.building-menu .building-menu__stats {
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+}
+
+.building-menu .building-menu__stat {
+  display: grid;
+  gap: 6px;
+  padding: 10px 12px;
+  border: 2px solid #120c08;
+  border-left: 0;
+  border-radius: 10px;
+  background: linear-gradient(#3f2c1e, #2e2017);
+  box-shadow: inset 4px 0 0 var(--gold-2);
+  color: #fff1ce;
+  font: 8px/1.5 var(--pixel-font);
+}
+
+.building-menu .building-menu__card .building-menu__stat {
+  margin-top: 8px;
+  border: 0;
+  border-radius: 8px;
+  background: rgba(107, 74, 48, 0.12);
+  box-shadow: inset 3px 0 0 var(--gold-2);
+  color: var(--ink);
+}
+
+.stat__label {
+  color: #d7b77a;
+  font-size: 7px;
+}
+
+.building-menu__card .stat__label {
+  color: var(--ink-soft);
+}
+
+.stat__value {
+  font-size: 9px;
+}
+
+/* Custos com ícone e quanto você tem. */
+.cost-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin: 2px 4px 2px 0;
+  padding: 4px 8px 4px 4px;
+  border-radius: 999px;
+  background: rgba(63, 122, 46, 0.16);
+  color: var(--ok);
+  font: 8px/1 var(--pixel-font);
+  white-space: nowrap;
+}
+
+.cost-chip.cost-missing {
+  background: rgba(176, 58, 46, 0.14);
+  color: var(--bad);
+}
+
+.cost-chip small {
+  opacity: 0.75;
+  font-size: 7px;
+}
+
+.building-menu .building-menu__stats .cost-chip {
+  background: rgba(185, 230, 154, 0.12);
+  color: #b9e69a;
+}
+
+.building-menu .building-menu__stats .cost-chip.cost-missing {
+  background: rgba(255, 159, 138, 0.12);
+  color: #ff9f8a;
+}
+
+/* Botões: dourado para a ação principal, madeira para as outras. */
+.building-menu .building-menu__content button {
+  min-height: 42px;
+  padding: 11px 12px;
+  border: 2px solid #120c08;
+  border-radius: 9px;
+  background: linear-gradient(#7a5236, #5a3c26);
+  box-shadow: 0 3px 0 #120c08;
+  color: #fff1ce;
+  font-size: 8px;
+}
+
+.building-menu .building-menu__content .button--primary {
+  border-color: var(--gold-dark);
+  background: linear-gradient(#ffe08a, var(--gold-2));
+  box-shadow: 0 3px 0 var(--gold-dark);
+  color: var(--ink);
+}
+
+.building-menu .building-menu__content button:hover,
+.building-menu .building-menu__content button:focus-visible {
+  outline: none;
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
+.building-menu .building-menu__content button:disabled {
+  border-color: #8a7458;
+  background: #c8b48c;
+  box-shadow: none;
+  color: #7d6a50;
+  filter: none;
+  transform: none;
+  cursor: not-allowed;
+}
+
+/* Listas de recursos (armazém, baú secreto, venda). */
+.building-menu .building-menu__resource {
+  grid-template-columns: 34px minmax(90px, 1.2fr) repeat(2, minmax(70px, 0.8fr)) minmax(96px, 1fr) minmax(96px, 1fr);
+  padding: 8px 6px;
+  border-bottom: 2px dashed rgba(107, 74, 48, 0.3);
+  color: var(--ink);
+  font-size: 8px;
+}
+
+.building-menu .building-menu__resource button {
+  min-height: 34px;
+  font-size: 7px;
+}
+
+/* Roteiro dos 10 níveis como linha do tempo. */
+.building-menu .building-menu__roadmap {
+  margin-top: 18px;
+  padding-left: 4px;
+}
+
+.building-menu .building-menu__level {
+  grid-template-columns: 30px 1fr;
+  gap: 12px;
+  align-items: center;
+  padding: 7px 0;
+  border: 0;
+  color: #9c8466;
+  font-size: 8px;
+}
+
+.building-menu .building-menu__level strong {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 2px solid #8a7458;
+  border-radius: 50%;
+  background: #e2cda0;
+  color: #8a7458;
+}
+
+.building-menu .building-menu__level--done {
+  color: var(--ink);
+}
+
+.building-menu .building-menu__level--done strong {
+  border-color: var(--gold-dark);
+  background: linear-gradient(#ffe08a, var(--gold-2));
+  color: var(--ink);
+}
+
+.building-menu .building-menu__level--next {
+  color: var(--ink);
+}
+
+.building-menu .building-menu__level--next strong {
+  border-color: var(--bad);
+  background: #fff3d6;
+  color: var(--bad);
+  box-shadow: 0 0 0 3px rgba(176, 58, 46, 0.2);
+}
+
+.building-menu .building-menu__note {
+  color: #e3cfa5;
+}
+
+.building-menu .building-menu__footer {
+  padding: 12px 18px;
+  border-top: 3px solid #120c08;
+  background: #2a1d14;
+  color: #f2dda5;
+  font-size: 8px;
+}
+
+@media (max-width: 720px), (max-height: 560px) {
+  .building-menu {
+    padding: 0;
+  }
+
+  .building-menu__window {
+    width: 100%;
+    height: 100%;
+    border: 0;
+    border-radius: 0;
+  }
+
+  .building-menu .building-menu__header {
+    gap: 10px;
+    padding: 10px 12px;
+  }
+
+  .building-menu__portrait-frame {
+    width: 56px;
+    height: 56px;
+    border-radius: 10px;
+  }
+
+  .building-menu__portrait {
+    width: 48px;
+    height: 48px;
+  }
+
+  .building-menu .building-menu__content {
+    padding: 12px;
+  }
+
+  .building-menu .building-menu__resource {
+    grid-template-columns: 28px 1fr 1fr;
+  }
+
+  .backpack-panel {
+    width: calc(100% - 28px);
+  }
+}
+
+/* Custos soltos (sem rótulo) ficam lado a lado e quebram linha quando preciso. */
+.building-menu .building-menu__stat:has(> .cost-chip) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.building-menu .stat__value:has(.cost-chip) {
+  display: flex;
+  flex-wrap: wrap;
+}
