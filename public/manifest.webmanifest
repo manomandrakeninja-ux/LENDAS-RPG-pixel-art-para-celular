@@ -1,0 +1,15 @@
+{
+  "name": "LENDAS",
+  "short_name": "LENDAS",
+  "description": "RPG pixel art de exploração, coleta e sobrevivência.",
+  "lang": "pt-BR",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#15231e",
+  "theme_color": "#15231e",
+  "icons": [
+    { "src": "favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

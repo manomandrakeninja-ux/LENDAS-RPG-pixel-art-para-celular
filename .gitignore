@@ -1,0 +1,10 @@
+node_modules/
+dist/
+# arquivos temporários dos testes (perfis do Chrome e capturas em .tmp/capturas)
+.tmp/
+.acl-reports/
+# capturas soltas na raiz (os scripts agora salvam em .tmp/capturas)
+/*.png
+*.log
+.DS_Store
+Thumbs.db

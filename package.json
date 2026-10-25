@@ -1,0 +1,34 @@
+{
+  "name": "lendas",
+  "version": "1.0.0",
+  "description": "LENDAS — RPG pixel art em Phaser 3 para celular (Lucas Eduardo Nistal da Silva).",
+  "author": "Lucas Eduardo Nistal da Silva",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "dev:celular": "vite --host",
+    "preview:celular": "vite preview --host",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "node --test",
+    "test:runtime:phase1": "node scripts/phase1-runtime-check.mjs",
+    "test:runtime:map": "node scripts/map-runtime-check.mjs",
+    "test:runtime:progression": "node scripts/progression-runtime-check.mjs",
+    "test:runtime:economy": "node scripts/economy-runtime-check.mjs",
+    "test:runtime:boss": "node scripts/boss-runtime-check.mjs",
+    "test:runtime:harvest": "node scripts/harvest-runtime-check.mjs",
+    "test:runtime:system2": "node scripts/system2-runtime-check.mjs",
+    "test:runtime:system3": "node scripts/system3-runtime-check.mjs",
+    "test:runtime:gameplay": "node scripts/gameplay-runtime-check.mjs",
+    "test:runtime:touch": "node scripts/touch-runtime-check.mjs",
+    "assets:generate": "node scripts/generate-assets.js"
+  },
+  "dependencies": {
+    "@fontsource/press-start-2p": "^5.2.6",
+    "phaser": "^3.90.0"
+  },
+  "devDependencies": {
+    "vite": "^6.4.1"
+  }
+}

@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="theme-color" content="#15231e" />
+    <meta name="description" content="LENDAS — RPG pixel art de exploração, coleta e sobrevivência." />
+    <meta name="author" content="Lucas Eduardo Nistal da Silva" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="LENDAS" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <title>LENDAS — RPG de exploração</title>
+  </head>
+  <body>
+    <div id="game">
+      <div id="camp-actions" class="camp-actions" hidden>
+        <button type="button" data-building="forge" aria-label="Melhorar ferraria"></button>
+        <button type="button" data-building="farm" aria-label="Melhorar fazenda"></button>
+        <button type="button" data-building="house" aria-label="Melhorar casa e armazém"></button>
+        <button type="button" data-building="market" aria-label="Melhorar mercado"></button>
+        <button type="button" data-action="sleep" aria-label="Dormir e pular a noite"></button>
+      </div>
+      <div id="camp-feedback" class="camp-feedback" aria-live="polite"></div>
+      <section id="boss-health" class="boss-health" aria-label="Vida do chefe do bioma" hidden>
+        <div class="boss-health__header">
+          <strong id="boss-health-name">TITÃ DO BIOMA</strong>
+          <span id="boss-health-values">500 / 500</span>
+        </div>
+        <div class="boss-health__track"><div id="boss-health-fill" class="boss-health__fill"></div></div>
+      </section>
+      <section id="level-up-panel" class="level-up-panel" role="dialog" aria-modal="true" aria-labelledby="level-up-title" hidden>
+        <div class="level-up-panel__card">
+          <p class="level-up-panel__kicker">Progressão</p>
+          <h2 id="level-up-title" class="level-up-panel__title">NÍVEL 2</h2>
+          <p id="level-up-reward" class="level-up-panel__reward">+10 VIDA MÁXIMA</p>
+          <p id="level-up-question" class="level-up-panel__question">Escolha seu bônus de atributo:</p>
+          <div id="level-up-attributes" class="level-up-panel__choices">
+            <button id="level-up-attack" type="button">ATAQUE +2</button>
+            <button id="level-up-defense" type="button">DEFESA +2</button>
+          </div>
+          <div id="level-up-perks" class="level-up-panel__choices level-up-panel__choices--perks" hidden></div>
+        </div>
+      </section>
+      <section id="world-map" class="world-map" role="dialog" aria-modal="true" aria-labelledby="world-map-title" hidden>
+        <header class="world-map__header">
+          <div>
+            <p class="world-map__kicker">LENDAS</p>
+            <h1 id="world-map-title" class="world-map__title">MAPA DO MUNDO</h1>
+          </div>
+          <button id="world-map-close" class="world-map__close" type="button" aria-label="Fechar mapa">FECHAR</button>
+        </header>
+        <div class="world-map__body">
+          <canvas id="world-map-canvas" class="world-map__canvas" width="960" height="720" aria-label="Mapa completo com neblina de exploração"></canvas>
+          <aside class="world-map__legend" aria-label="Legenda do mapa">
+            <span><i class="world-map__legend-mark world-map__legend-mark--camp"></i>Acampamento</span>
+            <span><i class="world-map__legend-mark world-map__legend-mark--resource"></i>Estrutura descoberta</span>
+            <span><i class="world-map__legend-mark world-map__legend-mark--chest"></i>Baú</span>
+            <span><i class="world-map__legend-mark world-map__legend-mark--enemy"></i>Inimigo forte</span>
+            <span><i class="world-map__legend-mark world-map__legend-mark--player"></i>Jogador</span>
+          </aside>
+        </div>
+      </section>
+      <section id="building-menu" class="building-menu" role="dialog" aria-modal="true" aria-labelledby="building-menu-title" hidden>
+        <header class="building-menu__header">
+          <div>
+            <p id="building-menu-kicker" class="building-menu__kicker">LENDAS</p>
+            <h1 id="building-menu-title" class="building-menu__title">Prédio</h1>
+          </div>
+          <button id="building-menu-close" class="building-menu__close" type="button" aria-label="Fechar painel">FECHAR</button>
+        </header>
+        <nav id="building-menu-tabs" class="building-menu__tabs" aria-label="Abas do prédio"></nav>
+        <div id="building-menu-content" class="building-menu__content"></div>
+        <footer id="building-menu-footer" class="building-menu__footer"></footer>
+      </section>
+      <!-- Controles de toque: aparecem sozinhos no celular (ou com ?toque=1 no computador). -->
+      <div id="touch-controls" class="touch-controls" hidden>
+        <div id="touch-stick-zone" class="touch-stick-zone" aria-label="Joystick: arraste para mover">
+          <div id="touch-stick-base" class="touch-stick-base">
+            <div id="touch-stick-knob" class="touch-stick-knob"></div>
+          </div>
+        </div>
+        <div class="touch-top">
+          <button type="button" id="touch-camp" class="touch-small touch-camp" data-touch="camp" aria-label="Menu do acampamento" hidden>ACAMP.</button>
+          <button type="button" class="touch-small" data-touch="map" aria-label="Abrir mapa">MAPA</button>
+          <button type="button" class="touch-small" data-touch="fullscreen" aria-label="Tela cheia">TELA</button>
+        </div>
+        <div class="touch-buttons">
+          <button type="button" class="touch-round touch-round--dodge" data-touch="dodge" aria-label="Esquivar">ESQUIVA</button>
+          <button type="button" class="touch-round touch-round--special" data-touch="special" aria-label="Golpe especial">ESPECIAL</button>
+        </div>
+      </div>
+      <button id="store-all-action" class="store-all-action" type="button" hidden>GUARDAR TUDO</button>
+      <button id="world-action" class="world-action" type="button">ATACAR</button>
+    </div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

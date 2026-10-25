@@ -1,0 +1,180 @@
+export const ELITE_CONFIG = {
+  chance: {
+    day: 0.025,
+    night: 0.14
+  },
+  healthMultiplier: 1.75,
+  damageMultiplier: 1.35,
+  speedMultiplier: 1.08,
+  dropMultiplier: 2,
+  auraColor: 0xffd56b,
+  label: 'Elite'
+};
+
+export const ENEMY_TYPES = {
+  slime: {
+    name: 'Gosma',
+    period: 'day',
+    tier: 1,
+    placeholder: { shape: 'slime', size: 32, eliteSize: 40, color: '#83c96b', shade: '#4f7d4b', eye: '#20231f' },
+    health: 30,
+    damage: 7,
+    xp: 10,
+    speed: 62,
+    perception: 250,
+    attackRange: 30,
+    attackCooldown: 900,
+    hitbox: { width: 24, height: 23 },
+    behavior: 'chase',
+    fleeHealthRatio: 0.2,
+    packAttack: { enabled: false, maxAttackers: 1, radius: 110 },
+    ignoresObstacles: false,
+    drops: [
+      { type: 'herbs', chance: 0.55, min: 1, max: 2 },
+      { type: 'food', chance: 0.15, min: 1, max: 1 }
+    ],
+    spawnWeight: { day: 4, night: 1 }
+  },
+  wolf: {
+    name: 'Lobo',
+    period: 'day',
+    tier: 1,
+    placeholder: { shape: 'wolf', size: 32, eliteSize: 40, color: '#8e9aa7', shade: '#53616e', eye: '#252525', snout: '#d9dde0' },
+    health: 48,
+    damage: 12,
+    xp: 20,
+    speed: 88,
+    perception: 340,
+    attackRange: 34,
+    attackCooldown: 1000,
+    hitbox: { width: 28, height: 24 },
+    behavior: 'patrol',
+    fleeHealthRatio: 0.18,
+    packAttack: { enabled: true, maxAttackers: 2, radius: 140 },
+    ignoresObstacles: false,
+    drops: [
+      { type: 'food', chance: 0.65, min: 1, max: 2 },
+      { type: 'herbs', chance: 0.3, min: 1, max: 1 }
+    ],
+    spawnWeight: { day: 3, night: 1 }
+  },
+  boar: {
+    name: 'Javali',
+    period: 'day',
+    tier: 2,
+    placeholder: { shape: 'boar', size: 32, eliteSize: 40, color: '#9a6843', shade: '#6f4932', eye: '#241c18' },
+    health: 68,
+    damage: 14,
+    xp: 25,
+    speed: 76,
+    perception: 290,
+    attackRange: 36,
+    attackCooldown: 1150,
+    hitbox: { width: 30, height: 24 },
+    behavior: 'patrol',
+    fleeHealthRatio: 0.12,
+    packAttack: { enabled: false, maxAttackers: 1, radius: 100 },
+    ignoresObstacles: false,
+    drops: [
+      { type: 'food', chance: 0.85, min: 2, max: 4 },
+      { type: 'herbs', chance: 0.25, min: 1, max: 2 },
+      { type: 'stone', chance: 0.18, min: 1, max: 1 }
+    ],
+    spawnWeight: { day: 2.5, night: 0.5 }
+  },
+  skeleton: {
+    name: 'Esqueleto',
+    period: 'night',
+    tier: 2,
+    placeholder: { shape: 'skeleton', size: 32, eliteSize: 40, color: '#eee9d6', shade: '#aaa38f', eye: '#20211f' },
+    health: 58,
+    damage: 15,
+    xp: 30,
+    speed: 70,
+    perception: 350,
+    attackRange: 36,
+    attackCooldown: 1050,
+    hitbox: { width: 24, height: 28 },
+    behavior: 'chase',
+    fleeHealthRatio: 0,
+    packAttack: { enabled: true, maxAttackers: 2, radius: 130 },
+    ignoresObstacles: false,
+    drops: [
+      { type: 'bone', chance: 0.78, min: 1, max: 2 },
+      { type: 'stone', chance: 0.38, min: 1, max: 2 }
+    ],
+    spawnWeight: { day: 0, night: 3 }
+  },
+  ghost: {
+    name: 'Fantasma',
+    period: 'night',
+    tier: 2,
+    placeholder: { shape: 'ghost', size: 32, eliteSize: 40, color: '#a5e3ea', shade: '#5ba4b5', eye: '#23343a' },
+    health: 44,
+    damage: 12,
+    xp: 35,
+    speed: 94,
+    perception: 430,
+    attackRange: 32,
+    attackCooldown: 850,
+    hitbox: { width: 22, height: 26 },
+    behavior: 'chase',
+    fleeHealthRatio: 0,
+    packAttack: { enabled: false, maxAttackers: 1, radius: 100 },
+    ignoresObstacles: true,
+    drops: [
+      { type: 'ectoplasm', chance: 0.68, min: 1, max: 2 },
+      { type: 'moonherb', chance: 0.3, min: 1, max: 2 }
+    ],
+    spawnWeight: { day: 0, night: 2.5 }
+  },
+  spider: {
+    name: 'Aranha Gigante',
+    period: 'night',
+    tier: 3,
+    placeholder: { shape: 'spider', size: 32, eliteSize: 40, color: '#202126', shade: '#111217', eye: '#e15b55', leg: '#101115' },
+    health: 76,
+    damage: 17,
+    xp: 40,
+    speed: 108,
+    perception: 370,
+    attackRange: 38,
+    attackCooldown: 900,
+    hitbox: { width: 30, height: 24 },
+    behavior: 'pack',
+    fleeHealthRatio: 0,
+    packAttack: { enabled: true, maxAttackers: 3, radius: 160 },
+    ignoresObstacles: false,
+    drops: [
+      { type: 'silk', chance: 0.72, min: 1, max: 2 },
+      { type: 'food', chance: 0.28, min: 1, max: 2 }
+    ],
+    spawnWeight: { day: 0, night: 2.5 }
+  },
+  werewolf: {
+    name: 'Lobisomem',
+    period: 'night',
+    tier: 4,
+    placeholder: { shape: 'werewolf', size: 32, eliteSize: 40, color: '#5d466b', shade: '#392b42', eye: '#e4c65e', snout: '#8f719b' },
+    health: 128,
+    damage: 24,
+    xp: 50,
+    speed: 118,
+    perception: 480,
+    attackRange: 42,
+    attackCooldown: 1200,
+    hitbox: { width: 30, height: 30 },
+    behavior: 'pack',
+    fleeHealthRatio: 0.08,
+    packAttack: { enabled: true, maxAttackers: 2, radius: 190 },
+    ignoresObstacles: false,
+    drops: [
+      { type: 'food', chance: 0.82, min: 2, max: 4 },
+      { type: 'bone', chance: 0.34, min: 1, max: 1 },
+      { type: 'moonherb', chance: 0.24, min: 1, max: 2 }
+    ],
+    spawnWeight: { day: 0, night: 1.25 }
+  }
+};
+
+export const ENEMY_TYPE_NAMES = Object.keys(ENEMY_TYPES);
