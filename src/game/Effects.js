@@ -88,6 +88,49 @@ export class PixelEffects {
     this.scene.time.delayedCall(170, () => slash.destroy());
   }
 
+  /** Rastro do golpe saindo do jogador na direção do ataque (maior e dourado no golpe final). */
+  spawnSwingTrail(x, y, angle, finisher = false) {
+    const trail = this.scene.add.sprite(x + Math.cos(angle) * 14, y - 8 + Math.sin(angle) * 10, 'vfx', 'slash-0')
+      .setOrigin(0.5)
+      .setDepth(4205)
+      .setRotation(angle)
+      .setScale(finisher ? 1.7 : 1.2)
+      .setBlendMode(Phaser.BlendModes.ADD);
+    if (finisher) trail.setTint(0xffd76b);
+    this.scene.hudCamera?.ignore(trail);
+    trail.play('slash-swing');
+    this.scene.tweens.add({ targets: trail, alpha: 0, duration: 200, delay: 80, onComplete: () => trail.destroy() });
+  }
+
+  /** Impacto: anel de choque, faíscas e lascas. */
+  spawnImpact(x, y, { tint = 0xffe0a0, strong = false } = {}) {
+    const ring = this.scene.add.image(x, y, 'vfx', 'ring-1')
+      .setDepth(4210)
+      .setScale(0.3)
+      .setTint(tint)
+      .setBlendMode(Phaser.BlendModes.ADD);
+    this.scene.hudCamera?.ignore(ring);
+    this.scene.tweens.add({
+      targets: ring,
+      scale: strong ? 1.3 : 0.8,
+      alpha: 0,
+      duration: strong ? 280 : 200,
+      ease: 'Quad.easeOut',
+      onComplete: () => ring.destroy()
+    });
+    this.spawnHit(x, y, tint, strong ? 14 : 8);
+    this.dustEmitter.setParticleTint(0xb8a982);
+    this.dustEmitter.emitParticleAt(x, y + 6, strong ? 5 : 3);
+  }
+
+  /** Golpe de picareta: faíscas laranja e lascas de pedra. */
+  spawnMiningHit(x, y) {
+    this.sparkEmitter.setParticleTint(0xffb04a);
+    this.sparkEmitter.emitParticleAt(x, y, 7);
+    this.dustEmitter.setParticleTint(0x8d9496);
+    this.dustEmitter.emitParticleAt(x, y + 4, 5);
+  }
+
   spawnSpecial(x, y) {
     const ring = this.scene.add.sprite(x, y, 'vfx', 'ring-0')
       .setOrigin(0.5)
@@ -134,17 +177,22 @@ export class PixelEffects {
       this.damageTexts.push(label);
     }
     label.active = true;
+    const crit = tint === '#ffe28a';
     label.text
-      .setText(String(amount))
-      .setPosition(x, y - 18)
+      .setText(crit ? `${amount}!` : String(amount))
+      .setPosition(x + randomBetween(-4, 4), y - 18)
       .setAlpha(1)
+      .setScale(crit ? 1.9 : 1.4)
       .setVisible(true)
       .setColor(tint);
+    // Salta ao aparecer e depois sobe sumindo.
+    this.scene.tweens.add({ targets: label.text, scale: crit ? 1.3 : 1, duration: 120, ease: 'Back.out' });
     this.scene.tweens.add({
       targets: label.text,
-      y: y - 42,
+      y: y - 44,
       alpha: 0,
-      duration: 620,
+      delay: 120,
+      duration: 560,
       ease: 'Quad.easeOut',
       onComplete: () => {
         label.active = false;
@@ -166,8 +214,10 @@ export class PixelEffects {
 
   spawnDeath(x, y, tint = 0xb4d27c) {
     this.dustEmitter.setParticleTint(tint);
-    this.dustEmitter.emitParticleAt(x, y, 10);
-    this.spawnHit(x, y, 0xffe2a0, 10);
+    this.dustEmitter.emitParticleAt(x, y, 14);
+    this.spawnImpact(x, y, { tint: 0xffe2a0, strong: true });
+    // Brilhos subindo (a "alma" da criatura).
+    this.fireflyEmitter.emitParticleAt(x, y - 6, 6);
   }
 
   spawnHeal(x, y) {

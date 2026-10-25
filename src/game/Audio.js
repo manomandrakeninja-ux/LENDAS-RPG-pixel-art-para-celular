@@ -59,6 +59,12 @@ export class AudioManager {
     this.playTone(150, 0.07, 'square', 0.035);
   }
 
+  /** Picaretada: batida metálica curta. */
+  playPick() {
+    this.playTone(880, 0.04, 'square', 0.03);
+    this.playTone(220, 0.06, 'triangle', 0.035, 0.02);
+  }
+
   playCollect() {
     this.playTone(660, 0.08, 'square', 0.025);
     this.playTone(880, 0.09, 'square', 0.022, 0.06);

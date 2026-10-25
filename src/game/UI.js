@@ -28,7 +28,22 @@ export class GameUI {
     this.bossHealthFill = document.getElementById('boss-health-fill');
     this.lastBackpackFull = scene.inventory.isFull;
     this.metrics = this.getMetrics();
-    this.worldAction.addEventListener('click', () => this.scene.performContextAction());
+    // Apertar faz a ação; manter apertado continua minerando. O click só vale para teclado.
+    let lastPointerAction = -Infinity;
+    this.worldAction.addEventListener('pointerdown', (event) => {
+      event.preventDefault();
+      lastPointerAction = performance.now();
+      this.scene.actionHeld = true;
+      // Com controles de toque ligados, o TouchControls já faz a ação no pointerdown.
+      if (!this.scene.touch?.enabled) this.scene.performContextAction();
+    });
+    const release = () => { this.scene.actionHeld = false; };
+    for (const type of ['pointerup', 'pointercancel']) window.addEventListener(type, release);
+    this.worldAction.addEventListener('pointerleave', release);
+    this.worldAction.addEventListener('click', (event) => {
+      // O toque/clique já agiu no pointerdown; aqui só vale teclado (Enter/Espaço no botão).
+      if (performance.now() - lastPointerAction > 800) this.scene.performContextAction();
+    });
     this.storeAllAction.addEventListener('click', () => this.scene.storeAllAtCamp());
     this.ensureResourceIconTextures();
     this.ensureCoinIconTexture();

@@ -237,9 +237,11 @@ try {
   await evaluate(`(() => {
     const scene = window.__LENDAS__.scene.getScene('GameScene');
     const structure = scene.harvestStructures.state.structures.find((entry) => entry.id === ${JSON.stringify(rockTarget.id)});
+    scene.actionHeld = true;
     scene.collectHarvestStructure(structure);
   })()`);
-  await delay(2500);
+  await delay(4500);
+  await evaluate(`window.__LENDAS__.scene.getScene('GameScene').actionHeld = false`);
   const rockAfter = await evaluate(`(() => {
     const scene = window.__LENDAS__.scene.getScene('GameScene');
     const structure = scene.harvestStructures.state.structures.find((entry) => entry.id === ${JSON.stringify(rockTarget.id)});

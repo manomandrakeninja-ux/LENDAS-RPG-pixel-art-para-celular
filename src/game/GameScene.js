@@ -44,7 +44,10 @@ import { RaidDirector } from './RaidDirector.js';
 import { createGameAnimations, preloadGameAssets } from './assets.js';
 
 export const PICKAXE_MESSAGE = 'Você precisa de uma picareta para minerar isso.';
-const MINING_DURATION_MS = 2200;
+// Mineração: segure o botão por 4 s (picareta de ferro: 2 s).
+const MINING_DURATION_MS = 4000;
+const MINING_STRIKE_MS = 480;
+const MINING_MAX_DISTANCE = 76;
 
 export class GameScene extends Phaser.Scene {
   constructor() {
@@ -329,6 +332,7 @@ export class GameScene extends Phaser.Scene {
       if (Phaser.Input.Keyboard.JustDown(this.keys.special)) this.specialAttack();
     }
 
+    this.updateMining(delta);
     this.experiencePickups.update(delta, this.player, (amount) => this.collectExperience(amount));
     this.coinPickups.update(delta, this.player, (amount) => this.collectCoins(amount));
 
@@ -522,9 +526,15 @@ export class GameScene extends Phaser.Scene {
   attackNearby() {
     if (this.player.attackCooldown > 0 || this.progression?.hasPendingChoice || this.worldMap?.isOpen || this.buildingMenu?.isOpen || this.gameOver) return;
     this.player.attackCooldown = COMBAT_CONFIG.basicAttackCooldownMs;
-    this.player.showAttack();
+    if (this.mining) this.cancelMining();
     const target = this.nearestEnemy(COMBAT_CONFIG.basicAttackRange);
+    const facing = this.player.facing ?? { x: 0, y: 1 };
+    const swingAngle = target
+      ? Phaser.Math.Angle.Between(this.player.x, this.player.y - 8, target.x, target.y - 8)
+      : Math.atan2(facing.y, facing.x);
+    this.player.showAttack(swingAngle);
     if (!target) {
+      this.effects.spawnSwingTrail(this.player.x, this.player.y, swingAngle, false);
       this.comboStep = 0;
       // Arco Longo: sem inimigo corpo a corpo, dispara uma flecha no mais próximo ao alcance.
       if (this.camp.equipment.hasBow) this.fireBow();
@@ -540,10 +550,14 @@ export class GameScene extends Phaser.Scene {
       ? this.progression.hasPerk('rhythm') ? PERK_EFFECTS.rhythmFinisherMultiplier : COMBAT_CONFIG.combo.finisherMultiplier
       : 1;
     const attack = Math.round(this.player.attack * multiplier);
-    const angle = Phaser.Math.Angle.Between(this.player.x, this.player.y - 8, target.x, target.y - 8);
+    const angle = swingAngle;
     const damage = Math.min(target.health, attack);
+    this.effects.spawnSwingTrail(this.player.x, this.player.y, angle, finisher);
     this.effects.spawnSlash(target.x, target.y - 10, angle, finisher ? 2 : 1);
     const killed = target.hit(attack, angle);
+    this.effects.spawnImpact(target.x, target.y - 10, { tint: finisher ? 0xffd76b : 0xffe0a0, strong: finisher || killed });
+    this.audio.playHit();
+    if (finisher || killed) this.hitstop(killed ? 70 : 50);
     this.effects.spawnDamage(target.x, target.y - 18, damage, finisher ? '#ffe28a' : undefined);
     this.applyWeaponEffects(target, damage, killed);
     const shake = finisher ? COMBAT_CONFIG.screenShake.enemyDefeated : COMBAT_CONFIG.screenShake.enemyHit;
@@ -912,6 +926,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   interact() {
+    if (this.mining) return;
     if (this.campaign?.interact()) return;
     const resource = this.world.nearbyResource(this.player.x, this.player.y);
     const structure = this.harvestStructures.nearest(this.player.x, this.player.y);
@@ -932,16 +947,34 @@ export class GameScene extends Phaser.Scene {
         return;
       }
       const amount = resource.amount ?? Phaser.Math.Between(2, 4);
-      if (!this.inventory.add(resource.type, amount)) {
-        this.ui.showMessage(INVENTORY_CONFIG.fullMessage);
-        return;
+      const gather = () => {
+        if (!this.inventory.add(resource.type, amount)) {
+          this.ui.showMessage(INVENTORY_CONFIG.fullMessage);
+          return;
+        }
+        this.effects.spawnHarvest(resource.x, resource.y - 8, RESOURCE_TYPES[resource.type]?.accent ?? 0x9ed36e);
+        this.campaign?.onGathered({ [resource.type]: amount });
+        this.world.harvest(resource);
+        this.audio.playCollect();
+        this.ui.showMessage(`Coletou ${amount} ${RESOURCE_TYPES[resource.type]?.label.toLowerCase() ?? resource.type}!`);
+        this.save();
+      };
+      if (resource.definition?.requiresPickaxe) {
+        if (!this.inventory.canAdd(resource.type, amount)) {
+          this.ui.showMessage(INVENTORY_CONFIG.fullMessage);
+          return;
+        }
+        this.beginMining({
+          x: resource.x,
+          y: resource.y,
+          node: resource.node,
+          label: RESOURCE_TYPES[resource.type]?.label.toLowerCase() ?? 'pedra',
+          iron: this.camp.pickaxeTier === 'iron',
+          onDone: gather
+        });
+      } else {
+        gather();
       }
-      this.effects.spawnHarvest(resource.x, resource.y - 8, RESOURCE_TYPES[resource.type]?.accent ?? 0x9ed36e);
-      this.campaign?.onGathered({ [resource.type]: amount });
-      this.world.harvest(resource);
-      this.audio.playCollect();
-      this.ui.showMessage(`Coletou ${amount} ${RESOURCE_TYPES[resource.type]?.label.toLowerCase() ?? resource.type}!`);
-      this.save();
       return;
     }
     if (backpack) {
@@ -1025,20 +1058,140 @@ export class GameScene extends Phaser.Scene {
     };
 
     if (definition.requiresPickaxe) {
-      const duration = pickaxeTier === 'iron' ? MINING_DURATION_MS / 2 : MINING_DURATION_MS;
-      this.ui.showMessage(`Minerando ${definition.label.toLowerCase()}...`);
-      structure.node?.setTint(0xffc15a);
-      this.tweens.add({
-        targets: structure.node,
-        alpha: 0.58,
-        duration: Math.floor(duration / 6),
-        yoyo: true,
-        repeat: 5
+      this.beginMining({
+        x: structure.x,
+        y: structure.y,
+        node: structure.node,
+        label: definition.label.toLowerCase(),
+        iron: pickaxeTier === 'iron',
+        onDone: () => {
+          structure.node?.clearTint();
+          finish();
+        },
+        onCancel: () => this.harvestStructures.cancelCollection(structure)
       });
-      this.time.delayedCall(duration, finish);
     } else {
       finish();
     }
+  }
+
+  /** Botão de ação está apertado? (tecla E, botão da tela ou toque). */
+  isActionHeld() {
+    return Boolean(this.keys?.interact?.isDown || this.actionHeld);
+  }
+
+  /** Começa a picaretar: o jogador precisa segurar o botão até a barra encher. */
+  beginMining({ x, y, node = null, label, iron = false, onDone, onCancel = null }) {
+    this.cancelMining();
+    const duration = iron ? MINING_DURATION_MS / 2 : MINING_DURATION_MS;
+    this.mining = {
+      x, y, node, label, duration, onDone, onCancel,
+      elapsed: 0,
+      strikeTimer: MINING_STRIKE_MS,
+      baseX: node?.x ?? x
+    };
+    node?.setTint(0xffd9a0);
+    this.player.startMining(x, y);
+    if (!this.miningBar) {
+      this.miningBar = this.add.graphics().setDepth(9500);
+      this.miningLabel = this.add.text(0, 0, '', {
+        fontFamily: 'Press Start 2P',
+        fontSize: '8px',
+        color: '#ffe9b0',
+        stroke: '#2a1d1a',
+        strokeThickness: 3
+      }).setOrigin(0.5, 1).setDepth(9501).setResolution(2);
+      this.hudCamera?.ignore([this.miningBar, this.miningLabel]);
+    }
+    this.miningBar.setVisible(true);
+    this.miningLabel.setVisible(true);
+    this.ui.showMessage(`Segure para minerar ${label}...`);
+    this.drawMiningBar();
+  }
+
+  updateMining(delta) {
+    const mining = this.mining;
+    if (!mining) return;
+    const distance = Phaser.Math.Distance.Between(this.player.x, this.player.y, mining.x, mining.y);
+    if (distance > MINING_MAX_DISTANCE) {
+      this.cancelMining('Você se afastou da rocha.');
+      return;
+    }
+    if (!this.isActionHeld() || this.buildingMenu?.isOpen || this.worldMap?.isOpen || this.gameOver) {
+      this.cancelMining('Mineração interrompida — segure o botão para continuar.');
+      return;
+    }
+    this.player.body?.setVelocity(0, 0);
+    mining.elapsed += delta;
+    mining.strikeTimer -= delta;
+    if (mining.strikeTimer <= 0) {
+      // Cada batida da picareta: faíscas, lascas, tremida na rocha e som.
+      mining.strikeTimer += MINING_STRIKE_MS;
+      const side = this.player.x <= mining.x ? -1 : 1;
+      this.effects.spawnMiningHit(mining.x + side * 6, mining.y - 8);
+      this.audio.playPick?.();
+      this.cameras.main.shake(60, 0.0016, true);
+      if (mining.node) {
+        mining.node.x = mining.baseX;
+        this.tweens.add({ targets: mining.node, x: mining.baseX - side * 1.5, duration: 45, yoyo: true });
+      }
+    }
+    if (mining.elapsed >= mining.duration) {
+      const done = mining.onDone;
+      this.clearMining();
+      done?.();
+      return;
+    }
+    this.drawMiningBar();
+  }
+
+  drawMiningBar() {
+    const mining = this.mining;
+    if (!mining || !this.miningBar) return;
+    const ratio = Phaser.Math.Clamp(mining.elapsed / mining.duration, 0, 1);
+    const width = 40;
+    const x = Math.round(this.player.x - width / 2);
+    const y = Math.round(this.player.y - 42);
+    this.miningBar.clear();
+    this.miningBar.fillStyle(0x1d1612, 0.9).fillRect(x - 2, y - 2, width + 4, 9);
+    this.miningBar.fillStyle(0x4a3a2c, 1).fillRect(x, y, width, 5);
+    this.miningBar.fillStyle(0xf0a840, 1).fillRect(x, y, Math.round(width * ratio), 5);
+    this.miningBar.fillStyle(0xffe6a0, 1).fillRect(x, y, Math.round(width * ratio), 1);
+    const seconds = Math.max(0, (mining.duration - mining.elapsed) / 1000);
+    this.miningLabel.setText(`${seconds.toFixed(1)}s`).setPosition(this.player.x, y - 3);
+  }
+
+  cancelMining(message = null) {
+    const mining = this.mining;
+    if (!mining) return;
+    const cancel = mining.onCancel;
+    mining.node?.clearTint();
+    this.clearMining();
+    cancel?.();
+    if (message) this.ui.showMessage(message);
+  }
+
+  clearMining() {
+    const mining = this.mining;
+    if (mining?.node) mining.node.x = mining.baseX;
+    this.mining = null;
+    this.player.stopMining();
+    this.miningBar?.clear().setVisible(false);
+    this.miningLabel?.setVisible(false);
+  }
+
+  /** Pausa curtinha no impacto para o golpe "pesar". */
+  hitstop(ms = 50) {
+    if (this.hitstopActive) return;
+    this.hitstopActive = true;
+    this.physics.world.pause();
+    this.anims.pauseAll();
+    setTimeout(() => {
+      this.hitstopActive = false;
+      if (!this.sys.isActive()) return;
+      this.physics.world.resume();
+      this.anims.resumeAll();
+    }, ms);
   }
 
   upgradeBuilding(key) {

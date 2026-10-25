@@ -57,12 +57,25 @@ await runInChrome({ name: 'mining', port: 9353 }, async ({ inScene, capture, fre
     const crafted = scene.buildingMenuAction('craft', 'stonePickaxe');
     const vein = scene.__vein;
     scene.player.body.reset(vein.x + 20, vein.y + 10);
+    // Soltar o botão cancela a mineração (nada é coletado e o veio continua lá).
+    scene.actionHeld = false;
+    scene.interact();
+    const startedMining = Boolean(scene.mining) && Boolean(scene.player.miningTarget);
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    const released = { startedMining, stillMining: Boolean(scene.mining), iron: scene.inventory.items.iron, available: vein.available };
+    // Segurando: leva 4 s.
+    scene.actionHeld = true;
     const started = performance.now();
     scene.interact();
-    while (scene.inventory.items.iron === 0 && performance.now() - started < 5000) {
+    let barSeen = false;
+    while (scene.inventory.items.iron === 0 && performance.now() - started < 7000) {
+      barSeen ||= Boolean(scene.miningBar?.visible && scene.player.handTool.visible);
       await new Promise((resolve) => setTimeout(resolve, 50));
     }
+    scene.actionHeld = false;
     return {
+      released,
+      barSeen,
       crafted: crafted.ok,
       tier: scene.camp.pickaxeTier,
       ms: Math.round(performance.now() - started),
@@ -73,7 +86,10 @@ await runInChrome({ name: 'mining', port: 9353 }, async ({ inScene, capture, fre
   });
   check(basic.crafted && basic.tier === 'stone', `Picareta básica: ${JSON.stringify(basic)}`);
   check(basic.iron >= 2 && basic.iron <= 4 && !basic.veinAvailable, `Mineração básica: ${JSON.stringify(basic)}`);
-  check(basic.ms >= 2000, `Picareta básica rápida demais: ${basic.ms}ms`);
+  check(basic.ms >= 3800 && basic.ms < 5500, `Picareta básica deve levar 4 s: ${basic.ms}ms`);
+  check(basic.released.startedMining && !basic.released.stillMining && basic.released.iron === 0 && basic.released.available,
+    `Soltar o botão não cancelou: ${JSON.stringify(basic.released)}`);
+  check(basic.barSeen, 'Barra de mineração / picareta na mão não apareceu.');
 
   // Picareta de ferro (5 ferro, 1 carvão): 2x mais rápida e +1 por veio.
   const iron = await inScene(async (scene) => {
@@ -88,14 +104,16 @@ await runInChrome({ name: 'mining', port: 9353 }, async ({ inScene, capture, fre
     scene.player.body.reset(vein.x + 20, vein.y + 10);
     const before = scene.inventory.items.iron;
     const started = performance.now();
+    scene.actionHeld = true;
     scene.interact();
     while (scene.inventory.items.iron === before && performance.now() - started < 5000) {
       await new Promise((resolve) => setTimeout(resolve, 50));
     }
+    scene.actionHeld = false;
     return { crafted: crafted.ok, tier: scene.camp.pickaxeTier, ms: Math.round(performance.now() - started), gained: scene.inventory.items.iron - before };
   });
   check(iron.crafted && iron.tier === 'iron', `Picareta de ferro: ${JSON.stringify(iron)}`);
-  check(iron.ms < 1600 && iron.gained >= 3 && iron.gained <= 5, `Picareta de ferro não é 2x/+1: ${JSON.stringify(iron)}`);
+  check(iron.ms >= 1800 && iron.ms < 2800 && iron.gained >= 3 && iron.gained <= 5, `Picareta de ferro não é 2x/+1: ${JSON.stringify(iron)}`);
 
   // Veio renasce em 4 dias de jogo.
   const regrow = await inScene((scene) => {

@@ -1,6 +1,10 @@
 import Phaser from 'phaser';
 import { COMBAT_CONFIG } from '../data/combat.js';
 import { PERK_EFFECTS } from '../data/progression.js';
+import { SWORD_TIERS, drawPickaxe, drawSword, swordTierFor } from '../art/gear.js';
+
+const SWING_MS = 170;
+const PICK_SWING_MS = 480;
 
 const BASE_ATTACK = 12;
 const BASE_DEFENSE = 0;
@@ -52,6 +56,114 @@ export class Player extends Phaser.GameObjects.Container {
     this.knockbackX = 0;
     this.knockbackY = 0;
     this.sprite.play('player-idle-down');
+
+    // Equipamento visível: espada na mão, picareta nas costas (e na mão ao minerar).
+    this.ensureGearTextures();
+    this.backPickaxe = scene.add.image(-5, -3, 'gear-pickaxe-stone').setOrigin(0.5, 0.85).setRotation(-0.7).setVisible(false);
+    this.weapon = scene.add.image(7, 2, 'gear-sword-rusty').setOrigin(0.5, 0.9);
+    this.handTool = scene.add.image(0, 0, 'gear-pickaxe-stone').setOrigin(0.5, 0.9).setVisible(false);
+    this.addAt(this.backPickaxe, 0);
+    this.add([this.weapon, this.handTool]);
+    this.swingTimer = 0;
+    this.swingAngle = 0;
+    this.miningTarget = null;
+    this.miningClock = 0;
+    this.gearKey = '';
+    this.gearTimer = 0;
+  }
+
+  ensureGearTextures() {
+    const textures = this.scene.textures;
+    const put = (key, pixels) => {
+      if (textures.exists(key)) return;
+      const texture = textures.createCanvas(key, pixels.width, pixels.height);
+      texture.getContext().putImageData(new ImageData(pixels.data, pixels.width, pixels.height), 0, 0);
+      texture.setFilter(Phaser.Textures.FilterMode.NEAREST);
+      texture.refresh();
+    };
+    for (const tier of Object.keys(SWORD_TIERS)) put(`gear-sword-${tier}`, drawSword(tier));
+    for (const tier of ['stone', 'iron']) put(`gear-pickaxe-${tier}`, drawPickaxe(tier));
+  }
+
+  /** Atualiza a espada (cor da arma forjada) e a picareta (tem ou não, pedra ou ferro). */
+  refreshGear() {
+    const camp = this.scene.camp;
+    const weapon = camp?.equipment?.equipped?.weapon ?? null;
+    const pickaxe = camp?.pickaxeTier ?? null;
+    const key = `${weapon}|${pickaxe}`;
+    if (key === this.gearKey) return;
+    this.gearKey = key;
+    this.weapon.setTexture(`gear-sword-${swordTierFor(weapon)}`);
+    if (pickaxe) {
+      this.backPickaxe.setTexture(`gear-pickaxe-${pickaxe === 'iron' ? 'iron' : 'stone'}`);
+      this.handTool.setTexture(`gear-pickaxe-${pickaxe === 'iron' ? 'iron' : 'stone'}`);
+    }
+  }
+
+  /** Golpe: a espada faz um arco na direção do ataque. */
+  swingWeapon(angle = Math.atan2(this.facing.y, this.facing.x)) {
+    this.swingAngle = angle;
+    this.swingTimer = SWING_MS;
+  }
+
+  startMining(x, y) {
+    this.miningTarget = { x, y };
+    this.miningClock = 0;
+  }
+
+  stopMining() {
+    this.miningTarget = null;
+  }
+
+  /** Pose da espada e da picareta a cada quadro. */
+  poseGear(delta) {
+    this.gearTimer -= delta;
+    if (this.gearTimer <= 0) {
+      this.gearTimer = 400;
+      this.refreshGear();
+    }
+    const hasPickaxe = Boolean(this.scene.camp?.pickaxeTier);
+    const behind = this.direction === 'up';
+    if (this.miningTarget) {
+      // Picaretando: a ferramenta sobe e desce em direção à rocha.
+      this.miningClock += delta;
+      const angle = Math.atan2(this.miningTarget.y - this.y, this.miningTarget.x - this.x);
+      const phase = (this.miningClock % PICK_SWING_MS) / PICK_SWING_MS;
+      const lift = phase < 0.7 ? phase / 0.7 : 1 - (phase - 0.7) / 0.3;
+      const side = Math.cos(angle) < 0 ? -1 : 1;
+      this.weapon.setVisible(false);
+      this.backPickaxe.setVisible(false);
+      this.handTool.setVisible(true)
+        .setPosition(side * 6, -4)
+        .setFlipX(side < 0)
+        .setRotation(side * (1.4 - lift * 2.1));
+      return;
+    }
+    this.handTool.setVisible(false);
+    this.weapon.setVisible(true);
+    this.backPickaxe.setVisible(hasPickaxe);
+    this.moveTo(this.backPickaxe, behind ? this.list.length - 1 : 0);
+    if (this.swingTimer > 0) {
+      this.swingTimer = Math.max(0, this.swingTimer - delta);
+      const t = 1 - this.swingTimer / SWING_MS;
+      const eased = 1 - (1 - t) * (1 - t);
+      const angle = this.swingAngle;
+      this.weapon
+        .setPosition(Math.cos(angle) * 8, -7 + Math.sin(angle) * 5)
+        .setFlipX(false)
+        .setRotation(angle + Math.PI / 2 + (-1.5 + eased * 3));
+      this.moveTo(this.weapon, this.list.length - 1);
+      return;
+    }
+    const poses = {
+      down: [7, 3, 0.45],
+      right: [6, 3, 0.35],
+      left: [-6, 3, -0.35],
+      up: [6, 0, 0.3]
+    };
+    const [x, y, rotation] = poses[this.direction] ?? poses.down;
+    this.weapon.setPosition(x, y).setRotation(rotation).setFlipX(this.direction === 'left');
+    this.moveTo(this.weapon, behind ? 0 : this.list.length - 1);
   }
 
   // analog: vetor do joystick de toque (-1 a 1); usado quando nenhuma tecla de movimento está pressionada.
@@ -107,6 +219,7 @@ export class Player extends Phaser.GameObjects.Container {
       const speed = 130 * this.speedMultiplier;
       this.body.setVelocity(movement.x * speed, movement.y * speed);
     }
+    this.poseGear(delta);
     this.setDepth(this.y + 30);
   }
 
@@ -165,8 +278,9 @@ export class Player extends Phaser.GameObjects.Container {
     return true;
   }
 
-  showAttack() {
+  showAttack(angle) {
     this.sprite.setTint(0xffe4a5);
+    this.swingWeapon(angle);
     this.scene.time.delayedCall(90, () => this.sprite.clearTint());
   }
 
