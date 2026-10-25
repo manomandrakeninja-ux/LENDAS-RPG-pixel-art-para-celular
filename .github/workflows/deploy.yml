@@ -3,7 +3,8 @@ name: Publicar LENDAS no GitHub Pages
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:
@@ -12,28 +13,41 @@ permissions:
   id-token: write
 
 concurrency:
-  group: pages
+  group: github-pages
   cancel-in-progress: true
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Baixar codigo
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
 
-      - run: npm ci
-      - run: npm run build
+      - name: Instalar dependencias
+        run: npm ci
 
-      - uses: actions/configure-pages@v5
+      - name: Gerar build
+        run: npm run build
 
-      - uses: actions/upload-pages-artifact@v4
+      - name: Configurar Pages
+        uses: actions/configure-pages@v5
+
+      - name: Enviar artefato
+        uses: actions/upload-pages-artifact@v4
         with:
-          path: dist
+          path: ./dist
 
-      - uses: actions/deploy-pages@v4
-
+      - name: Publicar jogo
+        id: deployment
+        uses: actions/deploy-pages@v4
