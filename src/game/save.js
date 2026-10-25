@@ -136,6 +136,19 @@ export function loadSaveDetailed() {
   }
 }
 
+/** Apaga todos os saves (atual, antigos, cópia antes da invasão e corrompido). As configurações ficam. */
+export function clearAllSaves() {
+  if (!storageAvailable()) return false;
+  for (const key of [SAVE_KEY_V2, SAVE_KEY_V1, LEGACY_SAVE_KEY_V2, SAVE_KEY_PRE_RAID, SAVE_KEY_CORRUPT]) {
+    try {
+      localStorage.removeItem(key);
+    } catch {
+      return false;
+    }
+  }
+  return true;
+}
+
 export function loadSave() {
   return loadSaveDetailed().data;
 }

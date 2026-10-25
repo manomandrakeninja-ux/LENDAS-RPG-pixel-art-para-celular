@@ -3,6 +3,8 @@
 // No computador, abra o jogo com ?toque=1 para ver e testar os controles com o mouse
 // (?toque=0 esconde mesmo num celular).
 
+import { loadSettings } from './Settings.js';
+
 const STICK_RADIUS = 44;
 const DEAD_ZONE = 0.15;
 
@@ -12,6 +14,10 @@ export function detectTouchMode(win = typeof window === 'undefined' ? null : win
   const flag = params.get('toque') ?? params.get('touch');
   if (flag === '1') return { enabled: true, forced: true };
   if (flag === '0') return { enabled: false, forced: true };
+  // Escolha feita na engrenagem (Configurações → Interface).
+  const choice = win.localStorage ? loadSettings().interface : 'auto';
+  if (choice === 'mobile') return { enabled: true, forced: true };
+  if (choice === 'pc') return { enabled: false, forced: true };
   const coarse = win.matchMedia?.('(pointer: coarse)')?.matches ?? false;
   return { enabled: coarse, forced: false };
 }
@@ -95,6 +101,21 @@ export class TouchControls {
     }, true);
 
     this.listen(this.root, 'contextmenu', (event) => event.preventDefault());
+    this.scene.ui?.resize?.();
+  }
+
+  /** Volta para o modo computador (Configurações → Interface → Computador). */
+  disable() {
+    if (!this.enabled) return;
+    for (const remove of this.listeners) remove();
+    this.listeners = [];
+    this.enabled = false;
+    this.resetStick();
+    this.dodgeQueued = false;
+    document.body.classList.remove('is-touch');
+    this.root.hidden = true;
+    this.root.classList.remove('is-hidden');
+    this.visible = true;
     this.scene.ui?.resize?.();
   }
 

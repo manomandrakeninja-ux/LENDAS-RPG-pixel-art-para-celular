@@ -1,7 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import zlib from 'node:zlib';
 import { PixelCanvas, darken, dither, hash, lighten, ramp } from '../src/art/pixel.js';
+import { writePng } from './png.js';
+import { KNIGHT_FRAME, drawKnightFrame } from '../src/art/knight.js';
 
 // Gera toda a pixel art do jogo (PNG + atlas da Phaser) em public/assets/.
 // Rode com `npm run assets:generate`. Os tamanhos e nomes dos quadros são usados
@@ -9,50 +10,7 @@ import { PixelCanvas, darken, dither, hash, lighten, ramp } from '../src/art/pix
 
 const root = path.resolve('public/assets');
 
-// ---------- PNG e atlas ----------
-
-const crcTable = Uint32Array.from({ length: 256 }, (_, number) => {
-  let value = number;
-  for (let bit = 0; bit < 8; bit += 1) value = value & 1 ? 0xedb88320 ^ (value >>> 1) : value >>> 1;
-  return value >>> 0;
-});
-
-function crc32(buffer) {
-  let crc = 0xffffffff;
-  for (const byte of buffer) crc = crcTable[(crc ^ byte) & 0xff] ^ (crc >>> 8);
-  return (crc ^ 0xffffffff) >>> 0;
-}
-
-function chunk(type, data) {
-  const name = Buffer.from(type);
-  const length = Buffer.alloc(4);
-  length.writeUInt32BE(data.length);
-  const checksum = Buffer.alloc(4);
-  checksum.writeUInt32BE(crc32(Buffer.concat([name, data])));
-  return Buffer.concat([length, name, data, checksum]);
-}
-
-function writePng(file, canvas) {
-  const pixels = Buffer.from(canvas.data.buffer, canvas.data.byteOffset, canvas.data.byteLength);
-  const scanlines = Buffer.alloc((canvas.width * 4 + 1) * canvas.height);
-  for (let y = 0; y < canvas.height; y += 1) {
-    const row = y * (canvas.width * 4 + 1);
-    scanlines[row] = 0;
-    pixels.copy(scanlines, row + 1, y * canvas.width * 4, (y + 1) * canvas.width * 4);
-  }
-  const header = Buffer.alloc(13);
-  header.writeUInt32BE(canvas.width, 0);
-  header.writeUInt32BE(canvas.height, 4);
-  header[8] = 8;
-  header[9] = 6;
-  fs.mkdirSync(path.dirname(file), { recursive: true });
-  fs.writeFileSync(file, Buffer.concat([
-    Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]),
-    chunk('IHDR', header),
-    chunk('IDAT', zlib.deflateSync(scanlines, { level: 9 })),
-    chunk('IEND', Buffer.alloc(0))
-  ]));
-}
+// ---------- Atlas ----------
 
 function makeSheet(file, frameWidth, frameHeight, columns, rows, drawFrame, { outline = true } = {}) {
   const sheet = new PixelCanvas(frameWidth * columns, frameHeight * rows);
@@ -255,187 +213,13 @@ function drawDirtTile(canvas, side) {
 
 makeSheet('tiles/grass-sheet.png', 48, 48, 4, 2, drawGroundTile, { outline: false });
 
-// ---------- Personagem (24 x 32, 4 direções x 4 quadros) ----------
-
-const SKIN = ['#b8714c', '#e5a676', '#f5c99a'];
-const HAIR = ['#3a2219', '#5c3624', '#82502f', '#a46a3d'];
-const TUNIC = ['#26426b', '#36609b', '#4f84c4', '#79a7dc'];
-const SCARF = ['#8e2f2c', '#c0483b', '#e06a4f'];
-const PANTS = ['#2f2722', '#463a32', '#5c4c41'];
-const BOOT = ['#24170f', '#4a3020', '#6c4a2f'];
+// Couro (usado nos ícones da interface).
 const LEATHER = ['#3e2618', '#6a4228', '#8d5c36'];
 
-// Quadros: 0 = passo esquerdo, 1 = parado, 2 = passo direito, 3 = parado (balanço).
-function legPose(frame) {
-  if (frame === 0) return { left: 1, right: -1 };
-  if (frame === 2) return { left: -1, right: 1 };
-  return { left: 0, right: 0 };
-}
-
-function drawLegsFront(canvas, frame) {
-  const { left, right } = legPose(frame);
-  for (const [x, lift] of [[8, left], [13, right]]) {
-    const bottom = 28 - (lift < 0 ? 1 : 0);
-    canvas.rect(x, 23, 3, bottom - 23 - 1, PANTS[1]);
-    canvas.pixel(x + 2, 24, PANTS[0]);
-    canvas.pixel(x, 23, PANTS[2]);
-    canvas.rect(x, bottom - 2, 3, 3, BOOT[1]);
-    canvas.pixel(x, bottom - 2, BOOT[2]);
-    canvas.rect(x, bottom, 3, 1, BOOT[0]);
-  }
-}
-
-function drawTorsoFront(canvas, top, back = false) {
-  // Túnica com volume: luz à esquerda, sombra à direita.
-  canvas.rect(7, top, 10, 7, TUNIC[1]);
-  canvas.rect(7, top, 2, 7, TUNIC[2]);
-  canvas.rect(15, top, 2, 7, TUNIC[0]);
-  canvas.pixel(8, top + 1, TUNIC[3]);
-  // Cinto com fivela.
-  canvas.rect(7, top + 5, 10, 2, LEATHER[1]);
-  canvas.rect(7, top + 6, 10, 1, LEATHER[0]);
-  if (!back) {
-    canvas.rect(11, top + 5, 2, 2, '#e8c15a');
-    canvas.pixel(11, top + 5, '#fff0a6');
-    // Lenço vermelho.
-    canvas.rect(8, top, 8, 2, SCARF[1]);
-    canvas.pixel(8, top, SCARF[2]);
-    canvas.rect(13, top + 2, 2, 2, SCARF[0]);
-  } else {
-    // Capa curta nas costas.
-    canvas.rect(8, top, 8, 5, SCARF[1]);
-    canvas.rect(8, top, 2, 5, SCARF[2]);
-    canvas.rect(14, top, 2, 5, SCARF[0]);
-    canvas.rect(9, top + 5, 6, 1, SCARF[0]);
-  }
-  // Barra da túnica.
-  canvas.rect(7, top + 7, 10, 1, TUNIC[0]);
-}
-
-function drawArmsFront(canvas, top, frame) {
-  const swing = frame === 0 ? 1 : frame === 2 ? -1 : 0;
-  for (const [x, offset, shade] of [[5, -swing, 2], [17, swing, 0]]) {
-    canvas.rect(x, top + 1 + offset, 2, 4, TUNIC[shade === 2 ? 2 : 0]);
-    canvas.rect(x, top + 5 + offset, 2, 2, SKIN[1]);
-    canvas.pixel(x + (shade === 2 ? 0 : 1), top + 6 + offset, SKIN[0]);
-  }
-}
-
-function drawHeadFront(canvas, top) {
-  // Rosto.
-  canvas.rect(8, top + 4, 8, 7, SKIN[1]);
-  canvas.rect(8, top + 4, 2, 6, SKIN[2]);
-  canvas.rect(8, top + 10, 8, 1, SKIN[0]);
-  canvas.pixel(15, top + 9, SKIN[0]);
-  // Olhos com brilho.
-  canvas.rect(9, top + 6, 2, 2, '#1c1822');
-  canvas.rect(13, top + 6, 2, 2, '#1c1822');
-  canvas.pixel(9, top + 6, '#e9f1ff');
-  canvas.pixel(13, top + 6, '#e9f1ff');
-  canvas.pixel(8, top + 8, '#e98a77');
-  canvas.pixel(15, top + 8, '#e98a77');
-  canvas.pixel(11, top + 9, SKIN[0]);
-  canvas.pixel(12, top + 9, SKIN[0]);
-  // Cabelo com franja.
-  canvas.rect(7, top, 10, 4, HAIR[1]);
-  canvas.rect(8, top - 1, 8, 1, HAIR[1]);
-  canvas.rect(9, top - 1, 4, 1, HAIR[2]);
-  canvas.rect(8, top, 4, 2, HAIR[2]);
-  canvas.pixel(9, top, HAIR[3]);
-  canvas.pixel(10, top, HAIR[3]);
-  canvas.rect(7, top + 4, 1, 5, HAIR[1]);
-  canvas.rect(16, top + 4, 1, 5, HAIR[0]);
-  canvas.pixel(8, top + 4, HAIR[1]);
-  canvas.pixel(11, top + 4, HAIR[1]);
-  canvas.pixel(12, top + 4, HAIR[0]);
-  canvas.pixel(15, top + 4, HAIR[0]);
-  canvas.rect(13, top, 4, 3, HAIR[0]);
-  canvas.rect(13, top, 2, 1, HAIR[1]);
-}
-
-function drawHeadBack(canvas, top) {
-  canvas.rect(7, top, 10, 10, HAIR[1]);
-  canvas.rect(8, top - 1, 8, 1, HAIR[1]);
-  canvas.rect(8, top, 4, 3, HAIR[2]);
-  canvas.pixel(9, top, HAIR[3]);
-  canvas.rect(14, top, 3, 10, HAIR[0]);
-  canvas.rect(8, top + 10, 8, 1, SKIN[0]);
-  canvas.line(10, top + 4, 10, top + 8, HAIR[0]);
-  canvas.line(13, top + 3, 13, top + 8, HAIR[0]);
-}
-
-function drawPersonFront(canvas, frame, back) {
-  const bob = frame === 1 || frame === 3 ? 0 : 1;
-  canvas.shadow(12, 29, 7, 2, 110);
-  drawLegsFront(canvas, frame);
-  drawTorsoFront(canvas, 15 + bob, back);
-  drawArmsFront(canvas, 15 + bob, frame);
-  if (back) drawHeadBack(canvas, 5 + bob);
-  else drawHeadFront(canvas, 5 + bob);
-}
-
-function drawPersonSide(canvas, frame) {
-  // Virado para a esquerda; o lado direito é o espelho deste desenho.
-  const bob = frame === 1 || frame === 3 ? 0 : 1;
-  const stride = frame === 0 ? 2 : frame === 2 ? -2 : 0;
-  canvas.shadow(12, 29, 6, 2, 110);
-  // Perna de trás (mais escura) e da frente.
-  for (const [offset, back] of [[-stride, true], [stride, false]]) {
-    const x = 10 + offset;
-    canvas.rect(x, 23, 3, 4, back ? PANTS[0] : PANTS[1]);
-    canvas.rect(x - 1, 26, 4, 2, back ? BOOT[0] : BOOT[1]);
-    canvas.pixel(x - 1, 26, back ? BOOT[1] : BOOT[2]);
-    canvas.rect(x - 1, 28, 4, 1, BOOT[0]);
-  }
-  const top = 15 + bob;
-  // Braço de trás.
-  canvas.rect(13 + Math.sign(stride), top + 1, 2, 5, TUNIC[0]);
-  // Tronco.
-  canvas.rect(8, top, 8, 7, TUNIC[1]);
-  canvas.rect(8, top, 2, 7, TUNIC[2]);
-  canvas.rect(14, top, 2, 7, TUNIC[0]);
-  canvas.rect(8, top + 5, 8, 2, LEATHER[1]);
-  canvas.rect(8, top + 6, 8, 1, LEATHER[0]);
-  canvas.rect(8, top + 7, 8, 1, TUNIC[0]);
-  canvas.rect(9, top, 7, 2, SCARF[1]);
-  canvas.rect(15, top + 1, 2, 3, SCARF[0]);
-  // Braço da frente balançando.
-  const arm = -Math.sign(stride);
-  canvas.rect(10 + arm, top + 1, 2, 4, TUNIC[2]);
-  canvas.rect(10 + arm, top + 5, 2, 2, SKIN[1]);
-  // Cabeça de perfil.
-  const head = 5 + bob;
-  canvas.rect(7, head + 4, 8, 7, SKIN[1]);
-  canvas.rect(7, head + 4, 2, 6, SKIN[2]);
-  canvas.pixel(6, head + 7, SKIN[1]);
-  canvas.pixel(6, head + 8, SKIN[0]);
-  canvas.rect(8, head + 10, 6, 1, SKIN[0]);
-  canvas.rect(8, head + 6, 2, 2, '#1c1822');
-  canvas.pixel(8, head + 6, '#e9f1ff');
-  canvas.pixel(8, head + 9, '#e98a77');
-  // Cabelo cobrindo a nuca.
-  canvas.rect(8, head, 9, 4, HAIR[1]);
-  canvas.rect(9, head - 1, 7, 1, HAIR[1]);
-  canvas.rect(9, head, 4, 2, HAIR[2]);
-  canvas.pixel(10, head, HAIR[3]);
-  canvas.rect(12, head + 4, 5, 6, HAIR[1]);
-  canvas.rect(15, head + 2, 2, 8, HAIR[0]);
-  canvas.pixel(12, head + 4, HAIR[2]);
-  canvas.rect(7, head + 3, 3, 1, HAIR[1]);
-  canvas.pixel(11, head + 6, SKIN[0]);
-}
-
-makeSheet('characters/player-sheet.png', 24, 32, 4, 4, (canvas, frameIndex) => {
-  const direction = Math.floor(frameIndex / 4);
-  const frame = frameIndex % 4;
-  if (direction === 0) drawPersonFront(canvas, frame, false);
-  else if (direction === 3) drawPersonFront(canvas, frame, true);
-  else {
-    const side = new PixelCanvas(24, 32);
-    drawPersonSide(side, frame);
-    canvas.blit(side, 0, 0, { flipX: direction === 2 });
-  }
-});
+// Jogador: cavaleiro de armadura (src/art/knight.js), 32 x 40, 4 direções x 4 quadros.
+makeSheet('characters/player-sheet.png', KNIGHT_FRAME.width, KNIGHT_FRAME.height, 4, 4, (canvas, frameIndex) => {
+  canvas.blit(drawKnightFrame(Math.floor(frameIndex / 4), frameIndex % 4), 0, 0);
+}, { outline: false });
 
 // ---------- Animais da fazenda (24 x 24, virados para a direita) ----------
 

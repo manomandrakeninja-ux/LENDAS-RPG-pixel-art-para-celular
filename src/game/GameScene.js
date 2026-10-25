@@ -25,7 +25,7 @@ import { PixelEffects } from './Effects.js';
 import { Inventory } from './Inventory.js';
 import { LightingSystem } from './LightingSystem.js';
 import { Player } from './Player.js';
-import { loadSaveDetailed, saveGame } from './save.js';
+import { loadSaveDetailed, saveGame, clearAllSaves } from './save.js';
 import { HarvestStructures } from './HarvestStructures.js';
 import { FarmSystem } from './FarmSystem.js';
 import { MarketSystem } from './MarketSystem.js';
@@ -44,6 +44,7 @@ import { RaidDirector } from './RaidDirector.js';
 import { createGameAnimations, preloadGameAssets } from './assets.js';
 import { TORCH_RECIPE } from '../data/itemCatalog.js';
 import { ItemInfoPanel } from './ItemInfoPanel.js';
+import { SettingsPanel } from './SettingsPanel.js';
 
 export const PICKAXE_MESSAGE = 'Você precisa de uma picareta para minerar isso.';
 // Mineração: segure o botão por 4 s (picareta de ferro: 2 s).
@@ -146,6 +147,11 @@ export class GameScene extends Phaser.Scene {
     this.backpackPanel = new BackpackPanel(this);
     this.itemInfo = new ItemInfoPanel(this);
     this.touch = new TouchControls(this);
+    this.settingsPanel = new SettingsPanel(this);
+    // Tremor da tela pode ser desligado nas Configurações.
+    const camera = this.cameras.main;
+    const shake = camera.shake.bind(camera);
+    camera.shake = (...args) => (this.settingsPanel?.shake === false ? camera : shake(...args));
     this.restState = null;
     this.storeAllAvailable = false;
     this.wasNearCamp = false;
@@ -207,6 +213,10 @@ export class GameScene extends Phaser.Scene {
       const y = (event.clientY - rect.top) * (this.scale.height / rect.height);
       if (this.worldMap?.isOpen || this.buildingMenu?.isOpen) return;
       // Barra rápida do HUD: Mochila, Comer (tecla 2) e Poção (tecla 1).
+      if (this.ui.minimapAt(x, y)) {
+        this.worldMap.open();
+        return;
+      }
       const quick = this.ui.quickButtonAt(x, y);
       if (quick) {
         if (quick === 'backpack') this.toggleBackpack();
@@ -317,7 +327,7 @@ export class GameScene extends Phaser.Scene {
       this.player.body.setVelocity(0, 0);
       for (const enemy of this.enemies) enemy.body?.setVelocity(0, 0);
       this.boss?.body?.setVelocity(0, 0);
-    } else if (this.buildingMenu?.isOpen || this.itemInfo?.isOpen) {
+    } else if (this.buildingMenu?.isOpen || this.itemInfo?.isOpen || this.settingsPanel?.isOpen) {
       this.player.body.setVelocity(0, 0);
     } else {
       const pointer = this.input.activePointer;
@@ -327,6 +337,7 @@ export class GameScene extends Phaser.Scene {
       this.world.revealAround(this.player.x, this.player.y);
       this.enemyDirector.update(delta, this.player, this.timeState);
       this.camp.defense.update(delta, this.enemies);
+      this.updateBuildingLabels();
       this.updateEnemyStatus(delta);
       this.updateTraps();
       this.boss?.update(delta, this.player);
@@ -527,7 +538,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   attackNearby() {
-    if (this.player.attackCooldown > 0 || this.progression?.hasPendingChoice || this.worldMap?.isOpen || this.buildingMenu?.isOpen || this.itemInfo?.isOpen || this.gameOver) return;
+    if (this.player.attackCooldown > 0 || this.progression?.hasPendingChoice || this.worldMap?.isOpen || this.buildingMenu?.isOpen || this.itemInfo?.isOpen || this.settingsPanel?.isOpen || this.gameOver) return;
     this.player.attackCooldown = COMBAT_CONFIG.basicAttackCooldownMs;
     if (this.mining) this.cancelMining();
     const target = this.nearestEnemy(COMBAT_CONFIG.basicAttackRange);
@@ -929,7 +940,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   interact() {
-    if (this.mining || this.itemInfo?.isOpen) return;
+    if (this.mining || this.itemInfo?.isOpen || this.settingsPanel?.isOpen) return;
     if (this.campaign?.interact()) return;
     const resource = this.world.nearbyResource(this.player.x, this.player.y);
     const structure = this.harvestStructures.nearest(this.player.x, this.player.y);
@@ -1195,6 +1206,18 @@ export class GameScene extends Phaser.Scene {
       this.physics.world.resume();
       this.anims.resumeAll();
     }, ms);
+  }
+
+  /** No celular, o nome dos prédios só aparece perto do jogador (menos poluição na tela). */
+  updateBuildingLabels() {
+    const mode = this.settingsPanel?.labels ?? 'auto';
+    const nearOnly = mode === 'near' || (mode === 'auto' && Boolean(this.ui?.metrics?.phone));
+    for (const building of Object.values(this.camp.buildings)) {
+      const label = building.label;
+      if (!label) continue;
+      const near = Phaser.Math.Distance.Between(this.player.x, this.player.y, label.x, label.y + 30) < 110;
+      label.setAlpha(!nearOnly || near ? 1 : 0);
+    }
   }
 
   upgradeBuilding(key) {
@@ -1696,6 +1719,14 @@ export class GameScene extends Phaser.Scene {
       this.player.recalculateEquipment(equipment);
       this.ui.showMessage(`${brokeArmor ? 'Sua armadura' : 'Seu escudo'} quebrou! Repare no Ferreiro (nível 4).`);
     }
+  }
+
+  /** Recomeçar do zero (engrenagem): apaga o progresso e recarrega o jogo. */
+  restartFromScratch() {
+    // Sem isso, o save automático ao fechar a página gravaria o jogo antigo de volta.
+    this.skipSave = true;
+    clearAllSaves();
+    window.location.reload();
   }
 
   restartFromLastSave() {

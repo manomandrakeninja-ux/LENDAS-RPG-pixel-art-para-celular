@@ -189,7 +189,34 @@ try {
   const specialCooldown = await evaluate(`${scene}.player.specialCooldown`);
   check(specialCooldown > 0, 'Botão ESPECIAL não usou o golpe especial.');
 
-  const mapButton = await rectOf('[data-touch="map"]');
+  // Layout de celular: painel enxuto, sem botões repetidos e nada em cima do joystick.
+  const layout = await evaluate(`(() => {
+    const s = ${scene};
+    const box = (el) => { const r = el.getBoundingClientRect(); return { left: r.left, right: r.right, top: r.top, bottom: r.bottom, visible: r.width > 0 && r.height > 0 }; };
+    const tracker = document.querySelector('.quest-tracker');
+    const canvas = s.game.canvas.getBoundingClientRect();
+    return {
+      phone: s.ui.metrics.phone,
+      hudHeight: s.ui.metrics.hudHeight,
+      hidden: ['bag', 'journal', 'map'].every((id) => !box(document.querySelector('[data-touch="' + id + '"]')).visible),
+      tracker: tracker && !tracker.hidden ? box(tracker) : null,
+      stick: box(document.getElementById('touch-stick-base')),
+      touchTop: box(document.querySelector('.touch-top')),
+      gear: box(document.getElementById('settings-button')),
+      minimapBottom: canvas.top + s.ui.mapY + s.ui.metrics.mapSize / 2,
+      minimapLeft: canvas.left + s.ui.mapX - s.ui.metrics.mapSize / 2,
+      minimap: { x: canvas.left + s.ui.mapX, y: canvas.top + s.ui.mapY },
+      hint: s.ui.hint.visible
+    };
+  })()`);
+  const overlaps = (a, b) => a && b && a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+  check(layout.phone && layout.hudHeight <= 70 && layout.hidden && !layout.hint, `Layout de celular: ${JSON.stringify(layout)}`);
+  check(!overlaps(layout.tracker, layout.stick), `Rastreador em cima do joystick: ${JSON.stringify(layout)}`);
+  check(layout.touchTop.top >= layout.minimapBottom - 1, `Botões em cima do minimapa: ${JSON.stringify(layout)}`);
+  check(layout.gear.visible && layout.gear.right <= layout.minimapLeft + 1, `Engrenagem fora do lugar: ${JSON.stringify(layout)}`);
+
+  // Tocar no minimapa abre o mapa do mundo.
+  const mapButton = layout.minimap;
   await touch('touchStart', [[mapButton.x, mapButton.y, 5]]);
   await delay(60);
   await touch('touchEnd', []);

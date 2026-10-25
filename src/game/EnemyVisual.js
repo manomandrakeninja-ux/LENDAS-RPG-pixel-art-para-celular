@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { ENEMY_TYPES } from '../data/enemies.js';
 import { PixelCanvas, darken, lighten, ramp } from '../art/pixel.js';
+import { MONSTER_SIZES, drawMonsterFrame, hasMonsterArt } from '../art/monsters.js';
 
 // Inimigos desenhados em pixel art no navegador, com as cores de enemies.json.
 // Os desenhos usam uma grade de 32 unidades; o elite (40 px) é desenhado na
@@ -406,16 +407,24 @@ function paletteFor(kind) {
 }
 
 /** Desenha um quadro do inimigo e devolve o buffer de pixels. */
-export function drawEnemyFrame(kind, size, frame) {
+export function drawEnemyFrame(kind, size, frame, elite = false) {
+  // Monstros redesenhados (src/art/monsters.js); os demais usam os desenhos abaixo.
+  if (hasMonsterArt(kind)) return drawMonsterFrame(kind, size, frame, { elite });
   const canvas = new PixelCanvas(size, size);
   (VARIANTS[kind]?.draw ?? DRAWERS[kind] ?? drawSlime)(scaledCanvas(canvas, size), paletteFor(kind), frame);
   return canvas.outline();
 }
 
+/** Tamanho do desenho do inimigo (px). */
+export function enemyCanvasSize(kind, elite = false) {
+  const placeholder = ENEMY_TYPES[kind]?.placeholder;
+  const sizes = MONSTER_SIZES[kind];
+  if (elite) return placeholder?.eliteSize ?? sizes?.elite ?? 40;
+  return placeholder?.size ?? sizes?.size ?? 32;
+}
+
 function ensureCanvasTexture(scene, kind, elite) {
-  const size = elite
-    ? ENEMY_TYPES[kind]?.placeholder?.eliteSize ?? 40
-    : ENEMY_TYPES[kind]?.placeholder?.size ?? 32;
+  const size = enemyCanvasSize(kind, elite);
   const textureKey = `enemy-canvas-${kind}-${elite ? 'elite' : 'normal'}`;
   const animationKey = `enemy-canvas-${kind}-${elite ? 'elite' : 'normal'}-walk`;
 
@@ -424,7 +433,7 @@ function ensureCanvasTexture(scene, kind, elite) {
     const context = texture.getContext();
     context.clearRect(0, 0, size * 2, size);
     for (let frame = 0; frame < 2; frame += 1) {
-      const pixels = drawEnemyFrame(kind, size, frame);
+      const pixels = drawEnemyFrame(kind, size, frame, elite);
       context.putImageData(new ImageData(pixels.data, size, size), frame * size, 0);
     }
     texture.setFilter(Phaser.Textures.FilterMode.NEAREST);
@@ -459,6 +468,7 @@ export function resolveEnemyVisual(scene, kind, elite = false) {
     frame: 'frame-0',
     animation: visual.animationKey,
     shape: ENEMY_TYPES[kind]?.placeholder?.shape ?? kind,
+    size: visual.size,
     isPlaceholder: true,
     isFallback: false
   };

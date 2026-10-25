@@ -58,8 +58,15 @@ export class GameUI {
   getMetrics() {
     const { width, height } = this.scene.scale;
     const compact = width < 700 || height < 520;
+    // Celular: painel enxuto (só vida, XP, vigor e moedas), minimapa menor e sem dicas de teclado.
+    const phone = Boolean(this.scene.touch?.enabled) && (height < 560 || width < 560);
+    if (phone) {
+      return { compact: true, phone, hudWidth: 196, hudHeight: 62, hudX: 107, mapSize: 112, barWidth: 168 };
+    }
     return {
       compact,
+      phone: false,
+      barWidth: 212,
       hudWidth: compact ? 262 : 300,
       hudHeight: 150,
       // Centro do fundo do HUD: sempre colado à esquerda, junto dos textos (x = 22).
@@ -248,7 +255,7 @@ export class GameUI {
   }
 
   layoutQuickBar() {
-    const top = 12 + this.metrics.hudHeight + 10;
+    const top = 12 + this.metrics.hudHeight + (this.metrics.phone ? 4 : 10);
     const compact = this.metrics.compact;
     // Em telas pequenas os botões encolhem para não encostar no minimapa.
     const sizes = compact
@@ -272,6 +279,42 @@ export class GameUI {
       button.caption.setPosition(x + button.size / 2, top + 64);
       x += button.size + gap;
     }
+  }
+
+  /** Posiciona os textos e barras do painel de status (computador ou celular). */
+  layoutHud() {
+    const phone = this.metrics.phone;
+    const left = phone ? 20 : 22;
+    const bar = this.metrics.barWidth;
+    const rows = phone
+      ? { label: 18, health: 32, xp: 48, stamina: 56 }
+      : { label: 18, health: 40, xp: 55, stamina: 66 };
+    this.healthLabel.setPosition(left, rows.label);
+    this.healthBar.setPosition(left, rows.health).setSize(bar + 4, 13);
+    for (const item of [this.healthTrail, this.healthFill, this.healthShine]) item.setPosition(left + 2, rows.health + 2);
+    this.xpBar.setPosition(left, rows.xp).setSize(bar + 4, 5);
+    this.xpFill.setPosition(left + 2, rows.xp + 1);
+    this.staminaBar.setPosition(left, rows.stamina).setSize(bar + 4, 8);
+    this.staminaFill.setPosition(left + 2, rows.stamina + 2);
+    // No celular as moedas ficam na linha da vida; dia, status, XP em texto e minérios somem.
+    if (phone) {
+      this.coinIcon.setPosition(150, 22);
+      this.coinLabel.setPosition(160, 18);
+    } else {
+      this.coinIcon.setPosition(28, 124);
+      this.coinLabel.setPosition(42, 120);
+    }
+    for (const item of [this.xpLabel, this.dayLabel, this.statusLabel, this.mapLabel]) item?.setVisible(!phone);
+    for (const counter of this.oreCounters ?? []) {
+      counter.icon.setVisible(!phone);
+      counter.label.setVisible(!phone);
+    }
+  }
+
+  /** O ponto (x, y) da tela está sobre o minimapa? */
+  minimapAt(x, y) {
+    const half = this.metrics.mapSize / 2;
+    return Math.abs(x - this.mapX) <= half && Math.abs(y - this.mapY) <= half;
   }
 
   /** Botão da barra rápida na posição de tela (x, y), ou null. */
@@ -301,9 +344,17 @@ export class GameUI {
     this.metrics = this.getMetrics();
     this.hudBg.setSize(this.metrics.hudWidth, this.metrics.hudHeight)
       .setPosition(this.metrics.hudX, 12 + this.metrics.hudHeight / 2);
+    this.layoutHud();
     this.layoutQuickBar();
     this.mapX = width - this.metrics.mapSize / 2 - 12;
-    this.mapBg.setSize(this.metrics.mapSize, this.metrics.mapSize).setPosition(this.mapX, 91);
+    this.mapY = this.metrics.phone ? 10 + this.metrics.mapSize / 2 : 91;
+    this.mapBg.setSize(this.metrics.mapSize, this.metrics.mapSize).setPosition(this.mapX, this.mapY);
+    const quick = this.quickButtons.reduce((bottom, button) => Math.max(bottom, button.y + button.size), 0);
+    const rootStyle = document.documentElement.style;
+    rootStyle.setProperty('--minimap-bottom', `${Math.round(this.mapY + this.metrics.mapSize / 2 + 8)}px`);
+    rootStyle.setProperty('--minimap-width', `${Math.round(this.metrics.mapSize + 12)}px`);
+    rootStyle.setProperty('--quickbar-bottom', `${Math.round(quick + (this.metrics.compact ? 8 : 26))}px`);
+    document.body.classList.toggle('is-phone', this.metrics.phone);
     this.mapLabel.setPosition(this.mapX, 10);
     this.drawMapBase();
     this.layoutHint();
@@ -313,9 +364,13 @@ export class GameUI {
   }
 
   update(player, inventory, progression, economy, camp, time, nearestResource, nearestStructure, nearestBackpack, nearestEnemy, isNearCamp, enemies, world, storeAllAvailable = false) {
-    this.healthLabel.setText(`VIDA  ${Math.ceil(player.health)} / ${player.maxHealth}    DEF ${player.defense}`);
-    const healthWidth = Math.max(0, Math.round((212 * (player.health / player.maxHealth)) / 4) * 4);
-    const staminaWidth = Math.max(0, Math.round((212 * (player.stamina / 100)) / 4) * 4);
+    const phone = this.metrics.phone;
+    const barWidth = this.metrics.barWidth;
+    this.healthLabel.setText(phone
+      ? `VIDA ${Math.ceil(player.health)}/${player.maxHealth}`
+      : `VIDA  ${Math.ceil(player.health)} / ${player.maxHealth}    DEF ${player.defense}`);
+    const healthWidth = Math.max(0, Math.round((barWidth * (player.health / player.maxHealth)) / 4) * 4);
+    const staminaWidth = Math.max(0, Math.round((barWidth * (player.stamina / 100)) / 4) * 4);
     this.healthFill.setDisplaySize(healthWidth, 9);
     this.healthTrail.setDisplaySize(healthWidth, 9);
     this.healthShine.setDisplaySize(healthWidth, 2);
@@ -323,8 +378,8 @@ export class GameUI {
     this.xpLabel.setText(progression.level >= 20
       ? `NÍVEL ${progression.level} • XP MÁXIMO`
       : `NÍVEL ${progression.level} • XP ${progression.xp}/${progression.xpToNext}`);
-    this.xpFill.setDisplaySize(Math.max(0, Math.round(212 * progression.xpRatio)), 3);
-    this.coinLabel.setText(`${economy.coins} MOEDAS`);
+    this.xpFill.setDisplaySize(Math.max(0, Math.round(barWidth * progression.xpRatio)), 3);
+    this.coinLabel.setText(phone ? String(economy.coins) : `${economy.coins} MOEDAS`);
     for (const counter of this.oreCounters) {
       counter.label.setText(String((inventory.items[counter.type] ?? 0) + (camp?.storage?.[counter.type] ?? 0)));
     }
@@ -377,10 +432,12 @@ export class GameUI {
           ? 'Toque num prédio para abrir  •  ACAMP. para a visão geral'
           : '';
     }
+    if (phone) hint = '';
     this.hint.setText(hint).setVisible(hint !== '');
     this.worldAction.hidden = this.buildingMenuOpen;
     this.storeAllAvailable = storeAllAvailable;
-    this.storeAllAction.hidden = !storeAllAvailable || this.buildingMenuOpen;
+    this.storeAllAction.hidden = !storeAllAvailable || this.buildingMenuOpen ||
+      (Boolean(this.scene.touch?.enabled) && inventory.total === 0);
     this.storeAllAction.disabled = inventory.total === 0;
     this.storeAllAction.textContent = inventory.total > 0 ? 'GUARDAR TUDO' : 'MOCHILA VAZIA';
     this.worldAction.textContent = questTarget

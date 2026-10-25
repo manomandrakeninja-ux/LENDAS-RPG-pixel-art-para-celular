@@ -65,8 +65,9 @@ export class Enemy extends Phaser.GameObjects.Container {
     this.add(this.sprite);
     if (visual.animation && scene.anims.exists(visual.animation)) this.sprite.play(visual.animation);
 
-    this.healthBarBack = scene.add.rectangle(0, -22, 28, 4, 0x2d2624).setVisible(false);
-    this.healthBar = scene.add.rectangle(0, -22, 24, 2, 0xd96858).setVisible(false);
+    const barY = -Math.max(22, Math.round((visual.size ?? 32) * 0.72));
+    this.healthBarBack = scene.add.rectangle(0, barY, 28, 4, 0x2d2624).setVisible(false);
+    this.healthBar = scene.add.rectangle(0, barY, 24, 2, 0xd96858).setVisible(false);
     this.add(this.healthBarBack);
     this.add(this.healthBar);
 

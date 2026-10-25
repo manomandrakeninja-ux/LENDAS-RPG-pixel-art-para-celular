@@ -1,0 +1,218 @@
+import { PixelCanvas } from '../art/pixel.js';
+import { detectTouchMode } from './TouchControls.js';
+import { loadSettings, saveSettings } from './Settings.js';
+
+/** Ícone de engrenagem em pixel art (16 x 16) como data URL. */
+function gearIconUrl() {
+  const size = 16;
+  const pixels = new PixelCanvas(size, size);
+  const metal = ['#6b5038', '#c9a76b', '#f2c45c', '#fff1ce'];
+  // Dentes.
+  for (const [x, y, w, h] of [[6, 0, 4, 3], [6, 13, 4, 3], [0, 6, 3, 4], [13, 6, 3, 4], [2, 2, 3, 3], [11, 2, 3, 3], [2, 11, 3, 3], [11, 11, 3, 3]]) {
+    pixels.rect(x, y, w, h, metal[1]);
+  }
+  pixels.shadedEllipse(8, 8, 6, 6, metal);
+  pixels.ellipse(8, 8, 2.3, 2.3, '#24190f');
+  pixels.outline({ strength: 0.8 });
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  canvas.getContext('2d').putImageData(new ImageData(pixels.data, size, size), 0, 0);
+  return canvas.toDataURL();
+}
+
+const OPTIONS = {
+  interface: [['auto', 'Automática'], ['pc', 'Computador'], ['mobile', 'Celular']],
+  sound: [[true, 'Ligado'], [false, 'Desligado']],
+  shake: [[true, 'Ligado'], [false, 'Desligado']],
+  labels: [['auto', 'Automático'], ['always', 'Sempre'], ['near', 'Só de perto']]
+};
+
+/**
+ * Engrenagem ao lado do minimapa: interface (computador/celular), som, volume,
+ * tremor da tela, nomes dos prédios, tela cheia e salvar agora.
+ */
+export class SettingsPanel {
+  constructor(scene) {
+    this.scene = scene;
+    this.settings = loadSettings();
+    const host = document.getElementById('game') ?? document.body;
+
+    this.button = document.createElement('button');
+    this.button.type = 'button';
+    this.button.id = 'settings-button';
+    this.button.className = 'settings-button';
+    this.button.setAttribute('aria-label', 'Configurações');
+    this.button.innerHTML = `<img class="pixel-icon" src="${gearIconUrl()}" alt="" width="32" height="32">`;
+
+    this.root = document.createElement('div');
+    this.root.id = 'settings-panel';
+    this.root.className = 'item-info settings-panel';
+    this.root.hidden = true;
+    this.root.innerHTML = `
+      <section class="item-info__card" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+        <header class="item-info__header">
+          <div class="item-info__icon"><img class="pixel-icon" src="${gearIconUrl()}" alt="" width="40" height="40"></div>
+          <div>
+            <p class="item-info__kicker">LENDAS</p>
+            <h2 class="item-info__name" id="settings-title">Configurações</h2>
+          </div>
+          <button type="button" class="panel-close" data-settings="close" aria-label="Fechar configurações">✕</button>
+        </header>
+        <div class="item-info__body settings-panel__body" id="settings-body"></div>
+        <footer class="item-info__footer"><button type="button" data-settings="close">VOLTAR AO JOGO</button></footer>
+      </section>`;
+    host.append(this.button, this.root);
+    this.body = this.root.querySelector('#settings-body');
+
+    this.handleOpen = (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      this.toggle();
+    };
+    this.handleClick = (event) => {
+      if (event.target === this.root) {
+        this.close();
+        return;
+      }
+      const button = event.target.closest('button[data-settings]');
+      if (!button || button.disabled) return;
+      const { settings: action, value } = button.dataset;
+      if (action === 'close') this.close();
+      else if (action === 'restart') {
+        this.confirmRestart = true;
+        this.render();
+      } else if (action === 'restart-cancel') {
+        this.confirmRestart = false;
+        this.render();
+      } else if (action === 'restart-confirm') this.scene.restartFromScratch();
+      else if (action === 'fullscreen') this.scene.touch?.toggleFullscreen();
+      else if (action === 'save') {
+        this.scene.save();
+        this.scene.ui?.showMessage('Jogo salvo.');
+      } else if (action === 'volume') this.set('volume', this.settings.volume + Number(value));
+      else this.set(action, value === 'true' ? true : value === 'false' ? false : value);
+    };
+    this.handleKey = (event) => {
+      if (event.key === 'Escape' && this.isOpen) {
+        event.stopPropagation();
+        this.close();
+      }
+    };
+    this.stopDown = (event) => event.stopPropagation();
+    // pointerdown abre na hora (toque e mouse); o clique do teclado (Enter) também.
+    this.button.addEventListener('pointerdown', this.handleOpen);
+    this.button.addEventListener('click', (event) => {
+      if (event.detail === 0) this.handleOpen(event);
+    });
+    for (const type of ['pointerdown', 'mousedown', 'touchstart']) {
+      this.button.addEventListener(type, this.stopDown);
+      this.root.addEventListener(type, this.stopDown);
+    }
+    this.root.addEventListener('click', this.handleClick);
+    window.addEventListener('keydown', this.handleKey, true);
+    scene.events.once('shutdown', () => {
+      window.removeEventListener('keydown', this.handleKey, true);
+      this.button.remove();
+      this.root.remove();
+    });
+    this.apply({ initial: true });
+  }
+
+  get isOpen() {
+    return !this.root.hidden;
+  }
+
+  open() {
+    this.root.hidden = false;
+    this.render();
+    this.root.querySelector('.panel-close')?.focus({ preventScroll: true });
+  }
+
+  close() {
+    this.root.hidden = true;
+    this.confirmRestart = false;
+  }
+
+  toggle() {
+    if (this.isOpen) this.close();
+    else this.open();
+  }
+
+  set(key, value) {
+    this.settings = { ...this.settings, [key]: value };
+    saveSettings(this.settings);
+    this.settings = loadSettings();
+    this.apply();
+    this.render();
+  }
+
+  /** Aplica as configurações no jogo (som, interface, tremor, nomes dos prédios). */
+  apply({ initial = false } = {}) {
+    const scene = this.scene;
+    const { sound, volume } = this.settings;
+    scene.audio?.setVolume?.(volume / 100);
+    scene.audio?.setMuted?.(!sound);
+    if (!initial && scene.touch) {
+      const mode = detectTouchMode();
+      if (mode.enabled) scene.touch.enable();
+      else scene.touch.disable();
+    }
+    scene.ui?.resize?.();
+  }
+
+  get shake() {
+    return this.settings.shake;
+  }
+
+  get labels() {
+    return this.settings.labels;
+  }
+
+  choiceRow(key, title, description) {
+    const buttons = OPTIONS[key].map(([value, label]) => {
+      const active = this.settings[key] === value;
+      return `<button type="button" data-settings="${key}" data-value="${value}" aria-pressed="${active}" class="${active ? 'is-active' : ''}">${label}</button>`;
+    }).join('');
+    return `
+      <div class="settings-panel__row">
+        <h3>${title}</h3>
+        ${description ? `<p>${description}</p>` : ''}
+        <div class="settings-panel__choices">${buttons}</div>
+      </div>`;
+  }
+
+  render() {
+    if (!this.isOpen) return;
+    const touch = this.scene.touch?.enabled;
+    const forcedByUrl = /[?&](toque|touch)=/.test(window.location.search);
+    this.body.innerHTML = `
+      ${this.choiceRow('interface', 'Interface', `Agora: ${touch ? 'celular (controles de toque)' : 'computador (teclado e mouse)'}.${forcedByUrl ? ' O endereço da página está forçando um modo.' : ''}`)}
+      ${this.choiceRow('sound', 'Som', '')}
+      <div class="settings-panel__row">
+        <h3>Volume</h3>
+        <div class="settings-panel__choices settings-panel__volume">
+          <button type="button" data-settings="volume" data-value="-10" ${this.settings.volume <= 0 ? 'disabled' : ''} aria-label="Diminuir volume">−</button>
+          <span data-volume>${this.settings.volume}%</span>
+          <button type="button" data-settings="volume" data-value="10" ${this.settings.volume >= 100 ? 'disabled' : ''} aria-label="Aumentar volume">+</button>
+        </div>
+      </div>
+      ${this.choiceRow('shake', 'Tremor da tela', 'Balanço da câmera nos golpes e explosões.')}
+      ${this.choiceRow('labels', 'Nomes dos prédios', 'Automático: no celular só aparecem perto do personagem.')}
+      <div class="settings-panel__row settings-panel__actions">
+        <button type="button" data-settings="fullscreen">TELA CHEIA</button>
+        <button type="button" data-settings="save">SALVAR AGORA</button>
+      </div>
+      <div class="settings-panel__row settings-panel__danger">
+        <h3>Recomeçar do zero</h3>
+        ${this.confirmRestart
+          ? `<p class="settings-panel__warning">Tem certeza? Todo o progresso (prédios, itens, missões e nível) será apagado e não dá para desfazer.</p>
+        <div class="settings-panel__choices">
+          <button type="button" data-settings="restart-cancel">CANCELAR</button>
+          <button type="button" class="is-danger" data-settings="restart-confirm">SIM, APAGAR TUDO</button>
+        </div>`
+          : `<p>Começa um jogo novo. As configurações continuam.</p>
+        <div class="settings-panel__choices"><button type="button" class="is-danger" data-settings="restart">RECOMEÇAR</button></div>`}
+      </div>`;
+  }
+}

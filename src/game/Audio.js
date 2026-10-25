@@ -3,6 +3,7 @@ export class AudioManager {
     this.context = null;
     this.muted = false;
     this.masterGain = null;
+    this.volume = 0.7;
   }
 
   unlock() {
@@ -12,7 +13,7 @@ export class AudioManager {
     if (!this.context) {
       this.context = new AudioContext();
       this.masterGain = this.context.createGain();
-      this.masterGain.gain.value = 0.7;
+      this.masterGain.gain.value = this.muted ? 0 : this.volume;
       this.masterGain.connect(this.context.destination);
     }
     if (this.context.state === 'suspended') this.context.resume().catch(() => {});
@@ -21,11 +22,17 @@ export class AudioManager {
 
   setMuted(muted) {
     this.muted = muted;
-    if (this.masterGain) this.masterGain.gain.value = muted ? 0 : 0.7;
+    if (this.masterGain) this.masterGain.gain.value = muted ? 0 : this.volume;
+  }
+
+  /** Volume geral de 0 a 1 (Configurações). */
+  setVolume(volume) {
+    this.volume = Math.max(0, Math.min(1, Number(volume) || 0));
+    if (this.masterGain && !this.muted) this.masterGain.gain.value = this.volume;
   }
 
   playTone(frequency, duration = 0.12, type = 'square', volume = 0.05, delay = 0) {
-    if (this.muted || !this.unlock()) return;
+    if (this.muted || this.volume <= 0 || !this.unlock()) return;
     const start = this.context.currentTime + delay;
     const oscillator = this.context.createOscillator();
     const gain = this.context.createGain();

@@ -10,8 +10,8 @@ export const ASSET_CONFIG = {
     kind: 'spritesheet',
     key: 'player',
     file: 'assets/characters/player-sheet.png',
-    frameWidth: 24,
-    frameHeight: 32
+    frameWidth: 32,
+    frameHeight: 40
   },
   livestock: {
     kind: 'spritesheet',

@@ -616,3 +616,19 @@
     height: 64px;
   }
 }
+
+/* Celular: rastreador logo abaixo da barra rápida, estreito, longe do joystick. */
+.touch-controls:not([hidden]) ~ .quest-tracker {
+  top: var(--quickbar-bottom, 252px);
+}
+
+body.is-phone .quest-tracker {
+  width: min(210px, 40vw);
+  padding: 5px 8px;
+  font-size: 7px;
+  line-height: 1.5;
+}
+
+body.is-phone .quest-tracker h3 {
+  font-size: 8px;
+}

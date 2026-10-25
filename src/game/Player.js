@@ -19,7 +19,7 @@ export class Player extends Phaser.GameObjects.Container {
     this.body.setCollideWorldBounds(true);
     this.setDepth(y + 30);
 
-    this.sprite = scene.add.sprite(0, -2, 'player', 1).setOrigin(0.5, 0.68);
+    this.sprite = scene.add.sprite(0, -2, 'player', 1).setOrigin(0.5, 0.77);
     this.add(this.sprite);
 
     this.progression = progression;

@@ -1081,3 +1081,39 @@ body.is-touch .store-all-action {
 .level-up-panel__choices--three {
   grid-template-columns: repeat(auto-fit, minmax(min(150px, 100%), 1fr));
 }
+
+/* ===== Celular (body.is-phone: toque + tela baixa ou estreita) ===== */
+/* Botões ficam logo abaixo do minimapa, seja qual for o tamanho dele. */
+body.is-touch .touch-top {
+  top: var(--minimap-bottom, 182px);
+}
+
+/* Mochila e Diário já estão na barra rápida; o mapa abre tocando no minimapa. */
+body.is-phone .touch-small[data-touch="bag"],
+body.is-phone .touch-small[data-touch="journal"],
+body.is-phone .touch-small[data-touch="map"] {
+  display: none;
+}
+
+body.is-phone .touch-top {
+  gap: 6px;
+}
+
+body.is-phone .touch-small {
+  min-width: 48px;
+  min-height: 36px;
+  padding: 6px 8px;
+  font-size: 6px;
+}
+
+body.is-phone .world-action {
+  min-width: 132px;
+  min-height: 52px;
+  padding: 10px 8px;
+  font-size: 7px;
+}
+
+body.is-phone .store-all-action {
+  min-height: 40px;
+  padding: 8px;
+}
