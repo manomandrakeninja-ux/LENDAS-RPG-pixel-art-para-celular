@@ -18,6 +18,7 @@ import { Enemy } from './Enemies.js';
 import { RESOURCE_TYPES } from './config.js';
 import { LEATHER_DROP, RARE_SHOP } from '../data/campaign.js';
 import { QuestUI } from './QuestUI.js';
+import { ENDINGS, GOLEM_CHOICE, NPC_STORY_LINES } from '../data/story.js';
 
 const INTERACT_RANGE = 46;
 const SPAWN_RANGE = 380;
@@ -385,9 +386,7 @@ export class CampaignSystem {
     // Etapas seguidas de uma mesma luta (fases do Golem) começam na hora.
     if (next?.autoAccept) this.state.accept(next.id);
     else if (next) this.offerMission(next);
-    if (mission.chapter !== next?.chapter && next) {
-      this.scene.showEpic?.(`CAPÍTULO ${next.chapter}`, this.chapterTitle(next.chapter), 4200);
-    }
+    if (mission.chapter !== next?.chapter && next) this.ui.showChapter(next.chapter);
     if (id === MISSIONS[DAILY_UNLOCK_MISSION - 1].id) this.state.refreshDaily(this.scene.timeState.dayCount);
     if (mission.number === 99) this.showEnding();
     this.syncWorld();
@@ -399,7 +398,7 @@ export class CampaignSystem {
   /** Oferece a missão recém-liberada na hora, com o morador que a pede. */
   offerMission(mission) {
     this.ui.toast(`Nova missão: ${mission.title}`, 'gold');
-    this.ui.dialogue(mission.npc, `Nova missão — ${mission.title}: ${mission.description}`, [
+    this.ui.dialogue(mission.npc, `Nova missão — ${mission.title}: ${mission.description}${mission.intro ? ` ${mission.intro}` : ''}`, [
       { label: 'ACEITAR', primary: true, action: () => this.accept(mission.id) },
       { label: 'DEPOIS (L)', action: () => {} }
     ]);
@@ -477,15 +476,11 @@ export class CampaignSystem {
     return result;
   }
 
+  /** Final conforme a escolha da missão 95 (fica salvo nos Registros). */
   showEnding() {
-    const restored = this.state.choice === 'restore';
-    this.scene.showEpic?.(
-      'O AMANHECER DE ELDORIA',
-      restored
-        ? 'O Golem, restaurado, volta a guardar o Devorador. Eldoria renasce sob a proteção de seu antigo guardião.'
-        : 'O Golem se desfaz em brasas e o Devorador é selado para sempre pelos cinco selos. Eldoria renasce livre.',
-      9000
-    );
+    const ending = ENDINGS[this.state.choice === 'destroy' ? 'destroy' : 'restore'];
+    this.state.addLore(ending.lore);
+    this.ui.showChapter(10, { title: ending.title, kicker: 'Fim da campanha', text: LORE[ending.lore].text, image: 'final' });
   }
 
   // ---------- Interação (tecla E / botão de ação) ----------
@@ -538,7 +533,7 @@ export class CampaignSystem {
     }
     const offer = MISSIONS.find((mission) => mission.npc === id && this.state.stateOf(mission.id) === 'available');
     if (offer) {
-      this.ui.dialogue(id, `${offer.title}: ${offer.description}`, [
+      this.ui.dialogue(id, `${offer.title}: ${offer.description}${offer.intro ? ` ${offer.intro}` : ''}`, [
         { label: 'ACEITAR', primary: true, action: () => this.accept(offer.id) },
         { label: 'AGORA NÃO', action: () => {} }
       ]);
@@ -548,9 +543,20 @@ export class CampaignSystem {
       this.openShop(id);
       return;
     }
-    const line = npc.lines[(this.state.currentChapter + this.state.residents) % npc.lines.length];
+    const lines = this.storyLines(id);
+    const line = lines[(this.state.currentChapter + this.state.residents + (this.talkCount = (this.talkCount ?? 0) + 1)) % lines.length];
     const active = MISSIONS.find((mission) => mission.npc === id && this.state.stateOf(mission.id) === 'active');
     this.ui.dialogue(id, active ? `${line} (Missão: ${active.title})` : line, [{ label: 'ATÉ MAIS', action: () => {} }]);
+  }
+
+  /** Falas do morador de acordo com o capítulo atual (src/data/story.js). */
+  storyLines(id) {
+    const byChapter = NPC_STORY_LINES[id];
+    const chapter = this.state.currentChapter;
+    if (!byChapter) return NPCS[id].lines;
+    const unlocked = Object.keys(byChapter).map(Number).filter((from) => from <= chapter).sort((a, b) => b - a);
+    const lines = unlocked.flatMap((from) => byChapter[from]).slice(0, 4);
+    return lines.length > 0 ? lines : NPCS[id].lines;
   }
 
   openShop(owner) {
@@ -605,6 +611,7 @@ export class CampaignSystem {
         this.giveItems(def.gives, def.x, def.y);
         if (def.lore && this.state.addLore(def.lore)) this.ui.toast(`Registro descoberto: ${LORE[def.lore].title}`, 'gold');
         this.emit({ type: 'interact', target: id });
+        if (def.emits) this.emit({ ...def.emits });
         scene.audio.playCollect();
         scene.ui.showMessage(`${def.name}: +${this.formatBundle(def.gives)}`);
         break;
@@ -652,10 +659,10 @@ export class CampaignSystem {
         this.activatePillar(id, def);
         break;
       case 'choice':
-        this.ui.dialogue(null, 'O Golem aprisiona o Devorador de Mundos há séculos e está perdendo o controle. O que você fará?', [
-          { label: 'RESTAURAR O GUARDIÃO', primary: true, action: () => this.makeChoice('restore') },
-          { label: 'DESTRUIR O GOLEM', action: () => this.makeChoice('destroy') }
-        ], { title: def.name });
+        this.ui.dialogue(null, GOLEM_CHOICE.text, [
+          { label: GOLEM_CHOICE.restore.label, primary: true, action: () => this.makeChoice('restore') },
+          { label: GOLEM_CHOICE.destroy.label, action: () => this.makeChoice('destroy') }
+        ], { title: GOLEM_CHOICE.title });
         return;
       default:
         return;
@@ -667,7 +674,7 @@ export class CampaignSystem {
 
   makeChoice(choice) {
     this.state.choice = choice;
-    this.ui.toast(choice === 'restore' ? 'Você decidiu restaurar o guardião.' : 'Você decidiu destruir o Golem.', 'gold');
+    this.ui.toast(GOLEM_CHOICE[choice]?.toast ?? 'Escolha registrada.', 'gold');
     this.afterProgress();
     this.scene.save();
   }
@@ -804,7 +811,7 @@ export class CampaignSystem {
           this.spawnGroup(site, def.enemies, Math.min(missing, def.enemies.count));
           scene.ui.showMessage(`${def.name}: inimigos à vista!`);
         }
-      } else if (def.kind === 'boss' && distance < SPAWN_RANGE && site.spawned.length === 0 && this.bossNeeded(def.boss.tag)) {
+      } else if (def.kind === 'boss' && !def.boss.worldBoss && distance < SPAWN_RANGE && site.spawned.length === 0 && this.bossNeeded(def.boss.tag)) {
         this.spawnGroup(site, def.boss, 1, { boss: true });
         scene.showEpic?.(def.boss.name.toUpperCase(), def.name, 2600);
       } else if (def.kind === 'assault' && site.spawned.length === 0 && scene.timeState?.isNight) {
@@ -926,10 +933,12 @@ export class CampaignSystem {
   update(delta) {
     if (!this.state.introShown && this.scene.player && !window.__lendasSplash?.active) {
       this.state.introShown = true;
-      this.ui.dialogue('vigia', `${LORE.despertar.text} "Ei, viajante! Você está vivo. Me ajude a manter o fogo aceso e eu te conto o que sei."`, [
-        { label: 'ACEITAR A PRIMEIRA MISSÃO', primary: true, action: () => this.accept(MISSIONS[0].id) },
-        { label: 'DEPOIS', action: () => {} }
-      ], { title: 'As Cinzas do Primeiro Mundo' });
+      this.ui.showChapter(1, {
+        onClose: () => this.ui.dialogue('vigia', `${LORE.despertar.text} "Ei, viajante! Você está vivo. Me ajude a manter o fogo aceso e eu te conto o que sei."`, [
+          { label: 'ACEITAR A PRIMEIRA MISSÃO', primary: true, action: () => this.accept(MISSIONS[0].id) },
+          { label: 'DEPOIS', action: () => {} }
+        ], { title: 'As Cinzas do Primeiro Mundo' })
+      });
     }
     this.updateSites(delta);
     this.siteTimer -= delta;

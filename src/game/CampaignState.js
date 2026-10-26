@@ -231,6 +231,7 @@ export class CampaignState {
     entry.state = 'done';
     entry.rewarded = true;
     if (mission.lore && !this.lore.includes(mission.lore)) this.lore.push(mission.lore);
+    for (const key of mission.storyLore ?? []) if (!this.lore.includes(key)) this.lore.push(key);
     if (mission.setsFlag) this.flags[mission.setsFlag] = true;
     if (this.tracked === id) this.tracked = null;
     this.refreshAvailability();

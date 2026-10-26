@@ -13,6 +13,8 @@ await runInChrome({ name: 'campaign', port: 9358, width: 1280, height: 800 }, as
 
   // 1. Diálogo de abertura com o vigia; aceitar pela própria caixa de diálogo.
   const intro = await inScene((scene) => {
+    // Primeiro a abertura do capítulo 1; ao continuar, Bram puxa conversa.
+    scene.campaign.ui.closeChapter();
     const dialog = scene.campaign.ui.dialog;
     const visible = !dialog.hidden;
     dialog.querySelector('button[data-dialog="0"]')?.click();
@@ -139,6 +141,7 @@ await runInChrome({ name: 'campaign', port: 9358, width: 1280, height: 800 }, as
     }
     state.refreshAvailability();
     scene.campaign.ui.reward.hidden = true;
+    scene.campaign.ui.closeChapter();
     scene.campaign.ui.closeDialogue();
     scene.campaign.accept(`m${String(target).padStart(3, '0')}`);
     scene.campaign.ui.reward.hidden = true;
@@ -229,6 +232,26 @@ await runInChrome({ name: 'campaign', port: 9358, width: 1280, height: 800 }, as
   check(hazard.region === 'norte' && hazard.cold < hazard.max && hazard.cold >= Math.ceil(hazard.max * 0.15) && hazard.warm === hazard.max,
     `Perigo do norte: ${JSON.stringify(hazard)}`);
 
+  // Missão 6: os dois baús da missão aparecem no mapa e contam como "abrir baú".
+  await jump(6);
+  const chests = await inScene(async (scene) => {
+    scene.campaign.syncWorld();
+    const active = [...scene.campaign.activeSiteIds()];
+    const opened = [];
+    for (const id of ['bau-estrada', 'bau-ruina']) {
+      const site = scene.campaign.sites.get(id);
+      if (!site) continue;
+      scene.player.body.reset(site.def.x, site.def.y + 6);
+      scene.interact();
+      await new Promise((resolve) => setTimeout(resolve, 450));
+      opened.push(id);
+    }
+    const entry = scene.campaign.state.entry('m006');
+    return { active, opened, chestProgress: entry.progress[0], state: entry.state };
+  });
+  check(chests.active.includes('bau-estrada') && chests.active.includes('bau-ruina') && chests.opened.length === 2 && chests.chestProgress >= 2,
+    `Baús da missão 6: ${JSON.stringify(chests)}`);
+
   // Missão 95: escolha final pelo altar.
   await jump(95);
   const choice = await inScene((scene) => {
@@ -243,11 +266,16 @@ await runInChrome({ name: 'campaign', port: 9358, width: 1280, height: 800 }, as
   // Missões 96–98: fases do Golem de Fogo e defesa do núcleo.
   await jump(96);
   const golem = await inScene(async (scene) => {
+    // O Golem de Fogo é o golem de lava do mapa; com a missão 95 concluída ele está liberado.
     const site = scene.campaign.sites.get('nucleo');
     scene.player.body.reset(site.def.x, site.def.y + 200);
+    scene.player.invulnerable = 1e9;
     await new Promise((resolve) => setTimeout(resolve, 500));
-    const enemy = site.spawned[0];
-    if (!enemy) return { spawned: false };
+    scene.campaign.ui.closeChapter();
+    scene.campaign.ui.closeDialogue();
+    scene.updateGolemLock();
+    const enemy = scene.boss;
+    if (!enemy || enemy.dead || enemy.locked) return { spawned: false, dead: enemy?.dead, locked: enemy?.locked };
     scene.damageEnemy(enemy, Math.ceil(enemy.maxHealth * 0.55));
     await new Promise((resolve) => setTimeout(resolve, 400));
     const phase = { m096: scene.campaign.state.stateOf('m096'), m097: scene.campaign.state.stateOf('m097'), enraged: Boolean(enemy.enraged), alive: enemy.active };

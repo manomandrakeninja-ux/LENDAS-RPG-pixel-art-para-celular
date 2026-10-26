@@ -252,7 +252,9 @@ export class Player extends Phaser.GameObjects.Container {
   damage(amount, source = null, options = {}) {
     if (this.invulnerable > 0) return false;
     const fireFactor = options.fire ? 1 - this.fireResistance : 1;
-    const scaled = amount * fireFactor * (COMBAT_CONFIG.enemyDamageToPlayer ?? 1);
+    // fullDamage: o Golem de Fogo bate com o dano cheio (só a defesa reduz).
+    const scaling = options.fullDamage ? 1 : COMBAT_CONFIG.enemyDamageToPlayer ?? 1;
+    const scaled = amount * fireFactor * scaling;
     const dealt = Math.max(1, Math.round(scaled) - this.defense);
     this.health = Math.max(0, this.health - dealt);
     this.invulnerable = 450;

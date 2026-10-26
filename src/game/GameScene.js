@@ -44,8 +44,15 @@ import { RaidDirector } from './RaidDirector.js';
 import { createGameAnimations, preloadGameAssets } from './assets.js';
 import { TORCH_RECIPE } from '../data/itemCatalog.js';
 import { ItemInfoPanel } from './ItemInfoPanel.js';
+import { VillagerManager } from './Villagers.js';
 import { SettingsPanel } from './SettingsPanel.js';
 import { rollMonsterChest } from '../data/monsterChests.js';
+import { MISSIONS } from '../data/campaign.js';
+
+// Primeira missão que pede para enfrentar o Golem de Fogo; a anterior libera a área.
+const GOLEM_MISSION = MISSIONS.find((mission) => mission.objectives.some((objective) =>
+  ['boss', 'bossPhase'].includes(objective.type) && objective.target === BOSS_CONFIG.campaignTag));
+const GOLEM_UNLOCK_MISSION = GOLEM_MISSION ? MISSIONS.find((mission) => mission.number === GOLEM_MISSION.number - 1) : null;
 import { CRAFT_RECIPES_BY_ID, CRAFT_STATIONS, recipeItems } from '../data/craftRecipes.js';
 
 export const PICKAXE_MESSAGE = 'Você precisa de uma picareta para minerar isso.';
@@ -170,6 +177,8 @@ export class GameScene extends Phaser.Scene {
     // Campanha "As Cinzas do Primeiro Mundo": 100 missões, moradores, regiões e diárias.
     this.campaign = new CampaignSystem(this, saved?.campaign);
     this.campaign.state.refreshDaily(this.timeState.dayCount);
+    // Moradores dos prédios (níveis 4 e 8): andam no acampamento, falam e ajudam nas invasões.
+    this.villagers = new VillagerManager(this);
 
     this.keys = this.input.keyboard.addKeys({
       up: 'W', down: 'S', left: 'A', right: 'D',
@@ -188,6 +197,7 @@ export class GameScene extends Phaser.Scene {
       else if (this.campaign?.ui.isOpen) this.campaign.ui.toggleJournal(false);
       else if (this.campaign?.ui.dialog && !this.campaign.ui.dialog.hidden) this.campaign.ui.closeDialogue();
       else if (this.campaign?.ui.reward && !this.campaign.ui.reward.hidden) this.campaign.ui.closeReward();
+      else if (this.campaign?.ui.chapterCard && !this.campaign.ui.chapterCard.hidden) this.campaign.ui.closeChapter();
       else if (this.backpackPanel.isOpen) this.backpackPanel.close();
     });
     this.input.keyboard.on('keydown-M', () => {
@@ -333,6 +343,57 @@ export class GameScene extends Phaser.Scene {
     );
   }
 
+  /** Missão que precisa estar concluída para enfrentar o Golem de Fogo (null = livre). */
+  golemLockMission() {
+    if (!this.campaign || !GOLEM_UNLOCK_MISSION) return null;
+    return this.campaign.state.stateOf(GOLEM_UNLOCK_MISSION.id) === 'done' ? null : GOLEM_UNLOCK_MISSION;
+  }
+
+  /** Trava/destrava o golem e mostra o aviso de área restrita perto dele. */
+  updateGolemLock() {
+    const boss = this.boss;
+    if (!boss) return;
+    const lock = this.golemLockMission();
+    boss.locked = Boolean(lock);
+    // Save antigo em que o golem já tinha sido derrotado: ele volta para as missões dele.
+    if (boss.dead && !lock && this.campaign?.bossNeeded?.(BOSS_CONFIG.campaignTag)) {
+      boss.defeated = false;
+      boss.revive(this.campaign.bossStartRatio?.(BOSS_CONFIG.campaignTag) ?? 1);
+      this.showEpic?.(BOSS_CONFIG.name.toUpperCase(), 'O guardião do Núcleo desperta.', 2600);
+    }
+    if (!lock || boss.dead) return;
+    const distance = Phaser.Math.Distance.Between(this.player.x, this.player.y, boss.x, boss.y);
+    if (distance < 260) this.warnRestrictedArea(lock);
+  }
+
+  warnRestrictedArea(lock = this.golemLockMission()) {
+    if (!lock) return;
+    const now = this.time.now;
+    if (now - (this.restrictedWarnedAt ?? -Infinity) < 3500) return;
+    this.restrictedWarnedAt = now;
+    this.ui.showMessage(`ÁREA RESTRITA • Finalize a missão ${lock.number} (${lock.title}) para enfrentar o ${BOSS_CONFIG.name}.`);
+  }
+
+  /** O alvo é o golem travado? Mostra "IMUNE" e o aviso, e não deixa levar dano. */
+  bossIsProtected(target) {
+    if (!target?.isBoss || !target.locked) return false;
+    this.effects.spawnDamage(target.x, target.y - 30, 'IMUNE', '#9fd2ff');
+    this.effects.spawnHit(target.x, target.y - 20, 0x9fd2ff, 5);
+    this.warnRestrictedArea();
+    return true;
+  }
+
+  /** Cada dano no golem atualiza a fase das missões (metade da vida na missão 96). */
+  onBossDamaged(boss) {
+    const ratio = boss.health / boss.maxHealth;
+    this.campaign?.emit({ type: 'bossPhase', target: BOSS_CONFIG.campaignTag, ratio });
+    if (ratio <= 0.5 && !boss.enraged && boss.health > 0) {
+      boss.enraged = true;
+      boss.sprite?.setTint?.(0xff8a5a);
+      this.showEpic?.('O COLOSSO DESPERTA', `O ${BOSS_CONFIG.name} entra em fúria!`, 2600);
+    }
+  }
+
   /** Algum painel que deve pausar o jogo está aberto? */
   isUiPaused() {
     return Boolean(
@@ -394,8 +455,10 @@ export class GameScene extends Phaser.Scene {
       this.enemyDirector.update(delta, this.player, this.timeState);
       this.camp.defense.update(delta, this.enemies);
       this.updateBuildingLabels();
+      this.villagers?.update(delta);
       this.updateEnemyStatus(delta);
       this.updateTraps();
+      this.updateGolemLock();
       this.boss?.update(delta, this.player);
       this.campaign?.update(delta);
       if (Phaser.Input.Keyboard.JustDown(this.keys.attack)) this.attackNearby();
@@ -621,6 +684,10 @@ export class GameScene extends Phaser.Scene {
       : 1;
     const attack = Math.round(this.player.attack * multiplier);
     const angle = swingAngle;
+    if (this.bossIsProtected(target)) {
+      this.effects.spawnSwingTrail(this.player.x, this.player.y, angle, false);
+      return;
+    }
     const damage = Math.min(target.health, attack);
     this.effects.spawnSwingTrail(this.player.x, this.player.y, angle, finisher);
     this.effects.spawnSlash(target.x, target.y - 10, angle, finisher ? 2 : 1);
@@ -691,6 +758,7 @@ export class GameScene extends Phaser.Scene {
    */
   damageEnemy(enemy, amount, options = {}) {
     if (!enemy?.active || enemy.dead || amount <= 0) return false;
+    if (this.bossIsProtected(enemy)) return false;
     const damage = Math.min(enemy.health, Math.round(amount));
     const killed = enemy.hit(Math.round(amount), null);
     this.effects.spawnDamage(enemy.x, enemy.y - 18, damage, options.color);
@@ -715,7 +783,8 @@ export class GameScene extends Phaser.Scene {
     const targets = this.enemies.filter((enemy) => enemy.active &&
       Phaser.Math.Distance.Between(enemy.x, enemy.y, this.player.x, this.player.y) < COMBAT_CONFIG.specialAttackRange);
     if (this.boss && !this.boss.dead &&
-        Phaser.Math.Distance.Between(this.boss.x, this.boss.y, this.player.x, this.player.y) < COMBAT_CONFIG.specialAttackRange) {
+        Phaser.Math.Distance.Between(this.boss.x, this.boss.y, this.player.x, this.player.y) < COMBAT_CONFIG.specialAttackRange &&
+        !this.bossIsProtected(this.boss)) {
       targets.push(this.boss);
     }
     const specialMultiplier = this.progression.hasPerk('brute')
@@ -880,6 +949,7 @@ export class GameScene extends Phaser.Scene {
     if (!boss || boss.defeated) return;
     boss.dead = true;
     boss.defeated = true;
+    this.campaign?.emit({ type: 'boss', target: BOSS_CONFIG.campaignTag });
     boss.body?.setVelocity(0, 0);
     boss.body?.disableBody?.(true, true);
     boss.setVisible(false);
@@ -894,7 +964,7 @@ export class GameScene extends Phaser.Scene {
     this.dropMonsterChest(boss, 'boss');
     this.camp.equipment.unlockRecipe(BOSS_CONFIG.recipeId);
     this.player.recalculateEquipment(this.camp.equipment);
-    this.ui.showMessage('Titã do Bioma derrotado! Núcleo do Titã e receita rara obtidos.');
+    this.ui.showMessage(`${BOSS_CONFIG.name} derrotado! Núcleo do Titã e receita rara obtidos.`);
     this.audio.playCollect();
     this.cameras.main.shake(420, 0.012, true);
     this.save();

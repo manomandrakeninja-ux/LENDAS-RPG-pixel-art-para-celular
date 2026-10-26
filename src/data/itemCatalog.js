@@ -34,7 +34,7 @@ export const ITEM_DESCRIPTIONS = Object.freeze({
   ectoplasm: 'Resto gelatinoso deixado por fantasmas.',
   bone: 'Ossos de esqueletos e criaturas.',
   silk: 'Fio resistente tecido pelas aranhas gigantes.',
-  titanCore: 'Coração de pedra do Titã do Bioma. Muito raro.',
+  titanCore: 'Coração de pedra do Golem de Fogo. Muito raro.',
   staminaPotion: 'Poção verde que enche todo o vigor.',
   trap: 'Armadilha de ferro que prende e fere quem pisa nela.',
   elixir: 'Elixir que aumenta ataque e defesa por um tempo.',

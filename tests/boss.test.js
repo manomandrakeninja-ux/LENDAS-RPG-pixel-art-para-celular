@@ -6,8 +6,10 @@ import { Inventory } from '../src/game/Inventory.js';
 import { RESOURCE_TYPES } from '../src/game/config.js';
 
 test('biome boss has the requested health, damage, distance and three attack patterns', () => {
-  assert.equal(BOSS_CONFIG.maxHealth, 500);
-  assert.equal(BOSS_CONFIG.damage, 30);
+  assert.equal(BOSS_CONFIG.maxHealth, 10000);
+  assert.equal(BOSS_CONFIG.damage, 70);
+  assert.ok(BOSS_CONFIG.patternCooldownMs >= 3000, 'intervalo maior entre ataques');
+  assert.equal(BOSS_CONFIG.campaignTag, 'golem');
   assert.ok(BOSS_CAMP_DISTANCE > 800);
   assert.deepEqual([...BOSS_CONFIG.patterns], ['charge', 'slam', 'volley']);
   assert.equal(BOSS_CONFIG.coinDrop, 50);

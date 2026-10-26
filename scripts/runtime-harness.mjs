@@ -102,6 +102,8 @@ export async function runInChrome({ name, port, width = 960, height = 640, mobil
         check();
       })`);
       await delay(400);
+      // A abertura do capítulo 1 pausa o jogo: fecha como o jogador faria (a conversa com Bram vem em seguida).
+      await evaluate(`window.__LENDAS__.scene.getScene('GameScene')?.campaign?.ui?.closeChapter?.()`);
     };
     const capture = async (fileName) => {
       const screenshot = await send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false });
@@ -124,7 +126,10 @@ export async function runInChrome({ name, port, width = 960, height = 640, mobil
     await send('Log.enable');
     await send('Page.enable');
     await send('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile });
-    await waitForScene();
+    // Se o jogo nem abrir, mostra os erros do console junto (facilita achar a causa).
+    await waitForScene().catch((error) => {
+      throw new Error(`${error.message} Erros do console: ${JSON.stringify(errors)}`);
+    });
     const result = await body({ evaluate, inScene, capture, reload, freshStart, delay, send, errors });
     check(errors.length === 0, `Erros no console do jogo: ${JSON.stringify(errors)}`);
     console.log(JSON.stringify({ ...result, consoleErrors: errors.length }, null, 2));

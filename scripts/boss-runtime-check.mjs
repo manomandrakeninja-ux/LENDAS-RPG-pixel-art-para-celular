@@ -140,7 +140,7 @@ try {
       mapStrongEnemies: scene.worldMap.lastMarkerCounts.strongEnemies
     };
   })()`);
-  if (!initial.exists || initial.health !== 500 || initial.maxHealth !== 500 || initial.damage !== 30 ||
+  if (!initial.exists || initial.health !== 10000 || initial.maxHealth !== 10000 || initial.damage !== 70 ||
       initial.distance <= 800 || !initial.barHidden || initial.mapStrongEnemies !== 1) {
     throw new Error(`Estado inicial do chefe incorreto: ${JSON.stringify(initial)}`);
   }
@@ -148,8 +148,18 @@ try {
   await evaluate(`(() => {
     const scene = window.__LENDAS__.scene.getScene('GameScene');
     // Conversas e painéis da campanha pausam o jogo: fecha antes de testar o chefe.
+    scene.campaign?.ui.closeChapter();
     scene.campaign?.ui.closeDialogue();
     if (scene.campaign) scene.campaign.ui.reward.hidden = true;
+    scene.campaign?.ui.closeDialogue();
+    // Área restrita: antes da missão 95, o Golem de Fogo não leva dano e avisa qual missão falta.
+    scene.updateGolemLock();
+    const lockedBefore = scene.boss.health;
+    const blocked = scene.damageEnemy(scene.boss, 100);
+    window.__golemLock = { locked: scene.boss.locked, blocked: !blocked && scene.boss.health === lockedBefore, message: scene.ui.message.text };
+    // Libera a área (missão 95 concluída) para testar os ataques.
+    scene.campaign.state.missions.m095.state = 'done';
+    scene.updateGolemLock();
     const boss = scene.boss;
     boss.patternCooldown = 999999;
     scene.player.body.reset(boss.x + 90, boss.y);
@@ -165,7 +175,11 @@ try {
       barWidth: document.getElementById('boss-health-fill').style.width
     };
   })()`);
-  if (near.barHidden || near.barText !== '500 / 500' || near.barWidth !== '100%') {
+  const golemLock = await evaluate('window.__golemLock');
+  if (!golemLock.locked || !golemLock.blocked || !golemLock.message.includes('ÁREA RESTRITA') || !golemLock.message.includes('missão 95')) {
+    throw new Error(`Área restrita do Golem falhou: ${JSON.stringify(golemLock)}`);
+  }
+  if (near.barHidden || near.barText !== '10000 / 10000' || near.barWidth !== '100%') {
     throw new Error(`Barra de vida do chefe não apareceu: ${JSON.stringify(near)}`);
   }
   await capture();
@@ -211,14 +225,14 @@ try {
       text: document.getElementById('boss-health-values').textContent
     };
   })()`);
-  if (damaged.health !== 400 || damaged.text !== '400 / 500') {
+  if (damaged.health !== 9900 || damaged.text !== '9900 / 10000') {
     throw new Error(`Dano no chefe não foi aplicado: ${JSON.stringify(damaged)}`);
   }
 
   const defeated = await evaluate(`(async () => {
     const scene = window.__LENDAS__.scene.getScene('GameScene');
     const boss = scene.boss;
-    boss.hit(500);
+    boss.hit(10000);
     scene.defeatBoss(boss);
     scene.player.body.reset(boss.x, boss.y);
     await new Promise((resolve) => setTimeout(resolve, 300));

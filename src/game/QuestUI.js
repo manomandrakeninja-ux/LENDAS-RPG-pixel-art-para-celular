@@ -1,6 +1,7 @@
 import { BUILDING_DEFS } from '../data/buildings.js';
 import { FARM_CROPS, ANIMAL_PRODUCTS, FORGE_RECIPES } from '../data/buildingSystems.js';
 import { CAMPAIGN_TITLE, CHAPTERS, LORE, MISSIONS, MISSIONS_BY_ID, NPCS, REGIONS, SEALS, SITES } from '../data/campaign.js';
+import { CHAPTER_STORY } from '../data/story.js';
 import { ENEMY_TYPES } from '../data/enemies.js';
 import { RESOURCE_TYPES } from './config.js';
 import { resourceIconHtml, textureUrl } from './iconUrls.js';
@@ -51,6 +52,12 @@ export class QuestUI {
     this.dialog.hidden = true;
     this.reward = make('section', 'quest-reward');
     this.reward.hidden = true;
+    this.chapterCard = make('section', 'quest-chapter');
+    this.chapterCard.hidden = true;
+    this.chapterCard.setAttribute('role', 'dialog');
+    this.chapterCard.addEventListener('click', (event) => {
+      if (event.target.closest('button')) this.closeChapter();
+    });
     this.reward.addEventListener('click', (event) => {
       if (event.target.closest('button')) this.reward.hidden = true;
     });
@@ -58,7 +65,7 @@ export class QuestUI {
   }
 
   destroy() {
-    for (const element of [this.tracker, this.toasts, this.journal, this.dialog, this.reward]) element?.remove();
+    for (const element of [this.tracker, this.toasts, this.journal, this.dialog, this.reward, this.chapterCard]) element?.remove();
   }
 
   get isOpen() {
@@ -67,11 +74,40 @@ export class QuestUI {
 
   /** Diário, conversa ou tela de missão concluída abertos: o jogo pausa. */
   get isBlocking() {
-    return !this.journal.hidden || !this.dialog.hidden || !this.reward.hidden;
+    return !this.journal.hidden || !this.dialog.hidden || !this.reward.hidden || !this.chapterCard.hidden;
   }
 
   closeReward() {
     this.reward.hidden = true;
+  }
+
+  /** Tela de abertura do capítulo: ilustração em pixel art, título e a história. */
+  showChapter(number, { title = null, kicker = null, text = null, image = null, onClose = null } = {}) {
+    const chapter = CHAPTERS[number - 1];
+    const story = CHAPTER_STORY[number] ?? {};
+    const art = `assets/story/${image === 'final' ? 'final' : `capitulo-${number}`}.png`;
+    this.chapterOnClose = onClose;
+    this.chapterCard.innerHTML = `
+      <div class="quest-chapter__card">
+        <div class="quest-chapter__art"><img src="${art}" alt="" onerror="this.parentElement.hidden = true"></div>
+        <div class="quest-chapter__text">
+          <p class="quest-chapter__kicker">${escapeHtml(title ? kicker ?? '' : `CAPÍTULO ${number} • ${story.kicker ?? ''}`)}</p>
+          <h2>${escapeHtml(title ?? chapter?.title ?? '')}</h2>
+          <p>${escapeHtml(text ?? story.text ?? '')}</p>
+          <button type="button" class="button--primary">CONTINUAR</button>
+        </div>
+      </div>`;
+    this.chapterCard.hidden = false;
+    this.reward.hidden = true;
+    this.chapterCard.querySelector('button')?.focus({ preventScroll: true });
+  }
+
+  closeChapter() {
+    if (this.chapterCard.hidden) return;
+    this.chapterCard.hidden = true;
+    const next = this.chapterOnClose;
+    this.chapterOnClose = null;
+    next?.();
   }
 
   // ---------- Textos ----------
@@ -308,6 +344,9 @@ export class QuestUI {
       <div class="quest-seals">${seals}</div>
       <h4 class="quest-section">Moradores • ${state.residents + 1} no acampamento${state.choice ? ` • Decisão: ${state.choice === 'restore' ? 'restaurar o guardião' : 'destruir o Golem'}` : ''}</h4>
       <div class="quest-npcs">${npcs}</div>
+      <h4 class="quest-section">Capítulos</h4>
+      <div class="quest-chapters-list">${CHAPTERS.filter((chapter) => chapter.number <= state.currentChapter).map((chapter) => `
+        <button type="button" data-q-story="${chapter.number}">${chapter.number}. ${escapeHtml(chapter.title)}</button>`).join('')}</div>
       <h4 class="quest-section">Registros da história</h4>
       ${lore}`;
   }
@@ -317,6 +356,12 @@ export class QuestUI {
     if (!button || button.disabled) return;
     const data = button.dataset;
     if ('qClose' in data) { this.toggleJournal(false); return; }
+    if (data.qStory) {
+      // Rever a abertura de um capítulo: fecha o diário e reabre depois.
+      this.toggleJournal(false);
+      this.showChapter(Number(data.qStory), { onClose: () => this.toggleJournal(true) });
+      return;
+    }
     if (data.qTab) this.tab = data.qTab;
     if (data.qChapter) {
       this.chapter = Number(data.qChapter);

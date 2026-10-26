@@ -20,7 +20,15 @@ export class BiomeBoss extends Phaser.GameObjects.Container {
     this.isElite = false;
     this.name = BOSS_CONFIG.name;
     this.maxHealth = BOSS_CONFIG.maxHealth;
-    this.health = Math.min(this.maxHealth, Math.max(1, Number(saved.health) || this.maxHealth));
+    // Saves antigos guardavam a vida sobre 500: mantém a mesma proporção na vida nova.
+    const savedMax = Number(saved.maxHealth) || 500;
+    const savedHealth = Number(saved.health);
+    this.health = Number.isFinite(savedHealth) && savedHealth > 0
+      ? Math.min(this.maxHealth, Math.max(1, Math.round((savedHealth / savedMax) * this.maxHealth)))
+      : this.maxHealth;
+    // Travado (área restrita) até a missão anterior à do Golem ser concluída.
+    this.locked = false;
+    this.enraged = this.health <= this.maxHealth * 0.5;
     this.damage = BOSS_CONFIG.damage;
     this.speed = BOSS_CONFIG.speed;
     this.dead = Boolean(saved.defeated);
@@ -82,6 +90,14 @@ export class BiomeBoss extends Phaser.GameObjects.Container {
 
   update(delta, player) {
     if (this.dead) return;
+    if (this.locked) {
+      // Área restrita: o golem fica parado guardando o núcleo e não ataca.
+      if (this.state !== 'idle') this.endPattern();
+      this.body.setVelocity(0, 0);
+      this.updateProjectiles(delta, player);
+      this.setDepth(this.y + 30);
+      return;
+    }
     const distance = Phaser.Math.Distance.Between(this.x, this.y, player.x, player.y);
     if (this.state === 'idle') {
       this.patternCooldown = Math.max(0, this.patternCooldown - delta);
@@ -170,7 +186,7 @@ export class BiomeBoss extends Phaser.GameObjects.Container {
       this.body.setVelocity(Math.cos(this.chargeAngle) * 470, Math.sin(this.chargeAngle) * 470);
       if (!this.patternHit && Phaser.Math.Distance.Between(this.x, this.y, player.x, player.y) < 62) {
         this.patternHit = true;
-        player.damage(this.damage, this);
+        player.damage(this.damage, this, { fullDamage: true });
       }
     } else {
       this.body.setVelocity(0, 0);
@@ -193,7 +209,7 @@ export class BiomeBoss extends Phaser.GameObjects.Container {
         onComplete: () => ring.destroy()
       });
       if (Phaser.Math.Distance.Between(this.x, this.y, player.x, player.y) < 155) {
-        player.damage(this.damage, this);
+        player.damage(this.damage, this, { fullDamage: true });
       }
       this.scene.cameras.main.shake(240, 0.008, true);
     } else if (this.pattern === 'volley') {
@@ -220,7 +236,7 @@ export class BiomeBoss extends Phaser.GameObjects.Container {
       projectile.image.x += projectile.velocityX * seconds;
       projectile.image.y += projectile.velocityY * seconds;
       if (Phaser.Math.Distance.Between(projectile.image.x, projectile.image.y, player.x, player.y) < 27) {
-        player.damage(this.damage, this);
+        player.damage(this.damage, this, { fullDamage: true });
         projectile.image.destroy();
         this.projectiles = this.projectiles.filter((entry) => entry !== projectile);
       } else if (projectile.age > 1400) {
@@ -241,8 +257,9 @@ export class BiomeBoss extends Phaser.GameObjects.Container {
   }
 
   hit(amount) {
-    if (this.dead) return false;
+    if (this.dead || this.locked) return false;
     this.health = Math.max(0, this.health - Math.max(0, Number(amount) || 0));
+    this.scene.onBossDamaged?.(this);
     this.sprite.setTint(0xffc2a8);
     this.scene.time.delayedCall(100, () => {
       if (this.active) this.sprite.clearTint();
@@ -257,7 +274,17 @@ export class BiomeBoss extends Phaser.GameObjects.Container {
   }
 
   serialize() {
-    return { defeated: this.dead, health: this.health };
+    return { defeated: this.dead, health: this.health, maxHealth: this.maxHealth };
+  }
+
+  /** Volta à vida (save antigo em que o golem já tinha sido derrotado antes da missão). */
+  revive(ratio = 1) {
+    this.dead = false;
+    this.health = Math.max(1, Math.round(this.maxHealth * ratio));
+    this.enraged = ratio <= 0.5;
+    this.body.enable = true;
+    this.setVisible(true);
+    this.setActive(true);
   }
 
   destroy(fromScene) {

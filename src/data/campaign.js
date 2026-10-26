@@ -26,6 +26,9 @@
 //   choice    {target: 'golem'}                  decisão do jogador
 //   residents {count}                            moradores no acampamento (estado)
 
+import { BOSS_CONFIG } from './boss.js';
+import { MISSION_STORY, STORY_LORE } from './story.js';
+
 export const CAMPAIGN_VERSION = 1;
 export const CAMPAIGN_TITLE = 'As Cinzas do Primeiro Mundo';
 
@@ -153,6 +156,9 @@ export const SITES = {
   cogumelos: { name: 'Clareira de Cogumelos', ...at(-520, -260), kind: 'source', art: 'mushrooms', gives: { food: 1 }, emits: { type: 'structure', target: 'mushroom' }, uses: 3 },
   poco: { name: 'Poço Antigo', ...at(-470, 230), kind: 'source', art: 'well', gives: { water: 1 }, uses: 8 },
   deposito: { name: 'Depósito Infestado', ...at(560, -380), kind: 'enemies', art: 'crates', enemies: { kind: 'slime', visual: 'rat', name: 'Rato Gigante', tag: 'rato', count: 2, scale: 0.9 } },
+  // Dois baús da missão 6 perto da carroça (marcados no mapa enquanto a missão está ativa).
+  'bau-estrada': { name: 'Baú da Estrada', ...at(470, 380), kind: 'loot', art: 'chestSmall', gives: { wood: 3, food: 2 }, emits: { type: 'structure', target: 'chest' } },
+  'bau-ruina': { name: 'Baú da Ruína', ...at(760, 220), kind: 'loot', art: 'chestSmall', gives: { herbs: 2, potion: 1 }, emits: { type: 'structure', target: 'chest' } },
   carroca: { name: 'Carroça Abandonada', ...at(620, 300), kind: 'loot', art: 'cart', gives: { fabric: 3 } },
   sobrevivente: { name: 'Sobrevivente Ferido', ...at(-620, 520), kind: 'rescue', art: 'tent', recruits: 'curandeira' },
   cristal: { name: 'Cristal Vermelho', ...at(380, 560), kind: 'investigate', art: 'redCrystal', lore: 'fragmento' },
@@ -248,7 +254,8 @@ export const SITES = {
   'portao-nucleo': { name: 'Portas do Núcleo', ...inRegion('montanha', 0, 120), kind: 'enemies', art: 'portal', enemies: { kind: 'skeleton', visual: 'emberKnight', name: 'Sentinela das Brasas', tag: 'sentinela', count: 3, elite: true } },
   'coracao-adormecido': { name: 'Coração Adormecido', ...inRegion('montanha', 0, 40), kind: 'investigate', art: 'redCrystal', lore: 'coracao' },
   'altar-escolha': { name: 'Altar da Escolha', ...inRegion('montanha', 0, 40), kind: 'choice', art: 'altar' },
-  nucleo: { name: 'Núcleo de Eldoria', ...inRegion('montanha', 0, -20), kind: 'boss', art: 'portal', boss: { kind: 'werewolf', visual: 'golem', name: 'Golem de Fogo', tag: 'golem', health: 22, damage: 1.8, scale: 1.35 } },
+  // O Golem de Fogo é o golem de lava do mapa (BiomeBoss): o local só marca onde ele está.
+  nucleo: { name: 'Núcleo de Eldoria', x: BOSS_CONFIG.x, y: BOSS_CONFIG.y + 60, kind: 'boss', art: 'portal', boss: { kind: 'werewolf', visual: 'golem', name: 'Golem de Fogo', tag: 'golem', worldBoss: true } },
   estabilizar: { name: 'Estabilização do Núcleo', ...inRegion('montanha', 0, -20), kind: 'defend', art: 'portal', enemies: { kind: 'skeleton', visual: 'emberKnight', name: 'Brasa Viva', tag: 'brasa', count: 2 } },
   ritual: { name: 'Ritual do Amanhecer', ...inRegion('montanha', 0, -20), kind: 'investigate', art: 'altar', lore: 'amanhecer' }
 };
@@ -341,7 +348,7 @@ export const MISSIONS = [
     [o.kill('slime', 3)]),
   mission(5, 'vigia', 'Água para Todos', 'Busque água no Poço Antigo, a sudoeste, e entregue ao vigia.',
     [o.deliver('water', 5)], { items: { potion: 1 } }),
-  mission(6, 'vigia', 'A Carroça Abandonada', 'Abra dois baús pelo mapa e recupere os tecidos da carroça abandonada a sudeste.',
+  mission(6, 'vigia', 'A Carroça Abandonada', 'Abra dois baús (Baú da Estrada e Baú da Ruína, marcados no mapa a sudeste) e recupere os tecidos da carroça abandonada.',
     [o.structure('chest', 2), o.gather('fabric', 3)]),
   mission(7, 'vigia', 'Luz na Floresta', 'Fabrique uma tocha na Fogueira (2 madeiras + 1 tecido) e resgate o sobrevivente ferido a sudoeste.',
     [o.craft('torch', 1), o.rescue('sobrevivente')], { items: { herbs: 2 } }),
@@ -539,7 +546,7 @@ export const MISSIONS = [
     [o.interact('coracao-adormecido')], { lore: 'coracao' }),
   mission(95, 'vigia', 'A Última Escolha', 'Decida o destino do guardião: destruí-lo ou restaurá-lo.',
     [o.choice('golem')]),
-  mission(96, 'capitao', 'O Golem de Fogo', 'Enfrente a primeira fase do Golem de Fogo: reduza a vida dele à metade.',
+  mission(96, 'capitao', 'O Golem de Fogo', 'Enfrente o Golem de Fogo no Núcleo de Eldoria, a noroeste: reduza a vida dele à metade.',
     [o.bossPhase('golem', 0.5)]),
   mission(97, 'capitao', 'O Colosso Desperto', 'O Golem desperta em fúria. Sobreviva à segunda fase e derrote-o.',
     [o.boss('golem')], { coins: 400, autoAccept: true }),
@@ -550,6 +557,16 @@ export const MISSIONS = [
   mission(100, 'construtor', 'Uma Nova Lenda', 'Ajude a reconstruir a vila e celebre com todos os moradores.',
     [o.deliver('wood', 30), o.deliver('stone', 20), o.talk('vigia')], { coins: 800, setsFlag: 'postGame', outro: 'Eldoria renasce. E o seu nome agora é uma lenda.' })
 ];
+
+// História (src/data/story.js): falas extras, desfechos e registros. Objetivos e recompensas não mudam.
+for (const entry of MISSIONS) {
+  const story = MISSION_STORY[entry.number];
+  if (!story) continue;
+  if (story.intro) entry.intro = story.intro;
+  if (story.outro) entry.outro = story.outro;
+  if (story.lore) entry.storyLore = [...story.lore];
+}
+Object.assign(LORE, STORY_LORE);
 
 export const MISSIONS_BY_ID = Object.fromEntries(MISSIONS.map((entry) => [entry.id, entry]));
 

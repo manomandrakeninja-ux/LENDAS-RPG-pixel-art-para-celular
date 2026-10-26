@@ -3,6 +3,7 @@ import path from 'node:path';
 import { PixelCanvas, darken, dither, hash, lighten, ramp } from '../src/art/pixel.js';
 import { writePng } from './png.js';
 import { KNIGHT_FRAME, drawKnightFrame } from '../src/art/knight.js';
+import { STORY_SCENE_KEYS, drawStoryScene } from '../src/art/storyScenes.js';
 
 // Gera toda a pixel art do jogo (PNG + atlas da Phaser) em public/assets/.
 // Rode com `npm run assets:generate`. Os tamanhos e nomes dos quadros são usados
@@ -1330,3 +1331,8 @@ makeAtlas('ui/panel-atlas.json', [{
 }]);
 
 console.log('Pixel art gerada em public/assets/.');
+
+// ---------- Ilustrações dos capítulos (abertura de cada capítulo e final) ----------
+for (const key of STORY_SCENE_KEYS) {
+  writePng(path.join(root, 'story', key === 'final' ? 'final.png' : `capitulo-${key}.png`), drawStoryScene(key));
+}
