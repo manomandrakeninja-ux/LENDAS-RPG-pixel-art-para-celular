@@ -18,7 +18,7 @@ import { Enemy } from './Enemies.js';
 import { RESOURCE_TYPES } from './config.js';
 import { LEATHER_DROP, RARE_SHOP } from '../data/campaign.js';
 import { QuestUI } from './QuestUI.js';
-import { ENDINGS, GOLEM_CHOICE, NPC_STORY_LINES } from '../data/story.js';
+import { AURELIAN_ECHOES, AURELIAN_FINAL_WORDS, AURELIAN_LINES, BONDS, ENDINGS, GOLEM_CHOICE, NPC_STORY_LINES, SECRET_ENDING, SPEAKERS } from '../data/story.js';
 
 const INTERACT_RANGE = 46;
 const SPAWN_RANGE = 380;
@@ -77,6 +77,7 @@ export class CampaignSystem {
     };
     const arts = new Set(Object.values(SITES).map((site) => site.art).filter(Boolean));
     for (const art of [...arts, 'pillarLit', 'bridgeFixed']) put(`site-${art}`, drawSiteArt(art));
+    for (const [id, speaker] of Object.entries(SPEAKERS)) put(`npc-${id}-0`, drawNpc(speaker.palette, 0));
     for (const [id, npc] of Object.entries(NPCS)) {
       for (const frame of [0, 1]) put(`npc-${id}-${frame}`, drawNpc(npc.palette, frame));
       if (!this.scene.anims.exists(`npc-${id}-idle`)) {
@@ -135,6 +136,9 @@ export class CampaignSystem {
       });
     }
     for (const id of Object.keys(this.eventSites)) ids.add(id);
+    for (const echo of AURELIAN_ECHOES) {
+      if (state.stateOf(echo.afterMission) === 'done' && !state.lore.includes(echo.lore)) ids.add(echo.id);
+    }
     // Locais já resolvidos somem.
     for (const id of [...ids]) {
       const saved = state.sites[id] ?? {};
@@ -286,6 +290,7 @@ export class CampaignSystem {
         if (state === 'active' && this.state.isComplete(mission, ctx)) { mark = '?'; break; }
         if (state === 'available') mark = '!';
       }
+      if (!mark && this.pendingBond(id)) mark = '...';
       npc.marker.setText(mark);
     }
   }
@@ -388,6 +393,9 @@ export class CampaignSystem {
     else if (next) this.offerMission(next);
     if (mission.chapter !== next?.chapter && next) this.ui.showChapter(next.chapter);
     if (id === MISSIONS[DAILY_UNLOCK_MISSION - 1].id) this.state.refreshDaily(this.scene.timeState.dayCount);
+    for (const [npcId, bond] of Object.entries(BONDS)) {
+      if (bond.afterMission === id) this.ui.toast(`${NPCS[npcId].name} quer conversar com você.`, 'gold');
+    }
     if (mission.number === 99) this.showEnding();
     this.syncWorld();
     this.ui.refresh();
@@ -478,9 +486,13 @@ export class CampaignSystem {
 
   /** Final conforme a escolha da missão 95 (fica salvo nos Registros). */
   showEnding() {
-    const ending = ENDINGS[this.state.choice === 'destroy' ? 'destroy' : 'restore'];
+    const key = ['destroy', 'free'].includes(this.state.choice) ? this.state.choice : 'restore';
+    const ending = ENDINGS[key];
     this.state.addLore(ending.lore);
-    this.ui.showChapter(10, { title: ending.title, kicker: 'Fim da campanha', text: LORE[ending.lore].text, image: 'final' });
+    this.ui.showChapter(10, {
+      title: ending.title, kicker: key === 'free' ? 'Final secreto' : 'Fim da campanha', text: LORE[ending.lore].text, image: ending.image ?? 'final',
+      onClose: () => this.ui.dialogue('aurelian', AURELIAN_FINAL_WORDS[key], [{ label: 'CONTINUAR', action: () => {} }])
+    });
   }
 
   // ---------- Interação (tecla E / botão de ação) ----------
@@ -502,7 +514,7 @@ export class CampaignSystem {
       if (['marker', 'enemies', 'boss', 'defend', 'assault'].includes(def.kind)) continue;
       const distance = Phaser.Math.Distance.Between(player.x, player.y, def.x, def.y);
       if (distance < bestDistance + 8) {
-        const verbs = { source: 'Coletar em', loot: 'Revistar', investigate: 'Investigar', rescue: 'Resgatar', talk: 'Falar em', pillar: 'Ativar', choice: 'Decidir em' };
+        const verbs = { source: 'Coletar em', loot: 'Revistar', investigate: 'Investigar', rescue: 'Resgatar', talk: 'Falar em', pillar: 'Ativar', choice: 'Decidir em', echo: 'Ouvir' };
         best = { type: 'site', id, label: `${verbs[def.kind] ?? 'Usar'} ${def.name}` };
         bestDistance = distance;
       }
@@ -537,6 +549,11 @@ export class CampaignSystem {
         { label: 'ACEITAR', primary: true, action: () => this.accept(offer.id) },
         { label: 'AGORA NÃO', action: () => {} }
       ]);
+      return;
+    }
+    const bond = this.pendingBond(id);
+    if (bond) {
+      this.openBond(id, bond);
       return;
     }
     if (id === 'mercador' && (this.state.flags.shadowMerchant || this.state.flags.mirageMarket)) {
@@ -658,11 +675,21 @@ export class CampaignSystem {
       case 'pillar':
         this.activatePillar(id, def);
         break;
+      case 'echo': {
+        // Memória de Aurelian: cena ilustrada e depois a voz do rei.
+        const echo = AURELIAN_ECHOES.find((entry) => entry.id === def.echo);
+        if (!echo) return;
+        this.state.addLore(echo.lore);
+        this.ui.toast(`Eco do Rei encontrado: ${echo.title.replace('Memória: ', '')}`, 'gold');
+        this.ui.showChapter(10, {
+          title: echo.title, kicker: 'Eco do Rei', text: echo.text, image: 'aurelian',
+          onClose: () => this.ui.dialogue('aurelian', echo.speech, [{ label: 'CONTINUAR', action: () => {} }])
+        });
+        break;
+      }
       case 'choice':
-        this.ui.dialogue(null, GOLEM_CHOICE.text, [
-          { label: GOLEM_CHOICE.restore.label, primary: true, action: () => this.makeChoice('restore') },
-          { label: GOLEM_CHOICE.destroy.label, action: () => this.makeChoice('destroy') }
-        ], { title: GOLEM_CHOICE.title });
+        // Primeiro fala o que restou de Aurelian; depois a escolha.
+        this.ui.dialogue('aurelian', AURELIAN_LINES.choice, [{ label: 'OUVIR A ESCOLHA', primary: true, action: () => this.showGolemChoice() }]);
         return;
       default:
         return;
@@ -672,9 +699,44 @@ export class CampaignSystem {
     scene.save();
   }
 
+  /** Missão 95: restaurar, destruir ou (com tudo descoberto) libertar o Coração. */
+  showGolemChoice() {
+    const secret = this.state.secretProgress();
+    const options = [
+      { label: GOLEM_CHOICE.restore.label, primary: true, action: () => this.makeChoice('restore') },
+      { label: GOLEM_CHOICE.destroy.label, action: () => this.makeChoice('destroy') }
+    ];
+    if (secret.unlocked) options.unshift({ label: SECRET_ENDING.choice.label, primary: true, action: () => this.makeChoice('free') });
+    const text = secret.unlocked
+      ? `${GOLEM_CHOICE.text} Você reuniu todas as memórias do rei, os laços com os moradores e as provas do Eclipse: o Coração pode ser libertado.`
+      : `${GOLEM_CHOICE.text} ${SECRET_ENDING.hint}`;
+    this.ui.dialogue(null, text, options, { title: GOLEM_CHOICE.title });
+  }
+
+  /** Conversa pessoal disponível com o morador (laço), se houver. */
+  pendingBond(id) {
+    const bond = BONDS[id];
+    if (!bond || this.state.stateOf(bond.afterMission) !== 'done') return null;
+    return this.state.flags[`bond_${id}`] === undefined ? bond : null;
+  }
+
+  openBond(id, bond) {
+    this.ui.dialogue(id, bond.text, bond.options.map((option) => ({
+      label: option.label,
+      primary: option.bond,
+      action: () => {
+        this.state.flags[`bond_${id}`] = option.bond;
+        if (option.bond) this.ui.toast(`Laço fortalecido com ${NPCS[id].name}.`, 'gold');
+        this.ui.dialogue(id, option.reply, [{ label: 'CONTINUAR', action: () => {} }]);
+        this.refreshMarkers();
+        this.scene.save();
+      }
+    })));
+  }
+
   makeChoice(choice) {
     this.state.choice = choice;
-    this.ui.toast(GOLEM_CHOICE[choice]?.toast ?? 'Escolha registrada.', 'gold');
+    this.ui.toast(GOLEM_CHOICE[choice]?.toast ?? SECRET_ENDING.choice.toast, 'gold');
     this.afterProgress();
     this.scene.save();
   }

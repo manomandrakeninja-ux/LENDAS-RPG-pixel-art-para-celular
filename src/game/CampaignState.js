@@ -1,3 +1,4 @@
+import { SECRET_ENDING } from '../data/story.js';
 import {
   CAMPAIGN_VERSION,
   DAILY_COUNT,
@@ -97,7 +98,7 @@ export class CampaignState {
     this.lore = Array.isArray(data.lore) ? [...new Set(data.lore)] : [];
     this.recruited = Array.isArray(data.recruited) ? [...new Set(data.recruited)] : [];
     this.residents = clampInt(data.residents, 0, 999);
-    this.choice = data.choice === 'destroy' || data.choice === 'restore' ? data.choice : null;
+    this.choice = ['destroy', 'restore', 'free'].includes(data.choice) ? data.choice : null;
     this.tracked = MISSIONS_BY_ID[data.tracked] ? data.tracked : null;
     this.sites = { ...(data.sites ?? {}) };
     this.introShown = Boolean(data.introShown);
@@ -283,6 +284,18 @@ export class CampaignState {
     if (!seal || this.seals.includes(seal)) return false;
     this.seals.push(seal);
     return true;
+  }
+
+  /** Progresso do final secreto: Ecos do Rei, laços com os moradores e provas do Eclipse. */
+  secretProgress() {
+    const echoes = SECRET_ENDING.echoes.filter((key) => this.lore.includes(key)).length;
+    const bonds = SECRET_ENDING.bonds.filter((id) => this.flags[`bond_${id}`] === true).length;
+    const evidence = SECRET_ENDING.evidence.filter((key) => this.lore.includes(key)).length;
+    return {
+      echoes, bonds, evidence,
+      totals: { echoes: SECRET_ENDING.echoes.length, bonds: SECRET_ENDING.bonds.length, evidence: SECRET_ENDING.evidence.length },
+      unlocked: echoes === SECRET_ENDING.echoes.length && bonds === SECRET_ENDING.bonds.length && evidence === SECRET_ENDING.evidence.length
+    };
   }
 
   addLore(key) {

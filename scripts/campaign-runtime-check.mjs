@@ -258,8 +258,11 @@ await runInChrome({ name: 'campaign', port: 9358, width: 1280, height: 800 }, as
     const site = scene.campaign.sites.get('altar-escolha');
     scene.player.body.reset(site.def.x, site.def.y + 6);
     scene.interact();
+    // Primeiro fala Aurelian (OUVIR A ESCOLHA); depois vêm as opções.
+    const aurelian = scene.campaign.ui.dialog.querySelector('h3')?.textContent;
     scene.campaign.ui.dialog.querySelector('button[data-dialog="0"]').click();
-    return { choice: scene.campaign.state.choice, state: scene.campaign.state.stateOf('m095') };
+    scene.campaign.ui.dialog.querySelector('button[data-dialog="0"]').click();
+    return { aurelian, choice: scene.campaign.state.choice, state: scene.campaign.state.stateOf('m095') };
   });
   check(choice.choice === 'restore' && choice.state === 'done', `Escolha: ${JSON.stringify(choice)}`);
 

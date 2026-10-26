@@ -75,7 +75,7 @@ test('campaign has 100 unique missions, 10 per chapter, with valid references', 
 });
 
 test('every quest site has art, a known kind and a position inside the world', () => {
-  const kinds = new Set(['marker', 'source', 'loot', 'investigate', 'rescue', 'talk', 'enemies', 'boss', 'pillar', 'defend', 'assault', 'choice']);
+  const kinds = new Set(['marker', 'source', 'loot', 'investigate', 'rescue', 'talk', 'enemies', 'boss', 'pillar', 'defend', 'assault', 'choice', 'echo']);
   for (const [id, site] of Object.entries(SITES)) {
     assert.ok(kinds.has(site.kind), `${id}: ${site.kind}`);
     assert.ok(site.x > 0 && site.x < 2880 && site.y > 0 && site.y < 2160, `${id}: posição`);

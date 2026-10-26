@@ -1334,5 +1334,5 @@ console.log('Pixel art gerada em public/assets/.');
 
 // ---------- Ilustrações dos capítulos (abertura de cada capítulo e final) ----------
 for (const key of STORY_SCENE_KEYS) {
-  writePng(path.join(root, 'story', key === 'final' ? 'final.png' : `capitulo-${key}.png`), drawStoryScene(key));
+  writePng(path.join(root, 'story', /^\d+$/.test(key) ? `capitulo-${key}.png` : `${key}.png`), drawStoryScene(key));
 }

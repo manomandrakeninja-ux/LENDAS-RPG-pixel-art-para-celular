@@ -27,7 +27,7 @@
 //   residents {count}                            moradores no acampamento (estado)
 
 import { BOSS_CONFIG } from './boss.js';
-import { MISSION_STORY, STORY_LORE } from './story.js';
+import { AURELIAN_ECHOES, MISSION_STORY, STORY_LORE } from './story.js';
 
 export const CAMPAIGN_VERSION = 1;
 export const CAMPAIGN_TITLE = 'As Cinzas do Primeiro Mundo';
@@ -259,6 +259,11 @@ export const SITES = {
   estabilizar: { name: 'Estabilização do Núcleo', ...inRegion('montanha', 0, -20), kind: 'defend', art: 'portal', enemies: { kind: 'skeleton', visual: 'emberKnight', name: 'Brasa Viva', tag: 'brasa', count: 2 } },
   ritual: { name: 'Ritual do Amanhecer', ...inRegion('montanha', 0, -20), kind: 'investigate', art: 'altar', lore: 'amanhecer' }
 };
+
+// Ecos do Rei (opcionais): memórias de Aurelian que aparecem depois de certas missões.
+for (const echo of AURELIAN_ECHOES) {
+  SITES[echo.id] = { name: echo.name, ...inRegion(echo.region, echo.offset[0], echo.offset[1]), kind: 'echo', art: 'altar', echo: echo.id };
+}
 
 // Registros da história, liberados ao longo da campanha (aba Registros do Diário).
 export const LORE = {

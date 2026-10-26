@@ -441,6 +441,67 @@ function sceneDawn(c) {
   }
 }
 
+
+function sceneAurelian(c) {
+  // Salão do trono em ruínas: o rei diante do Coração aberto, céu vermelho pelas janelas.
+  sky(c, ['#14060a', '#2a0a10', '#4a1018']);
+  for (const x of [30, 90, 150, 210]) {
+    fill(c, x - 8, 0, 16, 96, '#1e1216');
+    fill(c, x - 8, 0, 2, 96, '#3a242a');
+    c.polygon([[x - 5, 20], [x, 8], [x + 5, 20], [x + 5, 50], [x - 5, 50]], '#c02a1a');
+    c.line(x, 8, x, 50, '#5a1010');
+  }
+  fill(c, 0, 96, W, H - 96, '#1a1014');
+  for (let x = 0; x < W; x += 12) fill(c, x, 96, 1, H - 96, '#2a1a1e');
+  // Coração de Eldoria: esfera pulsante com raios.
+  for (let i = 0; i < 12; i += 1) {
+    const angle = (i / 12) * Math.PI * 2;
+    c.line(120, 54, 120 + Math.cos(angle) * 46, 54 + Math.sin(angle) * 30, '#7a1a2a');
+  }
+  c.shadedEllipse(120, 54, 16, 16, ['#8a0a1a', '#d0202a', '#ff6a5a', '#ffd0c0']);
+  glow(c, 120, 54, 50, '#ff4a4a', 0.5);
+  // Os cinco selos flutuando em volta.
+  const seals = ['#7ac04a', '#4aa0e0', '#e0e0ff', '#ffe27a', '#ff7a2a'];
+  seals.forEach((color, index) => {
+    const angle = -Math.PI / 2 + (index / 5) * Math.PI * 2;
+    const x = 120 + Math.cos(angle) * 30;
+    const y = 54 + Math.sin(angle) * 22;
+    c.shadedEllipse(x, y, 3, 3, ['#2a2a2a', color, '#ffffff', '#ffffff']);
+  });
+  // Aurelian de costas, coroa e manto, com a mão estendida.
+  c.polygon([[104, 132], [112, 98], [128, 98], [136, 132]], '#3a1a4a');
+  c.polygon([[112, 98], [128, 98], [130, 110], [110, 110]], '#5a2a6a');
+  c.shadedEllipse(120, 92, 6, 6, ['#6a6070', '#8a8090', '#a8a0b0', '#c8c0d0']);
+  for (const dx of [-5, -2, 1, 4]) c.polygon([[120 + dx, 86], [121 + dx, 82], [122 + dx, 86]], '#e8c15a');
+  fill(c, 115, 86, 11, 2, '#e8c15a');
+  c.line(128, 102, 138, 86, '#3a1a4a');
+  glow(c, 138, 86, 8, '#ff9a8a', 0.5);
+}
+
+function sceneFreedHeart(c) {
+  // O Coração libertado: o Golem se desfaz em luz sobre a montanha ao amanhecer.
+  sky(c, ['#1a2a5a', '#6a5a9a', '#f0a07a', '#fff0c0'], 100);
+  ridge(c, 100, '#3a3048', { seed: 52, height: 26 });
+  fill(c, 0, 100, W, H - 100, '#2a2a34');
+  // Golem ajoelhado, rachado de luz.
+  const stone = ['#3a3a44', '#55556a', '#76768a', '#9a9aae'];
+  c.shadedEllipse(120, 88, 26, 18, stone);
+  c.shadedEllipse(120, 64, 10, 10, stone);
+  c.shadedEllipse(96, 96, 9, 12, stone);
+  c.shadedEllipse(144, 96, 9, 12, stone);
+  for (const [x0, y0, x1, y1] of [[120, 72, 112, 96], [120, 72, 130, 98], [100, 84, 92, 104], [140, 84, 148, 104]]) c.line(x0, y0, x1, y1, '#fff4c0');
+  // O Coração subindo livre, com faíscas douradas.
+  c.shadedEllipse(120, 34, 9, 9, ['#d08a2a', '#ffd06a', '#fff0b0', '#ffffff']);
+  glow(c, 120, 34, 46, '#ffe08a', 0.55);
+  for (let i = 0; i < 40; i += 1) {
+    const x = 70 + hash(i, 1, 71) * 100;
+    const y = 20 + hash(i, 2, 71) * 70;
+    c.pixel(x, y, hash(i, 3, 71) > 0.5 ? '#fff4c0' : '#ffd06a');
+  }
+  // O portador e os aliados assistindo.
+  for (const [x, body] of [[40, '#2a3440'], [52, '#3a6a3a'], [190, '#7a3a2a'], [202, '#5a4a7a']]) person(c, x, 128, { body, head: '#e0b080', scale: 1.5 });
+}
+
 const SCENES = {
   1: sceneCampfire,
   2: sceneVillage,
@@ -452,7 +513,9 @@ const SCENES = {
   8: sceneBlackFortress,
   9: sceneForge,
   10: sceneGolem,
-  final: sceneDawn
+  final: sceneDawn,
+  aurelian: sceneAurelian,
+  libertar: sceneFreedHeart
 };
 
 export const STORY_SCENE_KEYS = Object.freeze(Object.keys(SCENES));

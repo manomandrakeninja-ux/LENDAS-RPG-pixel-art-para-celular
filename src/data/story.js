@@ -74,6 +74,11 @@ export const STORY_LORE = Object.freeze({
   portador: { title: 'O Portador do Fragmento', text: 'Anos atrás, o Eclipse tentou forjar um sexto selo para controlar os outros cinco. O experimento destruiu tudo e só uma criança sobreviveu: você. O fragmento é o que restou desse selo. Por isso os templos respondem ao seu toque.' },
   coracao: { title: 'O Coração Adormecido', text: 'Dentro do núcleo, o Coração ainda pensa e sente. Com os cinco selos, ele pode ser preso de novo — ou a prisão pode ser quebrada para sempre.' },
   finalDestruir: { title: 'Final: o fim do ciclo pela força', text: 'O Golem caiu e o núcleo se apagou. As criaturas corrompidas perderam a força e a Ordem do Eclipse desmoronou. Mas a magia antiga também sumiu de parte do mundo. Nem toda vitória devolve o que foi destruído.' },
+  aurelianConflito: { title: 'O conflito de Aurelian', text: 'O rei não é simplesmente mau. Tomou uma decisão desesperada, foi enganado e condenou o próprio povo. Sua consciência ficou presa às memórias do Coração, dividida entre assumir a culpa e acreditar que, com mais poder, teria salvado todos.' },
+  ecoCoroa: { title: 'Eco do Rei: a coroa partida', text: 'Aurelian partiu a própria coroa num salão cheio de doentes. Ele não queria poder: queria tempo para salvar cada um.' },
+  ecoGelo: { title: 'Eco do Rei: a voz no gelo', text: 'Uma luz sem rosto prometeu cura se ele abrisse o Coração. Os guardiões imploraram para ele parar. Ele escolheu a voz que lhe dava esperança.' },
+  ecoForja: { title: 'Eco do Rei: a última ordem', text: 'Consumido pelo Coração, Aurelian ordenou que os guardiões o prendessem junto com a energia. Foi a primeira ordem que deu por todos, e não por si.' },
+  finalLibertar: { title: 'Final secreto: o Coração livre', text: 'Você libertou a consciência do Coração e deixou que ela escolhesse o próprio destino. Aurelian reconheceu sua culpa, o Eclipse perdeu o controle da energia e o Golem se desfez por vontade própria. Eldoria não voltou. Algo novo começou, sem rei, sem profecia e sem poder absoluto.' },
   finalRestaurar: { title: 'Final: o renascimento de Eldoria', text: 'Os cinco selos e o fragmento estabilizaram o núcleo. O Golem parou de lutar e revelou as memórias de Aurelian. A corrupção foi purificada, mas os mortos não voltaram. O passado pode ensinar o futuro, mas não substituí-lo.' },
   amanhecer: { title: 'O Amanhecer', text: 'As cinzas assentam e o sol volta a nascer. O acampamento é agora o primeiro povoado de uma nova era — sem rei, sem profecia, construído pelas mãos de quem sobreviveu.' }
 });
@@ -98,7 +103,7 @@ export const MISSION_STORY = Object.freeze({
   33: { intro: 'Kael diz que os animais da floresta atacam como se estivessem feridos por dentro.' },
   39: { outro: 'A visão termina e o fragmento queima na sua pele. Você viu a Noite das Cinzas como se estivesse lá.' },
   40: { lore: ['noiteCinzas'], outro: 'O Selo da Terra pulsa junto do fragmento. Ele não prende só o mal: guarda também a consciência de um reino inteiro.' },
-  47: { lore: ['aurelian'] },
+  47: { lore: ['aurelian', 'aurelianConflito'] },
   50: { outro: 'A confissão do rei ecoa nas ruínas. Uma voz o enganou. E alguém, hoje, está repetindo o mesmo ritual.' },
   57: { outro: 'Ninguém no vilarejo lembra o próprio nome. Lia anota cada rosto para que ninguém seja apagado.' },
   60: { lore: ['memorias'], outro: 'O Selo da Água mostra Aurelian chorando diante do Coração aberto. A entidade se alimenta de culpa — e ele tinha muita.' },
@@ -174,5 +179,113 @@ export const GOLEM_CHOICE = Object.freeze({
 /** Finais (missão 99), conforme a escolha da missão 95. */
 export const ENDINGS = Object.freeze({
   restore: { title: 'O RENASCIMENTO DE ELDORIA', lore: 'finalRestaurar' },
-  destroy: { title: 'O FIM DO CICLO PELA FORÇA', lore: 'finalDestruir' }
+  destroy: { title: 'O FIM DO CICLO PELA FORÇA', lore: 'finalDestruir' },
+  free: { title: 'O CORAÇÃO LIVRE', lore: 'finalLibertar', image: 'libertar' }
+});
+
+// ---------- Aurelian, o Último Rei ----------
+// O vilão que tentou salvar o mundo: decidiu desesperado, foi enganado e condenou o próprio povo.
+// A consciência dele ficou presa às memórias do Coração. Conflito: assumir a culpa ou continuar
+// acreditando que, com mais poder, teria salvado todos.
+
+/** Quem fala nos diálogos sem ser morador do acampamento (retrato próprio). */
+export const SPEAKERS = Object.freeze({
+  aurelian: {
+    name: 'Aurelian, o Último Rei',
+    palette: { tunic: '#4a2a5a', scarf: '#d9b45c', hair: '#d8d8e0', skin: '#b8b0c8', beard: true, hat: '#e8c15a' }
+  }
+});
+
+/** Ecos do Rei: memórias de Aurelian escondidas no mundo (opcionais, contam para o final secreto). */
+export const AURELIAN_ECHOES = Object.freeze([
+  {
+    id: 'eco-coroa', name: 'Eco do Rei: a Coroa Partida', region: 'valdora', offset: [-260, 120], afterMission: 'm050', lore: 'ecoCoroa',
+    title: 'Memória: a coroa partida',
+    text: 'Você vê Aurelian jovem, coroado sob aplausos. Depois, o mesmo salão vazio, cheio de leitos de doentes. Ele tira a coroa e a parte ao meio: "De que serve um rei que não salva ninguém?"',
+    speech: 'Eu não queria poder. Eu queria tempo. Mais um dia para cada criança naquela ala. Você entende isso, portador?'
+  },
+  {
+    id: 'eco-gelo', name: 'Eco do Rei: o Lago Congelado', region: 'norte', offset: [260, 120], afterMission: 'm060', lore: 'ecoGelo',
+    title: 'Memória: a voz no gelo',
+    text: 'No reflexo do lago, Aurelian ajoelha diante de uma luz sem rosto. A voz promete cura para todos se ele abrir o Coração. Os guardiões gritam para ele parar. Ele escolhe ouvir a voz.',
+    speech: 'A voz falava como um deus. Os guardiões falavam como juízes. Eu escolhi quem me dava esperança... e a esperança tinha dentes.'
+  },
+  {
+    id: 'eco-forja', name: 'Eco do Rei: as Cinzas da Forja', region: 'montanha', offset: [-220, 60], afterMission: 'm088', lore: 'ecoForja',
+    title: 'Memória: a última ordem',
+    text: 'A Noite das Cinzas vista de dentro do Coração. O rei, já consumido, ordena que os guardiões o prendam junto com a energia. É a última ordem que ele dá, e a primeira que dá por todos, e não por si.',
+    speech: 'Mil anos repetindo a mesma conta: se eu tivesse mais força, teria salvado todos. Talvez a resposta nunca tenha sido força.'
+  }
+]);
+
+/** Laços: conversas pessoais com os moradores (opcionais, contam para o final secreto). */
+export const BONDS = Object.freeze({
+  cacador: {
+    afterMission: 'm040',
+    text: 'Kael encara o horizonte. "Matei hoje um lobo que só estava ferido pela magia dos selos. E se a maioria deles puder ser curada?"',
+    options: [
+      { label: 'VAMOS CURAR OS QUE PUDERMOS', bond: true, reply: 'Kael sorri pela primeira vez em dias. "Então eu aprendo a mirar só no que precisa morrer."' },
+      { label: 'MONSTRO É MONSTRO', bond: false, reply: 'Kael assente devagar, mas não parece convencido.' }
+    ]
+  },
+  curandeira: {
+    afterMission: 'm060',
+    text: 'Lia segura o caderno com os nomes de todos. "Existe um ritual que cura a corrupção, mas apaga as minhas memórias. Se eu esquecer, quem lembra de vocês?"',
+    options: [
+      { label: 'NÓS LEMBRAMOS POR VOCÊ', bond: true, reply: '"Então deixo o caderno com você", diz Lia, mais leve. "Prometa que vai ler os nomes em voz alta."' },
+      { label: 'NÃO ARRISQUE NADA', bond: false, reply: 'Lia fecha o caderno. "Talvez você tenha razão." Ela não parece aliviada.' }
+    ]
+  },
+  mercador: {
+    afterMission: 'm067',
+    text: 'Zeno não olha nos seus olhos. "Vendi pedras dos templos para gente de preto. Não sabia para quê. Posso fugir hoje à noite... ou ficar e consertar."',
+    options: [
+      { label: 'FIQUE E CONSERTE', bond: true, reply: '"O pior negócio da minha vida", ri Zeno, nervoso. "E o único que vale a pena." Ele te entrega a lista dos compradores do Eclipse.' },
+      { label: 'FAÇA O QUE QUISER', bond: false, reply: 'Zeno guarda as moedas em silêncio.' }
+    ]
+  },
+  capitao: {
+    afterMission: 'm076',
+    text: 'Mirela queima uma ordem falsa na fogueira. "Obedeci a um traidor e quase perdemos as torres. Talvez eu não sirva para comandar."',
+    options: [
+      { label: 'DECIDA POR CONTA PRÓPRIA', bond: true, reply: '"Sem ordens, sem desculpas", diz Mirela. "Só eu e o peso das escolhas. Combinado."' },
+      { label: 'SIGA AS ORDENS DE SEMPRE', bond: false, reply: 'Mirela endireita o uniforme. "Sim, senhor." A voz sai vazia.' }
+    ]
+  },
+  ferreiro: {
+    afterMission: 'm077',
+    text: 'Doran examina as ferramentas do mestre. "Ele forjou armas para Eldoria e viu no que deu. Se eu terminar a obra dele, vou repetir o mesmo erro?"',
+    options: [
+      { label: 'FORJE PARA PROTEGER', bond: true, reply: 'Doran grava no cabo do martelo: "Toda lâmina guarda um juramento." "Agora sei qual é o meu."' },
+      { label: 'ARMAS SÃO SÓ ARMAS', bond: false, reply: 'Doran volta para a bigorna sem dizer nada.' }
+    ]
+  },
+  vigia: {
+    afterMission: 'm080',
+    text: 'Bram mexe no fogo. "Escondi a verdade de você por anos. Tive medo de te perder para o Eclipse. Você me perdoa?"',
+    options: [
+      { label: 'VOCÊ ME PROTEGEU. EU PERDOO', bond: true, reply: 'Bram fecha os olhos por um longo tempo. "Obrigado, filho. Agora vamos terminar isso juntos."' },
+      { label: 'VOCÊ DEVIA TER CONTADO', bond: false, reply: '"Eu sei", diz Bram. E não diz mais nada pelo resto da noite.' }
+    ]
+  }
+});
+
+/** Final secreto (C): exige os 3 Ecos do Rei, todos os laços e as provas do Eclipse. */
+export const SECRET_ENDING = Object.freeze({
+  echoes: AURELIAN_ECHOES.map((echo) => echo.lore),
+  bonds: Object.keys(BONDS),
+  evidence: ['ordens', 'rota', 'eclipse', 'documentos'],
+  choice: { label: 'LIBERTAR O CORAÇÃO', toast: 'Você decidiu libertar o Coração e deixar que ele escolha o próprio destino.' },
+  hint: 'Algo ainda está incompleto. Talvez existam memórias do rei, conversas e provas que você não encontrou.'
+});
+
+/** O que Aurelian diz em cada final (o conflito dele). */
+export const AURELIAN_FINAL_WORDS = Object.freeze({
+  destroy: '"Se eu tivesse mais força... não, nem agora." A voz do rei se apaga junto com o núcleo, ainda contando os que não salvou.',
+  restore: '"Então continuarei aqui, guardando o que quebrei." Aurelian aceita a prisão, mas ainda sonha com o poder que teria salvado todos.',
+  free: '"Fui eu. Não a voz, não a praga, não o destino. Fui eu." Pela primeira vez em mil anos Aurelian assume a culpa, e por isso finalmente pode descansar.'
+});
+
+export const AURELIAN_LINES = Object.freeze({
+  choice: 'Portador... eu sou o que restou de Aurelian. Abri o Coração para salvar meu povo e condenei todos. Escolha melhor do que eu escolhi.'
 });

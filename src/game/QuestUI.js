@@ -1,7 +1,7 @@
 import { BUILDING_DEFS } from '../data/buildings.js';
 import { FARM_CROPS, ANIMAL_PRODUCTS, FORGE_RECIPES } from '../data/buildingSystems.js';
 import { CAMPAIGN_TITLE, CHAPTERS, LORE, MISSIONS, MISSIONS_BY_ID, NPCS, REGIONS, SEALS, SITES } from '../data/campaign.js';
-import { CHAPTER_STORY } from '../data/story.js';
+import { CHAPTER_STORY, SPEAKERS } from '../data/story.js';
 import { ENEMY_TYPES } from '../data/enemies.js';
 import { RESOURCE_TYPES } from './config.js';
 import { resourceIconHtml, textureUrl } from './iconUrls.js';
@@ -85,7 +85,7 @@ export class QuestUI {
   showChapter(number, { title = null, kicker = null, text = null, image = null, onClose = null } = {}) {
     const chapter = CHAPTERS[number - 1];
     const story = CHAPTER_STORY[number] ?? {};
-    const art = `assets/story/${image === 'final' ? 'final' : `capitulo-${number}`}.png`;
+    const art = `assets/story/${image ?? `capitulo-${number}`}.png`;
     this.chapterOnClose = onClose;
     this.chapterCard.innerHTML = `
       <div class="quest-chapter__card">
@@ -342,8 +342,12 @@ export class QuestUI {
     return `
       <h4 class="quest-section">Selos elementais (${state.seals.length}/5)</h4>
       <div class="quest-seals">${seals}</div>
-      <h4 class="quest-section">Moradores • ${state.residents + 1} no acampamento${state.choice ? ` • Decisão: ${state.choice === 'restore' ? 'restaurar o guardião' : 'destruir o Golem'}` : ''}</h4>
+      <h4 class="quest-section">Moradores • ${state.residents + 1} no acampamento${state.choice ? ` • Decisão: ${{ restore: 'restaurar o guardião', destroy: 'destruir o Golem', free: 'libertar o Coração' }[state.choice]}` : ''}</h4>
       <div class="quest-npcs">${npcs}</div>
+      ${state.currentChapter >= 5 ? (() => {
+        const secret = state.secretProgress();
+        return `<p class="quest-secret">${secret.unlocked ? 'Tudo foi descoberto. Na Última Escolha haverá outro caminho.' : 'Algo ainda está incompleto…'} Memórias do rei ${secret.echoes}/${secret.totals.echoes} • Laços ${secret.bonds}/${secret.totals.bonds} • Provas do Eclipse ${secret.evidence}/${secret.totals.evidence}</p>`;
+      })() : ''}
       <h4 class="quest-section">Capítulos</h4>
       <div class="quest-chapters-list">${CHAPTERS.filter((chapter) => chapter.number <= state.currentChapter).map((chapter) => `
         <button type="button" data-q-story="${chapter.number}">${chapter.number}. ${escapeHtml(chapter.title)}</button>`).join('')}</div>
@@ -379,7 +383,7 @@ export class QuestUI {
 
   /** Caixa de diálogo com retrato. options: [{label, action, primary?, disabled?}] */
   dialogue(npcId, text, options = [], { title = null, keepOpen = false } = {}) {
-    const npc = npcId ? NPCS[npcId] : null;
+    const npc = npcId ? NPCS[npcId] ?? SPEAKERS[npcId] : null;
     const portrait = npc ? textureUrl(this.scene, `npc-${npcId}-0`) : '';
     this.dialogOptions = options;
     this.dialog.innerHTML = `

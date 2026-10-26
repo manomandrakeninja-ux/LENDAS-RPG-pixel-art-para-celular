@@ -51,6 +51,85 @@ await runInChrome({ name: 'story', port: 9389, width: 1280, height: 800 }, async
   const choice = await inScene((scene) => ({ choice: scene.campaign.state.choice }));
   check(choice.choice === 'destroy', `Escolha não ficou salva: ${JSON.stringify(choice)}`);
 
+  // 4b. Aurelian: Eco do Rei aparece depois da missão 50 e mostra a memória ilustrada.
+  const echo = await inScene(async (scene) => {
+    const campaign = scene.campaign;
+    const state = campaign.state;
+    campaign.ui.closeChapter();
+    campaign.ui.closeDialogue();
+    for (const [id, entry] of Object.entries(state.missions)) {
+      const n = Number(id.slice(1));
+      entry.state = n <= 80 ? 'done' : 'locked';
+      entry.rewarded = n <= 80;
+    }
+    state.refreshAvailability();
+    campaign.syncWorld();
+    const site = campaign.sites.get('eco-coroa');
+    if (!site) return { site: false };
+    scene.player.body.reset(site.def.x, site.def.y + 6);
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    campaign.useSite('eco-coroa');
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    const card = document.querySelector('.quest-chapter');
+    const image = card.querySelector('img');
+    const shown = { visible: !card.hidden, title: card.querySelector('h2').textContent, image: image.naturalWidth, src: image.getAttribute('src') };
+    campaign.ui.closeChapter();
+    const speaker = campaign.ui.dialog.querySelector('h3')?.textContent;
+    campaign.ui.closeDialogue();
+    campaign.syncWorld();
+    return { site: true, shown, speaker, lore: state.lore.includes('ecoCoroa'), gone: !campaign.sites.has('eco-coroa') };
+  });
+  check(echo.site && echo.shown.visible && echo.shown.image === 240 && echo.shown.src.includes('aurelian') && echo.speaker === 'Aurelian, o Último Rei' && echo.lore && echo.gone,
+    `Eco do Rei: ${JSON.stringify(echo)}`);
+  await capture('historia-eco-do-rei.png');
+
+  // 4c. Laço: Kael quer conversar depois da missão 40; a resposta gentil fortalece o laço.
+  const bond = await inScene((scene) => {
+    const campaign = scene.campaign;
+    campaign.talkToNpc('cacador');
+    const text = campaign.ui.dialog.textContent;
+    campaign.ui.dialog.querySelector('button[data-dialog="0"]').click();
+    const reply = campaign.ui.dialog.textContent;
+    campaign.ui.closeDialogue();
+    return { asked: text.includes('Kael'), flag: campaign.state.flags.bond_cacador, reply: reply.slice(0, 60) };
+  });
+  check(bond.asked && bond.flag === true, `Laço com Kael: ${JSON.stringify(bond)}`);
+
+  // 4d. Missão 95: sem tudo descoberto, duas opções; com tudo, aparece "Libertar o Coração".
+  const secret = await inScene((scene) => {
+    const campaign = scene.campaign;
+    const labels = () => [...campaign.ui.dialog.querySelectorAll('button')].map((button) => button.textContent);
+    campaign.showGolemChoice();
+    const before = labels();
+    campaign.ui.closeDialogue();
+    for (const key of ['ecoCoroa', 'ecoGelo', 'ecoForja', 'ordens', 'rota', 'eclipse', 'documentos']) campaign.state.addLore(key);
+    for (const npc of ['cacador', 'curandeira', 'mercador', 'capitao', 'ferreiro', 'vigia']) campaign.state.flags[`bond_${npc}`] = true;
+    campaign.showGolemChoice();
+    const after = labels();
+    campaign.ui.dialog.querySelector('button[data-dialog="0"]').click();
+    return { before, after, choice: campaign.state.choice };
+  });
+  check(!secret.before.includes('LIBERTAR O CORAÇÃO') && secret.after.includes('LIBERTAR O CORAÇÃO') && secret.choice === 'free',
+    `Final secreto: ${JSON.stringify(secret)}`);
+
+  // 4e. Final secreto: cena "libertar" e as palavras finais de Aurelian.
+  const ending = await inScene(async (scene) => {
+    const campaign = scene.campaign;
+    campaign.ui.closeDialogue();
+    campaign.showEnding();
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    const card = document.querySelector('.quest-chapter');
+    const result = { title: card.querySelector('h2').textContent, image: card.querySelector('img').naturalWidth, src: card.querySelector('img').getAttribute('src') };
+    campaign.ui.closeChapter();
+    result.words = campaign.ui.dialog.textContent.includes('Fui eu');
+    campaign.ui.closeDialogue();
+    result.lore = campaign.state.lore.includes('finalLibertar');
+    scene.save();
+    return result;
+  });
+  await capture('historia-final-secreto.png');
+  check(ending.title === 'O CORAÇÃO LIVRE' && ending.image === 240 && ending.src.includes('libertar') && ending.words && ending.lore, `Final secreto: ${JSON.stringify(ending)}`);
+
   // 5. Moradores: nível 4 traz o homem, nível 8 a mulher.
   const villagers = await inScene(async (scene) => {
     scene.campaign.ui.closeChapter();
@@ -108,6 +187,6 @@ await runInChrome({ name: 'story', port: 9389, width: 1280, height: 800 }, async
     };
   });
   check(fight.damaged >= 10 && fight.damaged % 10 === 0 && !fight.playerTargetsVillager, `Luta dos moradores: ${JSON.stringify(fight)}`);
-  return { opening, lore, bramStory: bramStory.outro, choice, villagers, fight };
+  return { opening, lore, bramStory: bramStory.outro, choice, echo, bond, secret, ending, villagers, fight };
 });
 console.log('História e moradores OK.');
