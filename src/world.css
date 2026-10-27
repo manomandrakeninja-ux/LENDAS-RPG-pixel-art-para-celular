@@ -246,3 +246,13 @@
 .bestiary__drop--common small { color: #cfd8c4; }
 .bestiary__drop--uncommon small { color: #6ad0ff; }
 .bestiary__drop--rare small { color: #ffc84a; }
+
+.achievements__body { overflow-y: auto; max-height: 70vh; padding: 8px 12px; color: #f3e6c8; }
+.achievements__body h3 { margin: 8px 0 4px; font-size: 13px; color: #ffd56b; }
+.achievements__body ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.achievements__body li { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 5px 8px; background: rgba(0, 0, 0, 0.3); border: 1px solid #5b4630; font-size: 12px; opacity: 0.65; }
+.achievements__body li.is-done { opacity: 1; border-color: #c9a54a; }
+.achievements__body small { display: block; color: #bfae8a; }
+.achievements__daily li { display: block; }
+.achievements__body button { font: inherit; padding: 3px 8px; cursor: pointer; }
+.achievements__body button.is-active { background: #c9a54a; }

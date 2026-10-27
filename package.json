@@ -40,7 +40,8 @@
     "test:runtime:hunt": "node scripts/hunt-runtime-check.mjs",
     "test:runtime:comfort": "node scripts/comfort-runtime-check.mjs",
     "test:runtime:content": "node scripts/content-runtime-check.mjs",
-    "test:runtime:companions": "node scripts/companions-runtime-check.mjs"
+    "test:runtime:companions": "node scripts/companions-runtime-check.mjs",
+    "test:runtime:achievements": "node scripts/achievements-runtime-check.mjs"
   },
   "dependencies": {
     "@fontsource/press-start-2p": "^5.2.6",

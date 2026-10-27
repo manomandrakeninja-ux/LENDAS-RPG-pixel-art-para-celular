@@ -40,6 +40,7 @@ import { HuntUI } from './HuntUI.js';
 import { InvasionDirector } from './InvasionDirector.js';
 import { INVASION_CONFIG, invasionCoins } from './RegionInvasion.js';
 import { XpBoost } from './XpEvents.js';
+import { AchievementSystem } from './AchievementSystem.js';
 import { CompanionSystem } from './CompanionSystem.js';
 import { HeroChoice, shouldAskHero } from './HeroChoice.js';
 import { HERO_LABELS, normalizeGender } from './HeroStyle.js';
@@ -165,6 +166,9 @@ export class GameScene extends Phaser.Scene {
     // Mascotes e montaria (saves antigos não têm o campo).
     this.companions = new CompanionSystem(this, saved?.companions);
     this.companions.sync();
+    this.achievements = new AchievementSystem(this, saved?.achievements);
+    this.achievements.refreshDaily();
+    this.achievements.syncTitle();
     this.enemyDirector.populate(this.timeState);
     this.camp.defense.setupEnemyCollision(this.enemies);
     this.effects = new PixelEffects(this);
@@ -241,6 +245,7 @@ export class GameScene extends Phaser.Scene {
     });
     this.input.keyboard.on('keydown-ESC', () => {
       if (this.worldMap.isOpen) this.worldMap.close();
+      else if (this.achievements?.isOpen) this.achievements.close();
       else if (this.bestiaryPanel?.isOpen) this.bestiaryPanel.close();
       else if (this.equipmentPanel?.isOpen) this.equipmentPanel.close();
       else if (this.buildingMenu.isOpen) this.buildingMenu.close();
@@ -266,6 +271,7 @@ export class GameScene extends Phaser.Scene {
       if (this.ui.campOpen || !this.overlayBlocked()) this.toggleCampMenu();
     });
     this.input.keyboard.on('keydown-F', () => this.restAtCamp());
+    this.input.keyboard.on('keydown-T', () => { if (this.achievements.isOpen || !this.overlayBlocked()) this.achievements.toggle(); });
     this.input.keyboard.on('keydown-G', () => { if (!this.overlayBlocked()) this.companions.action('mount'); });
     this.input.keyboard.on('keydown-R', () => this.sleepAtCamp());
     // Ataque, especial, esquiva, interagir e poção: teclas configuráveis (Ajustes → Teclas).
@@ -352,6 +358,7 @@ export class GameScene extends Phaser.Scene {
       this.touch?.destroy();
       this.worldMap?.destroy();
       this.bestiaryPanel?.destroy();
+      this.achievements?.destroy();
       this.equipmentPanel?.destroy();
       this.levelUpOverlay?.destroy();
       document.removeEventListener('visibilitychange', this.handleVisibilityChange);
@@ -444,6 +451,7 @@ export class GameScene extends Phaser.Scene {
     this.camp.pay(cost);
     const result = this.gear.enhance(uid);
     if (result.success) this.audio.playCollect();
+    this.achievements?.onEnhance(result);
     return this.afterGearChange(result);
   }
 
@@ -538,6 +546,7 @@ export class GameScene extends Phaser.Scene {
       this.itemInfo?.isOpen ||
       this.settingsPanel?.isOpen ||
       this.bestiaryPanel?.isOpen ||
+      this.achievements?.isOpen ||
       this.equipmentPanel?.isOpen ||
       (this.campaign?.ui?.reward && !this.campaign.ui.reward.hidden)
     );
@@ -603,6 +612,7 @@ export class GameScene extends Phaser.Scene {
       this.itemInfo?.isOpen ||
       this.settingsPanel?.isOpen ||
       this.bestiaryPanel?.isOpen ||
+      this.achievements?.isOpen ||
       this.equipmentPanel?.isOpen ||
       this.heroChoice?.isOpen ||
       this.campaign?.ui?.isBlocking
@@ -678,6 +688,7 @@ export class GameScene extends Phaser.Scene {
     this.experiencePickups.update(delta, this.player, (amount) => this.collectExperience(amount));
     this.coinPickups.update(delta, this.player, (amount) => this.collectCoins(amount));
     this.companions?.update(delta, paused);
+    this.achievements?.update();
 
     const resource = this.world.nearbyResource(this.player.x, this.player.y);
     const structureCandidate = this.harvestStructures.nearest(this.player.x, this.player.y);
@@ -779,6 +790,7 @@ export class GameScene extends Phaser.Scene {
       this.ui.showMessage('Um viajante chegou à fogueira com uma missão.');
     }
     this.raid.checkDay(day);
+    if (this.achievements?.refreshDaily()) this.ui.showMessage("Novas missões do dia (tecla T).");
     this.invasion.checkDay(day);
     this.announceXpEvent();
     this.campaign?.onDayAdvance(day);
@@ -1125,6 +1137,7 @@ export class GameScene extends Phaser.Scene {
 
   collectCoins(amount) {
     this.economy.addCoins(amount);
+    this.achievements?.note('coins', amount);
     this.ui.showMessage(`+${amount} moedas`);
     this.audio.playCollect();
     this.save();
@@ -1216,6 +1229,7 @@ export class GameScene extends Phaser.Scene {
     amount = boosted;
     const result = this.progression.addXp(amount);
     this.player.recalculateEquipment(this.camp.equipment);
+    if (result.leveledUp) this.achievements?.checkAchievements();
     if (result.leveledUp && shouldShowWardTip(levelBefore, this.progression.level)) {
       this.showEpic(WARD_TIP_TITLE, WARD_TIP_TEXT, 7000);
     }
@@ -1286,6 +1300,7 @@ export class GameScene extends Phaser.Scene {
     this.coinPickups.spawn(boss.x, boss.y + 8, BOSS_CONFIG.coinDrop);
     this.dropMonsterChest(boss, 'boss');
     this.companions?.onBossDefeated();
+    this.achievements?.note('bosses', 1);
     this.camp.equipment.unlockRecipe(BOSS_CONFIG.recipeId);
     this.player.recalculateEquipment(this.camp.equipment);
     this.ui.showMessage(`${BOSS_CONFIG.name} derrotado! Núcleo do Titã e receita rara obtidos.`);
@@ -1303,6 +1318,7 @@ export class GameScene extends Phaser.Scene {
     if (!enemy || enemy.dead) return;
     enemy.dead = true;
     this.travelers.recordKill(enemy.kind);
+    this.achievements?.note('kills', 1);
     const deathColor = enemy.isElite ? 0xffd56b : enemy.kind === 'wolf' ? 0xb9a984 : 0x9fd477;
     this.effects.spawnDeath(enemy.x, enemy.y - 8, deathColor);
     const drops = enemy.rollDrops();
@@ -1331,7 +1347,7 @@ export class GameScene extends Phaser.Scene {
       this.deathBackpacks.create(enemy.x, enemy.y, result.remaining);
     }
     if (enemy.isElite || enemy.isQuestBoss) this.dropMonsterChest(enemy, enemy.isQuestBoss ? 'boss' : 'elite');
-    if (enemy.isQuestBoss) this.companions?.onBossDefeated();
+    if (enemy.isQuestBoss) { this.companions?.onBossDefeated(); this.achievements?.note('bosses', 1); }
     this.dropGear(enemy);
     this.camp.questKills += 1;
     const gained = Object.entries(result.accepted)
@@ -2281,6 +2297,7 @@ export class GameScene extends Phaser.Scene {
       invasion: this.invasion?.serialize(),
       xpBoost: this.xpBoost?.serialize(),
       companions: this.companions?.serialize(),
+      achievements: this.achievements?.serialize(),
       hero: { gender: this.heroGender }
     });
   }

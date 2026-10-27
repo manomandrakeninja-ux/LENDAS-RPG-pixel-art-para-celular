@@ -335,6 +335,7 @@ export class CampaignSystem {
 
   /** Itens obtidos de verdade (coleta, baú, drop, colheita, animais) contam para "coletar". */
   onGathered(bundle = {}) {
+    this.scene.achievements?.onGather(bundle);
     for (const [target, amount] of Object.entries(bundle)) {
       if (amount > 0) this.emit({ type: 'gather', target, amount });
     }
