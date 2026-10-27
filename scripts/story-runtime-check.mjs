@@ -170,6 +170,7 @@ await runInChrome({ name: 'story', port: 9389, width: 1280, height: 800 }, async
     const borin = scene.villagers.villagers.get('borin');
     const monster = new Enemy(scene, borin.container.x + 30, borin.container.y, 'skeleton', {});
     monster.update = () => {};
+    monster.isQuestEnemy = true; // evita o despawn por fase do dia/distância
     monster.maxHealth = monster.health = 500;
     scene.enemyDirector.enemies.push(monster);
     scene.player.body.reset(scene.camp.x - 200, scene.camp.y + 150);
