@@ -1,4 +1,6 @@
-import { check, runInChrome } from './runtime-harness.mjs';
+import fs from 'node:fs';
+import path from 'node:path';
+import { capturesDir, check, runInChrome } from './runtime-harness.mjs';
 
 // Engrenagem: interface computador/celular, som, volume, tremor da tela e recomeçar do zero.
 await runInChrome({ name: 'settings', port: 9379, width: 1280, height: 800 }, async ({ evaluate, inScene, send, capture, freshStart, delay }) => {
@@ -41,6 +43,33 @@ await runInChrome({ name: 'settings', port: 9379, width: 1280, height: 800 }, as
   await click('#settings-button');
   check(await inScene((scene) => scene.settingsPanel.isOpen), 'Painel de configurações não abriu.');
   await capture('configuracoes.png');
+
+  // Skins: 7 cartões com prévia animada; escolher aplica na hora e fica no save.
+  const cards = await evaluate(`document.querySelectorAll('.skin-card').length`);
+  check(cards === 7, `Esperava 7 cartões de skin: ${cards}`);
+  const animated = await evaluate(`getComputedStyle(document.querySelector('.skin-card__preview')).animationName`);
+  check(animated === 'skin-walk', `Prévia da skin sem animação: ${animated}`);
+  await evaluate(`document.querySelector('[data-skins]').scrollIntoView({ block: 'start' })`);
+  await capture('skin-menu.png');
+  for (const id of ['male', 'female', 'swordsman', 'warrior', 'warrior-blue', 'warrior-green', 'warrior-black']) {
+    await click(`[data-settings="gender"][data-value="${id}"]`);
+    const info = await inScene((scene) => ({ gender: scene.heroGender, texture: scene.player.sprite.texture.key, anim: scene.player.sprite.anims.currentAnim?.key, saved: scene.player.animPrefix }));
+    const want = id === 'male' ? 'player' : `player-${id}`;
+    check(info.gender === id && info.texture === want && String(info.anim).startsWith(want), `Skin ${id} não aplicou: ${JSON.stringify(info)}`);
+    // Foto ampliada do herói no jogo, com o painel fechado.
+    await inScene((scene) => { scene.settingsPanel.close(); scene.player.sprite.play(`${scene.player.animPrefix}-idle-down`); });
+    await delay(300);
+    const box = await inScene((scene) => {
+      const canvas = scene.game.canvas.getBoundingClientRect();
+      return { x: canvas.left + canvas.width / 2, y: canvas.top + canvas.height / 2 };
+    });
+    const shot = await send('Page.captureScreenshot', { format: 'png', clip: { x: Math.max(0, box.x - 90), y: Math.max(0, box.y - 110), width: 180, height: 180, scale: 4 } });
+    fs.writeFileSync(path.join(capturesDir, `skin-${id}.png`), Buffer.from(shot.data, 'base64'));
+    await click('#settings-button');
+  }
+  const savedSkin = await inScene((scene) => { scene.save(); return JSON.parse(localStorage.getItem(Object.keys(localStorage).find((k) => /save|lendas/i.test(k) && localStorage.getItem(k).includes('"hero"')))).hero?.gender; });
+  check(savedSkin === 'warrior-black', `Skin não ficou salva: ${savedSkin}`);
+  await click('[data-settings="gender"][data-value="male"]');
 
   // Interface: celular liga os controles de toque; computador desliga.
   await click('[data-settings="interface"][data-value="mobile"]');

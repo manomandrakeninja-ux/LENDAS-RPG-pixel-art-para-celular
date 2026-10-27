@@ -3,6 +3,7 @@ import { detectTouchMode } from './TouchControls.js';
 import { loadSettings, saveSettings } from './Settings.js';
 import { exportSaveCode, importSaveCode } from './saveBackup.js';
 import { ACTION_LABELS, KEY_ACTIONS, DEFAULT_KEYBINDS, keyLabel, loadKeybinds, rebind, saveKeybinds } from './Keybinds.js';
+import { HERO_LABELS, HERO_SKINS, heroTexture } from './HeroStyle.js';
 
 /** Ícone de engrenagem em pixel art (16 x 16) como data URL. */
 function gearIconUrl() {
@@ -31,8 +32,6 @@ const OPTIONS = {
   labels: [['auto', 'Automático'], ['always', 'Sempre'], ['near', 'Só de perto']],
   stickSize: [['small', 'Pequeno'], ['medium', 'Médio'], ['large', 'Grande']],
   stickSide: [['left', 'Esquerda'], ['right', 'Direita']],
-  // Fica no save do jogo (não nas configurações do aparelho).
-  gender: [['male', 'Cavaleiro'], ['female', 'Heroína']]
 };
 
 /**
@@ -233,7 +232,7 @@ export class SettingsPanel {
 
   choiceRow(key, title, description) {
     const buttons = OPTIONS[key].map(([value, label]) => {
-      const current = key === 'gender' ? this.scene.heroGender : this.settings[key];
+      const current = this.settings[key];
       const active = current === value;
       return `<button type="button" data-settings="${key}" data-value="${value}" aria-pressed="${active}" class="${active ? 'is-active' : ''}">${label}</button>`;
     }).join('');
@@ -242,6 +241,38 @@ export class SettingsPanel {
         <h3>${title}</h3>
         ${description ? `<p>${description}</p>` : ''}
         <div class="settings-panel__choices">${buttons}</div>
+      </div>`;
+  }
+
+  /** Folha de sprites da skin como data URL (as URLs blob do Phaser são revogadas depois do carregamento). */
+  skinSheetUrl(skin) {
+    this.skinUrls ??= {};
+    if (this.skinUrls[skin]) return this.skinUrls[skin];
+    const image = this.scene.textures?.get(heroTexture(skin))?.getSourceImage?.();
+    if (!image?.width) return '';
+    const canvas = document.createElement('canvas');
+    canvas.width = image.width;
+    canvas.height = image.height;
+    canvas.getContext('2d').drawImage(image, 0, 0);
+    this.skinUrls[skin] = canvas.toDataURL();
+    return this.skinUrls[skin];
+  }
+
+  /** Skins do herói: cartões com prévia animada (andando) de cada uma. */
+  skinsRow() {
+    const cards = HERO_SKINS.map((skin) => {
+      const src = this.skinSheetUrl(skin);
+      const active = this.scene.heroGender === skin;
+      return `<button type="button" data-settings="gender" data-value="${skin}" aria-pressed="${active}" class="skin-card ${active ? 'is-active' : ''}">
+        <span class="skin-card__preview" style="background-image:url('${src}')"></span>
+        <span class="skin-card__name">${HERO_LABELS[skin]}</span>
+      </button>`;
+    }).join('');
+    return `
+      <div class="settings-panel__row" data-skins>
+        <h3>Skins</h3>
+        <p>Escolha o visual do seu herói. Aplica na hora e fica salvo. As animações são as mesmas.</p>
+        <div class="skin-grid">${cards}</div>
       </div>`;
   }
 
@@ -313,7 +344,7 @@ export class SettingsPanel {
     const forcedByUrl = /[?&](toque|touch)=/.test(window.location.search);
     this.body.innerHTML = `
       ${this.choiceRow('interface', 'Interface', `Agora: ${touch ? 'celular (controles de toque)' : 'computador (teclado e mouse)'}.${forcedByUrl ? ' O endereço da página está forçando um modo.' : ''}`)}
-      ${this.choiceRow('gender', 'Personagem', 'Escolha o visual do seu herói. As animações são as mesmas.')}
+      ${this.skinsRow()}
       ${this.choiceRow('sound', 'Som', '')}
       ${this.choiceRow('music', 'Música', 'Melodia simples de cada região.')}
       <div class="settings-panel__row">

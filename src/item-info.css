@@ -419,3 +419,11 @@ body.is-phone .settings-button {
   box-shadow: 0 2px 0 #5a160f;
   color: #fff1ce;
 }
+
+/* Skins do herói (Ajustes): cartões com prévia animada andando para baixo. */
+.skin-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 8px; margin-top: 6px; }
+.skin-card { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px 4px; cursor: pointer; font: inherit; color: inherit; background: rgba(20, 15, 20, 0.7); border: 2px solid #4a3a30; border-radius: 4px; }
+.skin-card.is-active { border-color: #e8c24e; background: rgba(74, 52, 24, 0.75); }
+.skin-card__preview { display: block; width: 64px; height: 80px; image-rendering: pixelated; background-repeat: no-repeat; background-size: 256px 320px; background-position: 0 0; animation: skin-walk 0.45s steps(4) infinite; }
+.skin-card__name { font-size: 8px; line-height: 1.2; text-align: center; }
+@keyframes skin-walk { from { background-position-x: 0; } to { background-position-x: -256px; } }

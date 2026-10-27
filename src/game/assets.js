@@ -20,6 +20,13 @@ export const ASSET_CONFIG = {
     frameWidth: 32,
     frameHeight: 40
   },
+  ...Object.fromEntries(['swordsman', 'warrior', 'warrior-blue', 'warrior-green', 'warrior-black'].map((id) => [`player-${id}`, {
+    kind: 'spritesheet',
+    key: `player-${id}`,
+    file: `assets/characters/player-${id}-sheet.png`,
+    frameWidth: 32,
+    frameHeight: 40
+  }])),
   livestock: {
     kind: 'spritesheet',
     key: 'livestock',
@@ -76,7 +83,7 @@ export function preloadGameAssets(scene) {
 export function createGameAnimations(scene) {
   const playerDirections = ['down', 'left', 'right', 'up'];
   // Cavaleiro ('player') e heroína ('player-female'): mesmas animações, uma folha cada.
-  for (const prefix of ['player', 'player-female']) {
+  for (const prefix of ['player', 'player-female', 'player-swordsman', 'player-warrior', 'player-warrior-blue', 'player-warrior-green', 'player-warrior-black']) {
     playerDirections.forEach((direction, row) => {
       const first = row * 4;
       scene.anims.create({

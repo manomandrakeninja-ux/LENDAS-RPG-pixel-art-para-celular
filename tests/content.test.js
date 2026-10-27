@@ -149,6 +149,7 @@ test('equipamento: chance dobrada e garantido', () => {
 
 test('personagem: masculino/feminino com valor padrão seguro', () => {
   assert.deepEqual(HERO_GENDERS, ['male', 'female']);
+  assert.equal(normalizeGender('warrior'), 'warrior');
   assert.equal(normalizeGender('female'), 'female');
   assert.equal(normalizeGender('x'), 'male');
   assert.equal(normalizeGender(undefined), 'male');
