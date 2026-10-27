@@ -1,6 +1,7 @@
 import { PixelCanvas } from '../art/pixel.js';
 import { detectTouchMode } from './TouchControls.js';
 import { loadSettings, saveSettings } from './Settings.js';
+import { exportSaveCode, importSaveCode } from './saveBackup.js';
 import { ACTION_LABELS, KEY_ACTIONS, DEFAULT_KEYBINDS, keyLabel, loadKeybinds, rebind, saveKeybinds } from './Keybinds.js';
 
 /** Ícone de engrenagem em pixel art (16 x 16) como data URL. */
@@ -95,6 +96,10 @@ export class SettingsPanel {
         this.confirmRestart = false;
         this.render();
       } else if (action === 'restart-confirm') this.scene.restartFromScratch();
+      else if (action === 'backup-export') this.backupExport(false);
+      else if (action === 'backup-file') this.backupExport(true);
+      else if (action === 'backup-import') this.backupImport(this.root.querySelector('[data-backup-text]')?.value);
+      else if (action === 'backup-pick') this.root.querySelector('[data-backup-file]')?.click();
       else if (action === 'key') this.startListening(value);
       else if (action === 'keys-reset') {
         this.keybinds = { ...DEFAULT_KEYBINDS };
@@ -108,6 +113,11 @@ export class SettingsPanel {
         this.scene.ui?.showMessage('Jogo salvo.');
       } else if (action === 'volume') this.set('volume', this.settings.volume + Number(value));
       else this.set(action, value === 'true' ? true : value === 'false' ? false : value);
+    };
+    this.handleChange = async (event) => {
+      const input = event.target.closest?.('[data-backup-file]');
+      const file = input?.files?.[0];
+      if (file) this.backupImport(await file.text());
     };
     this.handleKey = (event) => {
       if (this.listening && this.isOpen) {
@@ -145,6 +155,7 @@ export class SettingsPanel {
       this.root.addEventListener(type, this.stopDown);
     }
     this.root.addEventListener('click', this.handleClick);
+    this.root.addEventListener('change', this.handleChange);
     window.addEventListener('keydown', this.handleKey, true);
     scene.events.once('shutdown', () => {
       window.removeEventListener('keydown', this.handleKey, true);
@@ -234,6 +245,55 @@ export class SettingsPanel {
       </div>`;
   }
 
+  async backupExport(asFile) {
+    try {
+      this.backupText = await exportSaveCode();
+      this.backupMsg = 'Código gerado. Copie e guarde em lugar seguro.';
+      if (asFile) {
+        const url = URL.createObjectURL(new Blob([this.backupText], { type: 'text/plain' }));
+        const a = Object.assign(document.createElement('a'), { href: url, download: 'lendas-backup.txt' });
+        a.click();
+        URL.revokeObjectURL(url);
+        this.backupMsg = 'Arquivo lendas-backup.txt baixado.';
+      }
+    } catch (error) {
+      this.backupMsg = error.message;
+    }
+    this.render();
+  }
+
+  async backupImport(code) {
+    this.backupText = code ?? '';
+    try {
+      await importSaveCode(code);
+      if (this.scene) this.scene.skipSave = true;
+      this.backupMsg = 'Backup importado! Recarregando...';
+      this.render();
+      setTimeout(() => window.location.reload(), 600);
+    } catch (error) {
+      this.backupMsg = error.message;
+      this.render();
+    }
+  }
+
+  backupSection() {
+    const esc = (t) => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+    return `
+      <div class="settings-panel__row">
+        <h3>Backup do save</h3>
+        <p>Gere um código (ou arquivo) para guardar seu progresso. Para restaurar, cole o código e importe: isso substitui o save atual.</p>
+        <textarea data-backup-text rows="3" style="width:100%" placeholder="Código LENDAS1:...">${esc(this.backupText ?? '')}</textarea>
+        <p class="settings-panel__keymsg">${esc(this.backupMsg ?? '')}</p>
+        <div class="settings-panel__choices">
+          <button type="button" data-settings="backup-export">GERAR CÓDIGO</button>
+          <button type="button" data-settings="backup-file">BAIXAR ARQUIVO</button>
+          <button type="button" data-settings="backup-pick">IMPORTAR ARQUIVO</button>
+          <button type="button" data-settings="backup-import">IMPORTAR CÓDIGO</button>
+        </div>
+        <input type="file" data-backup-file accept=".txt,text/plain" hidden>
+      </div>`;
+  }
+
   keysSection() {
     const rows = KEY_ACTIONS.map((action) => `
         <button type="button" data-settings="key" data-value="${action}" class="${this.listening === action ? 'is-listening' : ''}">${ACTION_LABELS[action]}: ${this.listening === action ? '...' : keyLabel(this.keybinds[action])}</button>`).join('');
@@ -273,6 +333,7 @@ export class SettingsPanel {
         <button type="button" data-settings="fullscreen">TELA CHEIA</button>
         <button type="button" data-settings="save">SALVAR AGORA</button>
       </div>
+      ${this.backupSection()}
       <div class="settings-panel__row settings-panel__danger">
         <h3>Recomeçar do zero</h3>
         ${this.confirmRestart

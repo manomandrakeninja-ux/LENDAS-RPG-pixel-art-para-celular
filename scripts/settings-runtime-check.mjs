@@ -76,6 +76,25 @@ await runInChrome({ name: 'settings', port: 9379, width: 1280, height: 800 }, as
     scene.save();
     return true;
   });
+  // Fase 17: backup do save (código de ida e volta).
+  await inScene((scene) => { scene.economy.coins = 4242; scene.save(); return true; });
+  await click('#settings-button');
+  await click('[data-settings="backup-export"]');
+  await delay(300);
+  const code = await evaluate(`document.querySelector('[data-backup-text]').value`);
+  check(typeof code === 'string' && code.startsWith('LENDAS1:'), 'Backup deveria gerar um código LENDAS1.');
+  await inScene((scene) => { scene.economy.coins = 1; scene.save(); return true; });
+  await evaluate(`(() => { const t = document.querySelector('[data-backup-text]'); t.value = 'lixo'; })()`);
+  await click('[data-settings="backup-import"]');
+  await delay(200);
+  check(await inScene((scene) => scene.economy.coins === 1), 'Código inválido não pode alterar o save.');
+  await evaluate(`(() => { document.querySelector('[data-backup-text]').value = ${JSON.stringify(code)}; })()`);
+  await click('[data-settings="backup-import"]');
+  await delay(1500);
+  await waitScene();
+  await delay(400);
+  check(await inScene((scene) => scene.economy.coins === 4242), 'Importar o código deveria restaurar as moedas.');
+  await inScene((scene) => { scene.economy.coins = 777; scene.camp.levels.house = 6; scene.save(); return true; });
   await click('#settings-button');
   await click('[data-settings="restart"]');
   const asked = await evaluate(`Boolean(document.querySelector('[data-settings="restart-confirm"]'))`);
