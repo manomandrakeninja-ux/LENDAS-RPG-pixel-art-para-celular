@@ -22,6 +22,7 @@ import { gearIconHtml } from './gearIconUrl.js';
 import { resourceIconHtml, textureUrl } from './iconUrls.js';
 import { XP_EVENT_CONFIG, daysUntilDoubleXp, isDoubleXpDay } from './XpEvents.js';
 import { formatRemaining } from './ActiveEffects.js';
+import { REBIRTH_CONFIG, canRebirth } from '../data/rebirth.js';
 import { MOUNT_LEVEL, PETS, PET_IDS, mountUnlocked } from '../data/companions.js';
 
 // Desenho de cada prédio no cabeçalho e nos cartões (textura, quadro).
@@ -109,6 +110,9 @@ export class BuildingMenu {
         'pet-summon': () => this.scene.companions?.action('summon', button.dataset.arg),
         'pet-hatch': () => this.scene.companions?.action('hatch'),
         'mount-toggle': () => this.scene.companions?.action('mount'),
+        'rebirth': () => this.scene.rebirthHero?.(),
+        'arena-start': () => this.scene.arenaAction?.('start'),
+        'arena-leave': () => this.scene.arenaAction?.('leave'),
         'respec-talents': () => this.scene.respecTalents?.(),
         'claim-xp-bonus': () => this.scene.claimXpBonus?.(),
         'hunt-accept': () => this.scene.huntAction?.('accept', button.dataset.arg),
@@ -445,6 +449,39 @@ export class BuildingMenu {
         </article>`;
   }
 
+  /** Renascimento: no nível 150 volta ao 1 e ganha +5% de dano, vida e XP (até 10 vezes). */
+  rebirthCard() {
+    const progression = this.scene.progression;
+    if (!progression) return '';
+    const can = canRebirth(progression.level, progression.rebirths);
+    return `
+        <article class="building-menu__card" data-rebirth>
+          <h2>Renascimento</h2>
+          <p>No nível ${REBIRTH_CONFIG.level} você volta ao nível 1 e guarda o equipamento. Cada renascimento dá +5% de dano, vida e XP (máx. ${REBIRTH_CONFIG.max}).</p>
+          <div class="building-menu__stat">Renascimentos: ${progression.rebirths}/${REBIRTH_CONFIG.max} • Nível ${progression.level}</div>
+          <div class="building-menu__actions">
+            <button type="button" class="button--primary" data-action="rebirth" ${disabled(!can)}>${progression.rebirths >= REBIRTH_CONFIG.max ? 'MÁXIMO' : can ? 'RENASCER' : `NÍVEL ${REBIRTH_CONFIG.level} NECESSÁRIO`}</button>
+          </div>
+        </article>`;
+  }
+
+  /** Arena de chefes ao lado da Fogueira. */
+  arenaCard() {
+    const arena = this.scene.arena;
+    if (!arena) return '';
+    return `
+        <article class="building-menu__card" data-arena>
+          <h2>Arena de chefes</h2>
+          <p>Ondas de chefes cada vez mais fortes ao redor da Fogueira. A cada 5 ondas há moedas e XP. Se cair, a tentativa acaba.</p>
+          <div class="building-menu__stat">Recorde: onda ${arena.record}${arena.active ? ` • agora: onda ${arena.wave}` : ''}</div>
+          <div class="building-menu__actions">
+            ${arena.active
+              ? '<button type="button" data-action="arena-leave">DESISTIR</button>'
+              : '<button type="button" class="button--primary" data-action="arena-start">ENTRAR NA ARENA</button>'}
+          </div>
+        </article>`;
+  }
+
   /** Mascotes (comprar, chamar, chocar ovo) e montaria. */
   companionCard() {
     const scene = this.scene;
@@ -563,6 +600,8 @@ export class BuildingMenu {
         </article>
         ${this.blessingCard()}
         ${this.respecCard()}
+        ${this.rebirthCard()}
+        ${this.arenaCard()}
         ${this.xpBonusCard()}
         ${this.huntCard()}
         ${this.companionCard()}

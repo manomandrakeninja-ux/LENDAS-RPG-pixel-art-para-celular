@@ -41,6 +41,7 @@ import { InvasionDirector } from './InvasionDirector.js';
 import { INVASION_CONFIG, invasionCoins } from './RegionInvasion.js';
 import { XpBoost } from './XpEvents.js';
 import { AchievementSystem } from './AchievementSystem.js';
+import { ArenaSystem } from './ArenaSystem.js';
 import { CompanionSystem } from './CompanionSystem.js';
 import { HeroChoice, shouldAskHero } from './HeroChoice.js';
 import { HERO_LABELS, normalizeGender } from './HeroStyle.js';
@@ -169,6 +170,7 @@ export class GameScene extends Phaser.Scene {
     this.achievements = new AchievementSystem(this, saved?.achievements);
     this.achievements.refreshDaily();
     this.achievements.syncTitle();
+    this.arena = new ArenaSystem(this, saved?.arena);
     this.enemyDirector.populate(this.timeState);
     this.camp.defense.setupEnemyCollision(this.enemies);
     this.effects = new PixelEffects(this);
@@ -689,6 +691,7 @@ export class GameScene extends Phaser.Scene {
     this.coinPickups.update(delta, this.player, (amount) => this.collectCoins(amount));
     this.companions?.update(delta, paused);
     this.achievements?.update();
+    this.arena?.update(delta);
 
     const resource = this.world.nearbyResource(this.player.x, this.player.y);
     const structureCandidate = this.harvestStructures.nearest(this.player.x, this.player.y);
@@ -1208,6 +1211,32 @@ export class GameScene extends Phaser.Scene {
     return { ok: true, message, previousMax };
   }
 
+  /** Renascer no nível 150 (Fogueira): nível 1, equipamento guardado, +5% de dano, vida e XP. */
+  rebirthHero() {
+    const result = this.progression.rebirth();
+    if (!result.ok) {
+      const message = 'Só é possível renascer no nível 150 (até 10 vezes).';
+      this.ui.showMessage(message);
+      return { ok: false, message };
+    }
+    this.player.recalculateEquipment(this.camp.equipment);
+    this.player.health = this.player.maxHealth;
+    this.effects.spawnHeal(this.player.x, this.player.y - 8);
+    this.audio.playCollect();
+    this.levelUpOverlay.hide();
+    this.save();
+    const message = `Você renasceu! Renascimentos: ${result.rebirths} (+${result.rebirths * 5}% de dano, vida e XP).`;
+    this.ui.showMessage(message);
+    return { ok: true, message };
+  }
+
+  /** Arena de chefes: começa ou desiste. */
+  arenaAction(kind) {
+    if (kind === 'start') return this.arena.start();
+    this.arena.end('Você deixou a arena.');
+    return true;
+  }
+
   /** Personagem: 'male' (cavaleiro) ou 'female' (heroína). */
   setHeroGender(gender) {
     this.heroGender = normalizeGender(gender);
@@ -1368,6 +1397,7 @@ export class GameScene extends Phaser.Scene {
 
   respawn() {
     this.isRespawning = true;
+    this.arena?.end('Você caiu na arena. Fim da tentativa.');
     const day = this.timeState.dayCount;
     const camp = this.camp;
     const raidActive = Boolean(this.raid?.active);
@@ -2298,6 +2328,7 @@ export class GameScene extends Phaser.Scene {
       xpBoost: this.xpBoost?.serialize(),
       companions: this.companions?.serialize(),
       achievements: this.achievements?.serialize(),
+      arena: this.arena?.serialize(),
       hero: { gender: this.heroGender }
     });
   }

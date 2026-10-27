@@ -12,6 +12,8 @@ export const LEVEL_CHOICES = Object.freeze({
   defense: Object.freeze({ amount: 2, label: '+2 DEFESA' })
 });
 
+import { REBIRTH_CONFIG, canRebirth, rebirthMultiplier } from './rebirth.js';
+
 export const PERK_LEVELS = Object.freeze([5, 10, 15, 20, 30, 45, 60, 80, 100, 125, 150]);
 /** Nível da aura dourada no pé do personagem. */
 export const LEGEND_AURA_LEVEL = 150;
@@ -74,6 +76,7 @@ export class PlayerProgression {
       Math.max(1, Math.floor(Number(saved.level) || 1))
     );
     this.xp = Math.max(0, Math.floor(Number(saved.xp) || 0));
+    this.rebirths = Math.min(REBIRTH_CONFIG.max, Math.max(0, Math.floor(Number(saved.rebirths) || 0)));
     const points = (value) => Math.max(0, Math.floor(Number(value) || 0));
     this.attackPoints = points(saved.attackPoints);
     this.defensePoints = points(saved.defensePoints);
@@ -117,7 +120,8 @@ export class PlayerProgression {
     const flat = this.baseMaxHealth + this.legacy.health + this.healthPoints * LEVEL_CHOICES.health.amount +
       (this.hasPerk('vitality') ? PERK_EFFECTS.vitalityHealth : 0) +
       (this.hasPerk('titan') ? PERK_EFFECTS.titanHealth : 0);
-    return this.hasPerk('giant') ? Math.round(flat * PERK_EFFECTS.giantHealthMultiplier) : flat;
+    const base = this.hasPerk('giant') ? Math.round(flat * PERK_EFFECTS.giantHealthMultiplier) : flat;
+    return Math.round(base * this.rebirthBonus);
   }
 
   /** Multiplicador de dano dos talentos Crítico e Fúria para um golpe. */
@@ -126,6 +130,11 @@ export class PlayerProgression {
     if (this.hasPerk('fury') && healthRatio < PERK_EFFECTS.furyThreshold) multiplier *= PERK_EFFECTS.furyMultiplier;
     if (this.hasPerk('critical') && random() < PERK_EFFECTS.criticalChance) multiplier *= PERK_EFFECTS.criticalMultiplier;
     return multiplier;
+  }
+
+  /** +5% de dano, vida e XP por renascimento. */
+  get rebirthBonus() {
+    return rebirthMultiplier(this.rebirths);
   }
 
   get coinMultiplier() {
@@ -196,7 +205,7 @@ export class PlayerProgression {
 
   addXp(amount) {
     const scholar = this.hasPerk('scholar') ? PERK_EFFECTS.scholarXpMultiplier : 1;
-    const gained = Math.max(0, Math.round((Number(amount) || 0) * scholar));
+    const gained = Math.max(0, Math.round((Number(amount) || 0) * scholar * this.rebirthBonus));
     if (gained === 0 || this.level >= PROGRESSION_CONFIG.maxLevel) {
       return { gained: 0, levelsGained: 0, leveledUp: false };
     }
@@ -212,6 +221,22 @@ export class PlayerProgression {
     }
     if (this.level >= PROGRESSION_CONFIG.maxLevel) this.xp = 0;
     return { gained, levelsGained, leveledUp: levelsGained > 0 };
+  }
+
+  /** Renascer no nível máximo: volta ao 1, zera pontos e talentos, ganha +5% por vez (equipamento fica). */
+  rebirth() {
+    if (!canRebirth(this.level, this.rebirths)) return { ok: false, rebirths: this.rebirths };
+    this.rebirths += 1;
+    this.level = 1;
+    this.xp = 0;
+    this.attackPoints = 0;
+    this.defensePoints = 0;
+    this.healthPoints = 0;
+    this.legacy = { health: 0, attack: 0, defense: 0 };
+    this.pendingLevels = [];
+    this.perks = [];
+    this.pendingPerks = [];
+    return { ok: true, rebirths: this.rebirths };
   }
 
   choose(attribute) {
@@ -258,6 +283,7 @@ export class PlayerProgression {
       version: PROGRESSION_CONFIG.version,
       baseMaxHealth: this.baseMaxHealth,
       level: this.level,
+      rebirths: this.rebirths,
       xp: this.xp,
       attackPoints: this.attackPoints,
       defensePoints: this.defensePoints,

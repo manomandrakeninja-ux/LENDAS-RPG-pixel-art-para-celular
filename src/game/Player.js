@@ -354,7 +354,7 @@ export class Player extends Phaser.GameObjects.Container {
     const camp = this.scene.camp;
     const flatAttack = this.baseAttack + (this.progression?.attackBonus ?? 0) + bonuses.attack + (buffs.attack ?? 0);
     const flatDefense = this.baseDefense + (this.progression?.defenseBonus ?? 0) + bonuses.defense + (buffs.defense ?? 0);
-    this.attack = Math.round(flatAttack * (1 + (buffs.attackPercent ?? 0)));
+    this.attack = Math.round(flatAttack * (1 + (buffs.attackPercent ?? 0)) * (this.progression?.rebirthBonus ?? 1));
     this.defense = Math.round(flatDefense * (1 + (buffs.defensePercent ?? 0)));
     const baseMax = this.progression?.maxHealth ?? this.maxHealth;
     this.maxHealth = baseMax + bonuses.maxHealth + (buffs.maxHealth ?? 0);

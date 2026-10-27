@@ -375,9 +375,10 @@ export class GameUI {
     this.healthTrail.setDisplaySize(healthWidth, 9);
     this.healthShine.setDisplaySize(healthWidth, 2);
     this.staminaFill.setDisplaySize(staminaWidth, 4);
-    this.xpLabel.setText(progression.level >= 20
-      ? `NÍVEL ${progression.level} • XP MÁXIMO`
-      : `NÍVEL ${progression.level} • XP ${progression.xp}/${progression.xpToNext}`);
+    const star = progression.rebirths > 0 ? `\u2605${progression.rebirths} ` : '';
+    this.xpLabel.setText(progression.xpToNext === 0
+      ? `${star}NÍVEL ${progression.level} • XP MÁXIMO`
+      : `${star}NÍVEL ${progression.level} • XP ${progression.xp}/${progression.xpToNext}`);
     this.xpFill.setDisplaySize(Math.max(0, Math.round(barWidth * progression.xpRatio)), 3);
     this.coinLabel.setText(phone ? String(economy.coins) : `${economy.coins} MOEDAS`);
     for (const counter of this.oreCounters) {
