@@ -121,6 +121,18 @@ export class GearSystem {
     return overridden;
   }
 
+  /**
+   * Lança de arremesso: depois de um acerto, pode quebrar (chance da arma). Devolve a peça
+   * quebrada (já removida da sacola) ou null.
+   */
+  rollThrownBreak(random = Math.random) {
+    const item = this.equippedItem('weapon');
+    const definition = this.definition(item);
+    if (!definition?.thrown || random() >= (definition.breakChance ?? 0)) return null;
+    this.remove(item.uid);
+    return definition;
+  }
+
   /** Arma vestida (para o desenho da espada na mão). */
   get weapon() {
     return this.definition(this.equippedItem('weapon'));

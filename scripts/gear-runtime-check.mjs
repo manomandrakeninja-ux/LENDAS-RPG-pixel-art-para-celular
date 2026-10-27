@@ -34,7 +34,7 @@ await runInChrome({ name: 'gear', port: 9393, width: 1280, height: 800 }, async 
   // 3. Drop de chefe: duas peças, uma lendária; arma vestida troca a espada da Forja.
   const drop = await inScene(async (scene) => {
     scene.equipmentPanel.close();
-    scene.progression.level = 20;
+    scene.progression.level = 150;
     const fake = { x: 5600, y: 4500, isElite: false, isRegionBoss: true, kind: 'dragon' };
     const before = scene.gear.bag.length;
     const random = Math.random;
@@ -53,6 +53,7 @@ await runInChrome({ name: 'gear', port: 9393, width: 1280, height: 800 }, async 
 
   // 4. Morte: bênção protege primeiro, depois o amuleto se quebra; sem proteção perde parte da mochila.
   const death = await inScene(async (scene) => {
+    scene.economy.addCoins(10000);
     scene.buyBlessing();
     const blessed = scene.gear.blessed;
     scene.inventory.add('wood', 10);

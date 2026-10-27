@@ -40,6 +40,7 @@ import { ShadowSystem } from './ShadowSystem.js';
 import { GearSystem } from './GearSystem.js';
 import { EquipmentPanel } from './EquipmentPanel.js';
 import { GEAR_ITEMS, RARITIES, blessingPrice, rollGearDrop } from '../data/gear.js';
+import { TILE } from '../data/worldRegions.js';
 import { ExperiencePickups } from './ExperiencePickups.js';
 import { LevelUpOverlay } from './LevelUpOverlay.js';
 import { EconomySystem } from './EconomySystem.js';
@@ -367,7 +368,7 @@ export class GameScene extends Phaser.Scene {
   /** Peças que o inimigo deixa: vão direto para a sacola de equipamentos. */
   dropGear(enemy) {
     const region = this.regionWorld?.regionOf?.(enemy.x, enemy.y) ?? 'vale';
-    const drops = rollGearDrop({ region, elite: enemy.isElite, boss: enemy.isRegionBoss ? enemy.kind : null });
+    const drops = rollGearDrop({ region, level: enemy.level ?? null, elite: enemy.isElite, boss: enemy.isRegionBoss ? enemy.kind : null });
     for (const drop of drops) {
       const item = this.gear.add(drop.id, drop.rarity);
       const definition = GEAR_ITEMS[drop.id];
@@ -769,7 +770,8 @@ export class GameScene extends Phaser.Scene {
     if (this.player.attackCooldown > 0 || this.progression?.hasPendingChoice || this.worldMap?.isOpen || this.buildingMenu?.isOpen || this.itemInfo?.isOpen || this.settingsPanel?.isOpen || this.campaign?.ui?.isBlocking || this.gameOver) return;
     this.player.attackCooldown = COMBAT_CONFIG.basicAttackCooldownMs;
     if (this.mining) this.cancelMining();
-    const target = this.nearestEnemy(COMBAT_CONFIG.basicAttackRange);
+    const thrown = this.gear?.weapon?.thrown ? this.gear.weapon : null;
+    const target = this.nearestEnemy(thrown ? thrown.range * TILE : COMBAT_CONFIG.basicAttackRange);
     const facing = this.player.facing ?? { x: 0, y: 1 };
     const swingAngle = target
       ? Phaser.Math.Angle.Between(this.player.x, this.player.y - 8, target.x, target.y - 8)
@@ -802,6 +804,10 @@ export class GameScene extends Phaser.Scene {
     this.effects.spawnSwingTrail(this.player.x, this.player.y, angle, finisher);
     this.effects.spawnSlash(target.x, target.y - 10, angle, finisher ? 2 : 1);
     const killed = target.hit(attack, angle);
+    if (thrown) {
+      const broken = this.gear.rollThrownBreak();
+      if (broken) this.afterGearChange({ ok: true, message: `${broken.name} quebrou!` });
+    }
     this.effects.spawnImpact(target.x, target.y - 10, { tint: finisher ? 0xffd76b : 0xffe0a0, strong: finisher || killed });
     this.audio.playHit();
     if (finisher || killed) this.hitstop(killed ? 70 : 50);
