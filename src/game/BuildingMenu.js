@@ -19,6 +19,8 @@ import { GEAR_ITEMS, SLOT_NAMES, blessingPrice, describeStats, gearStats } from 
 import { RESOURCE_TYPES } from './config.js';
 import { gearIconHtml } from './gearIconUrl.js';
 import { resourceIconHtml, textureUrl } from './iconUrls.js';
+import { XP_EVENT_CONFIG, daysUntilDoubleXp, isDoubleXpDay } from './XpEvents.js';
+import { formatRemaining } from './ActiveEffects.js';
 
 // Desenho de cada prédio no cabeçalho e nos cartões (textura, quadro).
 const PORTRAITS = {
@@ -98,6 +100,8 @@ export class BuildingMenu {
       const direct = {
         'buy-gear': () => this.scene.buyGear?.(button.dataset.arg),
         'buy-blessing': () => this.scene.buyBlessing?.(),
+        'respec-talents': () => this.scene.respecTalents?.(),
+        'claim-xp-bonus': () => this.scene.claimXpBonus?.(),
         'hunt-accept': () => this.scene.huntAction?.('accept', button.dataset.arg),
         'hunt-turnin': () => this.scene.huntAction?.('turnin'),
         'hunt-abandon': () => this.scene.huntAction?.('abandon')
@@ -412,6 +416,48 @@ export class BuildingMenu {
         </article>`;
   }
 
+  /** Refazer talentos e atributos: nível x 50 moedas (mínimo 100). */
+  respecCard() {
+    const scene = this.scene;
+    const progression = scene.progression;
+    if (!progression) return '';
+    const cost = progression.respecCost;
+    const coins = scene.economy?.coins ?? 0;
+    const nothing = progression.spentChoices === 0;
+    return `
+        <article class="building-menu__card" data-respec>
+          <h2>Refazer talentos</h2>
+          <p>Devolve todos os pontos de atributo e talentos para você escolher de novo. Nível e equipamento não mudam.</p>
+          <div class="building-menu__stat">Custo: ${cost} moedas • ${progression.spentChoices} escolhas feitas</div>
+          <div class="building-menu__actions">
+            <button type="button" class="button--primary" data-action="respec-talents" ${disabled(nothing || coins < cost)}>${nothing ? 'NADA PARA REFAZER' : coins < cost ? 'FALTAM MOEDAS' : `REFAZER • ${cost}`}</button>
+          </div>
+        </article>`;
+  }
+
+  /** Bônus de novato (primeiros 7 dias) e aviso do evento XP em dobro. */
+  xpBonusCard() {
+    const scene = this.scene;
+    const boost = scene.xpBoost;
+    if (!boost) return '';
+    const day = scene.timeState?.dayCount ?? 1;
+    const eventToday = isDoubleXpDay(day);
+    const canClaim = boost.canClaim(day);
+    const newbieWindow = day <= XP_EVENT_CONFIG.newbieDays;
+    const status = boost.bonusActive
+      ? `ATIVO • ${formatRemaining(boost.remainingMs)}`
+      : eventToday ? 'EVENTO DE HOJE: XP EM DOBRO' : `Próximo evento em ${daysUntilDoubleXp(day)} dia(s)`;
+    return `
+        <article class="building-menu__card" data-xp-bonus>
+          <h2>XP em dobro</h2>
+          <p>Todo dia 7, 14, 21... o XP vale o dobro. Nos 7 primeiros dias você resgata 10 minutos de XP em dobro, uma vez por dia.</p>
+          <div class="building-menu__stat">${status}</div>
+          ${newbieWindow ? `<div class="building-menu__actions">
+            <button type="button" class="button--primary" data-action="claim-xp-bonus" ${disabled(!canClaim)}>${canClaim ? 'RESGATAR 10 MIN' : 'JÁ RESGATADO HOJE'}</button>
+          </div>` : ''}
+        </article>`;
+  }
+
   /** Mestre de Caça: quadro de caçadas por região e nível. */
   huntCard() {
     const scene = this.scene;
@@ -474,6 +520,8 @@ export class BuildingMenu {
           <div class="building-menu__actions"><button type="button" class="button--primary" data-action="rest-fire">DESCANSAR</button></div>
         </article>
         ${this.blessingCard()}
+        ${this.respecCard()}
+        ${this.xpBonusCard()}
         ${this.huntCard()}
         <article class="building-menu__card">
           <h2>Fabricar tocha</h2>

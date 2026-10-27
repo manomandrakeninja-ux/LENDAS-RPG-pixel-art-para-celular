@@ -151,3 +151,44 @@ body.stick-right.is-touch .world-action {
   min-height: 1.2em;
   color: #ffb4a4;
 }
+
+/* Escolha do personagem (jogo novo) */
+.hero-choice {
+  z-index: 60;
+}
+
+.hero-choice__body {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  padding: 12px;
+}
+
+.hero-choice__card {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  min-width: 120px;
+  padding: 12px;
+  font: inherit;
+  color: #f4e6c6;
+  background: #2b2016;
+  border: 3px solid #c9a76b;
+  cursor: pointer;
+}
+
+.hero-choice__card:hover,
+.hero-choice__card:focus-visible {
+  background: #4a3622;
+  border-color: #ffe08a;
+}
+
+.hero-choice__card img {
+  image-rendering: pixelated;
+  width: 64px;
+  height: 80px;
+}
+
+.region-card__invasion {
+  color: #ff8a2a;
+}

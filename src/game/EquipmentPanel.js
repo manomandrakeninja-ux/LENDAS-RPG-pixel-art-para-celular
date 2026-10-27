@@ -182,7 +182,7 @@ export class EquipmentPanel {
     const gear = scene.gear;
     const player = scene.player;
     const sets = (gear?.activeSets?.() ?? []).map((set) => GEAR_SETS[set]?.name).filter(Boolean);
-    const knight = textureUrl(scene, 'player', 0);
+    const knight = textureUrl(scene, scene.player?.animPrefix ?? 'player', 0);
     const looseCount = gear?.loose?.length ?? 0;
     return `
       <div class="equipment__panel" role="dialog" aria-label="Equipamento">

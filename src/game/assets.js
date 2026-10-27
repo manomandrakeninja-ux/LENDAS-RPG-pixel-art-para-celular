@@ -13,6 +13,13 @@ export const ASSET_CONFIG = {
     frameWidth: 32,
     frameHeight: 40
   },
+  playerFemale: {
+    kind: 'spritesheet',
+    key: 'player-female',
+    file: 'assets/characters/player-female-sheet.png',
+    frameWidth: 32,
+    frameHeight: 40
+  },
   livestock: {
     kind: 'spritesheet',
     key: 'livestock',
@@ -68,21 +75,24 @@ export function preloadGameAssets(scene) {
 
 export function createGameAnimations(scene) {
   const playerDirections = ['down', 'left', 'right', 'up'];
-  playerDirections.forEach((direction, row) => {
-    const first = row * 4;
-    scene.anims.create({
-      key: `player-walk-${direction}`,
-      frames: scene.anims.generateFrameNumbers('player', { frames: [first, first + 1, first + 2, first + 3] }),
-      frameRate: 9,
-      repeat: -1
+  // Cavaleiro ('player') e heroína ('player-female'): mesmas animações, uma folha cada.
+  for (const prefix of ['player', 'player-female']) {
+    playerDirections.forEach((direction, row) => {
+      const first = row * 4;
+      scene.anims.create({
+        key: `${prefix}-walk-${direction}`,
+        frames: scene.anims.generateFrameNumbers(prefix, { frames: [first, first + 1, first + 2, first + 3] }),
+        frameRate: 9,
+        repeat: -1
+      });
+      scene.anims.create({
+        key: `${prefix}-idle-${direction}`,
+        frames: [{ key: prefix, frame: first + 1 }],
+        frameRate: 1,
+        repeat: -1
+      });
     });
-    scene.anims.create({
-      key: `player-idle-${direction}`,
-      frames: [{ key: 'player', frame: first + 1 }],
-      frameRate: 1,
-      repeat: -1
-    });
-  });
+  }
 
   for (const [name, start] of [['sheep', 0], ['pig', 4], ['chicken', 8]]) {
     scene.anims.create({

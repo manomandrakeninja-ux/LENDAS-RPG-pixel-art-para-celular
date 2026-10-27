@@ -1,5 +1,5 @@
 import { ENEMY_TYPES } from '../data/enemies.js';
-import { CAVES, DOCKS, OVERWORLD, REGION_INFO, REGION_SPAWNS, VALLEY_EXTRA_SPAWNS, regionAt } from '../data/worldRegions.js';
+import { CAVES, TOWERS, DOCKS, OVERWORLD, REGION_INFO, REGION_SPAWNS, VALLEY_EXTRA_SPAWNS, regionAt } from '../data/worldRegions.js';
 import { SPAWN_ZONES } from '../data/biomes.js';
 
 // Cartão da região no mapa grande: nome, faixa de nível, monstros, cavernas e portos.
@@ -28,6 +28,7 @@ export function regionCard(region) {
     banner: info.banner,
     monsters,
     caves: CAVES.filter((cave) => cave.region === region).map((cave) => cave.name),
+    towers: TOWERS.filter((tower) => tower.region === region).map((tower) => tower.name),
     docks: DOCKS.filter((dock) => dock.region === region).map((dock) => dock.name)
   };
 }

@@ -1,12 +1,13 @@
 import Phaser from 'phaser';
 import {
-  BLOCKING, BOAT_FARE, CAVES, CAVES_BY_ID, CAVE_NODES, DOCKS, FULL_WORLD, NODE_REGROW_DAYS, OASES, OVERWORLD,
-  REGION_INFO, REGION_NODES, ROOM_COLS, T, TERRAIN_NODES, TILE, buildTerrainGrid, caveLevelRange, fractal, dockPosition, regionAt, roomAt
+  BLOCKING, BOAT_FARE, DUNGEONS, CAVES_BY_ID, CAVE_NODES, DOCKS, FULL_WORLD, NODE_REGROW_DAYS, OASES, OVERWORLD,
+  REGION_INFO, REGION_NODES, ROOM_COLS, T, TERRAIN_NODES, TILE, buildTerrainGrid, dungeonLevelRange, fractal, dockPosition, regionAt, roomAt
 } from '../data/worldRegions.js';
 import { layoutTiles, transitionCells, underName } from '../data/terrainLayout.js';
 import { hash } from '../art/pixel.js';
 import { ENEMY_TYPES } from '../data/enemies.js';
 import { levelInRange } from '../data/enemyScaling.js';
+import { rollGearDrop, GEAR_ITEMS, RARITIES } from '../data/gear.js';
 import { WORLD } from './config.js';
 import { drawNpc } from '../art/person.js';
 import { SPEAKERS } from '../data/story.js';
@@ -190,9 +191,10 @@ export class RegionWorld {
       texture.setFilter(Phaser.Textures.FilterMode.NEAREST);
       texture.refresh();
     }
-    for (const cave of CAVES) {
+    for (const cave of DUNGEONS) {
       const { x, y } = cave.entrance;
       const sprite = scene.add.image(x, y, 'biome', `cave-${cave.theme}`).setOrigin(0.5, 0.92).setDepth(y);
+      if (cave.tower) sprite.setScale(0.9, 1.3);
       this.features.push({ type: 'cave', cave, x, y: y + 4, sprite, label: `ENTRAR • ${cave.name}` });
       this.addHint(sprite, x, y - 82, cave.name);
     }
@@ -214,11 +216,11 @@ export class RegionWorld {
       const entry = this.roomPoint(room, room.plan.entry);
       const exit = this.roomPoint(room, room.plan.exit);
       const up = scene.add.image(entry.x, entry.y, 'biome', 'stairs-up').setDepth(entry.y - 30);
-      this.features.push({ type: 'up', room, cave, x: entry.x, y: entry.y, sprite: up, label: room.floor === 0 ? 'SAIR DA CAVERNA' : 'SUBIR' });
+      this.features.push({ type: 'up', room, cave, x: entry.x, y: entry.y, sprite: up, label: room.floor === 0 ? (cave.tower ? 'SAIR DA TORRE' : 'SAIR DA CAVERNA') : (cave.tower ? 'DESCER' : 'SUBIR') });
       scene.hudCamera?.ignore(up);
       if (!last) {
         const down = scene.add.image(exit.x, exit.y, 'biome', 'stairs-down').setDepth(exit.y - 30);
-        this.features.push({ type: 'down', room, cave, x: exit.x, y: exit.y, sprite: down, label: 'DESCER' });
+        this.features.push({ type: 'down', room, cave, x: exit.x, y: exit.y, sprite: down, label: cave.tower ? 'SUBIR' : 'DESCER' });
         scene.hudCamera?.ignore(down);
       }
     }
@@ -329,7 +331,7 @@ export class RegionWorld {
     this.underground = { cave: caveId, floor, room };
     this.teleport(point.x + offset, point.y, () => {
       this.populateRoom(room, cave);
-      this.scene.ui.showMessage(`${cave.name} • andar ${floor + 1} de ${cave.floors}`);
+      this.scene.ui.showMessage(`${cave.name} • andar ${floor + 1} de ${cave.floors}${cave.tower ? ' • mais forte a cada andar' : ''}`);
     }, { x: room.x, y: room.y, width: room.width, height: room.height });
   }
 
@@ -370,7 +372,7 @@ export class RegionWorld {
         this.spawnCaveEnemy(kind, x, y, { elite, isNight });
       }
     });
-    if (last) {
+    if (last && !cave.tower) {
       const exit = this.roomPoint(room, room.plan.exit);
       const defeatedDay = this.bosses[cave.id];
       const day = scene.timeState?.dayCount ?? 1;
@@ -381,13 +383,15 @@ export class RegionWorld {
       }
       if (!this.chests.has(cave.id) && defeatedDay !== undefined) this.placeBossChest(cave, room);
     }
+    // Torre: o baú do topo já está lá (sem chefe); abre uma vez.
+    if (cave.tower && last && !this.chests.has(cave.id)) this.placeBossChest(cave, room);
   }
 
   spawnCaveEnemy(kind, x, y, { elite = false, isNight = false, boss = false } = {}) {
     const scene = this.scene;
     const EnemyClass = scene.enemyDirector?.EnemyClass;
     if (!EnemyClass) return null;
-    const level = levelInRange(ENEMY_TYPES[kind], caveLevelRange(CAVES_BY_ID[this.underground?.cave]));
+    const level = levelInRange(ENEMY_TYPES[kind], dungeonLevelRange(CAVES_BY_ID[this.underground?.cave], this.underground?.floor ?? 0));
     const enemy = new EnemyClass(scene, x, y, kind, { elite: boss ? false : elite, isNight, level });
     enemy.isCaveEnemy = true;
     enemy.ignoresSafeZone = true;
@@ -502,6 +506,10 @@ export class RegionWorld {
 
   openBossChest(feature) {
     const scene = this.scene;
+    if (feature.cave.tower) {
+      this.openTowerChest(feature);
+      return;
+    }
     const rewards = {
       orcChief: { iron: 6, gold: 3, leather: 4, potion: 2 },
       hydra: { moonherb: 6, potion: 3, elixir: 1, ectoplasm: 4 },
@@ -521,6 +529,33 @@ export class RegionWorld {
     scene.effects?.spawnHarvest?.(feature.x, feature.y - 10, 0xffd76b);
     scene.audio?.playCollect?.();
     scene.ui.showMessage(`Tesouro de ${feature.cave.name}! +150 moedas e itens raros.`);
+    scene.save?.();
+  }
+
+  /** Baú do topo da torre: equipamento do nível da região (2 peças), moedas e recursos. */
+  openTowerChest(feature) {
+    const scene = this.scene;
+    const tower = feature.cave;
+    const level = REGION_INFO[tower.region].levelRange[1];
+    const drops = rollGearDrop({ region: tower.region, level, boss: `tower:${tower.id}` });
+    const names = [];
+    for (const drop of drops) {
+      const item = scene.gear?.add(drop.id, drop.rarity);
+      if (!item) {
+        scene.ui.showMessage('Sacola de equipamentos cheia! Venda peças (tecla V).');
+        continue;
+      }
+      names.push(`${RARITIES[drop.rarity].name}: ${GEAR_ITEMS[drop.id].name}`);
+    }
+    const coins = 60 + level * 5;
+    scene.economy?.addCoins?.(coins);
+    feature.opened = true;
+    this.chests.add(tower.id);
+    feature.sprite.setTint(0x777777);
+    scene.effects?.spawnHarvest?.(feature.x, feature.y - 10, 0xffd76b);
+    scene.audio?.playCollect?.();
+    if (drops.length) window.dispatchEvent(new CustomEvent('lendas:gear'));
+    scene.ui.showMessage(`Baú de ${tower.name}! +${coins} moedas${names.length ? ` • ${names.join(', ')}` : ''}`);
     scene.save?.();
   }
 

@@ -322,7 +322,7 @@ export function regionGearPool(region, level = null) {
  * level: nível do monstro. boss: tipo do chefe da caverna (sempre deixa 2 peças do nível dele,
  * com chance de uma lendária dele).
  */
-export function rollGearDrop({ region, level = null, elite = false, boss = null } = {}, random = Math.random) {
+export function rollGearDrop({ region, level = null, elite = false, boss = null, chanceMultiplier = 1, guaranteed = false } = {}, random = Math.random) {
   const lvl = dropLevel(region, level);
   if (boss) {
     const drops = [];
@@ -332,7 +332,7 @@ export function rollGearDrop({ region, level = null, elite = false, boss = null 
     while (drops.length < 2 && pool.length) drops.push({ id: pick(pool, random).id, rarity: random() < 0.5 ? 'rare' : 'uncommon' });
     return drops;
   }
-  if (random() >= (elite ? GEAR_DROP.eliteChance : GEAR_DROP.normalChance)) return [];
+  if (!guaranteed && random() >= Math.min(1, (elite ? GEAR_DROP.eliteChance : GEAR_DROP.normalChance) * chanceMultiplier)) return [];
   const pool = gearPoolForLevel(lvl);
   if (!pool.length) return [];
   return [{ id: pick(pool, random).id, rarity: rollRarity(elite, random) }];

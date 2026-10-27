@@ -37,6 +37,11 @@ import { RegionWorld } from './RegionWorld.js';
 import { Bestiary } from './Bestiary.js';
 import { HuntSystem } from './HuntSystem.js';
 import { HuntUI } from './HuntUI.js';
+import { InvasionDirector } from './InvasionDirector.js';
+import { INVASION_CONFIG, invasionCoins } from './RegionInvasion.js';
+import { XpBoost } from './XpEvents.js';
+import { HeroChoice, shouldAskHero } from './HeroChoice.js';
+import { HERO_LABELS, normalizeGender } from './HeroStyle.js';
 import { EffectsPanel } from './EffectsPanel.js';
 import { actionForCode, keyCodeFor, loadKeybinds } from './Keybinds.js';
 import { WARD_TIP_TEXT, WARD_TIP_TITLE, isNewbieProtected, shouldShowWardTip } from './NewbieProtection.js';
@@ -113,6 +118,9 @@ export class GameScene extends Phaser.Scene {
     this.bestiary = new Bestiary(saved?.bestiary);
     // Caçadas do Mestre de Caça (saves antigos não têm o campo: começam sem caçada).
     this.hunts = new HuntSystem(saved?.hunts);
+    // XP em dobro (evento e bônus de novato) e personagem; saves antigos não têm os campos.
+    this.xpBoost = new XpBoost(saved?.xpBoost);
+    this.heroGender = normalizeGender(saved?.hero?.gender);
     this.world = new World(this);
     this.world.create();
     this.camp = new Camp(this, saved?.camp);
@@ -124,6 +132,7 @@ export class GameScene extends Phaser.Scene {
     this.progression = new PlayerProgression(saved?.progression);
     this.economy = new EconomySystem(saved?.economy);
     this.player = new Player(this, WORLD.camp.x, WORLD.camp.y + 85, saved?.player, this.progression);
+    this.player.setGender(this.heroGender);
     this.player.recalculateEquipment(this.camp.equipment);
     this.obstacles.collide(this.player);
     this.regionWorld.collide(this.player);
@@ -150,6 +159,7 @@ export class GameScene extends Phaser.Scene {
     this.enemyDirector = new EnemyDirector(this, this.enemies);
     this.enemyProjectiles = new EnemyProjectiles(this);
     this.huntUI = new HuntUI(this);
+    this.invasion = new InvasionDirector(this, saved?.invasion);
     this.enemyDirector.populate(this.timeState);
     this.camp.defense.setupEnemyCollision(this.enemies);
     this.effects = new PixelEffects(this);
@@ -349,6 +359,10 @@ export class GameScene extends Phaser.Scene {
     this.ui.showMessage(returnMessage);
     if (this.progression.hasPendingChoice) this.showLevelUpChoice();
     this.raid.checkDay(this.timeState.dayCount);
+    this.invasion.checkDay(this.timeState.dayCount);
+    this.announceXpEvent();
+    // Jogo novo: escolher o personagem (os testes automáticos pulam; ?escolha=1 força).
+    if (!saved && shouldAskHero()) this.heroChoice = new HeroChoice(this);
     this.saveTimer = this.time.addEvent({ delay: 60000, loop: true, callback: () => this.save() });
     this.lastPhase = this.timeState.phase;
     this.warningTriggered = false;
@@ -385,7 +399,15 @@ export class GameScene extends Phaser.Scene {
   /** Peças que o inimigo deixa: vão direto para a sacola de equipamentos. */
   dropGear(enemy) {
     const region = this.regionWorld?.regionOf?.(enemy.x, enemy.y) ?? 'vale';
-    const drops = rollGearDrop({ region, level: enemy.level ?? null, elite: enemy.isElite, boss: enemy.isRegionBoss ? enemy.kind : null });
+    // Invasores: o dobro de chance de equipamento; o líder sempre deixa uma peça.
+    const drops = rollGearDrop({
+      region,
+      level: enemy.level ?? null,
+      elite: enemy.isElite,
+      boss: enemy.isRegionBoss ? enemy.kind : null,
+      chanceMultiplier: enemy.isInvader ? INVASION_CONFIG.gearChanceMultiplier : 1,
+      guaranteed: Boolean(enemy.isInvasionLeader)
+    });
     for (const drop of drops) {
       const item = this.gear.add(drop.id, drop.rarity);
       const definition = GEAR_ITEMS[drop.id];
@@ -548,6 +570,7 @@ export class GameScene extends Phaser.Scene {
       this.settingsPanel?.isOpen ||
       this.bestiaryPanel?.isOpen ||
       this.equipmentPanel?.isOpen ||
+      this.heroChoice?.isOpen ||
       this.campaign?.ui?.isBlocking
     );
   }
@@ -582,6 +605,8 @@ export class GameScene extends Phaser.Scene {
       this.updateFarm(delta);
       this.updateCampEffects(delta);
       this.raid.update(delta);
+      this.xpBoost.update(delta);
+      this.invasion.update(delta);
     }
     this.menuRefreshTimer = (this.menuRefreshTimer ?? 0) + delta;
     if (this.menuRefreshTimer >= 500) {
@@ -719,6 +744,8 @@ export class GameScene extends Phaser.Scene {
       this.ui.showMessage('Um viajante chegou à fogueira com uma missão.');
     }
     this.raid.checkDay(day);
+    this.invasion.checkDay(day);
+    this.announceXpEvent();
     this.campaign?.onDayAdvance(day);
     this.save();
   }
@@ -1086,8 +1113,71 @@ export class GameScene extends Phaser.Scene {
     this.audio.playCollect();
   }
 
+  /** Aviso do evento "XP em dobro" (1 vez no dia do evento). */
+  announceXpEvent() {
+    const day = this.timeState?.dayCount ?? 1;
+    if (!this.xpBoost?.shouldAnnounce(day)) return;
+    this.showEpic?.('XP EM DOBRO', 'Hoje é dia de evento: todo o XP vale o dobro até o fim do dia.', 4200);
+  }
+
+  /** Bônus de novato (Fogueira): 10 minutos de XP em dobro, 1 vez por dia nos 7 primeiros dias. */
+  claimXpBonus() {
+    const result = this.xpBoost.claim(this.timeState.dayCount);
+    if (result.ok) {
+      this.effects.spawnHeal(this.player.x, this.player.y - 8);
+      this.audio.playCollect();
+      this.save();
+    }
+    this.ui.showMessage(result.message);
+    return result;
+  }
+
+  /** Refazer talentos e atributos na Fogueira: nível x 50 moedas (mín. 100). */
+  respecTalents() {
+    const cost = this.progression.respecCost;
+    if (this.progression.spentChoices === 0) {
+      const message = 'Você ainda não escolheu talentos nem atributos.';
+      this.ui.showMessage(message);
+      return { ok: false, message };
+    }
+    if (!this.economy.spendCoins(cost)) {
+      const message = `Refazer custa ${cost} moedas.`;
+      this.ui.showMessage(message);
+      return { ok: false, message };
+    }
+    this.progression.respec();
+    const previousMax = this.player.maxHealth;
+    this.player.recalculateEquipment(this.camp.equipment);
+    this.player.health = Math.min(this.player.health, this.player.maxHealth);
+    this.effects.spawnHeal(this.player.x, this.player.y - 8);
+    this.audio.playCollect();
+    this.worldMap.close();
+    this.showLevelUpChoice();
+    this.save();
+    const message = 'Escolhas refeitas: distribua seus pontos e talentos de novo.';
+    this.ui.showMessage(message);
+    return { ok: true, message, previousMax };
+  }
+
+  /** Personagem: 'male' (cavaleiro) ou 'female' (heroína). */
+  setHeroGender(gender) {
+    this.heroGender = normalizeGender(gender);
+    this.player.setGender(this.heroGender);
+    this.save();
+    window.dispatchEvent(new CustomEvent('lendas:gear'));
+    this.ui?.showMessage(`Personagem: ${HERO_LABELS[this.heroGender]}.`);
+    return this.heroGender;
+  }
+
+  invasionStatus() {
+    return this.invasion?.statusText ?? '';
+  }
+
   grantExperience(amount, announce = true) {
     const levelBefore = this.progression.level;
+    // Evento "XP em dobro" (dia 7, 14...) ou bônus de novato da Fogueira (não acumulam).
+    const boosted = Math.round((Number(amount) || 0) * this.xpBoost.multiplier(this.timeState?.dayCount ?? 1));
+    amount = boosted;
     const result = this.progression.addXp(amount);
     this.player.recalculateEquipment(this.camp.equipment);
     if (result.leveledUp && shouldShowWardTip(levelBefore, this.progression.level)) {
@@ -1197,7 +1287,9 @@ export class GameScene extends Phaser.Scene {
     else this.experiencePickups.spawn(enemy.x, enemy.y, enemyXp(enemy.kind, enemy.isElite, enemy.level));
     // Monstros das regiões mais perigosas deixam mais moedas.
     const coinTier = 1 + Math.max(0, (enemy.definition.tier ?? 1) - 2) * 0.5;
-    this.coinPickups.spawn(enemy.x + 9, enemy.y, Math.round(rollCoinDrop(enemy.definition.period, Math.random, enemy.isElite) * coinTier * (enemy.coinScale ?? 1) * this.progression.coinMultiplier));
+    const coins = Math.round(rollCoinDrop(enemy.definition.period, Math.random, enemy.isElite) * coinTier * (enemy.coinScale ?? 1) * this.progression.coinMultiplier);
+    this.coinPickups.spawn(enemy.x + 9, enemy.y, enemy.isInvader ? invasionCoins(coins) : coins);
+    this.invasion?.onDefeated(enemy);
     if (Object.keys(result.remaining).length > 0) {
       this.deathBackpacks.create(enemy.x, enemy.y, result.remaining);
     }
@@ -2147,7 +2239,10 @@ export class GameScene extends Phaser.Scene {
       regions: this.regionWorld?.serialize(),
       bestiary: this.bestiary?.serialize(),
       gear: this.gear?.serialize(),
-      hunts: this.hunts?.serialize()
+      hunts: this.hunts?.serialize(),
+      invasion: this.invasion?.serialize(),
+      xpBoost: this.xpBoost?.serialize(),
+      hero: { gender: this.heroGender }
     });
   }
 }

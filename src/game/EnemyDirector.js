@@ -36,7 +36,7 @@ export class EnemyDirector {
   /** Remove os inimigos comuns (ao entrar numa caverna). */
   clearRegular() {
     for (const enemy of [...this.enemies]) {
-      if (!enemy.isRaider && !enemy.isQuestEnemy && !enemy.isCaveEnemy) this.remove(enemy);
+      if (!enemy.isRaider && !enemy.isQuestEnemy && !enemy.isCaveEnemy && !enemy.isInvader) this.remove(enemy);
     }
   }
 
@@ -78,7 +78,7 @@ export class EnemyDirector {
     const limit = SPAWNING_CONFIG.activeLimit[period];
     if (this.spawnTimer <= 0) {
       this.spawnTimer = SPAWNING_CONFIG.spawnIntervalMs[period];
-      const regular = this.enemies.filter((enemy) => !enemy.isRaider && !enemy.isQuestEnemy && !enemy.isCaveEnemy).length;
+      const regular = this.enemies.filter((enemy) => !enemy.isRaider && !enemy.isQuestEnemy && !enemy.isCaveEnemy && !enemy.isInvader).length;
       if (regular < limit && !this.scene.regionWorld?.underground) this.spawnOne(timeState);
     }
     this.mineTimer -= delta;
@@ -98,7 +98,7 @@ export class EnemyDirector {
     const despawnDistance = SPAWNING_CONFIG.despawnDistance[period];
     for (const enemy of [...this.enemies]) {
       // Invasores e inimigos de missão são controlados pelos seus próprios sistemas.
-      if (enemy.isRaider || enemy.isQuestEnemy || enemy.isCaveEnemy) continue;
+      if (enemy.isRaider || enemy.isQuestEnemy || enemy.isCaveEnemy || enemy.isInvader) continue;
       const playerDistance = Phaser.Math.Distance.Between(enemy.x, enemy.y, player.x, player.y);
       const wrongPhase = enemy.definition.period === 'night' && period === 'day';
       const wrongPhaseFar = wrongPhase && playerDistance > 320;
@@ -235,7 +235,7 @@ export class EnemyDirector {
 
   clearNightEnemies() {
     for (const enemy of [...this.enemies]) {
-      if (enemy.definition.period === 'night' && !enemy.isQuestEnemy && !enemy.isCaveEnemy) this.remove(enemy);
+      if (enemy.definition.period === 'night' && !enemy.isQuestEnemy && !enemy.isCaveEnemy && !enemy.isInvader) this.remove(enemy);
     }
   }
 

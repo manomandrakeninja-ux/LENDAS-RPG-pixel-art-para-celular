@@ -1,5 +1,5 @@
 import { ENEMY_TYPES } from '../data/enemies.js';
-import { CAVES, REGION_INFO, REGION_SPAWNS, VALLEY_EXTRA_SPAWNS } from '../data/worldRegions.js';
+import { DUNGEONS, REGION_INFO, REGION_SPAWNS, VALLEY_EXTRA_SPAWNS } from '../data/worldRegions.js';
 import { SPAWN_ZONES } from '../data/biomes.js';
 
 // Bestiário: registra cada espécie derrotada e mostra vida, dano, XP, onde vive e o que deixa cair.
@@ -13,7 +13,7 @@ export function habitatsOf(kind) {
   for (const [region, spawns] of Object.entries(REGION_SPAWNS)) {
     if ([...spawns.day, ...spawns.night].includes(kind)) places.push(REGION_INFO[region].name);
   }
-  for (const cave of CAVES) {
+  for (const cave of DUNGEONS) {
     if (cave.monsters.includes(kind)) places.push(cave.name);
     if (cave.boss === kind) places.push(`${cave.name} (último andar)`);
   }

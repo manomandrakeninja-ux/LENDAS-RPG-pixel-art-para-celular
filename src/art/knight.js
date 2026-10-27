@@ -196,7 +196,7 @@ function drawArmFront(canvas, x, top, swing, light) {
   canvas.rect(x, top + 9 + swing, 2, 1, PALETTE[4]);
 }
 
-function drawFront(canvas, frame) {
+function drawFront(canvas, frame, female = false) {
   const bob = frame === 3 ? 1 : 0;
   const top = 15 + bob;
   const swing = frame === 0 ? 1 : frame === 2 ? -1 : 0;
@@ -208,9 +208,10 @@ function drawFront(canvas, frame) {
   drawPlume(canvas, 16, 3 + bob, 1, frame === 1 ? 1 : 0);
   stamp(canvas, 10, 3 + bob, HELMET_FRONT);
   drawShield(canvas, 3, top + 1 - swing, 9, 14);
+  if (female) heroineExtras(canvas, 'front', top, bob, frame);
 }
 
-function drawBack(canvas, frame) {
+function drawBack(canvas, frame, female = false) {
   const bob = frame === 3 ? 1 : 0;
   const top = 15 + bob;
   const swing = frame === 0 ? 1 : frame === 2 ? -1 : 0;
@@ -223,10 +224,11 @@ function drawBack(canvas, frame) {
   drawShield(canvas, 12, top + 1, 9, 12);
   stamp(canvas, 10, 3 + bob, HELMET_BACK);
   drawPlume(canvas, 16, 3 + bob, 1, frame === 1 ? 1 : 0);
+  if (female) heroineExtras(canvas, 'back', top, bob, frame);
 }
 
 /** Perfil virado para a esquerda (o lado direito é o espelho). */
-function drawSide(canvas, frame) {
+function drawSide(canvas, frame, female = false) {
   const bob = frame === 3 ? 1 : 0;
   const top = 15 + bob;
   const stride = frame === 0 ? 2 : frame === 2 ? -2 : 0;
@@ -261,16 +263,72 @@ function drawSide(canvas, frame) {
   canvas.rect(14 + arm, top + 9, 2, 1, PALETTE[4]);
   drawPlume(canvas, 17, 3 + bob, 1, frame === 1 ? 1 : 0);
   stamp(canvas, 10, 3 + bob, HELMET_SIDE);
+  if (female) heroineExtras(canvas, 'side', top, bob, frame);
+}
+
+// ---------- Heroína: o mesmo cavaleiro com cabelo longo, saia de placas e detalhes magenta ----------
+
+const HAIR = { dark: '#8a5a14', mid: '#c98a2b', light: '#f0c25a' };
+const SKIRT = { dark: '#3e1a50', mid: '#7a3a8a', light: '#b06cc4' };
+const FEMALE_PALETTE = { r: '#5e1a5a', R: '#a8309a', p: '#e070c8', B: '#7a3a8a', b: '#3e1a50' };
+
+/** Cabelo comprido, cinto e saia curva por cima do desenho do cavaleiro. */
+function heroineExtras(canvas, view, top, bob, frame) {
+  const sway = frame === 1 ? 1 : frame === 3 ? -1 : 0;
+  const lock = (x, y, height) => {
+    canvas.rect(x, y, 3, height, HAIR.mid);
+    canvas.rect(x, y, 1, height, HAIR.light);
+    canvas.rect(x + 2, y + 1, 1, height - 1, HAIR.dark);
+    canvas.pixel(x + 1, y + height, HAIR.dark);
+  };
+  const skirt = (left, right, y, flare) => {
+    canvas.polygon([[left, y], [right, y], [right + flare, y + 5], [left - flare, y + 5]], SKIRT.mid);
+    canvas.line(left, y, right, y, SKIRT.light);
+    canvas.line(left - flare, y + 5, right + flare, y + 5, SKIRT.dark);
+    canvas.line(Math.round((left + right) / 2), y + 1, Math.round((left + right) / 2), y + 4, SKIRT.dark);
+  };
+  if (view === 'front') {
+    skirt(10, 22, top + 12, 2);
+    lock(8, 9 + bob, 9);
+    lock(21, 9 + bob, 9 + sway);
+  } else if (view === 'back') {
+    skirt(10, 22, top + 12, 2);
+    lock(14, 11 + bob, 15);
+    canvas.rect(13, 11 + bob, 6, 2, HAIR.mid);
+    canvas.pixel(15 + sway, 27 + bob, HAIR.dark);
+  } else {
+    skirt(11, 21, top + 12, 2);
+    lock(20, 9 + bob, 14 + sway);
+    canvas.rect(19, 9 + bob, 3, 2, HAIR.mid);
+  }
+}
+
+function withFemalePalette(draw) {
+  const saved = {};
+  for (const [key, value] of Object.entries(FEMALE_PALETTE)) {
+    saved[key] = PALETTE[key];
+    PALETTE[key] = value;
+  }
+  try {
+    return draw();
+  } finally {
+    Object.assign(PALETTE, saved);
+  }
 }
 
 /** direction: 0 = baixo, 1 = esquerda, 2 = direita, 3 = cima. */
-export function drawKnightFrame(direction, frame) {
+export function drawHeroineFrame(direction, frame) {
+  return withFemalePalette(() => drawKnightFrame(direction, frame, true));
+}
+
+/** direction: 0 = baixo, 1 = esquerda, 2 = direita, 3 = cima. */
+export function drawKnightFrame(direction, frame, female = false) {
   const canvas = new PixelCanvas(KNIGHT_FRAME.width, KNIGHT_FRAME.height);
-  if (direction === 0) drawFront(canvas, frame);
-  else if (direction === 3) drawBack(canvas, frame);
+  if (direction === 0) drawFront(canvas, frame, female);
+  else if (direction === 3) drawBack(canvas, frame, female);
   else {
     const side = new PixelCanvas(KNIGHT_FRAME.width, KNIGHT_FRAME.height);
-    drawSide(side, frame);
+    drawSide(side, frame, female);
     canvas.blit(side, 0, 0, { flipX: direction === 2 });
   }
   return canvas.outline({ strength: 0.85 });

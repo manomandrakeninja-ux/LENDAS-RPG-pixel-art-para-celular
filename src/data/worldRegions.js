@@ -16,7 +16,9 @@ export const ROOM_ROWS = 20;
 const ROOM_GAP = 4;
 const UNDERGROUND_FIRST_ROW = OVERWORLD_ROWS + 4;
 const ROOMS_PER_ROW = 4;
-export const TOTAL_ROWS = UNDERGROUND_FIRST_ROW + 5 * (ROOM_ROWS + ROOM_GAP);
+// 10 fileiras de 4 salas: cavernas (19 andares) e torres (20 andares) cabem em 40 salas.
+export const UNDERGROUND_ROWS = 10;
+export const TOTAL_ROWS = UNDERGROUND_FIRST_ROW + UNDERGROUND_ROWS * (ROOM_ROWS + ROOM_GAP);
 export const FULL_WORLD = Object.freeze({ width: WORLD_COLS * TILE, height: TOTAL_ROWS * TILE });
 
 // ---------- Regiões ----------
@@ -154,6 +156,17 @@ export function terrainAt(x, y) {
   }
 }
 
+// ---------- Monstros por região ----------
+
+export const REGION_SPAWNS = Object.freeze({
+  antiga: { day: ['goblin', 'goblin', 'bear', 'orc'], night: ['treant', 'orc', 'werewolf', 'bat'] },
+  brejo: { day: ['frog', 'frog', 'snake', 'slime'], night: ['zombie', 'witch', 'ghost', 'bat'] },
+  gelo: { day: ['frostWolf', 'frostWolf', 'yeti', 'snowOwl', 'mammoth'], night: ['iceElemental', 'frostWolf', 'yeti', 'snowOwl'] },
+  areia: { day: ['scorpion', 'scorpion', 'sandworm', 'snake', 'cobra', 'scarab', 'sandGolem'], night: ['mummy', 'scorpion', 'sandworm', 'djinn', 'scarab'] },
+  esmeralda: { day: ['crab', 'crab', 'snake'], night: ['pirate', 'crab', 'bat'] },
+  brasa: { day: ['imp', 'salamander', 'imp', 'lavaHound', 'magmaSlime', 'phoenix'], night: ['demon', 'imp', 'salamander', 'fireElemental', 'obsidianKnight', 'lavaHound'] }
+});
+
 // ---------- Cavernas ----------
 
 // Cada caverna tem andares (salas no subterrâneo); o chefe espera no último.
@@ -193,10 +206,52 @@ export const CAVES = Object.freeze([
 export function caveLevelRange(cave) {
   return cave?.levelRange ?? REGION_INFO[cave?.region]?.levelRange ?? null;
 }
-export const CAVES_BY_ID = Object.freeze(Object.fromEntries(CAVES.map((cave) => [cave.id, cave])));
+
+// ---------- Torres ----------
+
+// Uma torre por região (fora do Vale), no modelo das cavernas: entrada no mapa e andares
+// (salas) com monstros da região, cada andar mais forte que o anterior. O baú fica no topo.
+const TOWER_SPOTS = {
+  antiga: { name: 'Torre do Carvalho', x: 4536, y: 3144, floors: 3, theme: 'earth' },
+  brejo: { name: 'Torre Afogada', x: 1272, y: 2952, floors: 3, theme: 'swamp' },
+  gelo: { name: 'Torre de Gelo', x: 3624, y: 984, floors: 3, theme: 'ice' },
+  areia: { name: 'Torre dos Ventos', x: 5928, y: 2232, floors: 4, theme: 'tomb' },
+  esmeralda: { name: 'Torre do Farol', x: 2232, y: 4536, floors: 3, theme: 'sea' },
+  brasa: { name: 'Torre de Cinzas', x: 5256, y: 4248, floors: 4, theme: 'fire' }
+};
+
+export const TOWERS = Object.freeze(Object.entries(TOWER_SPOTS).map(([region, spot]) => Object.freeze({
+  id: `torre-${region}`,
+  name: spot.name,
+  region,
+  tower: true,
+  entrance: Object.freeze({ x: spot.x, y: spot.y }),
+  floors: spot.floors,
+  theme: spot.theme,
+  monsters: Object.freeze([...new Set([...REGION_SPAWNS[region].day, ...REGION_SPAWNS[region].night])]),
+  boss: null
+})));
+export const TOWERS_BY_REGION = Object.freeze(Object.fromEntries(TOWERS.map((tower) => [tower.region, tower])));
+
+/** Cavernas e torres: tudo que tem entrada no mapa e andares no subterrâneo. */
+export const DUNGEONS = Object.freeze([...CAVES, ...TOWERS]);
+export const CAVES_BY_ID = Object.freeze(Object.fromEntries(DUNGEONS.map((cave) => [cave.id, cave])));
+
+/** Faixa de níveis de um andar da torre: sobe a cada andar até o teto da região. */
+export function towerFloorRange(tower, floor) {
+  const [lo, hi] = REGION_INFO[tower.region].levelRange;
+  const span = hi - lo;
+  const index = Math.max(0, Math.min(tower.floors - 1, floor));
+  return [lo + Math.round((span * index) / tower.floors), lo + Math.round((span * (index + 1)) / tower.floors)];
+}
+
+/** Faixa de níveis de uma sala (andar da torre) ou da caverna inteira. */
+export function dungeonLevelRange(dungeon, floor = 0) {
+  return dungeon?.tower ? towerFloorRange(dungeon, floor) : caveLevelRange(dungeon);
+}
 
 /** Lista de salas (caverna, andar) na ordem do subterrâneo. */
-export const CAVE_ROOMS = Object.freeze(CAVES.flatMap((cave) =>
+export const CAVE_ROOMS = Object.freeze(DUNGEONS.flatMap((cave) =>
   Array.from({ length: cave.floors }, (_, floor) => ({ cave: cave.id, floor }))
 ).map((room, index) => {
   const column = index % ROOMS_PER_ROW;
@@ -304,17 +359,6 @@ export function dockPosition(dock) {
     boatY: shore + direction * TILE * 2.2
   };
 }
-
-// ---------- Monstros por região ----------
-
-export const REGION_SPAWNS = Object.freeze({
-  antiga: { day: ['goblin', 'goblin', 'bear', 'orc'], night: ['treant', 'orc', 'werewolf', 'bat'] },
-  brejo: { day: ['frog', 'frog', 'snake', 'slime'], night: ['zombie', 'witch', 'ghost', 'bat'] },
-  gelo: { day: ['frostWolf', 'frostWolf', 'yeti', 'snowOwl', 'mammoth'], night: ['iceElemental', 'frostWolf', 'yeti', 'snowOwl'] },
-  areia: { day: ['scorpion', 'scorpion', 'sandworm', 'snake', 'cobra', 'scarab', 'sandGolem'], night: ['mummy', 'scorpion', 'sandworm', 'djinn', 'scarab'] },
-  esmeralda: { day: ['crab', 'crab', 'snake'], night: ['pirate', 'crab', 'bat'] },
-  brasa: { day: ['imp', 'salamander', 'imp', 'lavaHound', 'magmaSlime', 'phoenix'], night: ['demon', 'imp', 'salamander', 'fireElemental', 'obsidianKnight', 'lavaHound'] }
-});
 
 // Monstros novos também aparecem no Vale (somados às zonas antigas).
 export const VALLEY_EXTRA_SPAWNS = Object.freeze({ day: ['rat', 'snake'], night: ['bat'] });

@@ -560,6 +560,54 @@ export class GameUI {
       context.fillStyle = enemy.isQuestBoss ? '#ff8a5a' : '#e15950';
       context.fillRect(Math.round(x) - 2, Math.round(y) - 2, 4, 4);
     }
+    // Invasão: invasores (pontos laranja; o líder, dourado) e a região invadida.
+    const invasion = this.scene.invasion;
+    if (invasion?.active) {
+      for (const enemy of invasion.invaders) {
+        const x = toX(enemy.x);
+        const y = toY(enemy.y);
+        if (!inside(x, y)) continue;
+        context.fillStyle = enemy.isInvasionLeader ? '#ffd56b' : '#ff8a2a';
+        context.fillRect(Math.round(x) - 2, Math.round(y) - 2, 5, 5);
+        context.strokeStyle = '#1a120d';
+        context.lineWidth = 1;
+        context.strokeRect(Math.round(x) - 2.5, Math.round(y) - 2.5, 6, 6);
+        if (!kinds.includes('invader')) kinds.push('invader');
+      }
+      const center = invasion.center;
+      if (center) {
+        const cx = toX(center.x);
+        const cy = toY(center.y);
+        if (inside(cx, cy, -4)) {
+          context.fillStyle = 'rgba(255, 138, 42, 0.28)';
+          context.beginPath();
+          context.arc(cx, cy, 22, 0, Math.PI * 2);
+          context.fill();
+          context.fillStyle = '#ff8a2a';
+          context.font = '10px "Press Start 2P", monospace';
+          context.textAlign = 'center';
+          context.fillText('!', cx, cy + 4);
+        } else {
+          const angle = Math.atan2(cy - size / 2, cx - size / 2);
+          const radius = size / 2 - 7;
+          context.save();
+          context.translate(size / 2 + Math.cos(angle) * radius, size / 2 + Math.sin(angle) * radius);
+          context.rotate(angle);
+          context.fillStyle = '#ff8a2a';
+          context.strokeStyle = '#1a120d';
+          context.lineWidth = 2;
+          context.beginPath();
+          context.moveTo(6, 0);
+          context.lineTo(-4, -5);
+          context.lineTo(-4, 5);
+          context.closePath();
+          context.fill();
+          context.stroke();
+          context.restore();
+        }
+        kinds.push('invasion');
+      }
+    }
     const quest = renderer.drawQuestSites(context, toX, toY, { size: 4 });
     if (quest.length > 0) kinds.push('quest');
 

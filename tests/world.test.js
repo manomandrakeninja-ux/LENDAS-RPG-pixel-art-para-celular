@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import test from 'node:test';
 import {
-  CAVES, CAVE_NODES, DOCKS, REGION_INFO, REGION_NODES, REGION_SPAWNS, ROOM_COLS, ROOM_ROWS, T, TERRAIN_NODES, TILE,
+  CAVES, DUNGEONS, CAVE_NODES, DOCKS, REGION_INFO, REGION_NODES, REGION_SPAWNS, ROOM_COLS, ROOM_ROWS, T, TERRAIN_NODES, TILE,
   VALLEY, VALLEY_EXTRA_SPAWNS, buildTerrainGrid, dockPosition, regionAt, terrainAt
 } from '../src/data/worldRegions.js';
 import { layoutTiles } from '../src/data/terrainLayout.js';
@@ -54,7 +54,7 @@ test('cavernas: toda sala liga a escada de entrada à saída (ou ao chefe)', () 
     assert.ok(seen.has(`${exit.col},${exit.row}`), `${room.cave} andar ${room.floor}`);
     for (const chamber of room.plan.chambers) assert.ok(plan[chamber.row * ROOM_COLS + chamber.col], `câmara ${room.cave}`);
   }
-  assert.equal(grid.rooms.length, CAVES.reduce((sum, cave) => sum + cave.floors, 0));
+  assert.equal(grid.rooms.length, DUNGEONS.reduce((sum, cave) => sum + cave.floors, 0));
   for (const cave of CAVES) {
     assert.equal(regionAt(cave.entrance.x, cave.entrance.y), cave.region, cave.id);
     assert.ok(ENEMY_TYPES[cave.boss]?.boss, cave.boss);

@@ -59,11 +59,13 @@ export class Enemy extends Phaser.GameObjects.Container {
     this.placeholderShape = visual.shape;
 
     this.eliteAura = null;
-    if (this.isElite) {
+    // Aura: dourada nos elites; invasores usam a cor própria (laranja; o líder, dourada).
+    this.auraColor = options.auraColor ?? (this.isElite ? ELITE_CONFIG.auraColor : null);
+    if (this.auraColor !== null) {
       this.eliteAura = scene.add.image(0, -2, 'vfx', 'ring-0')
         .setBlendMode(Phaser.BlendModes.ADD)
         .setAlpha(0.42)
-        .setTint(ELITE_CONFIG.auraColor);
+        .setTint(this.auraColor);
       this.add(this.eliteAura);
     }
 

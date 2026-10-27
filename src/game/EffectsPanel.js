@@ -1,4 +1,5 @@
 import { collectEffects } from './ActiveEffects.js';
+import { isDoubleXpDay } from './XpEvents.js';
 
 // Ícones dos efeitos ativos perto da barra de vida. Tocar num ícone explica o efeito.
 export class EffectsPanel {
@@ -47,7 +48,13 @@ export class EffectsPanel {
       blessed: Boolean(scene.gear?.blessed),
       paralyzedMs: scene.player?.paralyzedMs ?? 0,
       hunt,
-      dayCount: scene.timeState?.dayCount ?? 0
+      dayCount: scene.timeState?.dayCount ?? 0,
+      xp: scene.xpBoost
+        ? { event: isDoubleXpDay(scene.timeState?.dayCount), bonusMs: scene.xpBoost.remainingMs }
+        : null,
+      invasion: scene.invasion?.active
+        ? { label: scene.invasionStatus?.() ?? 'Invasão em andamento.', time: '' }
+        : null
     });
   }
 

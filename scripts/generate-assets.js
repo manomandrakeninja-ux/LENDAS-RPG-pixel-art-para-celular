@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { PixelCanvas, darken, dither, hash, lighten, ramp } from '../src/art/pixel.js';
 import { readAtlas, writePng } from './png.js';
-import { KNIGHT_FRAME, drawKnightFrame } from '../src/art/knight.js';
+import { KNIGHT_FRAME, drawHeroineFrame, drawKnightFrame } from '../src/art/knight.js';
 import { STORY_SCENE_KEYS, drawStoryScene } from '../src/art/storyScenes.js';
 import { valleyPine, valleyRoundTree } from '../src/art/biomeProps.js';
 import { generateWorldAssets } from './generate-world-assets.js';
@@ -222,6 +222,11 @@ const LEATHER = ['#3e2618', '#6a4228', '#8d5c36'];
 // Jogador: cavaleiro de armadura (src/art/knight.js), 32 x 40, 4 direções x 4 quadros.
 makeSheet('characters/player-sheet.png', KNIGHT_FRAME.width, KNIGHT_FRAME.height, 4, 4, (canvas, frameIndex) => {
   canvas.blit(drawKnightFrame(Math.floor(frameIndex / 4), frameIndex % 4), 0, 0);
+}, { outline: false });
+
+// Heroína: mesma folha (4 direções x 4 quadros), com cabelo longo, saia e detalhes magenta.
+makeSheet('characters/player-female-sheet.png', KNIGHT_FRAME.width, KNIGHT_FRAME.height, 4, 4, (canvas, frameIndex) => {
+  canvas.blit(drawHeroineFrame(Math.floor(frameIndex / 4), frameIndex % 4), 0, 0);
 }, { outline: false });
 
 // ---------- Animais da fazenda (24 x 24, virados para a direita) ----------

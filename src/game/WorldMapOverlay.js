@@ -182,6 +182,7 @@ export class WorldMapOverlay {
   /** Mostra o cartão da região do ponto (x, y) do mundo; sem região (mar), esconde. */
   showRegionAt(x, y) {
     const card = regionCardAt(x, y);
+    if (card) card.invasion = this.scene.invasion?.active?.region === card.region;
     this.regionCard = card;
     if (!card) {
       this.card.hidden = true;
@@ -195,6 +196,8 @@ export class WorldMapOverlay {
       ${card.banner ? `<p>${card.banner}</p>` : ''}
       <p><strong>Monstros:</strong> ${list(card.monsters)}</p>
       <p><strong>Cavernas:</strong> ${list(card.caves)}</p>
+      <p><strong>Torre:</strong> ${list(card.towers ?? [])}</p>
+      ${card.invasion ? '<p class="region-card__invasion"><strong>INVASÃO!</strong> Invasores de aura laranja nesta região.</p>' : ''}
       <p><strong>Portos:</strong> ${list(card.docks)}</p>`;
     this.card.hidden = false;
     return card;
@@ -355,6 +358,45 @@ export class WorldMapOverlay {
     markers.structures.forEach((marker) => drawMarker(context, marker, toX, toY));
     markers.chests.forEach((marker) => drawMarker(context, marker, toX, toY));
     markers.strongEnemies.forEach((marker) => drawMarker(context, marker, toX, toY));
+    const invasion = this.scene.invasion;
+    let invasionMarkers = 0;
+    if (invasion?.active) {
+      for (const enemy of invasion.invaders) {
+        context.fillStyle = enemy.isInvasionLeader ? '#ffd56b' : '#ff8a2a';
+        context.strokeStyle = '#101713';
+        context.lineWidth = 2;
+        context.beginPath();
+        context.arc(Math.round(toX(enemy.x)), Math.round(toY(enemy.y)), enemy.isInvasionLeader ? 6 : 4, 0, Math.PI * 2);
+        context.fill();
+        context.stroke();
+        invasionMarkers += 1;
+      }
+      const center = invasion.center;
+      if (center) {
+        const px = Math.round(toX(center.x));
+        const py = Math.round(toY(center.y));
+        context.fillStyle = 'rgba(255, 138, 42, 0.25)';
+        context.beginPath();
+        context.arc(px, py, 26, 0, Math.PI * 2);
+        context.fill();
+        context.fillStyle = '#ff8a2a';
+        context.strokeStyle = '#101713';
+        context.lineWidth = 3;
+        context.beginPath();
+        context.moveTo(px, py - 12);
+        context.lineTo(px + 11, py + 8);
+        context.lineTo(px - 11, py + 8);
+        context.closePath();
+        context.fill();
+        context.stroke();
+        context.fillStyle = '#101713';
+        context.font = '9px "Press Start 2P", monospace';
+        context.textAlign = 'center';
+        context.fillText('!', px, py + 6);
+        context.textAlign = 'left';
+        invasionMarkers += 1;
+      }
+    }
     renderer?.drawQuestSites(context, toX, toY, { labels: true, size: 7 });
     if (markers.player && renderer) renderer.drawPlayer(context, toX(markers.player.x), toY(markers.player.y), 9);
     else if (markers.player) drawMarker(context, markers.player, toX, toY);
@@ -369,6 +411,7 @@ export class WorldMapOverlay {
       structures: markers.structures.length,
       chests: markers.chests.length,
       strongEnemies: markers.strongEnemies.length,
+      invasion: invasionMarkers,
       player: markers.player ? 1 : 0
     };
   }

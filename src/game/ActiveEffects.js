@@ -28,7 +28,7 @@ export function formatRemaining(ms) {
  * Efeitos ativos. Cada item: { id, kind, icon, name, time, description }.
  * Entradas: buffs (BuffSystem.list()), blessed, paralyzedMs, hunt ({progress, label}) e dayCount.
  */
-export function collectEffects({ buffs = [], blessed = false, paralyzedMs = 0, hunt = null, dayCount = 0 } = {}) {
+export function collectEffects({ buffs = [], blessed = false, paralyzedMs = 0, hunt = null, dayCount = 0, xp = null, invasion = null } = {}) {
   const effects = [];
   if (paralyzedMs > 0) {
     effects.push({ id: 'paralysis', kind: 'bad', icon: '!', name: 'Paralisado', time: formatRemaining(paralyzedMs),
@@ -48,6 +48,18 @@ export function collectEffects({ buffs = [], blessed = false, paralyzedMs = 0, h
   if (blessed) {
     effects.push({ id: 'blessing', kind: 'ward', icon: '*', name: 'Bênção da Fogueira', time: '1x',
       description: 'Na próxima morte, nada da mochila fica para trás. A bênção se gasta.' });
+  }
+  if (xp?.event) {
+    effects.push({ id: 'xp-event', kind: 'buff', icon: '2X', name: 'XP em dobro', time: 'hoje',
+      description: 'Evento do fim de semana do jogo: todo o XP ganho hoje vale o dobro.' });
+  }
+  if (xp?.bonusMs > 0) {
+    effects.push({ id: 'xp-bonus', kind: 'buff', icon: '2X', name: 'Bônus de novato', time: formatRemaining(xp.bonusMs),
+      description: 'Resgatado na Fogueira: XP em dobro enquanto o tempo não acabar.' });
+  }
+  if (invasion) {
+    effects.push({ id: 'invasion', kind: 'bad', icon: '!', name: 'Invasão', time: invasion.time ?? '',
+      description: invasion.label ?? 'Invasores atacam uma região.' });
   }
   if (hunt) {
     effects.push({ id: 'hunt', kind: 'hunt', icon: 'X', name: 'Caçada', time: hunt.progress ?? '',

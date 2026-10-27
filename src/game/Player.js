@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { COMBAT_CONFIG } from '../data/combat.js';
 import { ShieldBlocker, blockedDamage } from './ShieldBlock.js';
+import { heroTexture, normalizeGender } from './HeroStyle.js';
 import { PERK_EFFECTS } from '../data/progression.js';
 import { SWORD_TIERS, drawPickaxe, drawSword, swordTierFor } from '../art/gear.js';
 
@@ -20,6 +21,8 @@ export class Player extends Phaser.GameObjects.Container {
     this.body.setCollideWorldBounds(true);
     this.setDepth(y + 30);
 
+    this.gender = 'male';
+    this.animPrefix = 'player';
     this.sprite = scene.add.sprite(0, -2, 'player', 1).setOrigin(0.5, 0.77);
     this.add(this.sprite);
 
@@ -222,7 +225,7 @@ export class Player extends Phaser.GameObjects.Container {
       this.direction = Math.abs(movement.x) > Math.abs(movement.y)
         ? movement.x < 0 ? 'left' : 'right'
         : movement.y < 0 ? 'up' : 'down';
-      const walk = `player-walk-${this.direction}`;
+      const walk = `${this.animPrefix}-walk-${this.direction}`;
       if (this.sprite.anims.currentAnim?.key !== walk) this.sprite.play(walk);
       if (this.stepTimer === 0) {
         this.stepTimer = 240;
@@ -231,10 +234,10 @@ export class Player extends Phaser.GameObjects.Container {
     } else if (pointerWorld) {
       const aim = new Phaser.Math.Vector2(pointerWorld.x - this.x, pointerWorld.y - this.y);
       if (aim.lengthSq() > 0) this.facing.copy(aim.normalize());
-      const idle = `player-idle-${this.direction}`;
+      const idle = `${this.animPrefix}-idle-${this.direction}`;
       if (this.sprite.anims.currentAnim?.key !== idle) this.sprite.play(idle);
     } else {
-      const idle = `player-idle-${this.direction}`;
+      const idle = `${this.animPrefix}-idle-${this.direction}`;
       if (this.sprite.anims.currentAnim?.key !== idle) this.sprite.play(idle);
     }
     if (this.knockbackTimer > 0) {
@@ -330,6 +333,14 @@ export class Player extends Phaser.GameObjects.Container {
   /** Nível do herói (poções fortes e equipamentos pedem nível mínimo). */
   get level() {
     return this.progression?.level ?? 1;
+  }
+
+  /** Troca o desenho do herói (cavaleiro ou heroína); as animações são as mesmas. */
+  setGender(gender) {
+    this.gender = normalizeGender(gender);
+    this.animPrefix = heroTexture(this.gender);
+    this.sprite.setTexture(this.animPrefix, 1);
+    this.sprite.play(`${this.animPrefix}-idle-${this.direction}`);
   }
 
   /** Recalcula atributos: base + níveis + Forja + equipamento vestido + buffs + efeitos do acampamento. */

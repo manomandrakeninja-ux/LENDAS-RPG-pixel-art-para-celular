@@ -159,7 +159,16 @@ export class MapRenderer {
     for (const feature of this.scene.regionWorld?.features ?? []) {
       const x = feature.x / MAP_SCALE;
       const y = feature.y / MAP_SCALE;
-      if (feature.type === 'cave') {
+      if (feature.type === 'cave' && feature.cave.tower) {
+        context.fillStyle = '#d8c8a0';
+        context.fillRect(x - 4, y - 12, 8, 12);
+        context.fillStyle = '#6b5a3a';
+        context.fillRect(x - 4, y - 14, 2, 3);
+        context.fillRect(x - 1, y - 14, 2, 3);
+        context.fillRect(x + 2, y - 14, 2, 3);
+        context.fillStyle = '#1a1416';
+        context.fillRect(x - 1, y - 4, 3, 4);
+      } else if (feature.type === 'cave') {
         context.fillStyle = '#1a1416';
         context.beginPath();
         context.ellipse(x, y - 4, 8, 6, 0, 0, Math.PI * 2);

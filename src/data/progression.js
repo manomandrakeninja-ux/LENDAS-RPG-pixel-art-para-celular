@@ -54,6 +54,11 @@ export const PERK_EFFECTS = Object.freeze({
   scholarXpMultiplier: 1.15
 });
 
+/** Refazer talentos: nível x 50 moedas, mínimo 100. */
+export function respecCost(level) {
+  return Math.max(100, Math.floor(Number(level) || 1) * 50);
+}
+
 export function xpRequiredForLevel(level) {
   const normalizedLevel = Math.max(1, Math.floor(Number(level) || 1));
   // Até o 20 é linear (como sempre foi); depois cresce para o fim de jogo durar.
@@ -219,6 +224,33 @@ export class PlayerProgression {
     else this.healthPoints += 1;
     this.pendingLevels.shift();
     return { applied: true, attribute };
+  }
+
+  /** Custo de refazer talentos e atributos na Fogueira: nível x 50, no mínimo 100 moedas. */
+  get respecCost() {
+    return respecCost(this.level);
+  }
+
+  /** Pontos de atributo e talentos já escolhidos (e que voltariam). */
+  get spentChoices() {
+    return this.attackPoints + this.defensePoints + this.healthPoints + this.perks.length;
+  }
+
+  /**
+   * Refaz as escolhas: os pontos de atributo e os talentos voltam para escolha.
+   * O bônus legado (saves antigos) e o nível não mudam.
+   */
+  respec() {
+    const attributePoints = this.attackPoints + this.defensePoints + this.healthPoints;
+    const total = attributePoints + this.pendingLevels.length;
+    this.attackPoints = 0;
+    this.defensePoints = 0;
+    this.healthPoints = 0;
+    // Cada escolha vale um dos níveis já alcançados (2 em diante); nenhum ponto se perde.
+    this.pendingLevels = Array.from({ length: total }, (_, index) => (index % Math.max(1, this.level - 1)) + 2);
+    this.perks = [];
+    this.pendingPerks = PERK_LEVELS.filter((level) => level <= this.level);
+    return { refunded: attributePoints, perks: this.pendingPerks.length };
   }
 
   serialize() {

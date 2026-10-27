@@ -28,7 +28,9 @@ const OPTIONS = {
   shake: [[true, 'Ligado'], [false, 'Desligado']],
   labels: [['auto', 'Automático'], ['always', 'Sempre'], ['near', 'Só de perto']],
   stickSize: [['small', 'Pequeno'], ['medium', 'Médio'], ['large', 'Grande']],
-  stickSide: [['left', 'Esquerda'], ['right', 'Direita']]
+  stickSide: [['left', 'Esquerda'], ['right', 'Direita']],
+  // Fica no save do jogo (não nas configurações do aparelho).
+  gender: [['male', 'Cavaleiro'], ['female', 'Heroína']]
 };
 
 /**
@@ -96,6 +98,9 @@ export class SettingsPanel {
       else if (action === 'keys-reset') {
         this.keybinds = { ...DEFAULT_KEYBINDS };
         this.commitKeybinds('Teclas padrão restauradas.');
+      } else if (action === 'gender') {
+        this.scene.setHeroGender?.(value);
+        this.render();
       } else if (action === 'fullscreen') this.scene.touch?.toggleFullscreen();
       else if (action === 'save') {
         this.scene.save();
@@ -215,7 +220,8 @@ export class SettingsPanel {
 
   choiceRow(key, title, description) {
     const buttons = OPTIONS[key].map(([value, label]) => {
-      const active = this.settings[key] === value;
+      const current = key === 'gender' ? this.scene.heroGender : this.settings[key];
+      const active = current === value;
       return `<button type="button" data-settings="${key}" data-value="${value}" aria-pressed="${active}" class="${active ? 'is-active' : ''}">${label}</button>`;
     }).join('');
     return `
@@ -245,6 +251,7 @@ export class SettingsPanel {
     const forcedByUrl = /[?&](toque|touch)=/.test(window.location.search);
     this.body.innerHTML = `
       ${this.choiceRow('interface', 'Interface', `Agora: ${touch ? 'celular (controles de toque)' : 'computador (teclado e mouse)'}.${forcedByUrl ? ' O endereço da página está forçando um modo.' : ''}`)}
+      ${this.choiceRow('gender', 'Personagem', 'Escolha o visual do seu herói. As animações são as mesmas.')}
       ${this.choiceRow('sound', 'Som', '')}
       <div class="settings-panel__row">
         <h3>Volume</h3>
