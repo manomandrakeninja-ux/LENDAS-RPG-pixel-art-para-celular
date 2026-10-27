@@ -169,7 +169,7 @@ export const GEAR_SETS = Object.freeze(Object.fromEntries(TIERS.map((tier) => [t
 // ---------- Geração das peças ----------
 const generated = [];
 TIERS.forEach((tier, index) => {
-  const base = { level: tier.level, region: GEAR_SETS[tier.key].region, colors: tier.colors };
+  const base = { tierKey: tier.key, level: tier.level, region: GEAR_SETS[tier.key].region, colors: tier.colors };
   for (const slot of ['helmet', 'chest', 'legs', 'boots']) {
     generated.push({ ...base, id: `${tier.key}-${slot}`, name: tier.armor[ARMOR_NAME_INDEX[slot]], slot, set: tier.key, ...armorStats(tier, slot) });
   }

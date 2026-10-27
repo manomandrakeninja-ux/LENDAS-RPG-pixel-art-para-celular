@@ -315,6 +315,85 @@ function amulet(c, main, accent, item) {
   }
 }
 
+// ---------- Marca de cada conjunto ----------
+// Cada um dos 18 conjuntos tem um glifo próprio (desenhado em torno de x, y), uma
+// crista de elmo e ombreiras próprias; o glifo aparece em todos os espaços da peça.
+const GLYPHS = {
+  couro: (c, x, y, a) => { c.line(x - 3, y + 3, x + 3, y - 3, a[2]); c.line(x - 3, y - 3, x + 3, y + 3, a[2]); c.pixel(x, y, a[3]); },
+  bosque: (c, x, y, a) => { c.polygon([[x, y - 4], [x + 3, y], [x, y + 3], [x - 3, y]], a[2]); c.line(x, y - 3, x, y + 4, a[0]); },
+  ferro: (c, x, y, a) => { c.rect(x - 3, y - 3, 7, 3, a[2]); c.rect(x - 1, y, 3, 4, a[1]); c.pixel(x - 3, y - 3, a[3]); },
+  malha: (c, x, y, a) => { for (const [dx, dy] of [[-2, -2], [2, -2], [0, 0], [-2, 2], [2, 2]]) { c.pixel(x + dx, y + dy, a[3]); c.pixel(x + dx + 1, y + dy, a[1]); } },
+  brejo: (c, x, y, a) => { c.shadedEllipse(x, y + 1, 3, 2.5, ramp('#a8c860')); c.pixel(x - 2, y - 2, a[3]); c.pixel(x + 2, y - 2, a[3]); },
+  prata: (c, x, y, a) => { c.shadedEllipse(x, y, 3.5, 3.5, ramp('#f4f8ff')); c.shadedEllipse(x + 2, y - 1, 3, 3, ramp('#4a5468')); },
+  corsario: (c, x, y, a) => { c.shadedEllipse(x, y - 1, 3, 3, ramp('#f4efe0')); c.pixel(x - 1, y - 1, '#1a1418'); c.pixel(x + 1, y - 1, '#1a1418'); c.line(x - 3, y + 3, x + 3, y + 3, '#f4efe0'); },
+  coral: (c, x, y, a) => { c.line(x, y + 4, x, y - 1, a[2]); c.line(x, y + 1, x - 3, y - 3, a[2]); c.line(x, y, x + 3, y - 4, a[2]); c.pixel(x - 3, y - 3, a[3]); c.pixel(x + 3, y - 4, a[3]); },
+  glacial: (c, x, y, a) => { c.line(x, y - 4, x, y + 4, '#ffffff'); c.line(x - 4, y, x + 4, y, '#ffffff'); c.line(x - 3, y - 3, x + 3, y + 3, a[3]); c.line(x - 3, y + 3, x + 3, y - 3, a[3]); },
+  runico: (c, x, y, a) => { c.line(x - 1, y - 4, x - 1, y + 4, a[3]); c.line(x - 1, y - 4, x + 3, y - 1, a[3]); c.line(x + 3, y - 1, x - 1, y + 1, a[3]); c.pixel(x + 2, y + 3, a[2]); },
+  mithril: (c, x, y, a) => { c.polygon([[x, y - 4], [x + 4, y], [x, y + 4], [x - 4, y]], a[2]); c.polygon([[x, y - 2], [x + 2, y], [x, y + 2], [x - 2, y]], a[3]); },
+  faraonico: (c, x, y, a) => { c.shadedEllipse(x, y - 2, 2.2, 2.2, GOLD); c.line(x, y, x, y + 4, GOLD[2]); c.line(x - 3, y + 1, x + 3, y + 1, GOLD[2]); },
+  adamante: (c, x, y, a) => { c.polygon([[x - 3, y - 1], [x, y - 4], [x + 3, y - 1], [x, y + 4]], a[2]); c.line(x - 3, y - 1, x + 3, y - 1, a[3]); c.line(x, y - 1, x, y + 4, a[0]); },
+  vulcanico: (c, x, y, a) => { c.polygon([[x, y - 4], [x + 3, y + 3], [x - 3, y + 3]], '#ff7a2a'); c.polygon([[x, y - 1], [x + 1, y + 3], [x - 1, y + 3]], '#ffd060'); },
+  demoniaco: (c, x, y, a) => { c.polygon([[x - 4, y - 4], [x - 2, y - 4], [x, y], [x + 2, y - 4], [x + 4, y - 4], [x + 2, y + 3], [x - 2, y + 3]], a[2]); c.pixel(x - 1, y + 1, '#ffd0d8'); c.pixel(x + 1, y + 1, '#ffd0d8'); },
+  celestial: (c, x, y, a) => { c.line(x - 4, y, x - 1, y - 3, '#ffffff'); c.line(x + 4, y, x + 1, y - 3, '#ffffff'); c.line(x - 4, y + 1, x, y + 3, '#fff6c8'); c.line(x + 4, y + 1, x, y + 3, '#fff6c8'); c.pixel(x, y - 1, GOLD[3]); },
+  abissal: (c, x, y, a) => { for (let t = 0; t < 14; t += 1) { const r = 1 + t * 0.28; const ang = t * 0.7; c.pixel(x + Math.cos(ang) * r, y + Math.sin(ang) * r, t > 9 ? '#d8b0ff' : a[2]); } },
+  titanico: (c, x, y, a) => { for (let i = 0; i < 5; i += 1) { const ang = -Math.PI / 2 + (i * Math.PI * 2) / 5; c.line(x, y, x + Math.cos(ang) * 4, y + Math.sin(ang) * 4, GOLD[2]); } c.pixel(x, y, GOLD[3]); }
+};
+
+const CRESTS = {
+  couro: (c, t) => c.line(16, 5, 16, 8, t[2]),
+  bosque: null,
+  ferro: (c, t) => c.rect(14, 3, 4, 5, t[1]),
+  malha: (c, t) => { c.line(8, 15, 8, 24, t[3]); c.line(24, 15, 24, 24, t[3]); },
+  brejo: null,
+  prata: (c, t) => { c.line(16, 1, 16, 7, t[3]); c.polygon([[16, 1], [21, 4], [16, 5]], t[2]); },
+  corsario: null,
+  coral: (c, t) => { c.line(10, 6, 8, 1, t[2]); c.line(16, 5, 16, 0, t[2]); c.line(22, 6, 24, 1, t[2]); },
+  glacial: null,
+  runico: (c, t) => { c.line(10, 8, 7, 3, t[3]); c.line(22, 8, 25, 3, t[3]); c.pixel(16, 6, t[3]); },
+  mithril: (c, t) => { c.polygon([[12, 8], [16, 0], [20, 8]], t[2]); c.line(16, 1, 16, 8, t[3]); },
+  faraonico: null,
+  adamante: (c, t) => { for (const x of [11, 16, 21]) c.polygon([[x - 1, 8], [x, 3], [x + 1, 8]], t[3]); },
+  vulcanico: null,
+  demoniaco: (c, t) => { c.polygon([[8, 9], [4, 1], [11, 7]], t[2]); c.polygon([[24, 9], [28, 1], [21, 7]], t[2]); },
+  celestial: (c, t) => { c.shadedEllipse(16, 4, 7, 2, GOLD); c.pixel(16, 2, '#ffffff'); },
+  abissal: (c, t) => { c.line(8, 9, 4, 4, '#8a3aff'); c.line(4, 4, 8, 1, '#d8b0ff'); c.line(24, 9, 28, 4, '#8a3aff'); c.line(28, 4, 24, 1, '#d8b0ff'); },
+  titanico: (c, t) => { c.polygon([[8, 8], [8, 1], [12, 5], [16, 0], [20, 5], [24, 1], [24, 8]], GOLD[1]); c.line(8, 1, 24, 1, GOLD[3]); }
+};
+
+const SHOULDERS = {
+  couro: (c) => { c.pixel(5, 10, '#d9a070'); c.pixel(27, 10, '#d9a070'); },
+  ferro: (c, t) => { c.rect(3, 6, 4, 3, t[2]); c.rect(25, 6, 4, 3, t[2]); },
+  prata: (c, t) => { c.polygon([[3, 8], [6, 2], [9, 6]], t[3]); c.polygon([[29, 8], [26, 2], [23, 6]], t[3]); },
+  bosque: (c, t) => { c.polygon([[2, 8], [5, 3], [8, 7]], t[2]); c.polygon([[30, 8], [27, 3], [24, 7]], t[2]); },
+  corsario: (c, t) => { c.line(3, 8, 6, 11, GOLD[2]); c.line(29, 8, 26, 11, GOLD[2]); },
+  coral: (c, t) => { c.polygon([[2, 9], [4, 4], [8, 6]], t[2]); c.polygon([[30, 9], [28, 4], [24, 6]], t[2]); },
+  adamante: (c, t) => { c.polygon([[3, 9], [4, 2], [8, 6]], t[3]); c.polygon([[29, 9], [28, 2], [24, 6]], t[3]); },
+  demoniaco: (c, t) => { c.polygon([[3, 8], [1, 2], [7, 6]], t[2]); c.polygon([[29, 8], [31, 2], [25, 6]], t[2]); },
+  vulcanico: (c) => { c.pixel(4, 6, '#ff8a2a'); c.pixel(28, 6, '#ff8a2a'); c.pixel(3, 8, '#ffb04a'); c.pixel(29, 8, '#ffb04a'); },
+  celestial: (c) => { c.line(2, 9, 5, 4, '#ffffff'); c.line(30, 9, 27, 4, '#ffffff'); },
+  abissal: (c) => { c.pixel(4, 5, '#d8b0ff'); c.pixel(28, 5, '#d8b0ff'); c.line(3, 8, 5, 6, '#8a3aff'); c.line(29, 8, 27, 6, '#8a3aff'); },
+  titanico: (c) => { c.rect(2, 5, 5, 4, GOLD[1]); c.rect(25, 5, 5, 4, GOLD[1]); c.line(2, 5, 6, 5, GOLD[3]); c.line(25, 5, 29, 5, GOLD[3]); }
+};
+
+/** Anchor do glifo por espaço (null = o espaço não leva glifo). */
+const GLYPH_AT = { helmet: [16, 18], chest: [16, 14], legs: [16, 14], shield: [16, 16], ring: [16, 11], amulet: [16, 25] };
+
+function setMark(c, set, slot, item) {
+  const key = GLYPHS[set] ? set : null;
+  if (!key) return;
+  const tone = ramp(item.colors?.[1] ?? '#c8a030');
+  if (slot === 'helmet') CRESTS[set]?.(c, tone);
+  else if (slot === 'chest') SHOULDERS[set]?.(c, tone);
+  if (slot === 'boots') { GLYPHS[set](c, 9, 15, tone); GLYPHS[set](c, 21, 15, tone); return; }
+  if (slot === 'weapon') {
+    // Pomo e fita do punho com o glifo do conjunto.
+    GLYPHS[set](c, 6, 25, tone);
+    return;
+  }
+  const at = GLYPH_AT[slot];
+  if (at) GLYPHS[set](c, at[0], at[1], tone);
+}
+
 const WEAPONS = { sword, dagger, sabre, axe, spear, trident, club, staff, claw };
 
 /** Ícone 32 x 32 de uma peça (`id` de GEAR_ITEMS). */
@@ -331,6 +410,7 @@ export function drawGearIcon(id, rarity = 'common') {
   else if (item.slot === 'boots') boots(canvas, main, accent);
   else if (item.slot === 'ring') ring(canvas, main, accent);
   else if (item.slot === 'amulet') amulet(canvas, main, accent, item);
+  setMark(canvas, item.tierKey ?? item.set, item.slot, item);
   canvas.outline({ strength: 0.85, ink: '#120d12' });
   if (rarity === 'legendary' || item.boss) {
     sparkle(canvas, 4, 5);
