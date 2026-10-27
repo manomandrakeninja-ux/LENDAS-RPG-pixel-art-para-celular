@@ -79,7 +79,7 @@ export class EnemyDirector {
     if (this.spawnTimer <= 0) {
       this.spawnTimer = SPAWNING_CONFIG.spawnIntervalMs[period];
       const regular = this.enemies.filter((enemy) => !enemy.isRaider && !enemy.isQuestEnemy && !enemy.isCaveEnemy && !enemy.isInvader).length;
-      if (regular < limit && !this.scene.regionWorld?.underground) this.spawnOne(timeState);
+      if (regular < limit && !this.scene.regionWorld?.underground) this.spawnOne(timeState, true);
     }
     this.mineTimer -= delta;
     if (this.mineTimer <= 0) {
@@ -106,12 +106,13 @@ export class EnemyDirector {
     }
   }
 
-  spawnOne(timeState) {
+  /** `swirl`: só os nascimentos durante o jogo mostram o redemoinho; encher o mundo ao carregar é imediato. */
+  spawnOne(timeState, swirl = false) {
     const period = timeState.isNight ? 'night' : 'day';
     // Fora do Vale: monstros da região onde o jogador está, em volta dele.
     const player = this.scene.player;
     const region = player ? regionAt(player.x, player.y) : 'vale';
-    if (REGION_SPAWNS[region]) return this.spawnInRegion(region, period, timeState);
+    if (REGION_SPAWNS[region]) return this.spawnInRegion(region, period, timeState, swirl);
     if (region === 'mar') return false;
     const candidates = [];
     for (const type of player ? VALLEY_EXTRA_SPAWNS[period] ?? [] : []) {
@@ -133,11 +134,11 @@ export class EnemyDirector {
     if (!position) return false;
     const eliteChance = ELITE_CONFIG.chance[period];
     const elite = this.random() < eliteChance;
-    this.addEnemyWithSwirl(selected.type, position.x, position.y, { elite, isNight: period === 'night' });
+    this.spawnAt(swirl, selected.type, position.x, position.y, { elite, isNight: period === 'night' });
     return true;
   }
 
-  spawnInRegion(region, period, timeState) {
+  spawnInRegion(region, period, timeState, swirl = false) {
     const list = REGION_SPAWNS[region][period] ?? [];
     if (list.length === 0) return false;
     const type = list[Math.floor(this.random() * list.length)];
@@ -151,12 +152,16 @@ export class EnemyDirector {
       const x = position.x + (index ? (this.random() - 0.5) * 70 : 0);
       const y = position.y + (index ? (this.random() - 0.5) * 70 : 0);
       if (this.scene.regionWorld && !this.scene.regionWorld.walkable(x, y)) continue;
-      this.addEnemyWithSwirl(type, x, y, { elite: elite && index === 0, isNight: period === 'night', level: levelInRange(definition, REGION_INFO[region]?.levelRange) });
+      this.spawnAt(swirl, type, x, y, { elite: elite && index === 0, isNight: period === 'night', level: levelInRange(definition, REGION_INFO[region]?.levelRange) });
     }
     return true;
   }
 
   /** Nascimento natural: redemoinho azul por ~0,6 s e só então o monstro aparece. */
+  spawnAt(swirl, type, x, y, options) {
+    return swirl ? this.addEnemyWithSwirl(type, x, y, options) : this.addEnemy(type, x, y, options);
+  }
+
   addEnemyWithSwirl(type, x, y, options) {
     const scene = this.scene;
     if (!scene.effects?.spawnSwirl || !scene.time) return this.addEnemy(type, x, y, options);

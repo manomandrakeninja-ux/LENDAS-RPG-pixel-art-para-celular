@@ -340,6 +340,8 @@ try {
     const scene = window.__LENDAS__.scene.getScene('GameScene');
     scene.inventory.items.wood = 10;
     scene.inventory.items.food = 5;
+    // Até o nível 5 a proteção de novato guarda a mochila; o teste da perda vale a partir do 6.
+    scene.progression.level = Math.max(scene.progression.level, 6);
     scene.player.health = 1;
     scene.player.invulnerable = 0;
     scene.player.damage(999, { x: scene.player.x + 20, y: scene.player.y });
