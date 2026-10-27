@@ -90,8 +90,21 @@ export async function runInChrome({ name, port, width = 960, height = 640, mobil
       const scene = window.__LENDAS__.scene.getScene('GameScene');
       return (${fn.toString()})(scene, ...${JSON.stringify(args)});
     })()`);
+    // O Chrome lista a página antes de terminar a primeira navegação (e o reload também troca o
+    // documento). Se a página trocar no meio da espera, a pergunta se perde: espera e pergunta de novo.
+    const evaluateAcrossNavigation = async (expression) => {
+      for (let attempt = 1; ; attempt += 1) {
+        try {
+          return await evaluate(expression);
+        } catch (error) {
+          const navigated = /Execution context was destroyed|Cannot find context|Inspected target navigated/.test(error.message);
+          if (!navigated || attempt >= 5) throw error;
+          await delay(500);
+        }
+      }
+    };
     const waitForScene = async () => {
-      await evaluate(`new Promise((resolve, reject) => {
+      await evaluateAcrossNavigation(`new Promise((resolve, reject) => {
         const started = Date.now();
         const check = () => {
           const scene = window.__LENDAS__?.scene?.getScene('GameScene');
@@ -103,7 +116,7 @@ export async function runInChrome({ name, port, width = 960, height = 640, mobil
       })`);
       await delay(400);
       // A abertura do capítulo 1 pausa o jogo: fecha como o jogador faria (a conversa com Bram vem em seguida).
-      await evaluate(`window.__LENDAS__.scene.getScene('GameScene')?.campaign?.ui?.closeChapter?.()`);
+      await evaluateAcrossNavigation(`window.__LENDAS__.scene.getScene('GameScene')?.campaign?.ui?.closeChapter?.()`);
     };
     const capture = async (fileName) => {
       const screenshot = await send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false });

@@ -14,3 +14,13 @@ comprovacao-evolucao/
 
 # prévias da arte dos personagens
 previa-personagens/
+
+# Ruflo local secrets and runtime data
+.env
+.env.local
+.env.*.local
+.claude-flow/data/
+.claude-flow/logs/
+.claude-flow/sessions/
+RETOMAR_TRABALHO.md
+retomar-claude.ps1
