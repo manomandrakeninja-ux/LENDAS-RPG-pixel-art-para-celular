@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { PixelCanvas, darken, lighten } from '../art/pixel.js';
+import { drawHorseFrame, HORSE_W, HORSE_H, HORSE_FRAMES } from '../art/mountHorse.js';
 import { Companions, PETS, petAbility } from '../data/companions.js';
 
 // Parte da cena dos mascotes e da montaria: desenho em pixel, seguir o herói e os efeitos.
@@ -56,20 +57,15 @@ export function petTexture(scene, id) {
   });
 }
 
-export function mountTexture(scene) {
-  return makeTexture(scene, 'mount-horse', 34, 22, (c) => {
-    const coat = '#8a5a34';
-    c.rect(6, 6, 20, 9, coat);
-    c.rect(22, 2, 8, 8, lighten(coat, 0.12));
-    c.rect(28, 4, 4, 5, lighten(coat, 0.2));
-    c.rect(23, 0, 2, 3, coat);
-    c.rect(26, 0, 2, 3, coat);
-    c.rect(20, 2, 3, 8, '#2a1a10');
-    c.rect(2, 7, 5, 3, '#2a1a10');
-    for (const x of [7, 13, 19, 24]) c.rect(x, 15, 3, 6, darken(coat, 0.3));
-    c.rect(11, 4, 8, 3, '#b3322d');
-    c.pixel(28, 4, '#1c1426');
-  });
+export function mountTexture(scene, frame = 0) {
+  const key = `mount-horse-${frame}`;
+  if (scene.textures.exists(key)) return key;
+  const canvas = drawHorseFrame(frame);
+  const texture = scene.textures.createCanvas(key, HORSE_W, HORSE_H);
+  texture.getContext().putImageData(new ImageData(canvas.data, HORSE_W, HORSE_H), 0, 0);
+  texture.setFilter(Phaser.Textures.FilterMode.NEAREST);
+  texture.refresh();
+  return key;
 }
 
 export class CompanionSystem {
@@ -79,6 +75,8 @@ export class CompanionSystem {
     this.petSprite = null;
     this.petId = null;
     this.mountSprite = null;
+    this.mountClock = 0;
+    this.mountSide = 1;
     this.attackTimer = 0;
     this.healTimer = 0;
     this.bob = 0;
@@ -141,7 +139,7 @@ export class CompanionSystem {
       }
     }
     if (this.state.mounted && !this.mountSprite) {
-      this.mountSprite = scene.add.image(scene.player.x, scene.player.y + 12, mountTexture(scene)).setOrigin(0.5, 0.7);
+      this.mountSprite = scene.add.image(scene.player.x, scene.player.y + 12, mountTexture(scene, 1)).setOrigin(0.5, 0.78).setScale(1.2);
     } else if (!this.state.mounted && this.mountSprite) {
       this.mountSprite.destroy();
       this.mountSprite = null;
@@ -153,7 +151,14 @@ export class CompanionSystem {
     const player = scene.player;
     if (!player) return;
     if (this.mountSprite) {
-      this.mountSprite.setPosition(player.x, player.y + 12).setFlipX(player.direction === 'left').setDepth(player.y + 7);
+      if (player.direction === 'left') this.mountSide = -1;
+      else if (player.direction === 'right') this.mountSide = 1;
+      const moving = Math.hypot(player.x - (this.lastPx ?? player.x), player.y - (this.lastPy ?? player.y)) > 0.3;
+      this.lastPx = player.x;
+      this.lastPy = player.y;
+      if (moving) this.mountClock += delta;
+      const frame = moving ? Math.floor(this.mountClock / 90) % HORSE_FRAMES : 1;
+      this.mountSprite.setTexture(mountTexture(scene, frame)).setPosition(player.x, player.y + 14).setFlipX(this.mountSide < 0).setDepth(player.y + 7);
     }
     const sprite = this.petSprite;
     if (!sprite) return;
