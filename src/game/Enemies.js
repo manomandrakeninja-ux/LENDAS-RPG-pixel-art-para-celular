@@ -1,3 +1,4 @@
+import { scaleEnemy } from '../data/enemyScaling.js';
 import Phaser from 'phaser';
 import { COMBAT_CONFIG } from '../data/combat.js';
 import { ELITE_CONFIG, ENEMY_TYPES } from '../data/enemies.js';
@@ -21,15 +22,20 @@ export class Enemy extends Phaser.GameObjects.Container {
       ? `Guarda-mina (${this.definition.name})`
       : `${this.definition.name}${this.isElite ? ` ${ELITE_CONFIG.label}` : ''}`;
 
+    // Nível: espécie (ou o da região/caverna); abaixo do 15 os números são os de enemies.json.
+    const scaled = scaleEnemy(this.definition, options.level ?? this.definition.level ?? 1);
+    this.level = scaled.level;
+    this.scaledXp = scaled.xp;
+    this.coinScale = scaled.coinMultiplier;
     const night = this.isNight ? SPAWNING_CONFIG.nightScaling : null;
     this.maxHealth = Math.round(
-      this.definition.health *
+      scaled.health *
       (this.isElite ? ELITE_CONFIG.healthMultiplier : 1) *
       (night?.healthMultiplier ?? 1)
     );
     this.health = this.maxHealth;
     this.damage = Math.round(
-      this.definition.damage *
+      scaled.damage *
       (this.isElite ? ELITE_CONFIG.damageMultiplier : 1) *
       (night?.damageMultiplier ?? 1)
     );

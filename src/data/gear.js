@@ -109,6 +109,7 @@ const OTHER_ITEMS = [
   { id: 'pharaohStaff', name: 'Cetro do Faraó', slot: 'weapon', look: 'staff', level: 16, attack: 30, maxHealth: 40, boss: 'pharaoh', sword: 'legendary', colors: ['#c8a030', '#3aa0ff'] },
   { id: 'dragonClaw', name: 'Garra do Dragão', slot: 'weapon', look: 'claw', level: 19, attack: 42, fireResistance: 0.15, boss: 'dragon', sword: 'dragon', colors: ['#5a0c0c', '#ffb04a'] },
   { id: 'dragonHeart', name: 'Coração de Dragão', slot: 'amulet', look: 'amulet', level: 19, maxHealth: 80, fireResistance: 0.1, boss: 'dragon', colors: ['#5a0c0c', '#ff4a2a'] },
+  { id: 'abyssBlade', name: 'Lâmina do Abismo', slot: 'weapon', look: 'sword', level: 20, attack: 60, fireResistance: 0.2, boss: 'abyssLord', sword: 'dragon', colors: ['#240a14', '#ff3a4a'] },
   { id: 'kingRing', name: 'Anel do Faraó', slot: 'ring', look: 'ring', level: 16, attack: 6, defense: 3, boss: 'pharaoh', colors: ['#c8a030', '#3aa0ff'] }
 ];
 

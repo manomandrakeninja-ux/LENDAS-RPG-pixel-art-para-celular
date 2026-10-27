@@ -242,3 +242,7 @@
     width: calc(100% - 150px);
   }
 }
+
+.bestiary__drop--common small { color: #cfd8c4; }
+.bestiary__drop--uncommon small { color: #6ad0ff; }
+.bestiary__drop--rare small { color: #ffc84a; }

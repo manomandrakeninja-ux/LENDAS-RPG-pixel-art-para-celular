@@ -1,4 +1,5 @@
 import { ENEMY_TYPES } from '../data/enemies.js';
+import { RARITY_LABELS, dropRarity, scaleEnemy } from '../data/enemyScaling.js';
 import { RESOURCE_TYPES } from './config.js';
 import { drawEnemyFrame, enemyCanvasSize } from './EnemyVisual.js';
 import { BESTIARY_ORDER, habitatsOf } from './Bestiary.js';
@@ -93,17 +94,22 @@ export class BestiaryPanel {
     const definition = ENEMY_TYPES[kind];
     const kills = this.scene.bestiary.kills[kind] ?? 0;
     const period = definition.boss ? 'Chefe' : definition.period === 'night' ? 'Noturno' : 'Diurno';
-    const drops = definition.drops.map((drop) =>
-      `<li>${escapeHtml(RESOURCE_TYPES[drop.type]?.label ?? drop.type)} <small>${Math.round(drop.chance * 100)}%</small></li>`).join('');
+    const stats = scaleEnemy(definition, definition.level ?? 1);
+    const drops = [...definition.drops]
+      .sort((a, b) => b.chance - a.chance)
+      .map((drop) => {
+        const rarity = dropRarity(drop.chance);
+        return `<li class="bestiary__drop bestiary__drop--${rarity}">${escapeHtml(RESOURCE_TYPES[drop.type]?.label ?? drop.type)} <small>${RARITY_LABELS[rarity]}</small></li>`;
+      }).join('');
     const habitats = habitatsOf(kind).map((place) => `<li>${escapeHtml(place)}</li>`).join('');
     return `
       <img class="pixel-icon bestiary__portrait" src="${monsterPortrait(kind)}" alt="">
       <h3>${escapeHtml(definition.name)}</h3>
-      <p class="bestiary__tag">${period} • Perigo ${definition.tier}</p>
+      <p class="bestiary__tag">${period} • Nível ${stats.level} • Perigo ${definition.tier}</p>
       <dl class="bestiary__stats">
-        <div><dt>VIDA</dt><dd>${definition.health}</dd></div>
-        <div><dt>DANO</dt><dd>${definition.damage}</dd></div>
-        <div><dt>XP</dt><dd>${definition.xp}</dd></div>
+        <div><dt>VIDA</dt><dd>${stats.health}</dd></div>
+        <div><dt>DANO</dt><dd>${stats.damage}</dd></div>
+        <div><dt>XP</dt><dd>${stats.xp}</dd></div>
         <div><dt>ABATES</dt><dd>${kills}</dd></div>
       </dl>
       <h4>DEIXA CAIR</h4><ul>${drops || '<li>Nada</li>'}</ul>

@@ -3,7 +3,8 @@ import { SPAWN_ZONES } from '../data/biomes.js';
 import { ELITE_CONFIG, ENEMY_TYPES } from '../data/enemies.js';
 import { SPAWNING_CONFIG } from '../data/spawning.js';
 import { Enemy } from './Enemies.js';
-import { REGION_SPAWNS, VALLEY_EXTRA_SPAWNS, regionAt } from '../data/worldRegions.js';
+import { REGION_INFO, REGION_SPAWNS, VALLEY_EXTRA_SPAWNS, regionAt } from '../data/worldRegions.js';
+import { levelInRange } from '../data/enemyScaling.js';
 
 // Os guardas da mina eram criados só ao carregar o jogo; agora são repostos periodicamente.
 const MINE_REPOPULATE_MS = 30000;
@@ -148,7 +149,7 @@ export class EnemyDirector {
       const x = position.x + (index ? (this.random() - 0.5) * 70 : 0);
       const y = position.y + (index ? (this.random() - 0.5) * 70 : 0);
       if (this.scene.regionWorld && !this.scene.regionWorld.walkable(x, y)) continue;
-      this.addEnemy(type, x, y, { elite: elite && index === 0, isNight: period === 'night' });
+      this.addEnemy(type, x, y, { elite: elite && index === 0, isNight: period === 'night', level: levelInRange(definition, REGION_INFO[region]?.levelRange) });
     }
     return true;
   }

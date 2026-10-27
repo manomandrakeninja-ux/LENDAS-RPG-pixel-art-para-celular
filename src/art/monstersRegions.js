@@ -1,4 +1,5 @@
 import { hash } from './pixel.js';
+import { DEEP_DRAWERS, DEEP_MONSTER_SIZES } from './monstersDeep.js';
 
 // Monstros das regiões novas (vale, floresta antiga, brejo, picos gelados,
 // deserto, ilha vulcânica e ilha esmeralda) e os chefes de cada região.
@@ -1483,7 +1484,8 @@ export const REGION_MONSTER_SIZES = Object.freeze({
   frostGiant: { size: 80, elite: 80 },
   pharaoh: { size: 64, elite: 64 },
   dragon: { size: 96, elite: 96 },
-  ghostCaptain: { size: 64, elite: 64 }
+  ghostCaptain: { size: 64, elite: 64 },
+  ...DEEP_MONSTER_SIZES
 });
 
 /** Grade lógica de cada desenho (o tamanho normal). */
@@ -1518,5 +1520,6 @@ export const REGION_DRAWERS = Object.freeze({
   frostGiant: drawFrostGiant,
   pharaoh: drawPharaoh,
   dragon: drawDragon,
-  ghostCaptain: drawGhostCaptain
+  ghostCaptain: drawGhostCaptain,
+  ...DEEP_DRAWERS
 });

@@ -16,26 +16,26 @@ export const ROOM_ROWS = 20;
 const ROOM_GAP = 4;
 const UNDERGROUND_FIRST_ROW = OVERWORLD_ROWS + 4;
 const ROOMS_PER_ROW = 4;
-export const TOTAL_ROWS = UNDERGROUND_FIRST_ROW + 4 * (ROOM_ROWS + ROOM_GAP);
+export const TOTAL_ROWS = UNDERGROUND_FIRST_ROW + 5 * (ROOM_ROWS + ROOM_GAP);
 export const FULL_WORLD = Object.freeze({ width: WORLD_COLS * TILE, height: TOTAL_ROWS * TILE });
 
 // ---------- Regiões ----------
 
 export const REGION_INFO = Object.freeze({
-  vale: { name: 'Vale de Eldoria', levels: '1-10', color: '#4a7b48', banner: 'O lar do acampamento.' },
-  antiga: { name: 'Floresta Antiga', levels: '6-12', color: '#24452c', banner: 'Árvores mais velhas que os reis. Goblins e orcs vigiam as trilhas.' },
-  brejo: { name: 'Brejo Sombrio', levels: '8-14', color: '#3d4a33', banner: 'Água parada, névoa e coisas que se afogaram aqui.' },
+  vale: { name: 'Vale de Eldoria', levels: '1-15', levelRange: [1, 15], color: '#4a7b48', banner: 'O lar do acampamento.' },
+  antiga: { name: 'Floresta Antiga', levels: '12-30', levelRange: [12, 30], color: '#24452c', banner: 'Árvores mais velhas que os reis. Goblins e orcs vigiam as trilhas.' },
+  brejo: { name: 'Brejo Sombrio', levels: '25-45', levelRange: [25, 45], color: '#3d4a33', banner: 'Água parada, névoa e coisas que se afogaram aqui.' },
   gelo: {
-    name: 'Picos Gelados', levels: '12-18', color: '#d8e6f0', banner: 'O vento corta como lâmina.',
+    name: 'Picos Gelados', levels: '50-75', levelRange: [50, 75], color: '#d8e6f0', banner: 'O vento corta como lâmina.',
     hazard: { flag: 'warmClothes', damage: 3, message: 'Frio intenso! Roupas quentes protegem você (missão 51).' }
   },
   areia: {
-    name: 'Grande Deserto', levels: '14-20', color: '#d8b56a', banner: 'Areia sem fim e tumbas de reis esquecidos.',
+    name: 'Grande Deserto', levels: '70-95', levelRange: [70, 95], color: '#d8b56a', banner: 'Areia sem fim e tumbas de reis esquecidos.',
     hazard: { flag: 'desertSupplies', damage: 3, message: 'O sol do deserto drena suas forças! Suprimentos ajudam (missão 61).' }
   },
-  esmeralda: { name: 'Ilha Esmeralda', levels: '10-16', color: '#5aa04a', banner: 'Praias brancas, coqueiros e piratas que não descansam.' },
+  esmeralda: { name: 'Ilha Esmeralda', levels: '35-55', levelRange: [35, 55], color: '#5aa04a', banner: 'Praias brancas, coqueiros e piratas que não descansam.' },
   brasa: {
-    name: 'Ilha de Brasa', levels: '18-20+', color: '#5a2a22', banner: 'O vulcão respira. Demônios guardam o fogo antigo.',
+    name: 'Ilha de Brasa', levels: '90-120', levelRange: [90, 120], color: '#5a2a22', banner: 'O vulcão respira. Demônios guardam o fogo antigo.',
     hazard: { flag: 'ashMasks', damage: 4, message: 'Cinzas queimam seus pulmões! Máscaras protegem você (missão 82).' }
   },
   mar: { name: 'Mar de Eldoria', levels: '-', color: '#2a5a8a', banner: '' },
@@ -181,8 +181,18 @@ export const CAVES = Object.freeze([
   {
     id: 'coracao-vulcao', name: 'Coração do Vulcão', region: 'brasa', entrance: { x: 5180, y: 4640 }, floors: 3, theme: 'fire',
     monsters: ['imp', 'salamander', 'demon'], boss: 'dragon'
+  },
+  {
+    id: 'abismo-brasa', name: 'Abismo de Brasa', region: 'brasa', entrance: { x: 5900, y: 4700 }, floors: 4, theme: 'fire',
+    levelRange: [115, 150],
+    monsters: ['ashWraith', 'gargoyle', 'boneWyrm', 'voidStalker', 'cinderGiant', 'hellWarden', 'lavaWorm', 'soulReaper', 'abyssHound'], boss: 'abyssLord'
   }
 ]);
+
+/** Faixa de níveis de uma caverna (a da própria caverna ou a da região onde fica). */
+export function caveLevelRange(cave) {
+  return cave?.levelRange ?? REGION_INFO[cave?.region]?.levelRange ?? null;
+}
 export const CAVES_BY_ID = Object.freeze(Object.fromEntries(CAVES.map((cave) => [cave.id, cave])));
 
 /** Lista de salas (caverna, andar) na ordem do subterrâneo. */
@@ -300,10 +310,10 @@ export function dockPosition(dock) {
 export const REGION_SPAWNS = Object.freeze({
   antiga: { day: ['goblin', 'goblin', 'bear', 'orc'], night: ['treant', 'orc', 'werewolf', 'bat'] },
   brejo: { day: ['frog', 'frog', 'snake', 'slime'], night: ['zombie', 'witch', 'ghost', 'bat'] },
-  gelo: { day: ['frostWolf', 'frostWolf', 'yeti'], night: ['iceElemental', 'frostWolf', 'yeti'] },
-  areia: { day: ['scorpion', 'scorpion', 'sandworm', 'snake'], night: ['mummy', 'scorpion', 'sandworm'] },
+  gelo: { day: ['frostWolf', 'frostWolf', 'yeti', 'snowOwl', 'mammoth'], night: ['iceElemental', 'frostWolf', 'yeti', 'snowOwl'] },
+  areia: { day: ['scorpion', 'scorpion', 'sandworm', 'snake', 'cobra', 'scarab', 'sandGolem'], night: ['mummy', 'scorpion', 'sandworm', 'djinn', 'scarab'] },
   esmeralda: { day: ['crab', 'crab', 'snake'], night: ['pirate', 'crab', 'bat'] },
-  brasa: { day: ['imp', 'salamander', 'imp'], night: ['demon', 'imp', 'salamander'] }
+  brasa: { day: ['imp', 'salamander', 'imp', 'lavaHound', 'magmaSlime', 'phoenix'], night: ['demon', 'imp', 'salamander', 'fireElemental', 'obsidianKnight', 'lavaHound'] }
 });
 
 // Monstros novos também aparecem no Vale (somados às zonas antigas).

@@ -1,4 +1,5 @@
 import ENEMY_DATA from './enemies.json' with { type: 'json' };
+import { scaleEnemy } from './enemyScaling.js';
 
 // Atributos, drops e XP de cada espécie ficam em enemies.json.
 export const ELITE_CONFIG = {
@@ -20,7 +21,8 @@ export const ENEMY_TYPES = ENEMY_DATA.enemies;
 export const ENEMY_TYPE_NAMES = Object.keys(ENEMY_TYPES);
 
 /** XP de um inimigo derrotado: elite vale o dobro. */
-export function enemyXp(type, isElite = false) {
-  const base = ENEMY_TYPES[type]?.xp ?? 0;
+export function enemyXp(type, isElite = false, level) {
+  const def = ENEMY_TYPES[type];
+  const base = def ? scaleEnemy(def, level ?? def.level ?? 1).xp : 0;
   return isElite ? base * ELITE_CONFIG.xpMultiplier : base;
 }

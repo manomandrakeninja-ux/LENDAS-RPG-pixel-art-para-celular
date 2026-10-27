@@ -1,10 +1,12 @@
 import Phaser from 'phaser';
 import {
   BLOCKING, BOAT_FARE, CAVES, CAVES_BY_ID, CAVE_NODES, DOCKS, FULL_WORLD, NODE_REGROW_DAYS, OASES, OVERWORLD,
-  REGION_INFO, REGION_NODES, ROOM_COLS, T, TERRAIN_NODES, TILE, buildTerrainGrid, fractal, dockPosition, regionAt, roomAt
+  REGION_INFO, REGION_NODES, ROOM_COLS, T, TERRAIN_NODES, TILE, buildTerrainGrid, caveLevelRange, fractal, dockPosition, regionAt, roomAt
 } from '../data/worldRegions.js';
 import { layoutTiles, transitionCells, underName } from '../data/terrainLayout.js';
 import { hash } from '../art/pixel.js';
+import { ENEMY_TYPES } from '../data/enemies.js';
+import { levelInRange } from '../data/enemyScaling.js';
 import { WORLD } from './config.js';
 import { drawNpc } from '../art/person.js';
 import { SPEAKERS } from '../data/story.js';
@@ -385,7 +387,8 @@ export class RegionWorld {
     const scene = this.scene;
     const EnemyClass = scene.enemyDirector?.EnemyClass;
     if (!EnemyClass) return null;
-    const enemy = new EnemyClass(scene, x, y, kind, { elite: boss ? false : elite, isNight });
+    const level = levelInRange(ENEMY_TYPES[kind], caveLevelRange(CAVES_BY_ID[this.underground?.cave]));
+    const enemy = new EnemyClass(scene, x, y, kind, { elite: boss ? false : elite, isNight, level });
     enemy.isCaveEnemy = true;
     enemy.ignoresSafeZone = true;
     if (boss) {
@@ -443,7 +446,7 @@ export class RegionWorld {
     if (fight.timer <= 0 && distance < 520) {
       const enraged = boss.health < boss.maxHealth * 0.5;
       fight.timer = enraged ? 2600 : 3800;
-      const count = boss.kind === 'dragon' || boss.kind === 'hydra' ? 3 : enraged ? 2 : 1;
+      const count = boss.kind === 'dragon' || boss.kind === 'hydra' || boss.kind === 'abyssLord' ? 3 : enraged ? 2 : 1;
       for (let index = 0; index < count; index += 1) {
         const spread = index === 0 ? 0 : 70;
         const angle = Math.random() * Math.PI * 2;
@@ -465,7 +468,7 @@ export class RegionWorld {
   }
 
   addTelegraph(x, y, boss) {
-    const colors = { dragon: 0xff6a1a, frostGiant: 0x8ad8ff, hydra: 0x7ad84a, pharaoh: 0xe8c040, ghostCaptain: 0x8affe0, orcChief: 0xd8483a };
+    const colors = { dragon: 0xff6a1a, abyssLord: 0xc82a4a, frostGiant: 0x8ad8ff, hydra: 0x7ad84a, pharaoh: 0xe8c040, ghostCaptain: 0x8affe0, orcChief: 0xd8483a };
     const color = colors[boss.kind] ?? 0xff4a3a;
     const radius = 66;
     const ring = this.scene.add.circle(x, y, radius, color, 0.18).setStrokeStyle(2, color, 0.9).setDepth(y - 40);
@@ -505,7 +508,8 @@ export class RegionWorld {
       ghostCaptain: { gold: 8, mapPiece: 1, elixir: 1, fish: 4 },
       frostGiant: { crystal: 6, iron: 5, wool: 5, staminaPotion: 2 },
       pharaoh: { gold: 10, book: 1, elixir: 2, fabric: 4 },
-      dragon: { magmaCore: 4, gold: 12, titanCore: 1, elixir: 2 }
+      dragon: { magmaCore: 4, gold: 12, titanCore: 1, elixir: 2 },
+      abyssLord: { magmaCore: 8, gold: 20, titanCore: 3, elixir: 3 }
     }[feature.cave.boss] ?? { gold: 4 };
     const result = scene.inventory.addBundle(rewards);
     if (Object.keys(result.remaining).length > 0) scene.deathBackpacks.create(feature.x, feature.y, result.remaining);

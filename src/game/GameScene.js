@@ -1125,10 +1125,10 @@ export class GameScene extends Phaser.Scene {
     if (this.bestiary?.recordKill(enemy.kind)) this.ui.showMessage(`Bestiário: ${enemy.definition.name} registrado no Bestiário (tecla K).`);
     // Invasores não deixam cristais: o XP deles volta dobrado na recompensa do ataque.
     if (enemy.isRaider) this.raid.onRaiderDefeated(enemy);
-    else this.experiencePickups.spawn(enemy.x, enemy.y, enemyXp(enemy.kind, enemy.isElite));
+    else this.experiencePickups.spawn(enemy.x, enemy.y, enemyXp(enemy.kind, enemy.isElite, enemy.level));
     // Monstros das regiões mais perigosas deixam mais moedas.
     const coinTier = 1 + Math.max(0, (enemy.definition.tier ?? 1) - 2) * 0.5;
-    this.coinPickups.spawn(enemy.x + 9, enemy.y, Math.round(rollCoinDrop(enemy.definition.period, Math.random, enemy.isElite) * coinTier * this.progression.coinMultiplier));
+    this.coinPickups.spawn(enemy.x + 9, enemy.y, Math.round(rollCoinDrop(enemy.definition.period, Math.random, enemy.isElite) * coinTier * (enemy.coinScale ?? 1) * this.progression.coinMultiplier));
     if (Object.keys(result.remaining).length > 0) {
       this.deathBackpacks.create(enemy.x, enemy.y, result.remaining);
     }

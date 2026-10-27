@@ -63,9 +63,9 @@ test('cavernas: toda sala liga a escada de entrada à saída (ou ao chefe)', () 
   }
 });
 
-test('monstros: cerca de 30 espécies, todas com desenho, atributos e lugar onde vivem', () => {
+test('monstros: cerca de 55 espécies, todas com desenho, atributos e lugar onde vivem', () => {
   const kinds = Object.keys(ENEMY_TYPES);
-  assert.ok(kinds.length >= 30, `${kinds.length} espécies`);
+  assert.ok(kinds.length >= 55, `${kinds.length} espécies`);
   for (const kind of kinds) {
     assert.ok(hasMonsterArt(kind), `arte de ${kind}`);
     assert.ok(habitatsOf(kind).length > 0, `habitat de ${kind}`);
@@ -73,7 +73,7 @@ test('monstros: cerca de 30 espécies, todas com desenho, atributos e lugar onde
   for (const spawns of [...Object.values(REGION_SPAWNS), VALLEY_EXTRA_SPAWNS]) {
     for (const kind of [...spawns.day, ...spawns.night]) assert.ok(ENEMY_TYPES[kind] && !ENEMY_TYPES[kind].boss, kind);
   }
-  assert.equal(CAVES.filter((cave) => ENEMY_TYPES[cave.boss]?.boss).length, 6);
+  assert.equal(CAVES.filter((cave) => ENEMY_TYPES[cave.boss]?.boss).length, 7);
   assert.deepEqual([...BESTIARY_ORDER].sort(), [...kinds].sort());
 });
 
