@@ -22,6 +22,7 @@ import { gearIconHtml } from './gearIconUrl.js';
 import { resourceIconHtml, textureUrl } from './iconUrls.js';
 import { XP_EVENT_CONFIG, daysUntilDoubleXp, isDoubleXpDay } from './XpEvents.js';
 import { formatRemaining } from './ActiveEffects.js';
+import { MOUNT_LEVEL, PETS, PET_IDS, mountUnlocked } from '../data/companions.js';
 
 // Desenho de cada prédio no cabeçalho e nos cartões (textura, quadro).
 const PORTRAITS = {
@@ -104,6 +105,10 @@ export class BuildingMenu {
         'enhance-gear': () => this.scene.enhanceGear?.(button.dataset.arg),
         'socket-gear': () => this.scene.socketGear?.(button.dataset.arg, button.dataset.arg2),
         'unsocket-gear': () => this.scene.unsocketGear?.(button.dataset.arg, button.dataset.arg2),
+        'pet-buy': () => this.scene.companions?.action('buy', button.dataset.arg),
+        'pet-summon': () => this.scene.companions?.action('summon', button.dataset.arg),
+        'pet-hatch': () => this.scene.companions?.action('hatch'),
+        'mount-toggle': () => this.scene.companions?.action('mount'),
         'respec-talents': () => this.scene.respecTalents?.(),
         'claim-xp-bonus': () => this.scene.claimXpBonus?.(),
         'hunt-accept': () => this.scene.huntAction?.('accept', button.dataset.arg),
@@ -440,6 +445,38 @@ export class BuildingMenu {
         </article>`;
   }
 
+  /** Mascotes (comprar, chamar, chocar ovo) e montaria. */
+  companionCard() {
+    const scene = this.scene;
+    const comp = scene.companions;
+    if (!comp) return '';
+    const state = comp.state;
+    const coins = scene.economy?.coins ?? 0;
+    const rows = PET_IDS.map((id) => {
+      const pet = PETS[id];
+      const own = state.has(id);
+      let button;
+      if (own) button = `<button type="button" data-action="pet-summon" data-arg="${id}">${state.active === id ? 'GUARDAR' : 'CHAMAR'}</button>`;
+      else if (pet.egg) button = '<button type="button" disabled>SÓ POR OVO</button>';
+      else button = `<button type="button" data-action="pet-buy" data-arg="${id}" ${disabled(coins < pet.price)}>COMPRAR • ${pet.price}</button>`;
+      return `<div class="building-menu__stat" data-pet="${id}"><b>${escapeHtml(pet.name)}</b> — ${escapeHtml(pet.info)} ${button}</div>`;
+    }).join('');
+    const level = scene.progression.level;
+    const mount = mountUnlocked(level)
+      ? `<button type="button" class="button--primary" data-action="mount-toggle">${state.mounted ? 'DESMONTAR' : 'MONTAR'} (tecla G)</button>`
+      : `<button type="button" disabled>MONTARIA NO NÍVEL ${MOUNT_LEVEL}</button>`;
+    return `
+        <article class="building-menu__card" data-companions>
+          <h2>Mascotes e montaria</h2>
+          <p>Mascotes seguem você e ajudam. Chefes podem deixar um ovo raro. A montaria dá +35% de velocidade e some ao levar dano.</p>
+          ${rows}
+          <div class="building-menu__actions">
+            <button type="button" data-action="pet-hatch" ${disabled(state.eggs <= 0)}>CHOCAR OVO (${state.eggs})</button>
+            ${mount}
+          </div>
+        </article>`;
+  }
+
   /** Bônus de novato (primeiros 7 dias) e aviso do evento XP em dobro. */
   xpBonusCard() {
     const scene = this.scene;
@@ -528,6 +565,7 @@ export class BuildingMenu {
         ${this.respecCard()}
         ${this.xpBonusCard()}
         ${this.huntCard()}
+        ${this.companionCard()}
         <article class="building-menu__card">
           <h2>Fabricar tocha</h2>
           <p>2 madeiras + 1 tecido → 1 tocha (tecla 3 acende e amplia a luz).</p>

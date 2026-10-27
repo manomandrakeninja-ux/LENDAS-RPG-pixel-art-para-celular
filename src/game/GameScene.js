@@ -40,6 +40,7 @@ import { HuntUI } from './HuntUI.js';
 import { InvasionDirector } from './InvasionDirector.js';
 import { INVASION_CONFIG, invasionCoins } from './RegionInvasion.js';
 import { XpBoost } from './XpEvents.js';
+import { CompanionSystem } from './CompanionSystem.js';
 import { HeroChoice, shouldAskHero } from './HeroChoice.js';
 import { HERO_LABELS, normalizeGender } from './HeroStyle.js';
 import { EffectsPanel } from './EffectsPanel.js';
@@ -161,6 +162,9 @@ export class GameScene extends Phaser.Scene {
     this.enemyProjectiles = new EnemyProjectiles(this);
     this.huntUI = new HuntUI(this);
     this.invasion = new InvasionDirector(this, saved?.invasion);
+    // Mascotes e montaria (saves antigos não têm o campo).
+    this.companions = new CompanionSystem(this, saved?.companions);
+    this.companions.sync();
     this.enemyDirector.populate(this.timeState);
     this.camp.defense.setupEnemyCollision(this.enemies);
     this.effects = new PixelEffects(this);
@@ -262,6 +266,7 @@ export class GameScene extends Phaser.Scene {
       if (this.ui.campOpen || !this.overlayBlocked()) this.toggleCampMenu();
     });
     this.input.keyboard.on('keydown-F', () => this.restAtCamp());
+    this.input.keyboard.on('keydown-G', () => { if (!this.overlayBlocked()) this.companions.action('mount'); });
     this.input.keyboard.on('keydown-R', () => this.sleepAtCamp());
     // Ataque, especial, esquiva, interagir e poção: teclas configuráveis (Ajustes → Teclas).
     this.applyKeybinds(loadKeybinds());
@@ -672,6 +677,7 @@ export class GameScene extends Phaser.Scene {
     this.updateMining(delta);
     this.experiencePickups.update(delta, this.player, (amount) => this.collectExperience(amount));
     this.coinPickups.update(delta, this.player, (amount) => this.collectCoins(amount));
+    this.companions?.update(delta, paused);
 
     const resource = this.world.nearbyResource(this.player.x, this.player.y);
     const structureCandidate = this.harvestStructures.nearest(this.player.x, this.player.y);
@@ -1279,6 +1285,7 @@ export class GameScene extends Phaser.Scene {
     }
     this.coinPickups.spawn(boss.x, boss.y + 8, BOSS_CONFIG.coinDrop);
     this.dropMonsterChest(boss, 'boss');
+    this.companions?.onBossDefeated();
     this.camp.equipment.unlockRecipe(BOSS_CONFIG.recipeId);
     this.player.recalculateEquipment(this.camp.equipment);
     this.ui.showMessage(`${BOSS_CONFIG.name} derrotado! Núcleo do Titã e receita rara obtidos.`);
@@ -1324,6 +1331,7 @@ export class GameScene extends Phaser.Scene {
       this.deathBackpacks.create(enemy.x, enemy.y, result.remaining);
     }
     if (enemy.isElite || enemy.isQuestBoss) this.dropMonsterChest(enemy, enemy.isQuestBoss ? 'boss' : 'elite');
+    if (enemy.isQuestBoss) this.companions?.onBossDefeated();
     this.dropGear(enemy);
     this.camp.questKills += 1;
     const gained = Object.entries(result.accepted)
@@ -2272,6 +2280,7 @@ export class GameScene extends Phaser.Scene {
       hunts: this.hunts?.serialize(),
       invasion: this.invasion?.serialize(),
       xpBoost: this.xpBoost?.serialize(),
+      companions: this.companions?.serialize(),
       hero: { gender: this.heroGender }
     });
   }

@@ -13,7 +13,7 @@ export const DEFAULT_KEYBINDS = Object.freeze({
 
 // Teclas já usadas pelo jogo (movimento, painéis, hotkeys 2-5, menu).
 const RESERVED = new Set([
-  'KeyW', 'KeyA', 'KeyS', 'KeyD', 'KeyM', 'KeyB', 'KeyV', 'KeyK', 'KeyI', 'KeyC', 'KeyF', 'KeyR', 'KeyL',
+  'KeyW', 'KeyA', 'KeyS', 'KeyD', 'KeyM', 'KeyB', 'KeyV', 'KeyK', 'KeyI', 'KeyC', 'KeyF', 'KeyR', 'KeyL', 'KeyG',
   'Escape', 'Digit2', 'Digit3', 'Digit4', 'Digit5', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'
 ]);
 

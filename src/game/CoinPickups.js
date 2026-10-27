@@ -49,10 +49,10 @@ export class CoinPickups {
     return pickup;
   }
 
-  update(delta, player, onCollect) {
+  update(delta, player, onCollect, aging = true) {
     const seconds = delta / 1000;
     for (const pickup of [...this.pickups]) {
-      pickup.age += delta;
+      if (aging) pickup.age += delta;
       const distance = Phaser.Math.Distance.Between(pickup.image.x, pickup.image.y, player.x, player.y);
       if (distance < 88 && distance > 0) {
         const angle = Phaser.Math.Angle.Between(pickup.image.x, pickup.image.y, player.x, player.y);

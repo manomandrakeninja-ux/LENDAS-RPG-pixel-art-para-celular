@@ -247,7 +247,7 @@ export class Player extends Phaser.GameObjects.Container {
     } else {
       // Lodo do brejo e dos oásis deixa o passo mais lento.
       const terrainFactor = this.scene.regionWorld?.speedFactorAt(this.x, this.y) ?? 1;
-      const speed = 130 * this.speedMultiplier * terrainFactor;
+      const speed = 130 * this.speedMultiplier * terrainFactor * (this.scene.companions?.speed ?? 1);
       this.body.setVelocity(movement.x * speed, movement.y * speed);
     }
     this.poseGear(delta);
@@ -295,6 +295,7 @@ export class Player extends Phaser.GameObjects.Container {
     const dealt = Math.max(1, Math.round(scaled * 100 / (100 + Math.max(0, this.defense))));
     this.health = Math.max(0, this.health - dealt);
     this.invulnerable = 450;
+    this.scene.companions?.onPlayerDamaged();
     this.sprite.setTint(0xffc2a8);
     this.scene.effects?.spawnHit(this.x, this.y - 9, 0xff9b78, 6);
     this.scene.effects?.spawnDamage(this.x, this.y - 20, dealt, '#ffb59a');
