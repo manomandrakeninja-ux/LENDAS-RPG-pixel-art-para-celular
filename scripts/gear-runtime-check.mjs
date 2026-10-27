@@ -103,9 +103,36 @@ await runInChrome({ name: 'gear', port: 9393, width: 1280, height: 800 }, async 
   await capture('equipamento-bencao.png');
   check(campfire.blessing, `Bênção na Fogueira: ${JSON.stringify(campfire)}`);
 
+  // 6b. Aprimorar e joias no Ferreiro (aba Aprimorar), com ferro e moedas.
+  const enh = await inScene(async (scene) => {
+    scene.buildingMenu.close();
+    scene.economy.addCoins(20000);
+    scene.inventory.items.iron = (scene.inventory.items.iron ?? 0) + 50;
+    const item = scene.gear.find(scene.gear.equipped.weapon);
+    const before = scene.player.attack;
+    scene.openBuilding('forge');
+    await new Promise((resolve) => setTimeout(resolve, 250));
+    [...document.querySelectorAll('#building-menu button')].find((button) => /^aprimorar$/i.test(button.textContent.trim()))?.click();
+    await new Promise((resolve) => setTimeout(resolve, 250));
+    const card = document.querySelector(`[data-enhance-uid="${item.uid}"] [data-action="enhance-gear"]`);
+    card?.click();
+    await new Promise((resolve) => setTimeout(resolve, 250));
+    const upgraded = item.upgrade;
+    const afterPlus = scene.player.attack;
+    scene.gear.addJewel('fire');
+    const sockets = item.sockets.length;
+    scene.socketGear(item.uid, 'fire');
+    const afterJewel = scene.player.attack;
+    scene.save();
+    return { hasCard: Boolean(card), upgraded, before, afterPlus, afterJewel, sockets, jewel: item.sockets[0] };
+  });
+  await capture('equipamento-aprimorar.png');
+  check(enh.hasCard && enh.upgraded === 1 && enh.afterPlus > enh.before && enh.afterJewel > enh.afterPlus && enh.jewel === 'fire',
+    `Aprimorar e joias: ${JSON.stringify(enh)}`);
+
   // 7. Tudo salvo.
   await inScene((scene) => { scene.buildingMenu.close(); scene.save(); return true; });
   await reload();
-  const saved = await inScene((scene) => ({ weapon: scene.gear.equippedItem('weapon')?.id, sets: scene.gear.activeSets(), bag: scene.gear.bag.length }));
-  check(saved.weapon === 'dragonClaw' && saved.sets.includes('couro'), `Save do equipamento: ${JSON.stringify(saved)}`);
+  const saved = await inScene((scene) => ({ weapon: scene.gear.equippedItem('weapon')?.id, sets: scene.gear.activeSets(), bag: scene.gear.bag.length, upgrade: scene.gear.equippedItem('weapon')?.upgrade, jewel: scene.gear.equippedItem('weapon')?.sockets?.[0] }));
+  check(saved.weapon === 'dragonClaw' && saved.sets.includes('couro') && saved.upgrade === 1 && saved.jewel === 'fire', `Save do equipamento: ${JSON.stringify(saved)}`);
 });

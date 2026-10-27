@@ -15,7 +15,8 @@ import { recipeItems, recipesFor } from '../data/craftRecipes.js';
 import { availableHunts, huntReward } from './HuntSystem.js';
 import { REGION_INFO } from '../data/worldRegions.js';
 import { ENEMY_TYPES } from '../data/enemies.js';
-import { GEAR_ITEMS, SLOT_NAMES, blessingPrice, describeStats, gearStats } from '../data/gear.js';
+import { GEAR_ITEMS, RARITIES, SLOT_NAMES, blessingPrice, describeStats, gearStats } from '../data/gear.js';
+import { ENHANCE_RISK_FROM, JEWELS, JEWEL_TYPES, MAX_ENHANCE, describeJewel, enhanceChance } from '../data/enhance.js';
 import { RESOURCE_TYPES } from './config.js';
 import { gearIconHtml } from './gearIconUrl.js';
 import { resourceIconHtml, textureUrl } from './iconUrls.js';
@@ -100,6 +101,9 @@ export class BuildingMenu {
       const direct = {
         'buy-gear': () => this.scene.buyGear?.(button.dataset.arg),
         'buy-blessing': () => this.scene.buyBlessing?.(),
+        'enhance-gear': () => this.scene.enhanceGear?.(button.dataset.arg),
+        'socket-gear': () => this.scene.socketGear?.(button.dataset.arg, button.dataset.arg2),
+        'unsocket-gear': () => this.scene.unsocketGear?.(button.dataset.arg, button.dataset.arg2),
         'respec-talents': () => this.scene.respecTalents?.(),
         'claim-xp-bonus': () => this.scene.claimXpBonus?.(),
         'hunt-accept': () => this.scene.huntAction?.('accept', button.dataset.arg),
@@ -149,6 +153,7 @@ export class BuildingMenu {
       forge: [
         { id: 'craft', label: 'Criar' },
         { id: 'gear', label: 'Equipamento' },
+        { id: 'enhance', label: 'Aprimorar' },
         { id: 'shop', label: 'Loja' }
       ],
       house: [
@@ -666,6 +671,7 @@ export class BuildingMenu {
     const equipment = this.camp.equipment;
     if (this.tab === 'gear') return this.renderGear();
     if (this.tab === 'shop') return this.renderGearShop();
+    if (this.tab === 'enhance') return this.renderEnhance();
     const recipes = Object.entries(FORGE_RECIPES)
       .filter(([id, recipe]) => !recipe.requiresBoss || equipment.isRecipeUnlocked(id))
       .map(([id, recipe]) => {
@@ -722,6 +728,44 @@ export class BuildingMenu {
       </div>
       <div class="building-menu__grid">${cards}</div>
     `;
+  }
+
+  /** Aprimorar (+1 a +10) e encaixar joias nas peças da sacola de equipamentos. */
+  renderEnhance() {
+    const scene = this.scene;
+    const gear = scene.gear;
+    const jewelStock = JEWEL_TYPES.map((type) => `${JEWELS[type].short} ${gear.jewels[type]}`).join(' • ');
+    const cards = [...gear.bag].sort((a, b) => Number(gear.isEquipped(b.uid)) - Number(gear.isEquipped(a.uid))).map((item) => {
+      const definition = GEAR_ITEMS[item.id];
+      const rarity = RARITIES[item.rarity] ?? RARITIES.common;
+      const cost = gear.enhanceCostFor(item.uid);
+      const target = item.upgrade + 1;
+      const risky = cost && target >= ENHANCE_RISK_FROM;
+      const stats = describeStats(gear.statsOf(item));
+      const sockets = item.sockets.map((type, index) => type
+        ? `<button type="button" data-action="unsocket-gear" data-arg="${item.uid}" data-arg2="${index}" style="color:${JEWELS[type].color}">${escapeHtml(JEWELS[type].short.toUpperCase())} (${escapeHtml(describeJewel(type, definition.level))}) • RETIRAR</button>`
+        : '<span class="building-menu__stat">Encaixe vazio</span>').join('');
+      const hasEmpty = item.sockets.includes(null);
+      const insert = hasEmpty ? JEWEL_TYPES.filter((type) => gear.jewels[type] > 0).map((type) => `<button type="button" data-action="socket-gear" data-arg="${item.uid}" data-arg2="${type}">+ ${escapeHtml(JEWELS[type].short.toUpperCase())} (${gear.jewels[type]})</button>`).join('') : '';
+      const canPay = cost && this.camp.canPay(cost);
+      return `
+        <article class="building-menu__card" data-enhance-uid="${item.uid}">
+          <span class="gear-shop__icon">${gearIconHtml(item.id, item.rarity, 40)}</span>
+          <h2 style="color:${rarity.color}">${escapeHtml(definition.name)}${item.upgrade ? ` +${item.upgrade}` : ''}${gear.isEquipped(item.uid) ? ' • EQUIPADO' : ''}</h2>
+          <p>${escapeHtml(SLOT_NAMES[definition.slot])} • Nível ${definition.level}${stats ? ` • ${escapeHtml(stats)}` : ''}</p>
+          ${item.sockets.length ? `<div class="building-menu__actions">${sockets}${insert}</div>` : '<p>Sem encaixes para joias.</p>'}
+          ${cost ? `<div class="building-menu__stat">+${target}: ${Math.round(enhanceChance(target) * 100)}% de sucesso${risky ? ' (falha volta 1 nível)' : ''} • ${escapeHtml(formatBundle(cost))}</div>` : `<div class="building-menu__stat">Aprimoramento máximo (+${MAX_ENHANCE})</div>`}
+          <div class="building-menu__actions">
+            <button type="button" class="button--primary" data-action="enhance-gear" data-arg="${item.uid}" ${disabled(!cost || !canPay)}>${!cost ? 'NO MÁXIMO' : canPay ? `APRIMORAR +${target}` : 'FALTAM MATERIAIS'}</button>
+          </div>
+        </article>`;
+    }).join('') || '<article class="building-menu__card"><h2>Nenhuma peça</h2><p>Equipamentos caem dos monstros e saem da loja.</p></article>';
+    return `
+      <div class="building-menu__stats">
+        <div class="building-menu__stat">Cada +1 dá +6% nos atributos • do +5 em diante pode falhar (volta 1 nível, nunca quebra)</div>
+        <div class="building-menu__stat">Joias soltas: ${escapeHtml(jewelStock)}</div>
+      </div>
+      <div class="building-menu__grid">${cards}</div>`;
   }
 
   renderGear() {

@@ -1,3 +1,4 @@
+import { JEWELS } from '../data/enhance.js';
 import {
   GEAR_BAG_SIZE, GEAR_ITEMS, GEAR_SETS, RARITIES, SLOT_NAMES, describeStats, gearSellPrice, gearStats
 } from '../data/gear.js';
@@ -152,7 +153,8 @@ export class EquipmentPanel {
     const rarity = RARITIES[item.rarity] ?? RARITIES.common;
     const equipped = gear.isEquipped(item.uid);
     const level = this.heroLevel();
-    const stats = describeStats(gearStats(item.id, item.rarity));
+    const stats = describeStats(gear.statsOf(item));
+    const jewels = (item.sockets ?? []).map((type) => (type ? `${JEWELS[type].short}` : 'vazio')).join(' • ');
     const set = definition.set ? GEAR_SETS[definition.set] : null;
     const setCount = set ? (gear.setCounts?.()[definition.set] ?? 0) : 0;
     const setActive = setCount >= 4;
@@ -162,11 +164,12 @@ export class EquipmentPanel {
       <div class="equipment__detail-head">
         ${gearIconHtml(item.id, item.rarity, 64)}
         <div>
-          <h3 style="color:${rarity.color}">${escapeHtml(definition.name)}</h3>
+          <h3 style="color:${rarity.color}">${escapeHtml(definition.name)}${item.upgrade ? ` +${item.upgrade}` : ''}</h3>
           <p class="equipment__tag">${rarity.name} • ${SLOT_NAMES[definition.slot]} • <span class="${level < definition.level ? 'is-bad' : ''}">Nível ${definition.level}</span></p>
         </div>
       </div>
       <p class="equipment__stats">${escapeHtml(stats || 'Sem atributos')}</p>
+      ${jewels ? `<p class="equipment__desc">Joias: ${escapeHtml(jewels)} (encaixe no Ferreiro)</p>` : ''}
       ${definition.description ? `<p class="equipment__desc">${escapeHtml(definition.description)}</p>` : ''}
       ${set ? `<p class="equipment__set ${setActive ? 'is-active' : ''}">Conjunto ${escapeHtml(set.name)} • ${setCount}/4 peças<br>4 peças: ${escapeHtml(setBonusText(set.bonus))}</p>` : ''}
       <div class="equipment__actions">

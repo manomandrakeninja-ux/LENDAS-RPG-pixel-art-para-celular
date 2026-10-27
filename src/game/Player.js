@@ -361,5 +361,7 @@ export class Player extends Phaser.GameObjects.Container {
     this.speedMultiplier = 1 + bonuses.speedPercent + (buffs.speedPercent ?? 0);
     this.fireResistance = Math.min(0.9, bonuses.fireResistance + (camp?.fireResistance ?? 0));
     this.dragonShield = camp?.dragonShield ?? 0;
+    this.jewelCrit = Math.min(0.5, bonuses.critChance ?? 0);
+    this.jewelPoison = Math.max(0, Math.round(bonuses.poison ?? 0));
   }
 }

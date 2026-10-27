@@ -4,6 +4,7 @@
 // dos chefes das cavernas (lendários) e da loja do Ferreiro (só os tiers baixos, até o nível 30).
 
 import { REGION_INFO } from './worldRegions.js';
+import { enhanceMultiplier } from './enhance.js';
 
 export const GEAR_SLOTS = Object.freeze(['weapon', 'shield', 'helmet', 'chest', 'legs', 'boots', 'ring', 'amulet']);
 export const SLOT_NAMES = Object.freeze({
@@ -239,16 +240,20 @@ export const GEAR_ITEMS = Object.freeze(Object.fromEntries([...generated, ...LEG
 })));
 
 /** Atributos finais de uma peça com a raridade dela. */
-export function gearStats(id, rarity = 'common') {
+export function gearStats(id, rarity = 'common', upgrade = 0) {
   const item = GEAR_ITEMS[id];
   if (!item) return {};
   const multiplier = RARITIES[rarity]?.multiplier ?? 1;
+  const boost = enhanceMultiplier(upgrade);
   const stats = {};
   for (const stat of STATS) {
     const base = item[stat] ?? 0;
     if (!base) continue;
-    if (stat === 'speedPercent' || stat === 'fireResistance') stats[stat] = Math.round(base * multiplier * 100) / 100;
-    else stats[stat] = Math.max(base + (multiplier > 1 ? 1 : 0), Math.round(base * multiplier));
+    if (stat === 'speedPercent' || stat === 'fireResistance') stats[stat] = Math.round(base * multiplier * boost * 100) / 100;
+    else {
+      const plain = Math.max(base + (multiplier > 1 ? 1 : 0), Math.round(base * multiplier));
+      stats[stat] = boost > 1 ? Math.max(plain + 1, Math.round(plain * boost)) : plain;
+    }
   }
   return stats;
 }
@@ -268,6 +273,8 @@ export function describeStats(stats = {}) {
   if (stats.maxHealth) parts.push(`VIDA +${stats.maxHealth}`);
   if (stats.speedPercent) parts.push(`VELOC. +${Math.round(stats.speedPercent * 100)}%`);
   if (stats.fireResistance) parts.push(`FOGO +${Math.round(stats.fireResistance * 100)}%`);
+  if (stats.poison) parts.push(`VENENO +${stats.poison}`);
+  if (stats.critChance) parts.push(`CRÍT. +${Math.round(stats.critChance * 100)}%`);
   return parts.join(' • ');
 }
 

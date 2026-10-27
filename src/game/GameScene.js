@@ -51,6 +51,7 @@ import { ShadowSystem } from './ShadowSystem.js';
 import { GearSystem } from './GearSystem.js';
 import { EquipmentPanel } from './EquipmentPanel.js';
 import { GEAR_ITEMS, RARITIES, blessingPrice, rollGearDrop } from '../data/gear.js';
+import { JEWELS, rollJewelDrop } from '../data/enhance.js';
 import { TILE } from '../data/worldRegions.js';
 import { ExperiencePickups } from './ExperiencePickups.js';
 import { LevelUpOverlay } from './LevelUpOverlay.js';
@@ -418,7 +419,35 @@ export class GameScene extends Phaser.Scene {
       }
       this.campaign?.ui?.toast?.(`${rarity.name}: ${definition.name} • Equipamento (V)`, drop.rarity === 'common' ? '' : 'gold');
     }
-    if (drops.length) window.dispatchEvent(new CustomEvent('lendas:gear'));
+    const jewels = rollJewelDrop({
+      elite: enemy.isElite,
+      boss: Boolean(enemy.isRegionBoss),
+      chanceMultiplier: enemy.isInvader ? INVASION_CONFIG.gearChanceMultiplier : 1
+    });
+    for (const type of jewels) {
+      this.gear.addJewel(type);
+      this.campaign?.ui?.toast?.(`${JEWELS[type].name} • Ferreiro`, 'gold');
+    }
+    if (drops.length || jewels.length) window.dispatchEvent(new CustomEvent('lendas:gear'));
+  }
+
+  /** Ferreiro: aprimora uma peça (+1 a +10) gastando ferro e moedas. */
+  enhanceGear(uid) {
+    const cost = this.gear.enhanceCostFor(uid);
+    if (!cost) return this.afterGearChange({ ok: false, message: 'Esta peça não pode ser aprimorada.' });
+    if (!this.camp.canPay(cost)) return this.afterGearChange({ ok: false, message: `Faltam materiais (${cost.iron} ferro e ${cost.coins} moedas).` });
+    this.camp.pay(cost);
+    const result = this.gear.enhance(uid);
+    if (result.success) this.audio.playCollect();
+    return this.afterGearChange(result);
+  }
+
+  socketGear(uid, type) {
+    return this.afterGearChange(this.gear.socketJewel(uid, type));
+  }
+
+  unsocketGear(uid, index) {
+    return this.afterGearChange(this.gear.unsocketJewel(uid, Number(index)));
   }
 
   afterGearChange(result) {
@@ -862,8 +891,9 @@ export class GameScene extends Phaser.Scene {
     const multiplier = finisher
       ? this.progression.hasPerk('rhythm') ? PERK_EFFECTS.rhythmFinisherMultiplier : COMBAT_CONFIG.combo.finisherMultiplier
       : 1;
-    const perkMultiplier = this.progression.damageMultiplier(this.player.health / Math.max(1, this.player.maxHealth));
-    const attack = Math.round(this.player.attack * multiplier * perkMultiplier);
+    let perkMultiplier = this.progression.damageMultiplier(this.player.health / Math.max(1, this.player.maxHealth));
+    if (Math.random() < (this.player.jewelCrit ?? 0)) perkMultiplier *= 2;
+    const attack = Math.round(this.player.attack * multiplier * perkMultiplier) + (this.player.jewelPoison ?? 0);
     const angle = swingAngle;
     if (this.bossIsProtected(target)) {
       this.effects.spawnSwingTrail(this.player.x, this.player.y, angle, false);
