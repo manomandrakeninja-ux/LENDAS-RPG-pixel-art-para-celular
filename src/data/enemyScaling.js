@@ -10,7 +10,7 @@ const ratio = (level) => Math.max(1, Number(level) / SCALING_START);
 export function levelMultipliers(level) {
   return {
     health: 1 + over(level) * 0.08,
-    damage: 1 + over(level) * 0.05,
+    damage: 1 + over(level) * 0.08,
     xp: ratio(level) ** 1.7,
     coins: ratio(level) ** 1.2
   };

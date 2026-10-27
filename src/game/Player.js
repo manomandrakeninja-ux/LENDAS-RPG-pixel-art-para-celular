@@ -290,7 +290,9 @@ export class Player extends Phaser.GameObjects.Container {
       this.lastBlockRatio = this.shieldBlocker.tryBlock(source, this.scene.time.now);
       if (this.lastBlockRatio > 0) scaled = blockedDamage(scaled, this.lastBlockRatio);
     }
-    const dealt = Math.max(1, Math.round(scaled) - this.defense);
+    // Defesa reduz em porcentagem (100 de defesa = metade do dano); assim os monstros
+    // continuam perigosos no fim de jogo em vez de baterem sempre 1.
+    const dealt = Math.max(1, Math.round(scaled * 100 / (100 + Math.max(0, this.defense))));
     this.health = Math.max(0, this.health - dealt);
     this.invulnerable = 450;
     this.sprite.setTint(0xffc2a8);

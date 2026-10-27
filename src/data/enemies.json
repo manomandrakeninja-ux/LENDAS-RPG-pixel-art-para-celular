@@ -1315,7 +1315,7 @@
       "placeholder": {
         "shape": "demon"
       },
-      "health": 520,
+      "health": 501,
       "damage": 44,
       "xp": 170,
       "speed": 82,
@@ -1530,7 +1530,7 @@
       "placeholder": {
         "shape": "hydra"
       },
-      "health": 3200,
+      "health": 3030,
       "damage": 44,
       "xp": 700,
       "speed": 60,
@@ -1583,7 +1583,7 @@
       "placeholder": {
         "shape": "ghostCaptain"
       },
-      "health": 3200,
+      "health": 3030,
       "damage": 44,
       "xp": 700,
       "speed": 96,
@@ -1636,7 +1636,7 @@
       "placeholder": {
         "shape": "frostGiant"
       },
-      "health": 4200,
+      "health": 3180,
       "damage": 52,
       "xp": 900,
       "speed": 66,
@@ -1689,7 +1689,7 @@
       "placeholder": {
         "shape": "pharaoh"
       },
-      "health": 4600,
+      "health": 3240,
       "damage": 56,
       "xp": 1000,
       "speed": 78,
@@ -1742,8 +1742,8 @@
       "placeholder": {
         "shape": "dragon"
       },
-      "health": 6800,
-      "damage": 66,
+      "health": 3570,
+      "damage": 62,
       "xp": 1500,
       "speed": 92,
       "perception": 520,
@@ -1846,7 +1846,7 @@
       "placeholder": {
         "shape": "mammoth"
       },
-      "health": 900,
+      "health": 524,
       "damage": 56,
       "xp": 180,
       "speed": 150,
@@ -1904,7 +1904,7 @@
       "placeholder": {
         "shape": "cobra"
       },
-      "health": 520,
+      "health": 501,
       "damage": 46,
       "xp": 104,
       "speed": 200,
@@ -1959,7 +1959,7 @@
       "placeholder": {
         "shape": "scarab"
       },
-      "health": 780,
+      "health": 517,
       "damage": 52,
       "xp": 156,
       "speed": 210,
@@ -2011,8 +2011,8 @@
       "placeholder": {
         "shape": "sandGolem"
       },
-      "health": 1500,
-      "damage": 70,
+      "health": 560,
+      "damage": 63,
       "xp": 300,
       "speed": 160,
       "perception": 400,
@@ -2069,8 +2069,8 @@
       "placeholder": {
         "shape": "djinn"
       },
-      "health": 1300,
-      "damage": 76,
+      "health": 548,
+      "damage": 64,
       "xp": 260,
       "speed": 230,
       "perception": 400,
@@ -2132,8 +2132,8 @@
       "placeholder": {
         "shape": "lavaHound"
       },
-      "health": 1400,
-      "damage": 74,
+      "health": 554,
+      "damage": 64,
       "xp": 280,
       "speed": 240,
       "perception": 400,
@@ -2184,8 +2184,8 @@
       "placeholder": {
         "shape": "magmaSlime"
       },
-      "health": 1700,
-      "damage": 66,
+      "health": 572,
+      "damage": 62,
       "xp": 340,
       "speed": 150,
       "perception": 400,
@@ -2236,8 +2236,8 @@
       "placeholder": {
         "shape": "fireElemental"
       },
-      "health": 1900,
-      "damage": 84,
+      "health": 584,
+      "damage": 66,
       "xp": 380,
       "speed": 180,
       "perception": 400,
@@ -2288,8 +2288,8 @@
       "placeholder": {
         "shape": "obsidianKnight"
       },
-      "health": 2600,
-      "damage": 92,
+      "health": 626,
+      "damage": 68,
       "xp": 520,
       "speed": 150,
       "perception": 400,
@@ -2346,8 +2346,8 @@
       "placeholder": {
         "shape": "phoenix"
       },
-      "health": 2100,
-      "damage": 90,
+      "health": 596,
+      "damage": 68,
       "xp": 420,
       "speed": 230,
       "perception": 400,
@@ -2398,8 +2398,8 @@
       "placeholder": {
         "shape": "ashWraith"
       },
-      "health": 2200,
-      "damage": 94,
+      "health": 602,
+      "damage": 69,
       "xp": 440,
       "speed": 190,
       "perception": 400,
@@ -2450,8 +2450,8 @@
       "placeholder": {
         "shape": "gargoyle"
       },
-      "health": 3100,
-      "damage": 100,
+      "health": 656,
+      "damage": 70,
       "xp": 620,
       "speed": 170,
       "perception": 400,
@@ -2502,8 +2502,8 @@
       "placeholder": {
         "shape": "boneWyrm"
       },
-      "health": 3600,
-      "damage": 104,
+      "health": 686,
+      "damage": 71,
       "xp": 720,
       "speed": 180,
       "perception": 400,
@@ -2554,8 +2554,8 @@
       "placeholder": {
         "shape": "voidStalker"
       },
-      "health": 3000,
-      "damage": 110,
+      "health": 650,
+      "damage": 73,
       "xp": 600,
       "speed": 260,
       "perception": 400,
@@ -2606,8 +2606,8 @@
       "placeholder": {
         "shape": "cinderGiant"
       },
-      "health": 5200,
-      "damage": 118,
+      "health": 782,
+      "damage": 75,
       "xp": 1040,
       "speed": 120,
       "perception": 400,
@@ -2664,8 +2664,8 @@
       "placeholder": {
         "shape": "hellWarden"
       },
-      "health": 4800,
-      "damage": 126,
+      "health": 758,
+      "damage": 77,
       "xp": 960,
       "speed": 150,
       "perception": 400,
@@ -2722,8 +2722,8 @@
       "placeholder": {
         "shape": "lavaWorm"
       },
-      "health": 5600,
-      "damage": 130,
+      "health": 806,
+      "damage": 78,
       "xp": 1120,
       "speed": 140,
       "perception": 400,
@@ -2774,8 +2774,8 @@
       "placeholder": {
         "shape": "soulReaper"
       },
-      "health": 5000,
-      "damage": 138,
+      "health": 770,
+      "damage": 80,
       "xp": 1000,
       "speed": 210,
       "perception": 400,
@@ -2832,8 +2832,8 @@
       "placeholder": {
         "shape": "abyssHound"
       },
-      "health": 4600,
-      "damage": 134,
+      "health": 746,
+      "damage": 79,
       "xp": 920,
       "speed": 270,
       "perception": 400,
@@ -2885,8 +2885,8 @@
       "placeholder": {
         "shape": "abyssLord"
       },
-      "health": 9000,
-      "damage": 90,
+      "health": 3900,
+      "damage": 68,
       "xp": 2400,
       "speed": 100,
       "perception": 560,
