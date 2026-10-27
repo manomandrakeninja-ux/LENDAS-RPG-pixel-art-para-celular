@@ -1,505 +1,463 @@
-import { PixelCanvas, dither, hash, mix } from './pixel.js';
+import { NPCS } from '../data/campaign.js';
+import { SPEAKERS } from '../data/story.js';
+import { VILLAGERS } from '../data/villagers.js';
+import { drawKnightFrame } from './knight.js';
+import { drawMonsterFrame } from './monsters.js';
+import { Painter, clamp01, fbm, mixRgb, rgb } from './painter.js';
+import { drawNpc, drawVillager } from './person.js';
 
-// Ilustrações dos capítulos (240 x 135, ampliadas na tela com pixels nítidos).
-// Recriadas em pixel art a partir das referências: fogueira, vila, cerco, templo da floresta,
-// castelo da lua de sangue, cidade de gelo, deserto da caveira, fortaleza negra, forja e o Golem.
+// Ilustrações dos capítulos (400 x 225). Pintadas com luz, névoa e profundidade e
+// convertidas para pixel art; os personagens, monstros e prédios são os do próprio jogo.
 
-export const SCENE_SIZE = Object.freeze({ width: 240, height: 135 });
+export const SCENE_SIZE = Object.freeze({ width: 400, height: 225 });
 const W = SCENE_SIZE.width;
 const H = SCENE_SIZE.height;
+const SEAL_COLORS = ['#7ac04a', '#4aa0e0', '#e0e0ff', '#ffe27a', '#ff7a2a'];
 
-// ---------- Ferramentas ----------
+// ---------- Personagens e objetos do jogo ----------
 
-/** Céu em faixas com dither entre as cores (de cima para baixo). */
-function sky(c, colors, bottom = H) {
-  const steps = colors.length - 1;
-  for (let y = 0; y < bottom; y += 1) {
-    const t = (y / Math.max(1, bottom - 1)) * steps;
-    const index = Math.min(steps - 1, Math.floor(t));
-    const local = t - index;
+const knight = (direction = 0, frame = 1) => drawKnightFrame(direction, frame);
+const npc = (id) => drawNpc((NPCS[id] ?? SPEAKERS[id]).palette, 0);
+const villager = (id) => {
+  const def = VILLAGERS.find((entry) => entry.id === id);
+  return drawVillager(def.palette, def.prop, 0);
+};
+const monster = (kind, size, elite = false) => drawMonsterFrame(kind, size, 0, { elite });
+
+/** Chão com textura de ruído (grama, areia, neve, pedra). */
+function ground(p, top, colors, { seed = 4, scale = 18, horizonFade = null } = {}) {
+  const parsed = colors.map(rgb);
+  const fade = horizonFade ? rgb(horizonFade) : null;
+  for (let y = top; y < H; y += 1) {
+    const depth = (y - top) / (H - top);
     for (let x = 0; x < W; x += 1) {
-      c.pixel(x, y, local > dither(x, y) ? colors[index + 1] : colors[index]);
+      const n = fbm(x / (scale * (0.4 + depth)), y / (scale * 0.35 * (0.4 + depth)), seed, 4);
+      const index = Math.min(parsed.length - 2, Math.floor(n * (parsed.length - 1)));
+      let color = mixRgb(parsed[index], parsed[index + 1], clamp01(n * (parsed.length - 1) - index));
+      if (fade) color = mixRgb(color, fade, (1 - depth) * 0.45);
+      p.set(x, y, color);
     }
   }
 }
 
-function fill(c, x, y, w, h, color) {
-  c.rect(Math.round(x), Math.round(y), Math.round(w), Math.round(h), color);
-}
-
-/** Cordilheira: silhueta irregular do ponto baseY para baixo. */
-function ridge(c, baseY, color, { seed = 1, height = 20, step = 6, top = null } = {}) {
-  let previous = baseY - hash(0, 0, seed) * height;
-  for (let x = 0; x <= W; x += step) {
-    const next = baseY - hash(x, 1, seed) * height;
-    for (let dx = 0; dx < step; dx += 1) {
-      const y = Math.round(previous + ((next - previous) * dx) / step);
-      for (let py = y; py < H; py += 1) c.pixel(x + dx, py, color);
-      if (top) c.pixel(x + dx, y, top);
-    }
-    previous = next;
+/** Fileira de árvores do jogo: silhueta ao longe ou coloridas de perto. */
+function treeLine(p, atlas, y, { names = ['pine-0', 'pine-1', 'pine-2'], step = 14, scale = 2, silhouette = null, light = '#ffffff', lightAmount = 0, seed = 2, jitter = 6 } = {}) {
+  for (let x = -10, index = 0; x < W + 20; x += step, index += 1) {
+    const frame = atlas[names[index % names.length]];
+    if (!frame) continue;
+    const offset = Math.floor(fbm(index, seed, seed, 2) * jitter);
+    p.sprite(frame, x + offset, y + offset / 2, { scale, silhouette, light, lightAmount });
   }
 }
 
-function stars(c, count, seed, maxY = H * 0.6, color = '#fff6d8') {
-  for (let index = 0; index < count; index += 1) {
-    const x = Math.floor(hash(index, 3, seed) * W);
-    const y = Math.floor(hash(index, 7, seed) * maxY);
-    c.pixel(x, y, color, hash(index, 9, seed) > 0.5 ? 255 : 150);
+function fire(p, x, y, size = 1) {
+  p.glow(x, y - 6 * size, 80 * size, '#ff7a2a', 0.32);
+  p.glow(x, y - 6 * size, 22 * size, '#ffc06a', 0.3);
+  p.polygon([[x - 7 * size, y], [x - 5 * size, y - 9 * size], [x - 2 * size, y - 16 * size], [x, y - 24 * size], [x + 2 * size, y - 15 * size], [x + 5 * size, y - 10 * size], [x + 7 * size, y]], '#d8401a');
+  p.polygon([[x - 4 * size, y], [x - 1 * size, y - 11 * size], [x + 1 * size, y - 16 * size], [x + 4 * size, y]], '#ffb43a');
+  p.polygon([[x - 2 * size, y], [x, y - 8 * size], [x + 2 * size, y]], '#fff0a0');
+}
+
+function smoke(p, x, y, height, seed = 3, hex = '#3a3436', alpha = 0.55) {
+  for (let step = 0; step < height; step += 3) {
+    const t = step / height;
+    const drift = Math.sin(t * 5 + seed) * 10 * t + t * 30;
+    p.ellipse(x + drift, y - step, 6 + t * 18, 5 + t * 10, hex, alpha * (1 - t));
   }
 }
 
-function moon(c, x, y, r, colors) {
-  c.shadedEllipse(x, y, r, r, colors, { light: [-0.4, -0.5] });
+/** Símbolo do sol negro (Ordem do Eclipse). */
+function blackSun(p, x, y, radius) {
+  p.glow(x, y, radius * 3, '#ff5a2a', 0.5);
+  p.rays(x, y, { count: 16, length: radius * 2.4, hex: '#ffb06a', intensity: 0.6, width: 0.05 });
+  p.ellipse(x, y, radius + 2, radius + 2, '#ffcf8a');
+  p.ellipse(x, y, radius, radius, '#07050a');
 }
 
-function pine(c, x, baseY, height, colors) {
-  const [dark, mid, light] = colors;
-  for (let row = 0; row < height; row += 1) {
-    const half = Math.max(0, Math.round((row / height) * height * 0.32) - (row % 4 === 0 ? 1 : 0));
-    for (let dx = -half; dx <= half; dx += 1) {
-      c.pixel(x + dx, baseY - height + row, dx < -half / 3 ? light : dx > half / 3 ? dark : mid);
-    }
-  }
-  fill(c, x - 1, baseY, 2, 3, '#2a1a12');
-}
-
-function roundTree(c, x, baseY, size, colors) {
-  fill(c, x - 1, baseY - size, 3, size, '#3a2416');
-  c.shadedEllipse(x, baseY - size - size * 0.4, size * 0.75, size * 0.6, colors);
-}
-
-/** Casinha com telhado, janelas acesas e chaminé. */
-function house(c, x, y, w, h, { wall = '#8a6a4a', beam = '#4a3020', roof = '#7a4a2a', roofLight = '#a06a3a', lit = '#ffcf6a', chimney = true } = {}) {
-  fill(c, x, y, w, h, wall);
-  for (let bx = x; bx < x + w; bx += 5) fill(c, bx, y, 1, h, beam);
-  fill(c, x, y, w, 1, beam);
-  const peak = Math.round(w * 0.55);
-  for (let row = 0; row < peak; row += 1) {
-    const inset = row;
-    for (let px = x - 2 + inset; px < x + w + 2 - inset; px += 1) c.pixel(px, y - row, row % 2 ? roof : roofLight);
-  }
-  for (let wx = x + 2; wx < x + w - 2; wx += 6) fill(c, wx, y + Math.round(h * 0.35), 2, 2, lit);
-  fill(c, x + Math.round(w / 2) - 1, y + h - 4, 3, 4, beam);
-  if (chimney) fill(c, x + w - 4, y - peak + 2, 2, 5, '#5a5050');
-}
-
-/** Castelo: muralha, torres e pináculos, com janelas acesas. */
-function castle(c, cx, baseY, width, height, { color = '#1a1418', light = '#2a2228', windows = '#e0452f', spires = true } = {}) {
-  const left = cx - width / 2;
-  fill(c, left, baseY - height * 0.45, width, height * 0.45, color);
-  for (let x = left; x < left + width; x += 4) fill(c, x, baseY - height * 0.45 - 2, 2, 2, color);
-  const towers = [[0.1, 0.7, 6], [0.3, 0.85, 8], [0.5, 1, 12], [0.7, 0.85, 8], [0.9, 0.7, 6]];
-  for (const [fx, fh, tw] of towers) {
-    const tx = left + width * fx - tw / 2;
-    const th = height * fh;
-    fill(c, tx, baseY - th, tw, th, color);
-    fill(c, tx, baseY - th, 1, th, light);
-    if (spires) c.polygon([[tx - 1, baseY - th], [tx + tw / 2, baseY - th - tw * 1.4], [tx + tw + 1, baseY - th]], color);
-    for (let wy = baseY - th + 4; wy < baseY - 6; wy += 7) {
-      if (hash(Math.round(tx), Math.round(wy), 5) > 0.35) fill(c, tx + tw / 2 - 1, wy, 2, 3, windows);
-    }
-  }
-  fill(c, cx - 4, baseY - 10, 8, 10, '#0c080a');
-}
-
-/** Pessoa vista de longe (silhueta simples, 5 x 12). */
-function person(c, x, baseY, { body = '#2a2026', head = '#3a2e30', weapon = null, scale = 1 } = {}) {
-  const s = scale;
-  fill(c, x - 1 * s, baseY - 12 * s, 3 * s, 3 * s, head);
-  fill(c, x - 2 * s, baseY - 9 * s, 5 * s, 5 * s, body);
-  fill(c, x - 2 * s, baseY - 4 * s, 2 * s, 4 * s, body);
-  fill(c, x + 1 * s, baseY - 4 * s, 2 * s, 4 * s, body);
-  if (weapon) c.line(x + 3 * s, baseY - 7 * s, x + 6 * s, baseY - 13 * s, weapon);
-}
-
-function fire(c, x, baseY, size) {
-  c.shadedEllipse(x, baseY - size * 0.5, size * 0.6, size, ['#a0281a', '#e0501e', '#ff9a2a', '#ffe27a'], { light: [0, -1] });
-  c.polygon([[x - size * 0.3, baseY - size], [x, baseY - size * 2.1], [x + size * 0.3, baseY - size]], '#ffb04a');
-  c.pixel(x, baseY - size * 1.4, '#fff4c0');
-}
-
-/** Brilho suave em volta de um ponto (soma de cor). */
-function glow(c, x, y, radius, color, strength = 0.5) {
-  for (let py = Math.floor(y - radius); py <= y + radius; py += 1) {
-    for (let px = Math.floor(x - radius); px <= x + radius; px += 1) {
-      if (!c.inside(px, py) || c.alphaAt(px, py) === 0) continue;
-      const d = Math.hypot(px - x, py - y) / radius;
-      if (d > 1) continue;
-      const amount = (1 - d) * strength;
-      if (amount > dither(px, py) * 0.6) c.pixel(px, py, mix(c.colorAt(px, py), color, Math.min(1, amount)));
-    }
-  }
-}
-
-function lavaRiver(c, points, width = 3) {
-  for (let index = 0; index + 1 < points.length; index += 1) {
-    const [x0, y0] = points[index];
-    const [x1, y1] = points[index + 1];
-    const steps = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0));
-    for (let s = 0; s <= steps; s += 1) {
-      const x = x0 + ((x1 - x0) * s) / steps;
-      const y = y0 + ((y1 - y0) * s) / steps;
-      fill(c, x - width / 2, y - 1, width, 2, '#e2531e');
-      c.pixel(x, y, '#ffce5a');
-    }
-  }
-}
+const stoneFill = (seed, dark = '#3a4a44', light = '#7a8a80', moss = null) => (x, y) => {
+  const n = fbm(x / 6, y / 6, seed, 3);
+  const color = mixRgb(rgb(dark), rgb(light), n);
+  return moss && n > 0.62 ? rgb(moss) : color;
+};
 
 // ---------- Cenas ----------
 
-function sceneCampfire(c) {
-  sky(c, ['#04060c', '#0a1220', '#101a24']);
-  stars(c, 30, 11, 60, '#5fe08a');
-  // Troncos grossos da floresta escura.
-  for (const [x, w] of [[20, 14], [70, 18], [150, 20], [205, 16]]) {
-    fill(c, x, 0, w, H, '#2a160e');
-    fill(c, x, 0, 3, H, '#4a2a16');
-    for (let y = 4; y < H; y += 9) fill(c, x + 4 + (y % 3), y, 2, 4, '#1a0c08');
+/** Cap. 1 — sobrevivente sem memória junto à fogueira; Bram vigia; uma luz vermelha na mata. */
+function sceneCampfire(p, atlas) {
+  p.gradient([[0, '#03050c'], [0.5, '#0b1428'], [1, '#14203a']], 0, 150);
+  p.particles(90, { area: [0, 0, W, 110], hex: '#e8f0ff', alpha: 0.7, seed: 11 });
+  p.sphere(330, 34, 13, '#8a96b0', '#f4f6ff');
+  p.glow(330, 34, 60, '#9ab0e0', 0.25);
+  p.ridge({ base: 128, amplitude: 30, frequency: 0.012, seed: 3, color: '#0c1626', depth: 300 });
+  treeLine(p, atlas, 152, { step: 12, scale: 2, silhouette: '#08101c', seed: 4 });
+  p.fog(146, 14, '#24324a', 0.5);
+  ground(p, 150, ['#0e140c', '#16200f', '#1e2a14', '#2a3418'], { seed: 6 });
+  p.ellipse(200, 196, 150, 34, (x, y, d) => mixRgb(rgb('#3a2a1a'), rgb('#20180f'), d), 0.85);
+  // A luz vermelha entre as árvores (o presságio).
+  p.glow(330, 136, 70, '#ff2a2a', 0.8);
+  p.glow(330, 136, 18, '#ff8a8a', 0.9);
+  p.ellipse(330, 136, 3, 4, '#ffe0e0');
+  treeLine(p, atlas, 176, { names: ['oak-tree', 'pine-1'], step: 70, scale: 2, light: '#2a3a6a', lightAmount: 0.75, seed: 8, jitter: 20 });
+  for (let index = 0; index < 9; index += 1) {
+    const angle = (index / 9) * Math.PI * 2;
+    p.ellipse(200 + Math.cos(angle) * 16, 200 + Math.sin(angle) * 5, 4, 3, '#5a5450');
   }
-  fill(c, 0, 108, W, H - 108, '#140c0a');
-  // Fogueira e luz quente.
-  fire(c, 120, 112, 9);
-  for (const dx of [-8, -3, 3, 8]) fill(c, 120 + dx - 2, 112, 4, 2, '#5a3018');
-  glow(c, 120, 100, 70, '#ff8a3a', 0.55);
-  // Sobrevivente encostado à esquerda e cão dormindo à direita.
-  fill(c, 40, 100, 20, 10, '#3a5a7a');
-  fill(c, 38, 92, 8, 8, '#d9a070');
-  fill(c, 36, 89, 12, 4, '#5a3a20');
-  fill(c, 60, 106, 22, 4, '#3a2a1a');
-  // Fragmento vermelho brilhando no peito.
-  c.pixel(46, 102, '#ff3a3a');
-  glow(c, 46, 102, 8, '#ff3a3a', 0.6);
-  c.shadedEllipse(180, 110, 14, 5, ['#4a3020', '#7a5030', '#9a6a40', '#c08a5a']);
-  // Machado cravado no tronco.
-  c.line(212, 70, 218, 78, '#6a4228');
-  fill(c, 216, 68, 4, 5, '#9aa0a8');
-  // Olhos na escuridão.
-  for (const [x, y] of [[150, 90], [154, 90], [86, 96], [90, 96]]) c.pixel(x, y, '#ff5a3a');
+  p.line(186, 202, 214, 196, '#5a3a20', 3);
+  p.line(188, 196, 212, 202, '#6a4428', 3);
+  fire(p, 200, 198, 1.2);
+  // O herói, com o fragmento vermelho brilhando, e Bram do outro lado do fogo.
+  p.sprite(knight(2, 1), 160, 214, { scale: 2, light: '#ffb080', lightAmount: 0.45, rim: '#ffcf8a', rimSide: -1 });
+  p.glow(165, 184, 12, '#ff3030', 0.9);
+  p.sprite(npc('vigia'), 240, 214, { scale: 2, flip: true, light: '#ffb080', lightAmount: 0.45, rim: '#ffcf8a', rimSide: 1 });
+  p.particles(40, { area: [175, 120, 50, 70], hex: '#ffcf6a', seed: 13, glowHex: '#ff8a3a' });
+  p.particles(18, { area: [20, 140, 360, 60], hex: '#9aff8a', seed: 17, glowHex: '#5ae06a' });
+  p.vignette(0.6);
 }
 
-function sceneVillage(c) {
-  sky(c, ['#101836', '#2a2a5a', '#d06a3a', '#ffb04a'], 70);
-  moon(c, 120, 58, 9, ['#ff9a3a', '#ffc45a', '#ffe08a', '#fff4c0']);
-  stars(c, 25, 21, 35);
-  ridge(c, 72, '#1a2a3a', { seed: 3, height: 14 });
-  for (let x = 0; x < W; x += 7) pine(c, x + 3, 82 + (x % 3), 14 + (x % 5), ['#0e2018', '#16301e', '#204028']);
-  fill(c, 0, 84, W, H - 84, '#2f5a2a');
-  // Rio e ponte de pedra.
-  c.polygon([[110, 84], [130, 84], [150, H], [96, H]], '#2a6aa0');
-  c.polygon([[115, 90], [122, 90], [128, H], [110, H]], '#4a9ad0');
-  fill(c, 96, 104, 60, 6, '#6a6a6a');
-  for (let x = 98; x < 154; x += 8) fill(c, x, 110, 5, 5, '#4a4a4a');
-  // Casas com janelas acesas e moinho.
-  house(c, 18, 96, 30, 18);
-  house(c, 56, 92, 26, 16, { roof: '#6a3a1a' });
-  house(c, 166, 96, 28, 18);
-  house(c, 200, 90, 24, 14, { roof: '#8a5a2a' });
-  fill(c, 212, 64, 5, 26, '#5a4a3a');
-  c.line(214, 66, 200, 54, '#8a7a6a');
-  c.line(214, 66, 228, 78, '#8a7a6a');
-  c.line(214, 66, 226, 52, '#8a7a6a');
-  c.line(214, 66, 202, 80, '#8a7a6a');
-  fire(c, 150, 122, 4);
-  for (const x of [30, 70, 180]) glow(c, x, 100, 14, '#ffb04a', 0.35);
-}
-
-function sceneSiege(c) {
-  sky(c, ['#2a2a32', '#4a4a50', '#8a6a5a'], 60);
-  // Fumaça e telhados em chamas.
-  for (let i = 0; i < 9; i += 1) c.shadedEllipse(30 + i * 9, 30 - i * 2, 10, 6, ['#3a3a3a', '#5a5a5a', '#7a7a7a', '#8a8a8a']);
-  fill(c, 0, 60, W, H - 60, '#4a6a3a');
-  house(c, 6, 62, 34, 22, { wall: '#9a8a7a', roof: '#a08040', roofLight: '#c0a050' });
-  house(c, 44, 58, 28, 20, { wall: '#9a8a7a', roof: '#a08040', roofLight: '#c0a050' });
-  for (const x of [16, 30, 52, 64]) fire(c, x, 50, 4);
-  // Paliçada de madeira e portão aberto.
-  for (let x = 100; x < W; x += 5) {
-    fill(c, x, 46, 4, 26, '#8a5a30');
-    fill(c, x, 46, 1, 26, '#b07a40');
-    c.polygon([[x, 46], [x + 2, 42], [x + 4, 46]], '#8a5a30');
+/** Cap. 2 — a vila cresce ao entardecer; uma criança desenha cinco símbolos. */
+function sceneVillage(p, atlas) {
+  p.gradient([[0, '#1a2050'], [0.45, '#8a4a6a'], [0.75, '#ff9a5a'], [1, '#ffd08a']], 0, 140);
+  p.clouds({ top: 10, bottom: 90, cover: 0.45, lit: '#ffc08a', shade: '#6a4a7a', seed: 21 });
+  p.sphere(200, 118, 18, '#ff8a3a', '#fff0b0');
+  p.glow(200, 118, 120, '#ffb060', 0.35);
+  p.ridge({ base: 118, amplitude: 36, frequency: 0.01, seed: 22, color: '#4a3a6a', fogColor: '#c08a8a', fog: 0.5, depth: 300, rim: '#ffb07a' });
+  p.ridge({ base: 134, amplitude: 22, frequency: 0.02, seed: 23, color: '#2a3a3a', fogColor: '#8a6a6a', fog: 0.3, depth: 250 });
+  treeLine(p, atlas, 150, { step: 8, scale: 1, light: '#5a3a4a', lightAmount: 0.6, seed: 24 });
+  ground(p, 148, ['#3a5a2a', '#4a6a30', '#5a7a38', '#6a8a40'], { seed: 25, horizonFade: '#c08a6a' });
+  // Rio com o reflexo do pôr do sol.
+  p.polygon([[176, 148], [212, 148], [250, H], [140, H]], (x) => mixRgb(rgb('#3a6a9a'), rgb('#ffb070'), clamp01(1 - Math.abs(x - 200) / 30) * 0.6));
+  for (const [name, x, y] of [['house-8', 60, 178], ['store-8', 112, 172], ['house', 150, 166], ['forge-8', 270, 170], ['farm-8', 330, 180]]) {
+    if (atlas[name]) p.sprite(atlas[name], x, y, { scale: 1, light: '#ffc090', lightAmount: 0.3 });
   }
-  fill(c, 150, 52, 22, 20, '#3a2a18');
-  // Exército inimigo no horizonte.
-  for (let x = 176; x < W; x += 3) fill(c, x, 38 + (x % 4), 2, 6, '#2a2a30');
-  // Caminho de pedra e defensores lutando.
-  c.polygon([[110, 72], [140, 72], [170, H], [70, H]], '#8a8070');
-  const fighters = [[60, 100, '#5a6a7a'], [80, 116, '#7a3a2a'], [104, 96, '#5a6a7a'], [128, 110, '#3a4a3a'], [150, 124, '#5a6a7a'], [176, 104, '#7a5a3a'], [196, 120, '#5a6a7a'], [40, 124, '#7a3a2a']];
-  for (const [x, y, body] of fighters) person(c, x, y, { body, head: '#c0c4c8', weapon: '#d0d4d8', scale: 1.4 });
-  for (const x of [20, 214]) {
-    fill(c, x, 104, 10, 12, '#6a4a2a');
-    fill(c, x, 106, 10, 1, '#3a2a18');
-  }
-}
-
-function sceneForestTemple(c) {
-  sky(c, ['#0a1420', '#123040', '#1e5060']);
-  // Templo em espiral ao fundo, com luz azul.
-  fill(c, 104, 30, 32, 60, '#2a4a4a');
-  for (let y = 30; y < 90; y += 6) fill(c, 104, y, 32, 1, '#1a3434');
-  c.polygon([[108, 30], [120, 6], [132, 30]], '#2a4a4a');
-  fill(c, 116, 60, 8, 14, '#5ae0ff');
-  glow(c, 120, 66, 30, '#5ae0ff', 0.5);
-  fill(c, 90, 88, 60, 12, '#2a4040');
-  // Árvores enormes nas laterais.
-  for (const [x, w] of [[0, 34], [206, 34]]) {
-    fill(c, x, 0, w, H, '#2a1e18');
-    fill(c, x + (x ? 0 : w - 4), 0, 4, H, '#4a3a2a');
-  }
-  for (const [x, y] of [[40, 10], [190, 14], [60, 4], [170, 6]]) c.shadedEllipse(x, y, 30, 14, ['#0e2a24', '#16403a', '#1e5a4a', '#2a7a5a']);
-  // Cachoeira e lago.
-  fill(c, 112, 96, 16, 14, '#8ad0e0');
-  fill(c, 70, 108, 100, 10, '#2a6a8a');
-  fill(c, 0, 116, W, H - 116, '#1a2a1e');
-  // Cogumelos que brilham.
-  for (const [x, y, s, col] of [[30, 120, 5, '#5ab0ff'], [46, 126, 3, '#ffb04a'], [196, 122, 6, '#5ab0ff'], [212, 112, 3, '#ffb04a'], [80, 124, 3, '#5ae0ff'], [160, 126, 4, '#5ae0ff']]) {
-    fill(c, x - 1, y - s, 2, s, '#d0e0e0');
-    c.shadedEllipse(x, y - s, s, s * 0.6, ['#1a4a8a', col, '#a0e0ff', '#ffffff']);
-    glow(c, x, y - s, s * 4, col, 0.4);
-  }
-  stars(c, 18, 31, 90, '#9ae0ff');
-}
-
-function sceneBloodMoon(c) {
-  sky(c, ['#0a0e16', '#141c28', '#1e2a36']);
-  moon(c, 60, 34, 20, ['#a0201a', '#d0302a', '#ff4a3a', '#ff8a6a']);
-  glow(c, 60, 34, 36, '#ff4a3a', 0.25);
-  castle(c, 150, 116, 100, 96, { windows: '#ff2a2a' });
-  ridge(c, 118, '#0c1016', { seed: 8, height: 8 });
-  fill(c, 0, 120, W, H - 120, '#0a0c10');
-  // Árvores secas.
-  for (const [x, dir] of [[14, 1], [226, -1]]) {
-    c.line(x, H, x, 70, '#05070a');
-    c.line(x, 90, x + dir * 20, 74, '#05070a');
-    c.line(x, 80, x - dir * 12, 66, '#05070a');
-    c.line(x + dir * 10, 84, x + dir * 26, 92, '#05070a');
-  }
-  // Silhuetas de guerreiros no caminho.
-  for (const [x, s] of [[120, 1.6], [134, 2], [150, 2], [164, 1.6]]) person(c, x, 132, { body: '#05070a', head: '#05070a', scale: s });
-  // Dragão no topo da torre.
-  c.polygon([[146, 22], [152, 14], [158, 22], [164, 16], [160, 26], [150, 26]], '#05070a');
-}
-
-function sceneFrozen(c) {
-  sky(c, ['#0a1838', '#1a3a6a', '#4a7ab0']);
-  // Cidade de gelo com pináculos.
-  for (const [x, h, w] of [[60, 60, 10], [86, 84, 14], [120, 104, 18], [154, 84, 14], [180, 60, 10], [40, 44, 8], [200, 44, 8]]) {
-    c.polygon([[x - w / 2, 110], [x - w / 2, 110 - h * 0.6], [x, 110 - h], [x + w / 2, 110 - h * 0.6], [x + w / 2, 110]], '#7ab0e0');
-    c.line(x - w / 2 + 1, 110 - h * 0.6, x - w / 2 + 1, 110, '#c0e8ff');
-  }
-  fill(c, 110, 84, 20, 26, '#2a5a8a');
-  fill(c, 116, 92, 8, 12, '#7af0ff');
-  glow(c, 120, 98, 26, '#7af0ff', 0.55);
-  fill(c, 0, 108, W, H - 108, '#d8ecf8');
-  // Caminho de pedras escuras.
-  for (let i = 0; i < 8; i += 1) fill(c, 112 - i * 6, 112 + i * 3, 10 + i, 3, '#2a3a4a');
-  // Árvores com neve.
-  for (const x of [16, 224]) {
-    c.line(x, H, x, 70, '#3a2a2a');
-    c.line(x, 86, x + (x < 100 ? 14 : -14), 72, '#3a2a2a');
-    fill(c, x - 6, 72, 12, 2, '#ffffff');
-  }
-  // Lobisomem de armadura com machado.
-  c.shadedEllipse(170, 112, 10, 9, ['#1a1a24', '#2a2a36', '#3a3a4a', '#5a5a6a']);
-  c.shadedEllipse(178, 100, 6, 5, ['#2a2a36', '#4a4a5a', '#6a6a7a', '#8a8a9a']);
-  c.polygon([[176, 96], [178, 90], [181, 96]], '#2a2a36');
-  c.pixel(181, 99, '#ffd84a');
-  c.line(186, 120, 196, 100, '#5a4a3a');
-  c.polygon([[192, 102], [202, 96], [200, 108]], '#c0d0e0');
-  // Neve caindo.
-  for (let i = 0; i < 70; i += 1) c.pixel(Math.floor(hash(i, 1, 61) * W), Math.floor(hash(i, 2, 61) * H), '#ffffff', 200);
-}
-
-function sceneDesert(c) {
-  sky(c, ['#3a8ab0', '#7ac0c8', '#f0d8a0'], 70);
-  for (let i = 0; i < 6; i += 1) c.shadedEllipse(40 + i * 40, 20 + (i % 2) * 8, 26, 7, ['#5aa0c0', '#8ac8d8', '#c0e4e8', '#ffffff']);
-  // Nuvem de areia em forma de caveira.
-  c.shadedEllipse(150, 66, 50, 34, ['#c09060', '#e0b880', '#f0d4a0', '#fff0c8']);
-  c.shadedEllipse(132, 62, 10, 11, ['#3a2020', '#4a2a28', '#5a3430', '#6a4038']);
-  c.shadedEllipse(168, 62, 10, 11, ['#3a2020', '#4a2a28', '#5a3430', '#6a4038']);
-  c.polygon([[146, 76], [150, 70], [154, 76]], '#4a2a28');
-  for (let x = 136; x < 166; x += 5) fill(c, x, 84, 3, 8, '#4a2a28');
-  fill(c, 0, 92, W, H - 92, '#e8c080');
-  // Oásis e pirâmides.
-  c.shadedEllipse(140, 100, 26, 5, ['#2a6a2a', '#4a9a3a', '#6aba4a', '#8ad05a']);
-  c.polygon([[176, 112], [204, 70], [232, 112]], '#c06a40');
-  c.polygon([[204, 70], [232, 112], [214, 112]], '#8a4428');
-  c.polygon([[200, 76], [204, 70], [208, 76]], '#2a1a1a');
-  // Penhasco com dois exploradores.
-  c.polygon([[0, 104], [70, 110], [90, H], [0, H]], '#6a6a6a');
-  c.polygon([[0, 104], [70, 110], [72, 114], [0, 110]], '#8a8a8a');
-  person(c, 26, 108, { body: '#4a3020', head: '#3a2418', weapon: '#2a2a2a', scale: 1.8 });
-  person(c, 52, 110, { body: '#5a3a24', head: '#3a2418', scale: 1.8 });
-}
-
-function sceneBlackFortress(c) {
-  sky(c, ['#3a0808', '#8a1a14', '#c02a1a']);
-  for (let i = 0; i < 8; i += 1) c.shadedEllipse(30 + i * 12, 30 + (i % 3) * 6, 16, 9, ['#0a0606', '#161010', '#221818', '#2a2020']);
-  ridge(c, 96, '#2a0e0c', { seed: 15, height: 30 });
-  castle(c, 128, 104, 120, 100, { color: '#100a0a', light: '#2a1414', windows: '#ff7a2a' });
-  // Runas brilhando na fachada.
-  for (const [x, y] of [[96, 70], [160, 70], [104, 86], [152, 86], [128, 56]]) {
-    fill(c, x - 1, y - 4, 2, 8, '#ffb04a');
-    glow(c, x, y, 7, '#ff9a2a', 0.5);
-  }
-  fill(c, 0, 104, W, H - 104, '#1a0c0a');
-  lavaRiver(c, [[128, 104], [126, 118], [110, 128], [80, 134]], 5);
-  lavaRiver(c, [[20, 112], [60, 120], [100, 116], [140, 124], [200, 116], [240, 120]], 3);
-  glow(c, 128, 116, 40, '#ff7a2a', 0.4);
-}
-
-function sceneForge(c) {
-  sky(c, ['#0e0816', '#1a1024', '#24142e']);
-  // Canos, correntes e cristais roxos.
-  fill(c, 0, 10, W, 6, '#2a2430');
-  fill(c, 0, 10, W, 1, '#4a4054');
-  for (const x of [40, 200]) c.line(x, 16, x, 50, '#3a3440');
-  for (const [x, y, s] of [[16, 60, 7], [30, 68, 4], [214, 58, 6], [226, 70, 4], [60, 30, 3]]) {
-    c.polygon([[x, y - s * 2], [x + s * 0.7, y], [x, y + s * 0.5], [x - s * 0.7, y]], '#a05aff');
-    glow(c, x, y, s * 4, '#a05aff', 0.45);
-  }
-  // Fornalha em arco.
-  c.shadedEllipse(170, 64, 34, 40, ['#2a1e24', '#3a2e34', '#4a3e44', '#5a4e54']);
-  c.shadedEllipse(170, 70, 20, 28, ['#c0401a', '#ff7a2a', '#ffb04a', '#ffe27a']);
-  glow(c, 170, 70, 60, '#ff8a3a', 0.45);
-  fill(c, 0, 104, W, H - 104, '#1a1418');
-  // Bigorna e ferreiro de armadura com martelo.
-  fill(c, 96, 96, 34, 8, '#3a3a42');
-  fill(c, 104, 104, 18, 14, '#2a2a30');
-  fill(c, 92, 94, 8, 4, '#3a3a42');
-  c.shadedEllipse(80, 84, 12, 16, ['#1a1a20', '#2a2a32', '#3a3a44', '#4a4a56']);
-  c.shadedEllipse(80, 64, 7, 7, ['#1a1a20', '#2a2a32', '#4a4a56', '#6a6a76']);
-  fill(c, 76, 64, 8, 2, '#ff8a3a');
-  c.line(88, 78, 104, 70, '#5a3a20');
-  fill(c, 100, 64, 8, 8, '#5a5a62');
-  fill(c, 104, 94, 12, 3, '#ff9a3a');
-  glow(c, 110, 95, 12, '#ffb04a', 0.6);
-  for (const [x, y] of [[114, 88], [120, 84], [108, 82], [124, 90]]) c.pixel(x, y, '#ffe27a');
-  // Caixas de cristais laranja.
-  for (const x of [30, 196]) {
-    fill(c, x, 112, 20, 12, '#3a2a20');
-    c.polygon([[x + 4, 112], [x + 8, 102], [x + 12, 112]], '#ff9a2a');
-    c.polygon([[x + 10, 112], [x + 14, 104], [x + 18, 112]], '#ffb04a');
-    glow(c, x + 10, 108, 14, '#ff9a2a', 0.4);
-  }
-}
-
-function sceneGolem(c) {
-  sky(c, ['#2a3a3a', '#4a5a50', '#a0703a']);
-  // Paredes do cânion com rachaduras de lava.
-  c.polygon([[0, 0], [50, 0], [64, H], [0, H]], '#1a2224');
-  c.polygon([[190, 0], [W, 0], [W, H], [176, H]], '#1a2224');
-  for (const [x0, y0, x1, y1] of [[20, 10, 30, 60], [30, 60, 24, 100], [210, 20, 200, 70], [200, 70, 214, 110]]) {
-    c.line(x0, y0, x1, y1, '#ff7a2a');
-  }
-  // O Golem: corpo de pedra com rachaduras, olhos acesos e machado.
-  const stone = ['#24302e', '#3a4a48', '#55686a', '#76898a'];
-  c.shadedEllipse(120, 66, 40, 30, stone);
-  c.shadedEllipse(84, 50, 16, 14, stone);
-  c.shadedEllipse(156, 50, 16, 14, stone);
-  c.shadedEllipse(76, 84, 12, 22, stone);
-  c.shadedEllipse(164, 84, 12, 22, stone);
-  c.shadedEllipse(120, 40, 14, 14, stone);
-  c.shadedEllipse(104, 108, 12, 18, stone);
-  c.shadedEllipse(136, 108, 12, 18, stone);
-  for (const x of [114, 126]) {
-    fill(c, x - 2, 38, 4, 3, '#ffb04a');
-    glow(c, x, 39, 8, '#ff7a2a', 0.7);
-  }
-  for (let x = 112; x < 129; x += 3) fill(c, x, 46, 2, 3, '#1a1a1a');
-  for (const pts of [[[100, 56], [112, 70], [104, 86]], [[140, 56], [128, 72], [138, 88]], [[120, 60], [120, 90]], [[70, 70], [78, 90]], [[170, 70], [162, 92]]]) {
-    lavaRiver(c, pts, 1);
-  }
-  // Machado gigante.
-  c.line(70, 100, 90, 90, '#4a3a2a');
-  c.polygon([[52, 96], [74, 86], [80, 110], [58, 118]], '#a0a8a8');
-  c.polygon([[52, 96], [74, 86], [76, 92], [56, 100]], '#c8d0d0');
-  // Chão de lava e o herói pequeno.
-  fill(c, 0, 118, W, H - 118, '#1e2426');
-  lavaRiver(c, [[60, 124], [100, 130], [140, 122], [200, 128]], 4);
-  glow(c, 120, 126, 50, '#ff7a2a', 0.35);
-  person(c, 46, 126, { body: '#2a3440', head: '#3a4450', weapon: '#c0c4c8', scale: 1.6 });
-}
-
-function sceneDawn(c) {
-  sky(c, ['#2a3a6a', '#d0805a', '#ffd08a', '#fff0c0'], 90);
-  moon(c, 120, 82, 16, ['#ffb04a', '#ffd06a', '#ffe8a0', '#fffbe0']);
-  glow(c, 120, 82, 60, '#ffd06a', 0.3);
-  ridge(c, 92, '#5a4a6a', { seed: 41, height: 20 });
-  ridge(c, 102, '#3a5a3a', { seed: 42, height: 10 });
-  fill(c, 0, 104, W, H - 104, '#4a7a3a');
-  house(c, 24, 108, 30, 16, { lit: '#ffe8a0' });
-  house(c, 64, 104, 26, 16, { lit: '#ffe8a0' });
-  house(c, 150, 106, 28, 16, { lit: '#ffe8a0' });
-  house(c, 190, 104, 26, 16, { lit: '#ffe8a0' });
-  fire(c, 118, 126, 5);
-  for (const [x, body] of [[100, '#7a3a2a'], [110, '#3a5a7a'], [128, '#3a6a3a'], [138, '#7a6a3a']]) person(c, x, 132, { body, head: '#e0b080', scale: 1.3 });
-  // Pássaros.
-  for (const [x, y] of [[60, 40], [70, 34], [180, 30], [190, 38]]) {
-    c.pixel(x - 1, y - 1, '#3a2a3a');
-    c.pixel(x, y, '#3a2a3a');
-    c.pixel(x + 1, y - 1, '#3a2a3a');
-  }
-}
-
-
-function sceneAurelian(c) {
-  // Salão do trono em ruínas: o rei diante do Coração aberto, céu vermelho pelas janelas.
-  sky(c, ['#14060a', '#2a0a10', '#4a1018']);
-  for (const x of [30, 90, 150, 210]) {
-    fill(c, x - 8, 0, 16, 96, '#1e1216');
-    fill(c, x - 8, 0, 2, 96, '#3a242a');
-    c.polygon([[x - 5, 20], [x, 8], [x + 5, 20], [x + 5, 50], [x - 5, 50]], '#c02a1a');
-    c.line(x, 8, x, 50, '#5a1010');
-  }
-  fill(c, 0, 96, W, H - 96, '#1a1014');
-  for (let x = 0; x < W; x += 12) fill(c, x, 96, 1, H - 96, '#2a1a1e');
-  // Coração de Eldoria: esfera pulsante com raios.
-  for (let i = 0; i < 12; i += 1) {
-    const angle = (i / 12) * Math.PI * 2;
-    c.line(120, 54, 120 + Math.cos(angle) * 46, 54 + Math.sin(angle) * 30, '#7a1a2a');
-  }
-  c.shadedEllipse(120, 54, 16, 16, ['#8a0a1a', '#d0202a', '#ff6a5a', '#ffd0c0']);
-  glow(c, 120, 54, 50, '#ff4a4a', 0.5);
-  // Os cinco selos flutuando em volta.
-  const seals = ['#7ac04a', '#4aa0e0', '#e0e0ff', '#ffe27a', '#ff7a2a'];
-  seals.forEach((color, index) => {
-    const angle = -Math.PI / 2 + (index / 5) * Math.PI * 2;
-    const x = 120 + Math.cos(angle) * 30;
-    const y = 54 + Math.sin(angle) * 22;
-    c.shadedEllipse(x, y, 3, 3, ['#2a2a2a', color, '#ffffff', '#ffffff']);
+  for (const [x, y] of [[56, 160], [108, 154], [266, 154], [148, 150]]) p.glow(x, y, 10, '#ffcf6a', 0.5);
+  fire(p, 200, 206, 0.8);
+  // A criança e os cinco símbolos desenhados no chão.
+  p.sprite(villager('pipo'), 168, 214, { scale: 2, light: '#ffc090', lightAmount: 0.3 });
+  SEAL_COLORS.forEach((hex, index) => {
+    const x = 128 + index * 9;
+    p.ellipse(x, 218, 3, 2, hex);
+    p.glow(x, 218, 8, hex, 0.5);
   });
-  // Aurelian de costas, coroa e manto, com a mão estendida.
-  c.polygon([[104, 132], [112, 98], [128, 98], [136, 132]], '#3a1a4a');
-  c.polygon([[112, 98], [128, 98], [130, 110], [110, 110]], '#5a2a6a');
-  c.shadedEllipse(120, 92, 6, 6, ['#6a6070', '#8a8090', '#a8a0b0', '#c8c0d0']);
-  for (const dx of [-5, -2, 1, 4]) c.polygon([[120 + dx, 86], [121 + dx, 82], [122 + dx, 86]], '#e8c15a');
-  fill(c, 115, 86, 11, 2, '#e8c15a');
-  c.line(128, 102, 138, 86, '#3a1a4a');
-  glow(c, 138, 86, 8, '#ff9a8a', 0.5);
+  p.sprite(villager('marta'), 228, 212, { scale: 2, flip: true, light: '#ffc090', lightAmount: 0.3 });
+  p.sprite(knight(1, 1), 252, 216, { scale: 2, light: '#ffc090', lightAmount: 0.3 });
+  p.sprite(npc('construtor'), 104, 214, { scale: 2, light: '#ffc090', lightAmount: 0.3 });
+  smoke(p, 312, 130, 50, 2, '#6a5a6a', 0.35);
+  p.vignette(0.4);
 }
 
-function sceneFreedHeart(c) {
-  // O Coração libertado: o Golem se desfaz em luz sobre a montanha ao amanhecer.
-  sky(c, ['#1a2a5a', '#6a5a9a', '#f0a07a', '#fff0c0'], 100);
-  ridge(c, 100, '#3a3048', { seed: 52, height: 26 });
-  fill(c, 0, 100, W, H - 100, '#2a2a34');
-  // Golem ajoelhado, rachado de luz.
-  const stone = ['#3a3a44', '#55556a', '#76768a', '#9a9aae'];
-  c.shadedEllipse(120, 88, 26, 18, stone);
-  c.shadedEllipse(120, 64, 10, 10, stone);
-  c.shadedEllipse(96, 96, 9, 12, stone);
-  c.shadedEllipse(144, 96, 9, 12, stone);
-  for (const [x0, y0, x1, y1] of [[120, 72, 112, 96], [120, 72, 130, 98], [100, 84, 92, 104], [140, 84, 148, 104]]) c.line(x0, y0, x1, y1, '#fff4c0');
-  // O Coração subindo livre, com faíscas douradas.
-  c.shadedEllipse(120, 34, 9, 9, ['#d08a2a', '#ffd06a', '#fff0b0', '#ffffff']);
-  glow(c, 120, 34, 46, '#ffe08a', 0.55);
-  for (let i = 0; i < 40; i += 1) {
-    const x = 70 + hash(i, 1, 71) * 100;
-    const y = 20 + hash(i, 2, 71) * 70;
-    c.pixel(x, y, hash(i, 3, 71) > 0.5 ? '#fff4c0' : '#ffd06a');
+/** Cap. 3 — os Saqueadores atacam a paliçada; o estandarte deles tem um sol negro. */
+function sceneSiege(p, atlas) {
+  p.gradient([[0, '#2a2026'], [0.6, '#6a3a2a'], [1, '#c0602a']], 0, 140);
+  p.clouds({ top: 0, bottom: 100, cover: 0.65, lit: '#c07a4a', shade: '#2a2024', seed: 31 });
+  smoke(p, 80, 120, 110, 1, '#2a2224', 0.6);
+  smoke(p, 140, 126, 90, 4, '#2a2224', 0.5);
+  p.ridge({ base: 132, amplitude: 18, frequency: 0.015, seed: 32, color: '#2a1a1a', fogColor: '#8a4a2a', fog: 0.4, depth: 300 });
+  ground(p, 136, ['#2a3018', '#3a3a1e', '#4a4424', '#5a4a2a'], { seed: 33, horizonFade: '#8a4a2a' });
+  for (const [x, y] of [[64, 168], [128, 160]]) {
+    if (atlas['house-1']) p.sprite(atlas['house-1'], x, y, { scale: 2, light: '#c07a5a', lightAmount: 0.35 });
+    fire(p, x - 10, y - 46, 0.9);
+    fire(p, x + 12, y - 42, 0.7);
   }
-  // O portador e os aliados assistindo.
-  for (const [x, body] of [[40, '#2a3440'], [52, '#3a6a3a'], [190, '#7a3a2a'], [202, '#5a4a7a']]) person(c, x, 128, { body, head: '#e0b080', scale: 1.5 });
+  // Paliçada de troncos com o portão.
+  for (let x = 190; x < W; x += 7) {
+    const height = 40 + (x % 3) * 2;
+    p.rect(x, 168 - height, 6, height, (px) => mixRgb(rgb('#6a4022'), rgb('#a0703a'), clamp01((px - x) / 6)));
+    p.polygon([[x, 168 - height], [x + 3, 162 - height], [x + 6, 168 - height]], '#8a5a30');
+  }
+  p.rect(262, 138, 34, 30, '#1a1210');
+  p.line(330, 130, 330, 70, '#2a1a12', 2);
+  p.rect(331, 70, 30, 22, '#2a1418');
+  blackSun(p, 346, 81, 6);
+  const raider = drawNpc({ tunic: '#3a2a2a', scarf: '#1a1a1a', hair: '#1a1a1a', skin: '#a0704a', hat: '#2a2020' }, 0);
+  for (const [x, y] of [[300, 200], [330, 186], [356, 208], [382, 192], [280, 178]]) p.sprite(raider, x, y, { scale: 2, flip: true, light: '#ff9a5a', lightAmount: 0.45 });
+  // Defensores: o herói, a Capitã e um sentinela.
+  p.sprite(knight(2, 0), 220, 214, { scale: 2, light: '#ffb080', lightAmount: 0.35, rim: '#ffcf8a', rimSide: -1 });
+  p.sprite(npc('capitao'), 182, 210, { scale: 2, light: '#ffb080', lightAmount: 0.35 });
+  p.sprite(villager('rui'), 248, 222, { scale: 2, light: '#ffb080', lightAmount: 0.35 });
+  p.particles(70, { area: [0, 40, W, 140], hex: '#ffb04a', seed: 34, glowHex: '#ff7a2a' });
+  p.vignette(0.5);
+}
+
+/** Cap. 4 — o templo da Terra na floresta profunda; o Selo da Terra brilha no altar. */
+function sceneForestTemple(p, atlas) {
+  p.gradient([[0, '#0a1a1a'], [0.5, '#16363a'], [1, '#1e4a44']], 0, H);
+  p.rays(200, -20, { count: 7, length: 260, hex: '#c0ffe0', intensity: 0.35, start: Math.PI * 0.25, spread: Math.PI * 0.5, width: 0.04 });
+  treeLine(p, atlas, 128, { step: 18, scale: 2, silhouette: '#0c2626', seed: 41 });
+  p.fog(120, 16, '#3a7a6a', 0.45);
+  const stone = stoneFill(42, '#3a4a44', '#7a8a80', '#3c6e3c');
+  p.rect(140, 110, 120, 50, stone);
+  p.rect(160, 76, 80, 36, stone);
+  p.rect(180, 46, 40, 32, stone);
+  p.polygon([[176, 46], [200, 20], [224, 46]], stone);
+  p.rect(190, 124, 20, 36, '#0a1414');
+  p.glow(200, 140, 40, '#5ae0a0', 0.6);
+  ground(p, 160, ['#14261a', '#1e3420', '#2a4426', '#36542e'], { seed: 43 });
+  p.rect(186, 168, 28, 14, stone);
+  p.sphere(200, 160, 6, '#2a6a2a', '#a0ff7a');
+  p.glow(200, 160, 50, '#7aff7a', 0.6);
+  for (const x of [0, 354]) p.rect(x, 0, 46, H, (px, py) => mixRgb(rgb('#1e1610'), rgb('#4a3a28'), fbm(px / 3, py / 20, 44, 3)));
+  for (const [x, y, hex] of [[60, 200, '#5ab0ff'], [84, 214, '#ffb04a'], [320, 206, '#5ab0ff'], [340, 218, '#5ae0ff'], [130, 216, '#5ae0ff'], [270, 220, '#ffb04a']]) {
+    p.rect(x - 1, y - 6, 2, 6, '#d0e0d8');
+    p.ellipse(x, y - 7, 5, 3, hex);
+    p.glow(x, y - 7, 18, hex, 0.55);
+  }
+  p.sprite(knight(3, 1), 130, 218, { scale: 2, light: '#80c0a0', lightAmount: 0.5, rim: '#a0ffd0', rimSide: 1 });
+  p.sprite(npc('cacador'), 96, 214, { scale: 2, light: '#80c0a0', lightAmount: 0.5 });
+  p.particles(40, { area: [40, 40, 320, 170], hex: '#c0ffd0', seed: 45, glowHex: '#5ae0a0' });
+  p.vignette(0.55);
+}
+
+/** Cap. 5 — as ruínas de Valdora sob a lua de sangue; o túmulo do último rei. */
+function sceneBloodMoon(p) {
+  p.gradient([[0, '#06080e'], [0.6, '#141a26'], [1, '#2a1a20']], 0, H);
+  p.particles(60, { area: [0, 0, W, 100], hex: '#c0c8e0', alpha: 0.6, seed: 51 });
+  p.glow(110, 60, 120, '#ff2a2a', 0.35);
+  p.sphere(110, 60, 30, '#7a1010', '#ff5a3a', { highlight: '#ffb08a' });
+  p.clouds({ top: 30, bottom: 110, cover: 0.38, lit: '#5a2a30', shade: '#14101a', seed: 52, alpha: 0.8 });
+  const castle = '#1c1824';
+  p.glow(286, 96, 140, '#5a2a3a', 0.35);
+  p.rect(200, 100, 170, 70, castle);
+  for (const [x, w, h] of [[200, 18, 110], [236, 22, 140], [276, 30, 170], [318, 22, 140], [352, 18, 110]]) {
+    p.rect(x, 170 - h, w, h, castle);
+    p.polygon([[x - 2, 170 - h], [x + w / 2, 170 - h - w * 1.4], [x + w + 2, 170 - h]], castle);
+    for (let wy = 180 - h; wy < 160; wy += 14) {
+      p.rect(x + w / 2 - 1, wy, 3, 5, '#ff2a2a');
+      p.glow(x + w / 2, wy + 2, 6, '#ff2a2a', 0.4);
+    }
+  }
+  p.fog(170, 14, '#3a2a34', 0.6);
+  ground(p, 172, ['#0c0c12', '#16141c', '#201c24', '#2a2430'], { seed: 53 });
+  for (const [x, h] of [[30, 80], [60, 50], [380, 70]]) p.rect(x, 200 - h, 14, h, stoneFill(54, '#3a3640', '#6a6470'));
+  // Túmulo do rei com a coroa.
+  p.rect(130, 186, 70, 20, stoneFill(55, '#4a4450', '#7a7480'));
+  p.rect(136, 178, 58, 10, '#5a5460');
+  for (const dx of [-8, -3, 2, 7]) p.polygon([[165 + dx, 178], [166 + dx, 170], [168 + dx, 178]], '#e8c15a');
+  p.glow(166, 174, 16, '#ffd06a', 0.5);
+  for (const [x, y] of [[250, 204], [286, 210], [322, 202]]) p.sprite(monster('skeleton', 40, true), x, y, { scale: 2, light: '#7a4a5a', lightAmount: 0.6, rim: '#ff4a3a', rimSide: -1 });
+  p.sprite(knight(3, 1), 106, 222, { scale: 2, light: '#ff8a7a', lightAmount: 0.45, rim: '#ff6a5a', rimSide: -1 });
+  p.vignette(0.6);
+}
+
+/** Cap. 6 — a Terra Congelada: o palácio de gelo, a aurora e o Guardião Adormecido. */
+function sceneFrozen(p, atlas) {
+  p.gradient([[0, '#020818'], [0.5, '#0c2448'], [1, '#2a5a8a']], 0, 150);
+  p.particles(70, { area: [0, 0, W, 90], hex: '#ffffff', alpha: 0.7, seed: 61 });
+  for (let x = 0; x < W; x += 1) {
+    const center = 40 + Math.sin(x / 40) * 14 + fbm(x / 50, 1, 62, 3) * 20;
+    for (let y = Math.floor(center - 26); y < center + 10; y += 1) {
+      const t = 1 - Math.abs(y - center) / 26;
+      p.add(x, y, rgb(x % 120 < 60 ? '#5affb0' : '#7ac0ff'), clamp01(t) * 0.35 * fbm(x / 8, y / 30, 63, 2));
+    }
+  }
+  p.ridge({ base: 132, amplitude: 50, frequency: 0.012, seed: 64, color: '#5a7aa0', fogColor: '#9ac0e0', fog: 0.4, rim: '#ffffff', rimStrength: 0.7, sharp: 1.6, depth: 300 });
+  for (const [x, h, w] of [[150, 70, 12], [180, 100, 16], [210, 124, 22], [240, 100, 16], [270, 70, 12]]) {
+    p.polygon([[x - w / 2, 150], [x - w / 2, 150 - h * 0.6], [x, 150 - h], [x + w / 2, 150 - h * 0.6], [x + w / 2, 150]], (px) => mixRgb(rgb('#7ab0e0'), rgb('#d8f0ff'), clamp01((x - px) / w + 0.5)));
+  }
+  p.glow(210, 132, 60, '#7af0ff', 0.6);
+  ground(p, 150, ['#a0c0d8', '#c0d8ea', '#dceaf4', '#f4fbff'], { seed: 65 });
+  p.ellipse(210, 186, 110, 18, (x, y, d) => mixRgb(rgb('#5a8ab0'), rgb('#a0d0f0'), d), 0.9);
+  for (const [x, name] of [[30, 'pine-2'], [372, 'pine-0'], [60, 'pine-1']]) if (atlas[name]) p.sprite(atlas[name], x, 190, { scale: 2, light: '#c0e0ff', lightAmount: 0.5 });
+  // O Guardião Adormecido sobre o lago e o herói com uma tocha.
+  p.glow(210, 160, 70, '#7ae0ff', 0.45);
+  p.sprite(monster('ghost', 40), 210, 196, { scale: 3, light: '#a0e8ff', lightAmount: 0.3, alpha: 0.85 });
+  p.sprite(knight(3, 1), 120, 222, { scale: 2, light: '#9ac0e0', lightAmount: 0.4, rim: '#ffffff', rimSide: 1 });
+  fire(p, 140, 170, 0.4);
+  p.particles(160, { area: [0, 0, W, H], hex: '#ffffff', alpha: 0.85, seed: 67 });
+  p.vignette(0.45);
+}
+
+/** Cap. 7 — o Deserto dos Ossos: a caveira de areia, as pirâmides e o contrabandista do Eclipse. */
+function sceneDesert(p) {
+  p.gradient([[0, '#2a6aa0'], [0.55, '#8ac0d0'], [1, '#f8dca0']], 0, 140);
+  p.clouds({ top: 8, bottom: 70, cover: 0.42, lit: '#ffffff', shade: '#8ab0c8', seed: 71, stretch: 4 });
+  p.ellipse(250, 92, 90, 58, (x, y) => mixRgb(rgb('#c09060'), rgb('#f8dcb0'), fbm(x / 20, y / 14, 72, 4)), 0.9);
+  p.ellipse(222, 86, 18, 20, '#4a2a24', 0.85);
+  p.ellipse(278, 86, 18, 20, '#4a2a24', 0.85);
+  p.polygon([[244, 108], [250, 98], [256, 108]], '#4a2a24', 0.85);
+  for (let x = 224; x < 280; x += 8) p.rect(x, 124, 5, 12, '#4a2a24', 0.8);
+  for (const [base, amp, seed, light, dark] of [[150, 18, 73, '#f0c888', '#c08a50'], [176, 22, 74, '#e8b878', '#a87040']]) {
+    for (let x = 0; x < W; x += 1) {
+      const top = base - fbm(x * 0.01, seed, seed, 3) * amp;
+      const slope = fbm((x + 1) * 0.01, seed, seed, 3) - fbm(x * 0.01, seed, seed, 3);
+      for (let y = Math.floor(top); y < H; y += 1) p.set(x, y, mixRgb(rgb(dark), rgb(light), clamp01(0.5 + slope * 40)));
+    }
+  }
+  p.polygon([[300, 160], [348, 96], [396, 160]], '#d08a50');
+  p.polygon([[348, 96], [396, 160], [366, 160]], '#9a5a30');
+  p.ellipse(200, 168, 46, 7, '#3a8aa0');
+  for (const x of [168, 230]) {
+    p.line(x, 168, x + 4, 140, '#6a4a2a', 2);
+    for (const angle of [-2.6, -2.2, -1.2, -0.6]) p.line(x + 4, 140, x + 4 + Math.cos(angle) * 18, 148 + Math.sin(angle) * 10, '#3a8a3a', 2);
+  }
+  // O contrabandista com o sol negro no peito, diante do herói e de Zeno.
+  const smuggler = drawNpc({ tunic: '#1a1a22', scarf: '#2a2a32', hair: '#1a1a1a', skin: '#a0704a', hat: '#101014' }, 0);
+  p.sprite(smuggler, 300, 214, { scale: 2, flip: true });
+  blackSun(p, 296, 181, 3);
+  p.sprite(knight(2, 1), 220, 218, { scale: 2, light: '#ffe0b0', lightAmount: 0.2 });
+  p.sprite(npc('mercador'), 180, 216, { scale: 2, light: '#ffe0b0', lightAmount: 0.2 });
+  p.particles(80, { area: [0, 60, W, 160], hex: '#f8e0b0', alpha: 0.5, seed: 75 });
+  p.vignette(0.35);
+}
+
+/** Cap. 8 — a Guerra das Cinzas: o exército do Eclipse marcha sob um sol negro. */
+function sceneBlackFortress(p) {
+  p.gradient([[0, '#1a0406'], [0.5, '#6a0e0c'], [1, '#c0301a']], 0, 150);
+  p.clouds({ top: 0, bottom: 110, cover: 0.6, lit: '#a03020', shade: '#120808', seed: 81 });
+  blackSun(p, 300, 48, 18);
+  p.ridge({ base: 140, amplitude: 50, frequency: 0.015, seed: 82, color: '#1a0a0a', sharp: 1.4, depth: 300, rim: '#ff6a3a', rimStrength: 0.4 });
+  const fortress = '#0e0808';
+  p.rect(110, 90, 180, 70, fortress);
+  for (const [x, w, h] of [[110, 20, 100], [150, 24, 130], [190, 26, 160], [234, 24, 130], [270, 20, 100]]) {
+    p.rect(x, 160 - h, w, h, fortress);
+    p.polygon([[x - 2, 160 - h], [x + w / 2, 160 - h - w], [x + w + 2, 160 - h]], fortress);
+  }
+  for (const [x, y] of [[132, 120], [204, 100], [262, 120], [170, 140], [232, 140]]) {
+    p.rect(x - 1, y - 6, 3, 12, '#ffb04a');
+    p.glow(x, y, 14, '#ff8a2a', 0.6);
+  }
+  ground(p, 160, ['#140a0a', '#201010', '#2a1612', '#341c14'], { seed: 83 });
+  for (let x = 0; x < W; x += 1) {
+    const y = 186 + Math.sin(x / 30) * 8 + fbm(x / 20, 1, 84, 3) * 8;
+    for (let dy = -2; dy <= 2; dy += 1) p.set(x, y + dy, rgb(Math.abs(dy) < 1 ? '#ffd06a' : '#ff6a1e'));
+    if (x % 6 === 0) p.glow(x, y, 14, '#ff5a1e', 0.18);
+  }
+  for (let index = 0; index < 9; index += 1) {
+    p.sprite(monster('skeleton', 40, index % 3 === 0), 140 + index * 24, 178 + (index % 2) * 6, { scale: 2, silhouette: '#2a0e10', rim: '#ff7a3a', rimSide: -1 });
+  }
+  p.sprite(knight(3, 1), 120, 222, { scale: 2, light: '#ff8a5a', lightAmount: 0.45, rim: '#ffb06a', rimSide: 1 });
+  p.sprite(npc('capitao'), 84, 220, { scale: 2, light: '#ff8a5a', lightAmount: 0.45 });
+  p.particles(90, { area: [0, 20, W, 200], hex: '#ffb04a', seed: 85, glowHex: '#ff6a2a' });
+  p.vignette(0.55);
+}
+
+/** Cap. 9 — a forja dos selos: Doran e um anão ferreiro trabalham; os cinco selos brilham. */
+function sceneForge(p) {
+  p.gradient([[0, '#0a0610'], [0.6, '#160c1a'], [1, '#22141e']], 0, H);
+  for (let y = 0; y < 170; y += 1) {
+    for (let x = 0; x < W; x += 1) {
+      const mortar = (Math.floor(y / 10) % 2 ? x + 10 : x) % 20 < 1 || y % 10 < 1;
+      p.set(x, y, mortar ? rgb('#0c0810') : mixRgb(rgb('#1e1620'), rgb('#3a2a34'), fbm(x / 8, y / 8, 91, 3)));
+    }
+  }
+  p.rect(0, 14, W, 8, '#2a2430');
+  for (const x of [60, 340]) p.line(x, 22, x, 90, '#3a3440', 2);
+  p.ellipse(300, 110, 60, 64, (x, y, d) => mixRgb(rgb('#4a3a44'), rgb('#2a1e24'), d));
+  p.ellipse(300, 118, 38, 44, (x, y, d) => mixRgb(rgb('#fff0a0'), rgb('#e0501e'), d));
+  p.glow(300, 118, 160, '#ff8a3a', 0.5);
+  for (const [x, y, s] of [[30, 120, 10], [48, 130, 6], [370, 70, 8], [24, 60, 6]]) {
+    p.polygon([[x, y - s * 2], [x + s * 0.7, y], [x, y + s * 0.5], [x - s * 0.7, y]], '#a05aff');
+    p.glow(x, y, s * 5, '#a05aff', 0.5);
+  }
+  ground(p, 170, ['#14100e', '#1e1814', '#2a2018', '#34281c'], { seed: 92 });
+  p.rect(60, 176, 90, 8, '#5a3a20');
+  SEAL_COLORS.forEach((hex, index) => {
+    const x = 72 + index * 17;
+    p.sphere(x, 170, 5, '#1a1a1a', hex);
+    p.glow(x, 170, 16, hex, 0.55);
+  });
+  // Bigorna com metal em brasa.
+  p.rect(184, 188, 50, 12, '#3a3a42');
+  p.rect(196, 200, 26, 18, '#2a2a30');
+  p.rect(176, 186, 14, 6, '#3a3a42');
+  p.rect(196, 184, 22, 4, '#ff9a3a');
+  p.glow(207, 186, 30, '#ffb04a', 0.7);
+  p.sprite(npc('ferreiro'), 166, 220, { scale: 2, light: '#ffb080', lightAmount: 0.4, rim: '#ffcf8a', rimSide: -1 });
+  p.sprite(villager('borin'), 254, 220, { scale: 2, flip: true, light: '#ffb080', lightAmount: 0.4, rim: '#ffcf8a', rimSide: 1 });
+  p.particles(60, { area: [180, 140, 60, 50], hex: '#ffe27a', seed: 93, glowHex: '#ffb04a' });
+  p.vignette(0.55);
+}
+
+/** Cap. 10 — o Golem de Fogo no cânion de lava, diante do portador. */
+function sceneGolem(p) {
+  p.gradient([[0, '#1a2224'], [0.5, '#4a4a3a'], [1, '#b0602a']], 0, 160);
+  p.clouds({ top: 0, bottom: 80, cover: 0.55, lit: '#a07050', shade: '#1a1a1e', seed: 101 });
+  for (const side of [0, 1]) {
+    for (let y = 0; y < H; y += 1) {
+      const edge = side === 0 ? 70 + fbm(y / 20, 1, 102, 3) * 40 : W - 70 - fbm(y / 20, 2, 103, 3) * 40;
+      const from = side === 0 ? 0 : Math.floor(edge);
+      const to = side === 0 ? edge : W;
+      for (let x = from; x < to; x += 1) {
+        const n = fbm(x / 10, y / 10, 104 + side, 4);
+        p.set(x, y, Math.abs(n - 0.55) < 0.012 ? rgb('#ff7a2a') : mixRgb(rgb('#141a1c'), rgb('#3a4446'), n));
+      }
+    }
+  }
+  ground(p, 176, ['#141818', '#1e2222', '#2a2a2a', '#343232'], { seed: 105 });
+  for (let x = 60; x < 340; x += 1) {
+    const y = 200 + Math.sin(x / 24) * 6;
+    for (let dy = -3; dy <= 3; dy += 1) p.set(x, y + dy, rgb(Math.abs(dy) < 2 ? '#ffd06a' : '#ff5a1e'));
+  }
+  p.glow(200, 200, 160, '#ff6a1e', 0.35);
+  p.glow(200, 110, 110, '#ff6a2a', 0.3);
+  p.sprite(monster('titan', 64), 200, 196, { scale: 3, light: '#ffc0a0', lightAmount: 0.25 });
+  p.sprite(knight(3, 1), 200, 224, { scale: 2, light: '#ff9a6a', lightAmount: 0.45, rim: '#ffcf8a', rimSide: 1 });
+  p.particles(110, { area: [0, 0, W, H], hex: '#ffb04a', seed: 106, glowHex: '#ff6a2a' });
+  p.vignette(0.5);
+}
+
+/** Final — amanhecer sobre o novo povoado, com todos reunidos. */
+function sceneDawn(p, atlas) {
+  p.gradient([[0, '#2a3a7a'], [0.45, '#d08a7a'], [0.75, '#ffd08a'], [1, '#fff4c8']], 0, 150);
+  p.clouds({ top: 10, bottom: 90, cover: 0.4, lit: '#fff0d0', shade: '#a07a9a', seed: 111 });
+  p.glow(200, 96, 120, '#ffd08a', 0.45);
+  p.sphere(200, 96, 22, '#ffb04a', '#fff8d0');
+  p.rays(200, 96, { count: 14, length: 300, hex: '#fff0c0', intensity: 0.35, width: 0.05 });
+  p.ridge({ base: 132, amplitude: 34, frequency: 0.01, seed: 112, color: '#6a5a8a', fogColor: '#e0b0a0', fog: 0.5, depth: 300, rim: '#ffe0a0' });
+  treeLine(p, atlas, 154, { step: 8, scale: 1, light: '#7a5a6a', lightAmount: 0.5, seed: 113 });
+  ground(p, 154, ['#4a7a3a', '#5a8a40', '#6a9a48', '#7aaa50'], { seed: 114, horizonFade: '#e0b090' });
+  for (const [name, x, y] of [['house-8', 56, 184], ['store-8', 108, 178], ['forge-8', 296, 178], ['farm-8', 346, 188]]) {
+    if (atlas[name]) p.sprite(atlas[name], x, y, { scale: 1, light: '#ffe0b0', lightAmount: 0.25 });
+  }
+  fire(p, 200, 214, 0.7);
+  for (const [id, x] of [['vigia', 150], ['curandeira', 168], ['construtor', 232], ['capitao', 250], ['ferreiro', 268]]) p.sprite(npc(id), x, 222, { scale: 2, light: '#ffe0b0', lightAmount: 0.2 });
+  p.sprite(knight(0, 1), 200, 224, { scale: 2, light: '#ffe0b0', lightAmount: 0.2 });
+  p.vignette(0.3);
+}
+
+/** Memória — Aurelian diante do Coração aberto, com os cinco selos girando. */
+function sceneAurelian(p) {
+  p.gradient([[0, '#10040a'], [0.6, '#2a0a14'], [1, '#3a0e18']], 0, H);
+  for (const x of [50, 140, 260, 350]) {
+    p.rect(x - 14, 0, 28, 170, (px, py) => mixRgb(rgb('#1a1016'), rgb('#3a2630'), fbm(px / 5, py / 10, 121, 3)));
+    p.polygon([[x - 8, 40], [x, 18], [x + 8, 40], [x + 8, 90], [x - 8, 90]], '#c02a1a');
+    p.glow(x, 60, 30, '#ff3a2a', 0.35);
+  }
+  ground(p, 170, ['#1a1014', '#24161c', '#2e1c24', '#38222a'], { seed: 122 });
+  p.rays(200, 84, { count: 18, length: 220, hex: '#ff6a5a', intensity: 0.4, width: 0.05 });
+  p.glow(200, 84, 120, '#ff3a3a', 0.5);
+  p.sphere(200, 84, 22, '#8a0a1a', '#ff8a7a', { highlight: '#fff0e0' });
+  SEAL_COLORS.forEach((hex, index) => {
+    const angle = -Math.PI / 2 + (index / 5) * Math.PI * 2;
+    const x = 200 + Math.cos(angle) * 50;
+    const y = 84 + Math.sin(angle) * 34;
+    p.sphere(x, y, 5, '#1a1a1a', hex);
+    p.glow(x, y, 16, hex, 0.6);
+  });
+  p.sprite(npc('aurelian'), 200, 222, { scale: 3, light: '#ff9a8a', lightAmount: 0.45, rim: '#ffb0a0', rimSide: 1 });
+  // Coroa dourada sobre a cabeça do rei.
+  p.rect(184, 128, 32, 6, '#e8c15a');
+  for (const dx of [0, 10, 20, 30]) p.polygon([[184 + dx - 2, 128], [184 + dx, 118], [184 + dx + 3, 128]], '#f2d27a');
+  for (const dx of [5, 15, 25]) p.ellipse(184 + dx, 131, 2, 2, '#e0452f');
+  p.glow(200, 126, 24, '#ffd06a', 0.4);
+  p.particles(50, { area: [100, 20, 200, 160], hex: '#ffb0a0', seed: 123, glowHex: '#ff5a4a' });
+  p.vignette(0.6);
+}
+
+/** Final secreto — o Golem se desfaz em luz e o Coração sobe livre. */
+function sceneFreedHeart(p) {
+  p.gradient([[0, '#1a2a5a'], [0.5, '#7a6aa0'], [0.8, '#f0b08a'], [1, '#fff4d0']], 0, 160);
+  p.clouds({ top: 20, bottom: 100, cover: 0.38, lit: '#fff0e0', shade: '#7a6a9a', seed: 131 });
+  p.ridge({ base: 150, amplitude: 50, frequency: 0.012, seed: 132, color: '#3a3050', fogColor: '#c0a0b0', fog: 0.3, depth: 300, rim: '#ffe0c0', sharp: 1.3 });
+  ground(p, 172, ['#2a2a36', '#34343e', '#3e3e48', '#484852'], { seed: 133 });
+  p.rays(200, 56, { count: 16, length: 260, hex: '#fff4c0', intensity: 0.45, width: 0.05 });
+  p.glow(200, 56, 110, '#ffe08a', 0.6);
+  p.sphere(200, 56, 14, '#e0a03a', '#fffbe0');
+  p.sprite(monster('titan', 64), 200, 206, { scale: 2, light: '#c0c0e0', lightAmount: 0.5, alpha: 0.85 });
+  for (const [x0, y0, x1, y1] of [[200, 110, 186, 170], [200, 110, 216, 172], [170, 140, 160, 190], [230, 140, 240, 190]]) p.line(x0, y0, x1, y1, '#fff8d0', 2, 0.9);
+  p.particles(120, { area: [100, 20, 200, 180], hex: '#fff4c0', seed: 134, glowHex: '#ffe08a' });
+  for (const [id, x] of [['vigia', 70], ['curandeira', 92], ['cacador', 308], ['capitao', 330]]) p.sprite(npc(id), x, 222, { scale: 2, light: '#ffe0c0', lightAmount: 0.3 });
+  p.sprite(knight(3, 1), 120, 224, { scale: 2, light: '#ffe0c0', lightAmount: 0.3 });
+  p.vignette(0.35);
 }
 
 const SCENES = {
@@ -520,9 +478,12 @@ const SCENES = {
 
 export const STORY_SCENE_KEYS = Object.freeze(Object.keys(SCENES));
 
-/** Desenha a ilustração do capítulo (1–10) ou do final ('final'). */
-export function drawStoryScene(key) {
-  const c = new PixelCanvas(W, H);
-  (SCENES[key] ?? sceneCampfire)(c);
-  return c;
+/**
+ * Desenha a ilustração do capítulo (1–10), do final ('final'), da memória de Aurelian ('aurelian')
+ * ou do final secreto ('libertar'). atlas = quadros dos prédios e árvores do jogo (opcional).
+ */
+export function drawStoryScene(key, atlas = {}) {
+  const painter = new Painter(W, H);
+  (SCENES[key] ?? sceneCampfire)(painter, atlas);
+  return painter.toPixelCanvas(20);
 }

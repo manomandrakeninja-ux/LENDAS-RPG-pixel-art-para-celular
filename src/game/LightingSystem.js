@@ -54,10 +54,10 @@ export class LightingSystem {
       {
         x: player.x,
         y: player.y,
-        radius: (76 + (player.torchTimer > 0 ? CONSUMABLES.torch.lightRadiusBonus : 0)) * scaleX,
+        radius: (76 + (player.torchTimer > 0 ? CONSUMABLES.torch.lightRadiusBonus : 0) + (this.scene.regionWorld?.underground ? 90 : 0)) * scaleX,
         falloff: 46 * scaleX
       },
-      ...(this.camp.getLightSources?.() ?? []).map((light) => ({
+      ...[...(this.camp.getLightSources?.() ?? []), ...(this.scene.regionWorld?.getLightSources?.() ?? [])].map((light) => ({
         x: light.x,
         y: light.y,
         radius: light.radius * scaleX,

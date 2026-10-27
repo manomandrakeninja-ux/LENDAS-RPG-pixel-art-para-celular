@@ -7,6 +7,7 @@ import './visual.css';
 import './quest.css';
 import './map.css';
 import './item-info.css';
+import './world.css';
 
 // A fonte Press Start 2P só fica nítida em múltiplos de 8 px e sem suavização.
 // Os textos do mundo são ampliados 2x pela câmera: renderizá-los em resolução 2

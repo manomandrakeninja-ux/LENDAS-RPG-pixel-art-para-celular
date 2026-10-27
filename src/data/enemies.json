@@ -365,6 +365,1341 @@
         "day": 0,
         "night": 1.25
       }
+    },
+    "rat": {
+      "name": "Rato",
+      "period": "day",
+      "tier": 1,
+      "placeholder": {
+        "shape": "rat"
+      },
+      "health": 22,
+      "damage": 5,
+      "xp": 8,
+      "speed": 92,
+      "perception": 320,
+      "attackRange": 30,
+      "attackCooldown": 1000,
+      "hitbox": {
+        "width": 20,
+        "height": 14
+      },
+      "behavior": "chase",
+      "fleeHealthRatio": 0,
+      "packAttack": {
+        "enabled": false,
+        "maxAttackers": 1,
+        "radius": 140
+      },
+      "ignoresObstacles": false,
+      "drops": [
+        {
+          "type": "food",
+          "chance": 0.4,
+          "min": 1,
+          "max": 1
+        },
+        {
+          "type": "herbs",
+          "chance": 0.2,
+          "min": 1,
+          "max": 1
+        }
+      ],
+      "spawnWeight": {
+        "day": 2,
+        "night": 1
+      }
+    },
+    "snake": {
+      "name": "Cobra",
+      "period": "day",
+      "tier": 1,
+      "placeholder": {
+        "shape": "snake"
+      },
+      "health": 36,
+      "damage": 9,
+      "xp": 14,
+      "speed": 70,
+      "perception": 320,
+      "attackRange": 30,
+      "attackCooldown": 1000,
+      "hitbox": {
+        "width": 22,
+        "height": 14
+      },
+      "behavior": "chase",
+      "fleeHealthRatio": 0,
+      "packAttack": {
+        "enabled": false,
+        "maxAttackers": 1,
+        "radius": 140
+      },
+      "ignoresObstacles": false,
+      "drops": [
+        {
+          "type": "herbs",
+          "chance": 0.5,
+          "min": 1,
+          "max": 2
+        },
+        {
+          "type": "leather",
+          "chance": 0.15,
+          "min": 1,
+          "max": 1
+        }
+      ],
+      "spawnWeight": {
+        "day": 2,
+        "night": 0.5
+      }
+    },
+    "bat": {
+      "name": "Morcego",
+      "period": "night",
+      "tier": 2,
+      "placeholder": {
+        "shape": "bat"
+      },
+      "health": 30,
+      "damage": 8,
+      "xp": 16,
+      "speed": 120,
+      "perception": 340,
+      "attackRange": 30,
+      "attackCooldown": 1000,
+      "hitbox": {
+        "width": 20,
+        "height": 16
+      },
+      "behavior": "chase",
+      "fleeHealthRatio": 0,
+      "packAttack": {
+        "enabled": false,
+        "maxAttackers": 1,
+        "radius": 140
+      },
+      "ignoresObstacles": true,
+      "drops": [
+        {
+          "type": "bone",
+          "chance": 0.3,
+          "min": 1,
+          "max": 1
+        },
+        {
+          "type": "moonherb",
+          "chance": 0.25,
+          "min": 1,
+          "max": 1
+        }
+      ],
+      "spawnWeight": {
+        "day": 0,
+        "night": 2
+      }
+    },
+    "goblin": {
+      "name": "Goblin",
+      "period": "day",
+      "tier": 3,
+      "placeholder": {
+        "shape": "goblin"
+      },
+      "health": 70,
+      "damage": 14,
+      "xp": 30,
+      "speed": 96,
+      "perception": 360,
+      "attackRange": 30,
+      "attackCooldown": 1000,
+      "hitbox": {
+        "width": 20,
+        "height": 22
+      },
+      "behavior": "pack",
+      "fleeHealthRatio": 0,
+      "packAttack": {
+        "enabled": true,
+        "maxAttackers": 3,
+        "radius": 140
+      },
+      "ignoresObstacles": false,
+      "drops": [
+        {
+          "type": "gold",
+          "chance": 0.18,
+          "min": 1,
+          "max": 1
+        },
+        {
+          "type": "food",
+          "chance": 0.4,
+          "min": 1,
+          "max": 2
+        },
+        {
+          "type": "fabric",
+          "chance": 0.2,
+          "min": 1,
+          "max": 1
+        }
+      ],
+      "spawnWeight": {
+        "day": 3,
+        "night": 1
+      }
+    },
+    "orc": {
+      "name": "Orc",
+      "period": "day",
+      "tier": 4,
+      "placeholder": {
+        "shape": "orc"
+      },
+      "health": 190,
+      "damage": 24,
+      "xp": 65,
+      "speed": 78,
+      "perception": 380,
+      "attackRange": 30,
+      "attackCooldown": 1000,
+      "hitbox": {
+        "width": 26,
+        "height": 30
+      },
+      "behavior": "patrol",
+      "fleeHealthRatio": 0,
+      "packAttack": {
+        "enabled": false,
+        "maxAttackers": 1,
+        "radius": 140
+      },
+      "ignoresObstacles": false,
+      "drops": [
+        {
+          "type": "iron",
+          "chance": 0.35,
+          "min": 1,
+          "max": 2
+        },
+        {
+          "type": "leather",
+          "chance": 0.4,
+          "min": 1,
+          "max": 2
+        },
+        {
+          "type": "food",
+          "chance": 0.4,
+          "min": 1,
+          "max": 2
+        }
+      ],
+      "spawnWeight": {
+        "day": 2,
+        "night": 2
+      }
+    },
+    "bear": {
+      "name": "Urso",
+      "period": "day",
+      "tier": 4,
+      "placeholder": {
+        "shape": "bear"
+      },
+      "health": 160,
+      "damage": 22,
+      "xp": 55,
+      "speed": 84,
+      "perception": 380,
+      "attackRange": 37,
+      "attackCooldown": 1000,
+      "hitbox": {
+        "width": 34,
+        "height": 26
+      },
+      "behavior": "patrol",
+      "fleeHealthRatio": 0,
+      "packAttack": {
+        "enabled": false,
+        "maxAttackers": 1,
+        "radius": 140
+      },
+      "ignoresObstacles": false,
+      "drops": [
+        {
+          "type": "food",
+          "chance": 0.9,
+          "min": 2,
+          "max": 4
+        },
+        {
+          "type": "leather",
+          "chance": 0.6,
+          "min": 1,
+          "max": 2
+        }
+      ],
+      "spawnWeight": {
+        "day": 2,
+        "night": 0.5
+      }
+    },
+    "treant": {
+      "name": "Ent",
+      "period": "night",
+      "tier": 4,
+      "placeholder": {
+        "shape": "treant"
+      },
+      "health": 260,
+      "damage": 26,
+      "xp": 80,
+      "speed": 54,
+      "perception": 380,
+      "attackRange": 35,
+      "attackCooldown": 1000,
+      "hitbox": {
+        "width": 32,
+        "height": 34
+      },
+      "behavior": "chase",
+      "fleeHealthRatio": 0,
+      "packAttack": {
+        "enabled": false,
+        "maxAttackers": 1,
+        "radius": 140
+      },
+      "ignoresObstacles": false,
+      "drops": [
+        {
+          "type": "wood",
+          "chance": 0.95,
+          "min": 3,
+          "max": 5
+        },
+        {
+          "type": "herbs",
+          "chance": 0.5,
+          "min": 1,
+          "max": 3
+        },
+        {
+          "type": "moonherb",
+          "chance": 0.3,
+          "min": 1,
+          "max": 2
+        }
+      ],
+      "spawnWeight": {
+        "day": 0,
+        "night": 2
+      }
+    },
+    "frog": {
+      "name": "Sapo-Boi",
+      "period": "day",
+      "tier": 3,
+      "placeholder": {
+        "shape": "frog"
+      },
+      "health": 110,
+      "damage": 16,
+      "xp": 40,
+      "speed": 74,
+      "perception": 360,
+      "attackRange": 30,
+      "attackCooldown": 1000,
+      "hitbox": {
+        "width": 24,
+        "height": 20
+      },
+      "behavior": "patrol",
+      "fleeHealthRatio": 0,
+      "packAttack": {
+        "enabled": false,
+        "maxAttackers": 1,
+        "radius": 140
+      },
+      "ignoresObstacles": false,
+      "drops": [
+        {
+          "type": "food",
+          "chance": 0.6,
+          "min": 1,
+          "max": 2
+        },
+        {
+          "type": "herbs",
+          "chance": 0.5,
+          "min": 1,
+          "max": 2
+        }
+      ],
+      "spawnWeight": {
+        "day": 3,
+        "night": 1
+      }
+    },
+    "zombie": {
+      "name": "Afogado",
+      "period": "night",
+      "tier": 3,
+      "placeholder": {
+        "shape": "zombie"
+      },
+      "health": 150,
+      "damage": 20,
+      "xp": 50,
+      "speed": 56,
+      "perception": 360,
+      "attackRange": 30,
+      "attackCooldown": 1000,
+      "hitbox": {
+        "width": 22,
+        "height": 28
+      },
+      "behavior": "chase",
+      "fleeHealthRatio": 0,
+      "packAttack": {
+        "enabled": true,
+        "maxAttackers": 3,
+        "radius": 140
+      },
+      "ignoresObstacles": false,
+      "drops": [
+        {
+          "type": "bone",
+          "chance": 0.5,
+          "min": 1,
+          "max": 2
+        },
+        {
+          "type": "fabric",
+          "chance": 0.3,
+          "min": 1,
+          "max": 1
+        },
+        {
+          "type": "ectoplasm",
+          "chance": 0.2,
+          "min": 1,
+          "max": 1
+        }
+      ],
+      "spawnWeight": {
+        "day": 0,
+        "night": 3
+      }
+    },
+    "witch": {
+      "name": "Bruxa do Brejo",
+      "period": "night",
+      "tier": 4,
+      "placeholder": {
+        "shape": "witch"
+      },
+      "health": 140,
+      "damage": 24,
+      "xp": 60,
+      "speed": 82,
+      "perception": 380,
+      "attackRange": 30,
+      "attackCooldown": 1000,
+      "hitbox": {
+        "width": 22,
+        "height": 28
+      },
+      "behavior": "chase",
+      "fleeHealthRatio": 0,
+      "packAttack": {
+        "enabled": false,
+        "maxAttackers": 1,
+        "radius": 140
+      },
+      "ignoresObstacles": false,
+      "drops": [
+        {
+          "type": "moonherb",
+          "chance": 0.6,
+          "min": 1,
+          "max": 2
+        },
+        {
+          "type": "potion",
+          "chance": 0.2,
+          "min": 1,
+          "max": 1
+        },
+        {
+          "type": "ectoplasm",
+          "chance": 0.4,
+          "min": 1,
+          "max": 2
+        }
+      ],
+      "spawnWeight": {
+        "day": 0,
+        "night": 1.5
+      }
+    },
+    "frostWolf": {
+      "name": "Lobo do Gelo",
+      "period": "day",
+      "tier": 4,
+      "placeholder": {
+        "shape": "frostWolf"
+      },
+      "health": 180,
+      "damage": 24,
+      "xp": 60,
+      "speed": 110,
+      "perception": 380,
+      "attackRange": 31,
+      "attackCooldown": 1000,
+      "hitbox": {
+        "width": 28,
+        "height": 24
+      },
+      "behavior": "pack",
+      "fleeHealthRatio": 0,
+      "packAttack": {
+        "enabled": true,
+        "maxAttackers": 3,
+        "radius": 140
+      },
+      "ignoresObstacles": false,
+      "drops": [
+        {
+          "type": "leather",
+          "chance": 0.5,
+          "min": 1,
+          "max": 2
+        },
+        {
+          "type": "wool",
+          "chance": 0.5,
+          "min": 1,
+          "max": 2
+        },
+        {
+          "type": "crystal",
+          "chance": 0.15,
+          "min": 1,
+          "max": 1
+        }
+      ],
+      "spawnWeight": {
+        "day": 3,
+        "night": 2
+      }
+    },
+    "yeti": {
+      "name": "Yeti",
+      "period": "day",
+      "tier": 5,
+      "placeholder": {
+        "shape": "yeti"
+      },
+      "health": 320,
+      "damage": 32,
+      "xp": 100,
+      "speed": 72,
+      "perception": 400,
+      "attackRange": 37,
+      "attackCooldown": 1000,
+      "hitbox": {
+        "width": 34,
+        "height": 34
+      },
+      "behavior": "patrol",
+      "fleeHealthRatio": 0,
+      "packAttack": {
+        "enabled": false,
+        "maxAttackers": 1,
+        "radius": 140
+      },
+      "ignoresObstacles": false,
+      "drops": [
+        {
+          "type": "wool",
+          "chance": 0.8,
+          "min": 2,
+          "max": 3
+        },
+        {
+          "type": "food",
+          "chance": 0.6,
+          "min": 2,
+          "max": 3
+        },
+        {
+          "type": "crystal",
+          "chance": 0.3,
+          "min": 1,
+          "max": 1
+        }
+      ],
+      "spawnWeight": {
+        "day": 2,
+        "night": 2
+      }
+    },
+    "iceElemental": {
+      "name": "Elemental de Gelo",
+      "period": "night",
+      "tier": 5,
+      "placeholder": {
+        "shape": "iceElemental"
+      },
+      "health": 240,
+      "damage": 30,
+      "xp": 90,
+      "speed": 86,
+      "perception": 400,
+      "attackRange": 30,
+      "attackCooldown": 1000,
+      "hitbox": {
+        "width": 26,
+        "height": 30
+      },
+      "behavior": "chase",
+      "fleeHealthRatio": 0,
+      "packAttack": {
+        "enabled": false,
+        "maxAttackers": 1,
+        "radius": 140
+      },
+      "ignoresObstacles": true,
+      "drops": [
+        {
+          "type": "crystal",
+          "chance": 0.7,
+          "min": 1,
+          "max": 2
+        },
+        {
+          "type": "moonherb",
+          "chance": 0.3,
+          "min": 1,
+          "max": 1
+        }
+      ],
+      "spawnWeight": {
+        "day": 0,
+        "night": 2.5
+      }
+    },
+    "scorpion": {
+      "name": "Escorpião",
+      "period": "day",
+      "tier": 5,
+      "placeholder": {
+        "shape": "scorpion"
+      },
+      "health": 210,
+      "damage": 28,
+      "xp": 75,
+      "speed": 96,
+      "perception": 400,
+      "attackRange": 33,
+      "attackCooldown": 1000,
+      "hitbox": {
+        "width": 30,
+        "height": 22
+      },
+      "behavior": "patrol",
+      "fleeHealthRatio": 0,
+      "packAttack": {
+        "enabled": false,
+        "maxAttackers": 1,
+        "radius": 140
+      },
+      "ignoresObstacles": false,
+      "drops": [
+        {
+          "type": "bone",
+          "chance": 0.4,
+          "min": 1,
+          "max": 2
+        },
+        {
+          "type": "gold",
+          "chance": 0.2,
+          "min": 1,
+          "max": 1
+        },
+        {
+          "type": "herbs",
+          "chance": 0.3,
+          "min": 1,
+          "max": 1
+        }
+      ],
+      "spawnWeight": {
+        "day": 3,
+        "night": 2
+      }
+    },
+    "sandworm": {
+      "name": "Verme da Areia",
+      "period": "day",
+      "tier": 5,
+      "placeholder": {
+        "shape": "sandworm"
+      },
+      "health": 380,
+      "damage": 34,
+      "xp": 120,
+      "speed": 60,
+      "perception": 400,
+      "attackRange": 35,
+      "attackCooldown": 1000,
+      "hitbox": {
+        "width": 32,
+        "height": 30
+      },
+      "behavior": "chase",
+      "fleeHealthRatio": 0,
+      "packAttack": {
+        "enabled": false,
+        "maxAttackers": 1,
+        "radius": 140
+      },
+      "ignoresObstacles": false,
+      "drops": [
+        {
+          "type": "gold",
+          "chance": 0.4,
+          "min": 1,
+          "max": 2
+        },
+        {
+          "type": "stone",
+          "chance": 0.6,
+          "min": 2,
+          "max": 3
+        },
+        {
+          "type": "bone",
+          "chance": 0.4,
+          "min": 1,
+          "max": 2
+        }
+      ],
+      "spawnWeight": {
+        "day": 1.5,
+        "night": 1.5
+      }
+    },
+    "mummy": {
+      "name": "Múmia",
+      "period": "night",
+      "tier": 5,
+      "placeholder": {
+        "shape": "mummy"
+      },
+      "health": 300,
+      "damage": 30,
+      "xp": 100,
+      "speed": 62,
+      "perception": 400,
+      "attackRange": 30,
+      "attackCooldown": 1000,
+      "hitbox": {
+        "width": 24,
+        "height": 30
+      },
+      "behavior": "chase",
+      "fleeHealthRatio": 0,
+      "packAttack": {
+        "enabled": true,
+        "maxAttackers": 3,
+        "radius": 140
+      },
+      "ignoresObstacles": false,
+      "drops": [
+        {
+          "type": "fabric",
+          "chance": 0.8,
+          "min": 1,
+          "max": 3
+        },
+        {
+          "type": "gold",
+          "chance": 0.3,
+          "min": 1,
+          "max": 1
+        },
+        {
+          "type": "book",
+          "chance": 0.05,
+          "min": 1,
+          "max": 1
+        }
+      ],
+      "spawnWeight": {
+        "day": 0,
+        "night": 3
+      }
+    },
+    "imp": {
+      "name": "Diabrete",
+      "period": "day",
+      "tier": 5,
+      "placeholder": {
+        "shape": "imp"
+      },
+      "health": 220,
+      "damage": 30,
+      "xp": 85,
+      "speed": 112,
+      "perception": 400,
+      "attackRange": 30,
+      "attackCooldown": 1000,
+      "hitbox": {
+        "width": 20,
+        "height": 22
+      },
+      "behavior": "pack",
+      "fleeHealthRatio": 0,
+      "packAttack": {
+        "enabled": true,
+        "maxAttackers": 3,
+        "radius": 140
+      },
+      "ignoresObstacles": false,
+      "drops": [
+        {
+          "type": "coal",
+          "chance": 0.6,
+          "min": 1,
+          "max": 2
+        },
+        {
+          "type": "magmaCore",
+          "chance": 0.1,
+          "min": 1,
+          "max": 1
+        }
+      ],
+      "spawnWeight": {
+        "day": 3,
+        "night": 2
+      }
+    },
+    "salamander": {
+      "name": "Salamandra",
+      "period": "day",
+      "tier": 6,
+      "placeholder": {
+        "shape": "salamander"
+      },
+      "health": 330,
+      "damage": 36,
+      "xp": 115,
+      "speed": 90,
+      "perception": 420,
+      "attackRange": 33,
+      "attackCooldown": 1000,
+      "hitbox": {
+        "width": 30,
+        "height": 18
+      },
+      "behavior": "patrol",
+      "fleeHealthRatio": 0,
+      "packAttack": {
+        "enabled": false,
+        "maxAttackers": 1,
+        "radius": 140
+      },
+      "ignoresObstacles": false,
+      "drops": [
+        {
+          "type": "magmaCore",
+          "chance": 0.25,
+          "min": 1,
+          "max": 1
+        },
+        {
+          "type": "leather",
+          "chance": 0.5,
+          "min": 1,
+          "max": 2
+        },
+        {
+          "type": "coal",
+          "chance": 0.4,
+          "min": 1,
+          "max": 2
+        }
+      ],
+      "spawnWeight": {
+        "day": 2,
+        "night": 2
+      }
+    },
+    "demon": {
+      "name": "Demônio",
+      "period": "night",
+      "tier": 6,
+      "placeholder": {
+        "shape": "demon"
+      },
+      "health": 520,
+      "damage": 44,
+      "xp": 170,
+      "speed": 82,
+      "perception": 420,
+      "attackRange": 37,
+      "attackCooldown": 1000,
+      "hitbox": {
+        "width": 34,
+        "height": 36
+      },
+      "behavior": "chase",
+      "fleeHealthRatio": 0,
+      "packAttack": {
+        "enabled": false,
+        "maxAttackers": 1,
+        "radius": 140
+      },
+      "ignoresObstacles": false,
+      "drops": [
+        {
+          "type": "magmaCore",
+          "chance": 0.5,
+          "min": 1,
+          "max": 1
+        },
+        {
+          "type": "gold",
+          "chance": 0.4,
+          "min": 1,
+          "max": 2
+        },
+        {
+          "type": "bone",
+          "chance": 0.4,
+          "min": 1,
+          "max": 2
+        }
+      ],
+      "spawnWeight": {
+        "day": 0,
+        "night": 2
+      }
+    },
+    "crab": {
+      "name": "Caranguejo",
+      "period": "day",
+      "tier": 3,
+      "placeholder": {
+        "shape": "crab"
+      },
+      "health": 160,
+      "damage": 20,
+      "xp": 50,
+      "speed": 72,
+      "perception": 360,
+      "attackRange": 30,
+      "attackCooldown": 1000,
+      "hitbox": {
+        "width": 26,
+        "height": 20
+      },
+      "behavior": "patrol",
+      "fleeHealthRatio": 0,
+      "packAttack": {
+        "enabled": false,
+        "maxAttackers": 1,
+        "radius": 140
+      },
+      "ignoresObstacles": false,
+      "drops": [
+        {
+          "type": "fish",
+          "chance": 0.7,
+          "min": 1,
+          "max": 2
+        },
+        {
+          "type": "food",
+          "chance": 0.4,
+          "min": 1,
+          "max": 1
+        }
+      ],
+      "spawnWeight": {
+        "day": 3,
+        "night": 2
+      }
+    },
+    "pirate": {
+      "name": "Pirata Esqueleto",
+      "period": "night",
+      "tier": 4,
+      "placeholder": {
+        "shape": "pirate"
+      },
+      "health": 200,
+      "damage": 24,
+      "xp": 70,
+      "speed": 88,
+      "perception": 380,
+      "attackRange": 30,
+      "attackCooldown": 1000,
+      "hitbox": {
+        "width": 24,
+        "height": 28
+      },
+      "behavior": "pack",
+      "fleeHealthRatio": 0,
+      "packAttack": {
+        "enabled": true,
+        "maxAttackers": 3,
+        "radius": 140
+      },
+      "ignoresObstacles": false,
+      "drops": [
+        {
+          "type": "gold",
+          "chance": 0.4,
+          "min": 1,
+          "max": 2
+        },
+        {
+          "type": "bone",
+          "chance": 0.6,
+          "min": 1,
+          "max": 2
+        },
+        {
+          "type": "mapPiece",
+          "chance": 0.04,
+          "min": 1,
+          "max": 1
+        }
+      ],
+      "spawnWeight": {
+        "day": 0,
+        "night": 3
+      }
+    },
+    "orcChief": {
+      "name": "Grokk, o Chefe Orc",
+      "period": "any",
+      "tier": 8,
+      "boss": true,
+      "placeholder": {
+        "shape": "orcChief"
+      },
+      "health": 2600,
+      "damage": 40,
+      "xp": 600,
+      "speed": 80,
+      "perception": 520,
+      "attackRange": 48,
+      "attackCooldown": 1500,
+      "hitbox": {
+        "width": 48,
+        "height": 48
+      },
+      "behavior": "chase",
+      "fleeHealthRatio": 0,
+      "packAttack": {
+        "enabled": false,
+        "maxAttackers": 1,
+        "radius": 100
+      },
+      "ignoresObstacles": false,
+      "drops": [
+        {
+          "type": "iron",
+          "chance": 1,
+          "min": 4,
+          "max": 6
+        },
+        {
+          "type": "gold",
+          "chance": 1,
+          "min": 2,
+          "max": 4
+        },
+        {
+          "type": "leather",
+          "chance": 1,
+          "min": 3,
+          "max": 5
+        }
+      ],
+      "spawnWeight": {
+        "day": 0,
+        "night": 0
+      }
+    },
+    "hydra": {
+      "name": "Hidra do Brejo",
+      "period": "any",
+      "tier": 8,
+      "boss": true,
+      "placeholder": {
+        "shape": "hydra"
+      },
+      "health": 3200,
+      "damage": 44,
+      "xp": 700,
+      "speed": 60,
+      "perception": 520,
+      "attackRange": 53,
+      "attackCooldown": 1500,
+      "hitbox": {
+        "width": 56,
+        "height": 48
+      },
+      "behavior": "chase",
+      "fleeHealthRatio": 0,
+      "packAttack": {
+        "enabled": false,
+        "maxAttackers": 1,
+        "radius": 100
+      },
+      "ignoresObstacles": false,
+      "drops": [
+        {
+          "type": "moonherb",
+          "chance": 1,
+          "min": 4,
+          "max": 6
+        },
+        {
+          "type": "ectoplasm",
+          "chance": 1,
+          "min": 3,
+          "max": 5
+        },
+        {
+          "type": "potion",
+          "chance": 1,
+          "min": 2,
+          "max": 3
+        }
+      ],
+      "spawnWeight": {
+        "day": 0,
+        "night": 0
+      }
+    },
+    "ghostCaptain": {
+      "name": "Capitão Fantasma",
+      "period": "any",
+      "tier": 8,
+      "boss": true,
+      "placeholder": {
+        "shape": "ghostCaptain"
+      },
+      "health": 3200,
+      "damage": 44,
+      "xp": 700,
+      "speed": 96,
+      "perception": 520,
+      "attackRange": 39,
+      "attackCooldown": 1500,
+      "hitbox": {
+        "width": 36,
+        "height": 44
+      },
+      "behavior": "chase",
+      "fleeHealthRatio": 0,
+      "packAttack": {
+        "enabled": false,
+        "maxAttackers": 1,
+        "radius": 100
+      },
+      "ignoresObstacles": false,
+      "drops": [
+        {
+          "type": "gold",
+          "chance": 1,
+          "min": 4,
+          "max": 7
+        },
+        {
+          "type": "mapPiece",
+          "chance": 1,
+          "min": 1,
+          "max": 1
+        },
+        {
+          "type": "ectoplasm",
+          "chance": 1,
+          "min": 3,
+          "max": 5
+        }
+      ],
+      "spawnWeight": {
+        "day": 0,
+        "night": 0
+      }
+    },
+    "frostGiant": {
+      "name": "Gigante de Gelo",
+      "period": "any",
+      "tier": 8,
+      "boss": true,
+      "placeholder": {
+        "shape": "frostGiant"
+      },
+      "health": 4200,
+      "damage": 52,
+      "xp": 900,
+      "speed": 66,
+      "perception": 520,
+      "attackRange": 50,
+      "attackCooldown": 1500,
+      "hitbox": {
+        "width": 52,
+        "height": 60
+      },
+      "behavior": "chase",
+      "fleeHealthRatio": 0,
+      "packAttack": {
+        "enabled": false,
+        "maxAttackers": 1,
+        "radius": 100
+      },
+      "ignoresObstacles": false,
+      "drops": [
+        {
+          "type": "crystal",
+          "chance": 1,
+          "min": 4,
+          "max": 6
+        },
+        {
+          "type": "iron",
+          "chance": 1,
+          "min": 3,
+          "max": 5
+        },
+        {
+          "type": "wool",
+          "chance": 1,
+          "min": 3,
+          "max": 5
+        }
+      ],
+      "spawnWeight": {
+        "day": 0,
+        "night": 0
+      }
+    },
+    "pharaoh": {
+      "name": "Faraó Amaldiçoado",
+      "period": "any",
+      "tier": 8,
+      "boss": true,
+      "placeholder": {
+        "shape": "pharaoh"
+      },
+      "health": 4600,
+      "damage": 56,
+      "xp": 1000,
+      "speed": 78,
+      "perception": 520,
+      "attackRange": 39,
+      "attackCooldown": 1500,
+      "hitbox": {
+        "width": 36,
+        "height": 48
+      },
+      "behavior": "chase",
+      "fleeHealthRatio": 0,
+      "packAttack": {
+        "enabled": false,
+        "maxAttackers": 1,
+        "radius": 100
+      },
+      "ignoresObstacles": false,
+      "drops": [
+        {
+          "type": "gold",
+          "chance": 1,
+          "min": 5,
+          "max": 8
+        },
+        {
+          "type": "book",
+          "chance": 1,
+          "min": 1,
+          "max": 1
+        },
+        {
+          "type": "fabric",
+          "chance": 1,
+          "min": 3,
+          "max": 5
+        }
+      ],
+      "spawnWeight": {
+        "day": 0,
+        "night": 0
+      }
+    },
+    "dragon": {
+      "name": "Dragão de Brasa",
+      "period": "any",
+      "tier": 8,
+      "boss": true,
+      "placeholder": {
+        "shape": "dragon"
+      },
+      "health": 6800,
+      "damage": 66,
+      "xp": 1500,
+      "speed": 92,
+      "perception": 520,
+      "attackRange": 59,
+      "attackCooldown": 1500,
+      "hitbox": {
+        "width": 64,
+        "height": 52
+      },
+      "behavior": "chase",
+      "fleeHealthRatio": 0,
+      "packAttack": {
+        "enabled": false,
+        "maxAttackers": 1,
+        "radius": 100
+      },
+      "ignoresObstacles": false,
+      "drops": [
+        {
+          "type": "magmaCore",
+          "chance": 1,
+          "min": 3,
+          "max": 5
+        },
+        {
+          "type": "gold",
+          "chance": 1,
+          "min": 6,
+          "max": 10
+        },
+        {
+          "type": "titanCore",
+          "chance": 0.5,
+          "min": 1,
+          "max": 1
+        }
+      ],
+      "spawnWeight": {
+        "day": 0,
+        "night": 0
+      }
     }
   }
 }

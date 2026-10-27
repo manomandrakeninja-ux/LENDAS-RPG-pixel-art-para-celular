@@ -234,7 +234,7 @@ export class QuestUI {
           </div>
           <button type="button" class="panel-close" data-q-close>FECHAR</button>
         </header>
-        <nav class="quest-journal__tabs">${tabs}</nav>
+        <nav class="quest-journal__tabs">${tabs}<button type="button" data-q-bestiary>Bestiário</button></nav>
         <div class="quest-journal__body">${body}</div>
       </div>`;
   }
@@ -360,6 +360,12 @@ export class QuestUI {
     if (!button || button.disabled) return;
     const data = button.dataset;
     if ('qClose' in data) { this.toggleJournal(false); return; }
+    if ('qBestiary' in data) {
+      // Bestiário: fecha o diário e abre o painel dos monstros.
+      this.toggleJournal(false);
+      this.scene.bestiaryPanel?.open();
+      return;
+    }
     if (data.qStory) {
       // Rever a abertura de um capítulo: fecha o diário e reabre depois.
       this.toggleJournal(false);

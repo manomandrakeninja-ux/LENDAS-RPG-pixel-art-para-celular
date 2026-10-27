@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { RESOURCE_TYPES, WORLD } from './config.js';
+import { FULL_WORLD, VALLEY } from '../data/worldRegions.js';
 import { NIGHT_RESOURCES } from '../data/nightResources.js';
 import { RESOURCE_NODES } from '../data/resources.js';
 
@@ -13,6 +14,7 @@ export class World {
     this.groundDetails = [];
     // Posições de árvores e arbustos, usadas para desenhar o terreno do mapa e do minimapa.
     this.trees = [];
+    this.treeSprites = [];
     this.bushes = [];
     this.revealedCells = new Set();
     this.revealedPoints = [];
@@ -22,29 +24,12 @@ export class World {
   }
 
   create() {
-    const { width, height, tileSize, camp } = WORLD;
-    for (let y = 0; y < height; y += tileSize) {
-      for (let x = 0; x < width; x += tileSize) {
-        const centerX = x + tileSize / 2;
-        const centerY = y + tileSize / 2;
-        const pathToCamp = Math.abs(centerX - camp.x) < 42 &&
-          centerY > camp.y - 36 && centerY < camp.y + 420;
-        const aroundCampfire = Phaser.Math.Distance.Between(centerX, centerY, camp.x, camp.y) < 105;
-        // 4 = metade esquerda do caminho (borda de grama à esquerda), 5 = metade direita.
-        const frame = pathToCamp
-          ? (centerX < camp.x ? 4 : 5)
-          : aroundCampfire ? Phaser.Math.Between(0, 3) : this.groundVariant();
-        this.scene.add.image(centerX, centerY, 'grass', frame)
-          .setScale(tileSize / 48)
-          .setDepth(-1000);
-      }
-    }
-
+    // O chão (Vale e regiões novas) é desenhado pelo tilemap do RegionWorld.
     this.drawGroundDetails();
     this.drawForest();
-    this.createResources(camp);
-    this.createNightResources(camp);
-    this.scene.physics.world.setBounds(0, 0, width, height);
+    this.createResources(WORLD.camp);
+    this.createNightResources(WORLD.camp);
+    this.scene.physics.world.setBounds(0, 0, FULL_WORLD.width, FULL_WORLD.height);
   }
 
   groundVariant() {
@@ -57,7 +42,8 @@ export class World {
   }
 
   drawGroundDetails() {
-    const { width, height, tileSize } = WORLD;
+    const { width, height } = VALLEY;
+    const { tileSize } = WORLD;
     // Sem cogumelos decorativos: eles se confundiam com os coletáveis da missão 2.
     const frames = ['detail-grass', 'detail-flowers', 'detail-pebbles', 'detail-leaves'];
     for (let y = tileSize; y < height - tileSize; y += tileSize) {
@@ -78,7 +64,8 @@ export class World {
   }
 
   drawForest() {
-    const { width, height, camp } = WORLD;
+    const { width, height } = VALLEY;
+    const { camp } = WORLD;
     for (let i = 0; i < 155; i += 1) {
       const x = rand(40, width - 40);
       const y = rand(40, height - 40);
@@ -99,6 +86,7 @@ export class World {
         tree.setTexture('nature', 'pine-1').stop();
       }
       this.trees.push({ x, y, kind: tree.frame.name.startsWith('pine') ? 'pine' : tree.frame.name });
+      this.treeSprites.push(tree);
     }
     for (let i = 0; i < 48; i += 1) {
       const x = rand(32, width - 32);
@@ -118,8 +106,8 @@ export class World {
         let x;
         let y;
         do {
-          x = rand(90, WORLD.width - 90);
-          y = rand(90, WORLD.height - 90);
+          x = rand(90, VALLEY.width - 90);
+          y = rand(90, VALLEY.height - 90);
         } while (Phaser.Math.Distance.Between(x, y, camp.x, camp.y) < 220);
         this.resources.push(this.makeResource(type, x, y));
       }
@@ -133,8 +121,8 @@ export class World {
         let y = 0;
         let valid = false;
         for (let attempt = 0; attempt < 40 && !valid; attempt += 1) {
-          x = rand(90, WORLD.width - 90);
-          y = rand(90, WORLD.height - 90);
+          x = rand(90, VALLEY.width - 90);
+          y = rand(90, VALLEY.height - 90);
           valid = Phaser.Math.Distance.Between(x, y, camp.x, camp.y) > 390;
         }
         if (!valid) continue;
@@ -151,13 +139,13 @@ export class World {
     }
   }
 
-  makeResource(type, x, y, nightOnly = false) {
+  makeResource(type, x, y, nightOnly = false, options = {}) {
     const glow = this.scene.add.image(x, y - 9, 'vfx', 'spark-0')
       .setBlendMode(Phaser.BlendModes.ADD)
       .setAlpha(0.16)
       .setDepth(y - 1)
       .setVisible(!nightOnly);
-    const node = this.scene.add.image(x, y, 'nature', `resource-${type}`)
+    const node = this.scene.add.image(x, y, options.atlas ?? 'nature', options.frame ?? `resource-${type}`)
       .setOrigin(0.5, 0.85)
       .setDepth(y)
       .setVisible(!nightOnly);
@@ -173,7 +161,7 @@ export class World {
       fontFamily: 'Press Start 2P', fontSize: '8px', color: '#fff3cf',
       backgroundColor: '#26392dcc', padding: { x: 4, y: 3 }
     }).setOrigin(0.5).setDepth(y + 30).setVisible(false);
-    const amountConfig = nightOnly ? NIGHT_RESOURCES[type] : RESOURCE_NODES[type];
+    const amountConfig = options.definition ?? (nightOnly ? NIGHT_RESOURCES[type] : RESOURCE_NODES[type]);
     const amount = amountConfig
       ? Phaser.Math.Between(amountConfig.amount[0], amountConfig.amount[1])
       : 1;
@@ -219,6 +207,7 @@ export class World {
   }
 
   harvest(resource) {
+    this.scene.regionWorld?.onHarvest(resource);
     resource.bob.stop();
     resource.node.destroy();
     resource.glow.destroy();

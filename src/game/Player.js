@@ -219,7 +219,9 @@ export class Player extends Phaser.GameObjects.Container {
     } else if (this.dodgeTimer > 0) {
       this.body.setVelocity(this.dodgeX, this.dodgeY);
     } else {
-      const speed = 130 * this.speedMultiplier;
+      // Lodo do brejo e dos oásis deixa o passo mais lento.
+      const terrainFactor = this.scene.regionWorld?.speedFactorAt(this.x, this.y) ?? 1;
+      const speed = 130 * this.speedMultiplier * terrainFactor;
       this.body.setVelocity(movement.x * speed, movement.y * speed);
     }
     this.poseGear(delta);

@@ -5,11 +5,14 @@ export const INVENTORY_CONFIG = Object.freeze({
   fullMessage: 'Mochila cheia! Volte ao acampamento'
 });
 
+// Mundo grande (Vale + regiões novas + mar e ilhas). O Vale original continua em
+// 0..2880 x 0..2160; as salas das cavernas ficam abaixo, fora do mapa visível.
 export const WORLD = {
-  width: 2880,
-  height: 2160,
+  width: 7200,
+  height: 5376,
   tileSize: 48,
-  camp: { x: 1440, y: 1080 }
+  camp: { x: 1440, y: 1080 },
+  valley: { width: 2880, height: 2160 }
 };
 
 export const RESOURCE_TYPES = {

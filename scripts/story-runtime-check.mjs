@@ -16,7 +16,7 @@ await runInChrome({ name: 'story', port: 9389, width: 1280, height: 800 }, async
     return { visible: Boolean(card && !card.hidden), title: card?.querySelector('h2')?.textContent, image: img?.naturalWidth ?? 0, paused: scene.isUiPaused() };
   })()`);
   await capture('historia-capitulo-1.png');
-  check(opening.visible && opening.title === 'O Viajante sem Memória' && opening.image === 240 && opening.paused, `Abertura: ${JSON.stringify(opening)}`);
+  check(opening.visible && opening.title === 'O Viajante sem Memória' && opening.image === 400 && opening.paused, `Abertura: ${JSON.stringify(opening)}`);
   await evaluate(`document.querySelector('.quest-chapter button').click()`);
   await delay(200);
   const bram = await inScene((scene) => ({ dialog: !scene.campaign.ui.dialog.hidden, text: scene.campaign.ui.dialog.textContent }));
@@ -79,7 +79,7 @@ await runInChrome({ name: 'story', port: 9389, width: 1280, height: 800 }, async
     campaign.syncWorld();
     return { site: true, shown, speaker, lore: state.lore.includes('ecoCoroa'), gone: !campaign.sites.has('eco-coroa') };
   });
-  check(echo.site && echo.shown.visible && echo.shown.image === 240 && echo.shown.src.includes('aurelian') && echo.speaker === 'Aurelian, o Último Rei' && echo.lore && echo.gone,
+  check(echo.site && echo.shown.visible && echo.shown.image === 400 && echo.shown.src.includes('aurelian') && echo.speaker === 'Aurelian, o Último Rei' && echo.lore && echo.gone,
     `Eco do Rei: ${JSON.stringify(echo)}`);
   await capture('historia-eco-do-rei.png');
 
@@ -128,7 +128,7 @@ await runInChrome({ name: 'story', port: 9389, width: 1280, height: 800 }, async
     return result;
   });
   await capture('historia-final-secreto.png');
-  check(ending.title === 'O CORAÇÃO LIVRE' && ending.image === 240 && ending.src.includes('libertar') && ending.words && ending.lore, `Final secreto: ${JSON.stringify(ending)}`);
+  check(ending.title === 'O CORAÇÃO LIVRE' && ending.image === 400 && ending.src.includes('libertar') && ending.words && ending.lore, `Final secreto: ${JSON.stringify(ending)}`);
 
   // 5. Moradores: nível 4 traz o homem, nível 8 a mulher.
   const villagers = await inScene(async (scene) => {

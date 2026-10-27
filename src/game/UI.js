@@ -410,14 +410,18 @@ export class GameUI {
       this.warning.setText(`A NOITE CHEGA EM ${time.secondsUntilNight ?? 0}s  •  F no acampamento para dormir`);
     }
 
-    const questTarget = this.scene.campaign?.nearestInteraction() ?? null;
+    // Missões primeiro; depois cavernas, escadas, portos e baús do mundo grande.
+    const hero = this.scene.player;
+    const questTarget = this.scene.campaign?.nearestInteraction() ??
+      (hero ? this.scene.regionWorld?.nearestFeature(hero.x, hero.y) : null) ?? null;
+    const mines = (resource) => Boolean(resource?.definition?.requiresPickaxe) || resource?.type === 'stone';
     let hint = 'WASD mover   •   M mapa   •   Clique / J atacar   •   Espaço esquivar   •   Q especial';
     if (questTarget) {
       hint = `E  •  ${questTarget.label}`;
     } else if (nearestStructure) {
       const definition = HARVEST_STRUCTURE_TYPES[nearestStructure.type];
       hint = `E  •  ${definition.requiresPickaxe ? 'Minerar' : 'Coletar'} ${definition.label}`;
-    } else if (nearestResource) hint = `E  •  ${nearestResource.type === 'stone' ? 'Minerar' : 'Coletar'} ${RESOURCE_TYPES[nearestResource.type].label}`;
+    } else if (nearestResource) hint = `E  •  ${mines(nearestResource) ? 'Minerar' : 'Coletar'} ${RESOURCE_TYPES[nearestResource.type].label}`;
     else if (nearestBackpack) hint = nearestBackpack.kind === 'chest' ? 'E  •  Abrir baú do monstro' : 'E  •  Recuperar mochila de morte';
     else if (isNearCamp) {
       hint = time.isNight
@@ -445,7 +449,7 @@ export class GameUI {
       : nearestStructure
       ? `${HARVEST_STRUCTURE_TYPES[nearestStructure.type].requiresPickaxe ? 'MINERAR' : 'COLETAR'} ${HARVEST_STRUCTURE_TYPES[nearestStructure.type].label.toUpperCase()}`
       : nearestResource
-        ? `${nearestResource.type === 'stone' ? 'MINERAR' : 'COLETAR'} ${RESOURCE_TYPES[nearestResource.type].label.toUpperCase()}`
+        ? `${mines(nearestResource) ? 'MINERAR' : 'COLETAR'} ${RESOURCE_TYPES[nearestResource.type].label.toUpperCase()}`
         : nearestBackpack
           ? (nearestBackpack.kind === 'chest' ? 'ABRIR BAÚ' : 'RECUPERAR MOCHILA')
           : 'ATACAR';

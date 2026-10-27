@@ -1,4 +1,5 @@
 import { WORLD } from './config.js';
+import { FULL_WORLD, REGION_CENTERS as WORLD_REGION_LABELS, REGION_INFO, T, TILE } from '../data/worldRegions.js';
 import { DUNGEON_CONFIG } from '../data/buildings.js';
 import { REGIONS } from '../data/campaign.js';
 import { hash } from '../art/pixel.js';
@@ -6,8 +7,27 @@ import { hash } from '../art/pixel.js';
 // Desenha o terreno do mundo (uma vez) e a névoa de exploração, numa escala de
 // 1 pixel do mapa = MAP_SCALE pixels do mundo. Minimapa e mapa grande recortam daqui.
 export const MAP_SCALE = 6;
-const MAP_WIDTH = Math.ceil(WORLD.width / MAP_SCALE);
-const MAP_HEIGHT = Math.ceil(WORLD.height / MAP_SCALE);
+// Inclui a faixa das cavernas (abaixo do mar) para o minimapa funcionar lá dentro.
+const MAP_WIDTH = Math.ceil(FULL_WORLD.width / MAP_SCALE);
+const MAP_HEIGHT = Math.ceil(FULL_WORLD.height / MAP_SCALE);
+// Cor de cada terreno no mapa: [base, variação clara, variação escura].
+const TERRAIN_COLORS = {
+  [T.FOREST]: [[34, 64, 40], [44, 80, 48], [24, 50, 32]],
+  [T.SWAMP]: [[62, 72, 46], [74, 86, 54], [50, 58, 38]],
+  [T.SNOW]: [[214, 226, 238], [236, 244, 250], [190, 206, 222]],
+  [T.SAND]: [[214, 178, 104], [228, 196, 124], [196, 158, 88]],
+  [T.DUNE]: [[200, 160, 90], [214, 176, 104], [184, 144, 78]],
+  [T.BEACH]: [[232, 214, 166], [244, 230, 190], [218, 198, 150]],
+  [T.JUNGLE]: [[72, 150, 60], [90, 170, 72], [58, 128, 50]],
+  [T.ASH]: [[58, 44, 44], [72, 56, 54], [44, 34, 34]],
+  [T.SEA]: [[38, 92, 140], [46, 104, 154], [32, 82, 128]],
+  [T.LAVA]: [[240, 96, 30], [255, 150, 60], [200, 60, 20]],
+  [T.MURK]: [[42, 58, 40], [50, 68, 46], [36, 50, 34]],
+  [T.ICE]: [[160, 204, 232], [184, 220, 242], [140, 186, 218]],
+  [T.CAVE]: [[96, 84, 78], [110, 98, 90], [84, 72, 68]],
+  [T.WALL]: [[30, 26, 32], [36, 32, 38], [24, 20, 26]],
+  [T.VOID]: [[0, 0, 0], [0, 0, 0], [0, 0, 0]]
+};
 
 const hex = (value) => `#${value.toString(16).padStart(6, '0')}`;
 
@@ -29,6 +49,15 @@ export class MapRenderer {
     return MAP_WIDTH;
   }
 
+  terrainKind(x, y) {
+    const grid = this.scene.regionWorld?.grid;
+    if (!grid) return null;
+    const col = Math.floor(x / TILE);
+    const row = Math.floor(y / TILE);
+    if (col < 0 || row < 0 || col >= grid.cols || row >= grid.rows) return T.VOID;
+    return grid.terrain[row * grid.cols + col];
+  }
+
   get height() {
     return MAP_HEIGHT;
   }
@@ -45,6 +74,13 @@ export class MapRenderer {
         let [r, g, b] = patch > 0.7 ? [86, 138, 79] : patch < 0.25 ? [63, 109, 66] : [74, 123, 72];
         if (speck > 0.94) [r, g, b] = [108, 157, 89];
         else if (speck < 0.04) [r, g, b] = [51, 92, 59];
+        // Fora do Vale: cor do terreno das regiões novas, mares e cavernas.
+        const kind = this.terrainKind(x * MAP_SCALE, y * MAP_SCALE);
+        if (kind !== null && kind !== T.VALLEY) {
+          const palette = TERRAIN_COLORS[kind] ?? TERRAIN_COLORS[T.VOID];
+          [r, g, b] = patch > 0.72 ? palette[1] : patch < 0.24 ? palette[2] : palette[0];
+          if (kind === T.SEA && speck > 0.97) [r, g, b] = [120, 170, 210];
+        }
         const index = (y * MAP_WIDTH + x) * 4;
         data[index] = r;
         data[index + 1] = g;
@@ -118,6 +154,25 @@ export class MapRenderer {
     context.beginPath();
     context.ellipse(DUNGEON_CONFIG.x / MAP_SCALE, DUNGEON_CONFIG.y / MAP_SCALE, 9, 7, 0, 0, Math.PI * 2);
     context.fill();
+
+    // Entradas das cavernas e portos do mundo grande.
+    for (const feature of this.scene.regionWorld?.features ?? []) {
+      const x = feature.x / MAP_SCALE;
+      const y = feature.y / MAP_SCALE;
+      if (feature.type === 'cave') {
+        context.fillStyle = '#1a1416';
+        context.beginPath();
+        context.ellipse(x, y - 4, 8, 6, 0, 0, Math.PI * 2);
+        context.fill();
+        context.fillStyle = '#000000';
+        context.fillRect(x - 3, y - 6, 6, 5);
+      } else if (feature.type === 'dock') {
+        context.fillStyle = '#8a6440';
+        context.fillRect(x - 3, y - 2, 6, 14);
+        context.fillStyle = '#f4ecd8';
+        context.fillRect(x + 2, y + 10, 5, 4);
+      }
+    }
   }
 
   /** Névoa: escura onde ainda não foi explorado, com bordas suaves. */
@@ -267,8 +322,14 @@ export class MapRenderer {
 
   /** Nome das regiões já exploradas (no mapa grande). */
   regionLabels() {
-    return Object.entries(REGIONS)
+    const labels = Object.entries(REGIONS)
       .filter(([, region]) => region.radius && this.isExplored(region.x, region.y))
       .map(([key, region]) => ({ key, name: region.name, x: region.x, y: region.y }));
+    // Regiões do mundo grande (aparecem depois de visitadas).
+    const discovered = this.scene.regionWorld?.discovered ?? new Set();
+    for (const [key, point] of Object.entries(WORLD_REGION_LABELS)) {
+      if (discovered.has(key)) labels.push({ key, name: REGION_INFO[key].name, x: point.x, y: point.y });
+    }
+    return labels;
   }
 }

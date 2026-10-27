@@ -188,7 +188,8 @@ export class HarvestStructures {
     this.state = new HarvestStructureState({
       saved,
       dayCount: this.dayCount,
-      world: WORLD
+      // Estruturas de coleta continuam só no Vale.
+      world: { ...WORLD, width: WORLD.valley.width, height: WORLD.valley.height }
     });
     this.ensureTextures();
     for (const structure of this.state.structures) {

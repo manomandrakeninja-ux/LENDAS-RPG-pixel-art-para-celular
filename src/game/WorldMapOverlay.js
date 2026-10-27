@@ -216,12 +216,21 @@ export class WorldMapOverlay {
     else this.open();
   }
 
+  /** Posição do jogador no mapa (dentro de uma caverna, a entrada dela). */
+  surfacePlayer() {
+    const player = this.scene.player;
+    const underground = this.scene.regionWorld?.underground;
+    if (!player || !underground) return player;
+    const cave = this.scene.regionWorld.features.find((feature) => feature.type === 'cave' && feature.cave.id === underground.cave);
+    return cave ? { x: cave.x, y: cave.y } : player;
+  }
+
   /** Área do mundo visível: o mundo todo, ou um recorte centrado no jogador quando há zoom. */
   view() {
     const zoom = ZOOM_LEVELS[this.zoomIndex];
     const width = WORLD.width / zoom;
     const height = WORLD.height / zoom;
-    const player = this.scene.player ?? WORLD.camp;
+    const player = this.surfacePlayer() ?? WORLD.camp;
     const left = Math.max(0, Math.min(WORLD.width - width, player.x - width / 2));
     const top = Math.max(0, Math.min(WORLD.height - height, player.y - height / 2));
     return { left, top, width, height, zoom };
@@ -296,7 +305,7 @@ export class WorldMapOverlay {
       structures: this.scene.harvestStructures?.state?.structures ?? [],
       enemies: this.scene.enemies ?? [],
       boss: this.scene.boss ?? null,
-      player: this.scene.player,
+      player: this.surfacePlayer(),
       dungeonRevealed: Boolean(this.scene.camp?.dungeonRevealed || this.scene.camp?.defense?.dragonRadar)
     });
     drawMarker(context, markers.camp, toX, toY);

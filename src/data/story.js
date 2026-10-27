@@ -190,6 +190,10 @@ export const ENDINGS = Object.freeze({
 
 /** Quem fala nos diálogos sem ser morador do acampamento (retrato próprio). */
 export const SPEAKERS = Object.freeze({
+  barqueiro: {
+    name: 'Nilo, o Barqueiro',
+    palette: { tunic: '#2a4a6a', scarf: '#c8302a', hair: '#5a3a22', skin: '#c98a5a', beard: true, hat: '#3a2a1a' }
+  },
   aurelian: {
     name: 'Aurelian, o Último Rei',
     palette: { tunic: '#4a2a5a', scarf: '#d9b45c', hair: '#d8d8e0', skin: '#b8b0c8', beard: true, hat: '#e8c15a' }

@@ -33,6 +33,10 @@ import { BuildingMenu } from './BuildingMenu.js';
 import { GameUI } from './UI.js';
 import { World } from './World.js';
 import { WorldMapOverlay } from './WorldMapOverlay.js';
+import { RegionWorld } from './RegionWorld.js';
+import { Bestiary } from './Bestiary.js';
+import { BestiaryPanel } from './BestiaryPanel.js';
+import { ShadowSystem } from './ShadowSystem.js';
 import { ExperiencePickups } from './ExperiencePickups.js';
 import { LevelUpOverlay } from './LevelUpOverlay.js';
 import { EconomySystem } from './EconomySystem.js';
@@ -70,6 +74,10 @@ export class GameScene extends Phaser.Scene {
     // A tela de início (Splash.js) acompanha o carregamento por este evento.
     this.load.on('progress', (value) => window.dispatchEvent(new CustomEvent('lendas:progress', { detail: value })));
     preloadGameAssets(this);
+    // Mundo grande: chão das regiões, objetos dos biomas.
+    this.load.image('terrain-tiles', 'assets/tiles/terrain-sheet.png');
+    this.load.json('terrain-index', 'assets/tiles/terrain-sheet.json');
+    this.load.atlas('biome', 'assets/nature/biome-atlas.png', 'assets/nature/biome-atlas.json');
   }
 
   create() {
@@ -91,6 +99,8 @@ export class GameScene extends Phaser.Scene {
     this.travelers = new CampfireTravelers(saved?.travelers);
     this.traps = [];
     this.obstacles = new Obstacles(this);
+    this.regionWorld = new RegionWorld(this, saved?.regions);
+    this.bestiary = new Bestiary(saved?.bestiary);
     this.world = new World(this);
     this.world.create();
     this.camp = new Camp(this, saved?.camp);
@@ -101,6 +111,7 @@ export class GameScene extends Phaser.Scene {
     this.player = new Player(this, WORLD.camp.x, WORLD.camp.y + 85, saved?.player, this.progression);
     this.player.recalculateEquipment(this.camp.equipment);
     this.obstacles.collide(this.player);
+    this.regionWorld.collide(this.player);
     this.audio = new AudioManager();
     this.dayNight = new DayNightCycle(saved?.time);
     this.timeState = this.dayNight.getState();
@@ -143,6 +154,8 @@ export class GameScene extends Phaser.Scene {
     this.createDungeonMarker();
 
     this.cameras.main.setBounds(0, 0, WORLD.width, WORLD.height);
+    this.shadows = new ShadowSystem(this);
+    this.shadows.register(this.world.treeSprites);
     this.cameras.main.startFollow(this.player, true, 0.08, 0.08);
     this.cameras.main.setZoom(this.worldZoom()).setRoundPixels(true);
 
@@ -160,6 +173,7 @@ export class GameScene extends Phaser.Scene {
     this.itemInfo = new ItemInfoPanel(this);
     this.touch = new TouchControls(this);
     this.settingsPanel = new SettingsPanel(this);
+    this.bestiaryPanel = new BestiaryPanel(this);
     // Tremor da tela pode ser desligado nas Configurações.
     const camera = this.cameras.main;
     const shake = camera.shake.bind(camera);
@@ -193,6 +207,7 @@ export class GameScene extends Phaser.Scene {
     });
     this.input.keyboard.on('keydown-ESC', () => {
       if (this.worldMap.isOpen) this.worldMap.close();
+      else if (this.bestiaryPanel?.isOpen) this.bestiaryPanel.close();
       else if (this.buildingMenu.isOpen) this.buildingMenu.close();
       else if (this.campaign?.ui.isOpen) this.campaign.ui.toggleJournal(false);
       else if (this.campaign?.ui.dialog && !this.campaign.ui.dialog.hidden) this.campaign.ui.closeDialogue();
@@ -205,6 +220,9 @@ export class GameScene extends Phaser.Scene {
       else if (!this.overlayBlocked()) this.worldMap.open();
     });
     this.input.keyboard.on('keydown-B', () => this.toggleBackpack());
+    this.input.keyboard.on('keydown-K', () => {
+      if (this.bestiaryPanel.isOpen || !this.overlayBlocked()) this.bestiaryPanel.toggle();
+    });
     this.input.keyboard.on('keydown-I', () => this.toggleBackpack());
     this.input.keyboard.on('keydown-C', () => {
       if (this.ui.campOpen || !this.overlayBlocked()) this.toggleCampMenu();
@@ -259,6 +277,7 @@ export class GameScene extends Phaser.Scene {
         return;
       }
       if (this.world.nearbyResource(this.player.x, this.player.y) ||
+          this.regionWorld?.nearestFeature(this.player.x, this.player.y) ||
           this.harvestStructures.nearest(this.player.x, this.player.y) ||
           this.deathBackpacks.nearest(this.player.x, this.player.y)) this.interact();
       else this.attackNearby();
@@ -287,6 +306,7 @@ export class GameScene extends Phaser.Scene {
       this.gameOverButton.removeEventListener('click', this.handleGameOverRestart);
       this.touch?.destroy();
       this.worldMap?.destroy();
+      this.bestiaryPanel?.destroy();
       this.levelUpOverlay?.destroy();
       document.removeEventListener('visibilitychange', this.handleVisibilityChange);
       window.removeEventListener('pagehide', this.handlePageHide);
@@ -339,6 +359,7 @@ export class GameScene extends Phaser.Scene {
       this.buildingMenu?.isOpen ||
       this.itemInfo?.isOpen ||
       this.settingsPanel?.isOpen ||
+      this.bestiaryPanel?.isOpen ||
       (this.campaign?.ui?.reward && !this.campaign.ui.reward.hidden)
     );
   }
@@ -402,6 +423,7 @@ export class GameScene extends Phaser.Scene {
       this.buildingMenu?.isOpen ||
       this.itemInfo?.isOpen ||
       this.settingsPanel?.isOpen ||
+      this.bestiaryPanel?.isOpen ||
       this.campaign?.ui?.isBlocking
     );
   }
@@ -456,6 +478,8 @@ export class GameScene extends Phaser.Scene {
       this.camp.defense.update(delta, this.enemies);
       this.updateBuildingLabels();
       this.villagers?.update(delta);
+      this.regionWorld.update(delta);
+      this.shadows?.update(delta, this.timeState);
       this.updateEnemyStatus(delta);
       this.updateTraps();
       this.updateGolemLock();
@@ -525,7 +549,9 @@ export class GameScene extends Phaser.Scene {
     this.camp.setLightLevel(state.lightLevel);
     this.world.setNight(state.isNight);
     this.harvestStructures.setNight(state.isNight);
-    this.lighting.update(delta, state, this.player);
+    // Nas cavernas é sempre escuro: só a luz do herói (e da tocha) ilumina.
+    const lightState = this.regionWorld?.underground ? { ...state, lightLevel: Math.max(state.lightLevel, 0.72) } : state;
+    this.lighting.update(delta, lightState, this.player);
 
     if (state.rolledOver) {
       this.handleDayAdvance(state.dayCount);
@@ -989,10 +1015,14 @@ export class GameScene extends Phaser.Scene {
     const result = this.inventory.addBundle(drops);
     this.campaign?.onGathered(result.accepted);
     this.campaign?.onEnemyDefeated(enemy);
+    this.regionWorld?.onEnemyDefeated(enemy);
+    if (this.bestiary?.recordKill(enemy.kind)) this.ui.showMessage(`Bestiário: ${enemy.definition.name} registrado no Bestiário (tecla K).`);
     // Invasores não deixam cristais: o XP deles volta dobrado na recompensa do ataque.
     if (enemy.isRaider) this.raid.onRaiderDefeated(enemy);
     else this.experiencePickups.spawn(enemy.x, enemy.y, enemyXp(enemy.kind, enemy.isElite));
-    this.coinPickups.spawn(enemy.x + 9, enemy.y, rollCoinDrop(enemy.definition.period, Math.random, enemy.isElite));
+    // Monstros das regiões mais perigosas deixam mais moedas.
+    const coinTier = 1 + Math.max(0, (enemy.definition.tier ?? 1) - 2) * 0.5;
+    this.coinPickups.spawn(enemy.x + 9, enemy.y, Math.round(rollCoinDrop(enemy.definition.period, Math.random, enemy.isElite) * coinTier));
     if (Object.keys(result.remaining).length > 0) {
       this.deathBackpacks.create(enemy.x, enemy.y, result.remaining);
     }
@@ -1044,6 +1074,7 @@ export class GameScene extends Phaser.Scene {
       }
       if (mode === 'campfire' && !camp.unlocked('campfire', 'unlimitedRevive')) camp.lastLocalReviveNight = day;
       this.player.body.reset(WORLD.camp.x, WORLD.camp.y + 85);
+      this.regionWorld?.onRespawn();
       const ratio = mode === 'campfire'
         ? Math.max(BUILDING_DEFS.campfire.reviveHealthRatio, raidActive ? 0.3 : 0)
         : mode === 'raid' ? 0.3 : 1;
@@ -1070,6 +1101,7 @@ export class GameScene extends Phaser.Scene {
   interact() {
     if (this.mining || this.overlayBlocked() || this.campaign?.ui?.isOpen) return;
     if (this.campaign?.interact()) return;
+    if (this.regionWorld?.interact()) return;
     const resource = this.world.nearbyResource(this.player.x, this.player.y);
     const structure = this.harvestStructures.nearest(this.player.x, this.player.y);
     const backpack = this.deathBackpacks.nearest(this.player.x, this.player.y);
@@ -1646,7 +1678,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   performContextAction() {
-    if (this.campaign?.nearestInteraction()) {
+    if (this.campaign?.nearestInteraction() || this.regionWorld?.nearestFeature(this.player.x, this.player.y)) {
       this.interact();
       return;
     }
@@ -1921,7 +1953,9 @@ export class GameScene extends Phaser.Scene {
         dayCount: this.dayNight.dayCount
       },
       deathBackpacks: this.deathBackpacks.serialize(),
-      harvestStructures: this.harvestStructures.serialize()
+      harvestStructures: this.harvestStructures.serialize(),
+      regions: this.regionWorld?.serialize(),
+      bestiary: this.bestiary?.serialize()
     });
   }
 }

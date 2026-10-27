@@ -1,9 +1,11 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { PixelCanvas, darken, dither, hash, lighten, ramp } from '../src/art/pixel.js';
-import { writePng } from './png.js';
+import { readAtlas, writePng } from './png.js';
 import { KNIGHT_FRAME, drawKnightFrame } from '../src/art/knight.js';
 import { STORY_SCENE_KEYS, drawStoryScene } from '../src/art/storyScenes.js';
+import { valleyPine, valleyRoundTree } from '../src/art/biomeProps.js';
+import { generateWorldAssets } from './generate-world-assets.js';
 
 // Gera toda a pixel art do jogo (PNG + atlas da Phaser) em public/assets/.
 // Rode com `npm run assets:generate`. Os tamanhos e nomes dos quadros são usados
@@ -24,7 +26,7 @@ function makeSheet(file, frameWidth, frameHeight, columns, rows, drawFrame, { ou
   writePng(path.join(root, file), sheet);
 }
 
-function makeAtlas(file, entries) {
+function makeAtlas(file, entries, { enhance = null } = {}) {
   const atlasWidth = 256;
   let x = 2;
   let y = 2;
@@ -46,6 +48,7 @@ function makeAtlas(file, entries) {
   for (const entry of positions) {
     const sprite = new PixelCanvas(entry.width, entry.height);
     entry.draw(sprite);
+    if (enhance && entry.enhance !== false) enhance(sprite);
     if (entry.outline !== false) sprite.outline();
     atlas.blit(sprite, entry.x, entry.y);
     frames[entry.name] = {
@@ -78,7 +81,6 @@ const DIRT = ['#5e4130', '#74523a', '#8a6647', '#9f7a55', '#b79168'];
 const BARK = ['#3f2a1f', '#5b3d29', '#7a5236', '#9a6c45'];
 const WOOD = ['#5a3b26', '#7c5434', '#a0723f', '#c49556'];
 const STONE = ['#4c5257', '#6c7377', '#8d9496', '#b6bcb8', '#dad9cc'];
-const LEAF = ['#1f4130', '#2b5a3a', '#3d7745', '#5a9650', '#7fb35e'];
 
 // ---------- Chão (48 x 48, 1 pixel da arte = 1 pixel do mundo) ----------
 
@@ -500,76 +502,6 @@ makeAtlas('vfx/vfx-atlas.json', vfxEntries);
 
 // ---------- Natureza ----------
 
-function drawPine(canvas, shift) {
-  canvas.shadow(20, 52, 15, 3.5, 105);
-  // Tronco.
-  canvas.rect(17, 40, 6, 12, BARK[1]);
-  canvas.rect(17, 40, 2, 12, BARK[2]);
-  canvas.rect(21, 40, 2, 12, BARK[0]);
-  canvas.pixel(16, 51, BARK[1]);
-  canvas.pixel(23, 51, BARK[0]);
-  // Camadas de galhos, de baixo para cima; as de cima balançam mais.
-  const tiers = [
-    { apex: 18, base: 45, half: 17, sway: 0 },
-    { apex: 9, base: 34, half: 14, sway: shift * 0.5 },
-    { apex: 1, base: 23, half: 10, sway: shift }
-  ];
-  for (const tier of tiers) {
-    const cx = 20 + tier.sway;
-    const points = [[cx, tier.apex]];
-    // Base em zigue-zague.
-    const teeth = 5;
-    for (let index = 0; index <= teeth; index += 1) {
-      const t = index / teeth;
-      const x = cx + tier.half - t * tier.half * 2;
-      points.push([x, tier.base - (index % 2 ? 3 : 0)]);
-    }
-    canvas.forPolygon(points, (x, y) => {
-      const across = (x + 0.5 - cx) / tier.half;
-      const down = (y - tier.apex) / (tier.base - tier.apex);
-      const value = -across * 0.8 + (1 - down) * 0.35 + (dither(x, y) - 0.5) * 0.35;
-      const tone = value > 0.55 ? 4 : value > 0.15 ? 3 : value > -0.35 ? 2 : 1;
-      canvas.pixel(x, y, LEAF[tone]);
-    });
-    // Sombra irregular da camada de cima sobre a de baixo.
-    for (let x = Math.round(cx - tier.half * 0.5); x <= Math.round(cx + tier.half * 0.7); x += 1) {
-      const y = tier.base + 1 + (hash(x, tier.base, 8) > 0.5 ? 1 : 0);
-      if (canvas.alphaAt(x, y) > 0 && hash(x, y, 9) > 0.35) canvas.pixel(x, y, LEAF[1]);
-    }
-  }
-  canvas.pixel(14 + shift, 13, LEAF[4]);
-  canvas.pixel(12, 27, LEAF[4]);
-  canvas.pixel(26, 38, LEAF[1]);
-}
-
-function drawRoundTree(canvas, palette, fruit = null) {
-  canvas.shadow(24, 51, 17, 4, 105);
-  canvas.rect(21, 30, 7, 21, BARK[1]);
-  canvas.rect(21, 30, 2, 21, BARK[2]);
-  canvas.rect(26, 30, 2, 21, BARK[0]);
-  canvas.line(23, 34, 15, 26, BARK[1]);
-  canvas.line(26, 36, 34, 26, BARK[1]);
-  canvas.rect(19, 49, 3, 2, BARK[1]);
-  canvas.rect(27, 49, 3, 2, BARK[0]);
-  const colors = ramp(palette);
-  for (const [x, y, rx, ry] of [[24, 22, 16, 13], [13, 26, 9, 8], [35, 26, 9, 8], [18, 13, 9, 8], [31, 13, 9, 8], [24, 8, 8, 6]]) {
-    canvas.shadedEllipse(x, y, rx, ry, colors);
-  }
-  // Folhas soltas na borda.
-  for (let index = 0; index < 14; index += 1) {
-    const angle = hash(index, 3, palette.length) * Math.PI * 2;
-    const x = 24 + Math.cos(angle) * 17;
-    const y = 20 + Math.sin(angle) * 14;
-    if (canvas.alphaAt(Math.round(x), Math.round(y)) > 200) canvas.pixel(x, y, colors[index % 2 ? 2 : 0]);
-  }
-  if (fruit) {
-    for (const [x, y] of [[16, 24], [30, 18], [26, 29], [20, 14], [35, 26]]) {
-      canvas.rect(x, y, 2, 2, fruit);
-      canvas.pixel(x, y, lighten(fruit, 0.4));
-    }
-  }
-}
-
 function drawRock(canvas, cx, cy, width, height, colors = STONE) {
   const points = [
     [cx - width, cy + height * 0.5], [cx - width * 0.8, cy - height * 0.4], [cx - width * 0.2, cy - height],
@@ -587,14 +519,16 @@ function drawRock(canvas, cx, cy, width, height, colors = STONE) {
   canvas.pixel(cx - width * 0.5, cy - height * 0.3, colors[4]);
 }
 
+// Árvores do Vale pintadas com luz contínua (src/art/biomeProps.js); a sombra agora segue o sol no jogo.
+const paintedTree = (painted) => (canvas) => canvas.blit(painted, 0, 0);
 const natureEntries = [
   ...[0, 1, 2].map((frame) => ({
-    name: `pine-${frame}`, width: 40, height: 56,
-    draw: (canvas) => drawPine(canvas, frame === 1 ? -1 : frame === 2 ? 1 : 0)
+    name: `pine-${frame}`, width: 40, height: 56, outline: false,
+    draw: paintedTree(valleyPine(frame === 1 ? -1 : frame === 2 ? 1 : 0))
   })),
-  { name: 'autumn-tree', width: 48, height: 56, draw: (canvas) => drawRoundTree(canvas, '#c56a3f') },
-  { name: 'oak-tree', width: 48, height: 56, draw: (canvas) => drawRoundTree(canvas, '#4c8b49') },
-  { name: 'fruit-tree', width: 48, height: 56, draw: (canvas) => drawRoundTree(canvas, '#5a9650', '#d8413a') },
+  { name: 'autumn-tree', width: 48, height: 56, outline: false, draw: paintedTree(valleyRoundTree('autumn', null, 1)) },
+  { name: 'oak-tree', width: 48, height: 56, outline: false, draw: paintedTree(valleyRoundTree('oak', null, 2)) },
+  { name: 'fruit-tree', width: 48, height: 56, outline: false, draw: paintedTree(valleyRoundTree('fruit', '#e8413a', 3)) },
   {
     name: 'bush', width: 32, height: 24,
     draw: (canvas) => {
@@ -1307,7 +1241,31 @@ const buildingEntries = [
 for (const [name, art] of Object.entries(STAGE_ART)) {
   buildingEntries.push({ name, width: art.size, height: art.size, draw: art.draw });
 }
-makeAtlas('buildings/camp-atlas.json', buildingEntries);
+/**
+ * Acabamento dos prédios: luz do alto à esquerda, sombra de contato na base,
+ * brilho nas bordas de cima e uma textura leve, para dar mais volume e detalhe.
+ */
+function enhanceBuilding(canvas) {
+  const { width, height } = canvas;
+  let bottom = 0;
+  for (let y = 0; y < height; y += 1) for (let x = 0; x < width; x += 1) if (canvas.alphaAt(x, y) > 200) bottom = y;
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      if (canvas.alphaAt(x, y) < 200) continue;
+      const color = canvas.colorAt(x, y);
+      let tone = 0.06 * (1 - y / height) - 0.06 * (x / width) + (hash(x, y, 909) - 0.5) * 0.05;
+      // Sombra de contato perto do chão.
+      const fromBottom = bottom - y;
+      if (fromBottom < 5) tone -= (5 - fromBottom) * 0.035;
+      // Borda de cima e da esquerda pegam luz.
+      if (canvas.alphaAt(x, y - 1) < 200 || canvas.alphaAt(x - 1, y) < 200) tone += 0.1;
+      // Borda de baixo e da direita ficam na sombra.
+      if (canvas.alphaAt(x + 1, y) < 200) tone -= 0.08;
+      canvas.pixel(x, y, tone >= 0 ? lighten(color, tone) : darken(color, -tone));
+    }
+  }
+}
+makeAtlas('buildings/camp-atlas.json', buildingEntries, { enhance: enhanceBuilding });
 
 makeAtlas('ui/panel-atlas.json', [{
   name: 'panel', width: 24, height: 24, outline: false,
@@ -1330,9 +1288,15 @@ makeAtlas('ui/panel-atlas.json', [{
   }
 }]);
 
+generateWorldAssets();
 console.log('Pixel art gerada em public/assets/.');
 
 // ---------- Ilustrações dos capítulos (abertura de cada capítulo e final) ----------
+// As cenas usam os prédios e árvores do jogo, lidos dos atlas gerados acima.
+const storyAtlas = {
+  ...readAtlas(path.join(root, 'buildings/camp-atlas.png'), path.join(root, 'buildings/camp-atlas.json')),
+  ...readAtlas(path.join(root, 'nature/nature-atlas.png'), path.join(root, 'nature/nature-atlas.json'))
+};
 for (const key of STORY_SCENE_KEYS) {
-  writePng(path.join(root, 'story', /^\d+$/.test(key) ? `capitulo-${key}.png` : `${key}.png`), drawStoryScene(key));
+  writePng(path.join(root, 'story', /^\d+$/.test(key) ? `capitulo-${key}.png` : `${key}.png`), drawStoryScene(key, storyAtlas));
 }

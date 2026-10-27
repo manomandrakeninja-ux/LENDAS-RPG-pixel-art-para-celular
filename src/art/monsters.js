@@ -1,4 +1,5 @@
 import { PixelCanvas, hash } from './pixel.js';
+import { REGION_DRAWERS, REGION_LOGICAL, REGION_MONSTER_SIZES } from './monstersRegions.js';
 
 // Monstros no estilo das referências: contorno escuro forte, volumes com
 // luz do alto à esquerda e detalhes desenhados pixel a pixel.
@@ -15,7 +16,8 @@ export const MONSTER_SIZES = Object.freeze({
   ghost: { size: 32, elite: 40 },
   werewolf: { size: 40, elite: 48 },
   golem: { size: 48, elite: 56 },
-  titan: { size: 64, elite: 64 }
+  titan: { size: 64, elite: 64 },
+  ...REGION_MONSTER_SIZES
 });
 
 export const MONSTER_PREVIEW = [
@@ -29,7 +31,7 @@ export const MONSTER_PREVIEW = [
   { kind: 'golem', ...MONSTER_SIZES.golem }
 ];
 
-const LOGICAL = { slime: 32, wolf: 44, boar: 44, skeleton: 40, spider: 40, ghost: 32, werewolf: 40, golem: 64, titan: 64 };
+const LOGICAL = { slime: 32, wolf: 44, boar: 44, skeleton: 40, spider: 40, ghost: 32, werewolf: 40, golem: 64, titan: 64, ...REGION_LOGICAL };
 
 /** Canvas com coordenadas lógicas convertidas para o tamanho real. */
 function grid(canvas, size, logical) {
@@ -478,7 +480,8 @@ const DRAWERS = {
   ghost: drawGhost,
   werewolf: drawWerewolf,
   golem: drawGolem,
-  titan: drawGolem
+  titan: drawGolem,
+  ...REGION_DRAWERS
 };
 
 export function hasMonsterArt(kind) {

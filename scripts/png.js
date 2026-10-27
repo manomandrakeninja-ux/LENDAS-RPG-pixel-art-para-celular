@@ -46,3 +46,64 @@ export function writePng(file, canvas) {
     chunk('IEND', Buffer.alloc(0))
   ]));
 }
+
+/** Lê um PNG RGBA de 8 bits (os gerados por writePng) e devolve { width, height, data }. */
+export function readPng(file) {
+  const buffer = fs.readFileSync(file);
+  let offset = 8;
+  let width = 0;
+  let height = 0;
+  const idat = [];
+  while (offset < buffer.length) {
+    const length = buffer.readUInt32BE(offset);
+    const type = buffer.toString('ascii', offset + 4, offset + 8);
+    const data = buffer.subarray(offset + 8, offset + 8 + length);
+    if (type === 'IHDR') {
+      width = data.readUInt32BE(0);
+      height = data.readUInt32BE(4);
+      if (data[8] !== 8 || data[9] !== 6) throw new Error(`${file}: só PNG RGBA 8 bits`);
+    } else if (type === 'IDAT') idat.push(data);
+    offset += 12 + length;
+  }
+  const raw = zlib.inflateSync(Buffer.concat(idat));
+  const stride = width * 4;
+  const out = new Uint8ClampedArray(width * height * 4);
+  for (let y = 0; y < height; y += 1) {
+    const filter = raw[y * (stride + 1)];
+    for (let x = 0; x < stride; x += 1) {
+      const value = raw[y * (stride + 1) + 1 + x];
+      const left = x >= 4 ? out[y * stride + x - 4] : 0;
+      const up = y > 0 ? out[(y - 1) * stride + x] : 0;
+      const upLeft = y > 0 && x >= 4 ? out[(y - 1) * stride + x - 4] : 0;
+      let predictor = 0;
+      if (filter === 1) predictor = left;
+      else if (filter === 2) predictor = up;
+      else if (filter === 3) predictor = Math.floor((left + up) / 2);
+      else if (filter === 4) {
+        const p = left + up - upLeft;
+        const pa = Math.abs(p - left);
+        const pb = Math.abs(p - up);
+        const pc = Math.abs(p - upLeft);
+        predictor = pa <= pb && pa <= pc ? left : pb <= pc ? up : upLeft;
+      }
+      out[y * stride + x] = (value + predictor) & 255;
+    }
+  }
+  return { width, height, data: out };
+}
+
+/** Recorta os quadros de um atlas (PNG + JSON da Phaser) em { nome: { width, height, data } }. */
+export function readAtlas(pngFile, jsonFile) {
+  const image = readPng(pngFile);
+  const atlas = JSON.parse(fs.readFileSync(jsonFile, 'utf8'));
+  const frames = {};
+  for (const [name, entry] of Object.entries(atlas.frames)) {
+    const { x, y, w, h } = entry.frame;
+    const data = new Uint8ClampedArray(w * h * 4);
+    for (let row = 0; row < h; row += 1) {
+      data.set(image.data.subarray(((y + row) * image.width + x) * 4, ((y + row) * image.width + x + w) * 4), row * w * 4);
+    }
+    frames[name] = { width: w, height: h, data };
+  }
+  return frames;
+}

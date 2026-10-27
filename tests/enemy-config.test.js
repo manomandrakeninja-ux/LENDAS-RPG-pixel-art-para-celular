@@ -8,15 +8,11 @@ import { RESOURCE_TYPES } from '../src/game/config.js';
 const EXPECTED_ENEMIES = ['slime', 'wolf', 'boar', 'skeleton', 'ghost', 'spider', 'werewolf'];
 
 test('the Phase 1 catalog contains all day and night species', () => {
-  assert.deepEqual(Object.keys(ENEMY_TYPES), EXPECTED_ENEMIES);
-  assert.deepEqual(
-    Object.entries(ENEMY_TYPES).filter(([, definition]) => definition.period === 'day').map(([type]) => type),
-    ['slime', 'wolf', 'boar']
-  );
-  assert.deepEqual(
-    Object.entries(ENEMY_TYPES).filter(([, definition]) => definition.period === 'night').map(([type]) => type),
-    ['skeleton', 'ghost', 'spider', 'werewolf']
-  );
+  // As espécies da Fase 1 continuam primeiro; as das regiões novas vêm depois.
+  assert.deepEqual(Object.keys(ENEMY_TYPES).slice(0, EXPECTED_ENEMIES.length), EXPECTED_ENEMIES);
+  const phaseOne = Object.entries(ENEMY_TYPES).filter(([type]) => EXPECTED_ENEMIES.includes(type));
+  assert.deepEqual(phaseOne.filter(([, definition]) => definition.period === 'day').map(([type]) => type), ['slime', 'wolf', 'boar']);
+  assert.deepEqual(phaseOne.filter(([, definition]) => definition.period === 'night').map(([type]) => type), ['skeleton', 'ghost', 'spider', 'werewolf']);
 });
 
 test('every enemy has complete behavior, perception and combat data', () => {
@@ -62,9 +58,9 @@ test('spawn zones only reference known enemies and cover both periods', () => {
   }
 });
 
-test('ghost is the only configured obstacle-ignoring species', () => {
+test('only flying or ghostly species ignore obstacles', () => {
   const obstacleIgnoring = Object.entries(ENEMY_TYPES)
     .filter(([, definition]) => definition.ignoresObstacles)
     .map(([type]) => type);
-  assert.deepEqual(obstacleIgnoring, ['ghost']);
+  assert.deepEqual(obstacleIgnoring, ['ghost', 'bat', 'iceElemental']);
 });

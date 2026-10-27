@@ -3,6 +3,7 @@ import { SPAWN_ZONES } from '../data/biomes.js';
 import { ELITE_CONFIG, ENEMY_TYPES } from '../data/enemies.js';
 import { SPAWNING_CONFIG } from '../data/spawning.js';
 import { Enemy } from './Enemies.js';
+import { REGION_SPAWNS, VALLEY_EXTRA_SPAWNS, regionAt } from '../data/worldRegions.js';
 
 // Os guardas da mina eram criados só ao carregar o jogo; agora são repostos periodicamente.
 const MINE_REPOPULATE_MS = 30000;
@@ -25,6 +26,15 @@ export class EnemyDirector {
     this.random = options.random ?? Math.random;
     this.spawnTimer = 700;
     this.mineTimer = MINE_REPOPULATE_MS;
+    // As cavernas criam inimigos com a mesma classe.
+    this.EnemyClass = Enemy;
+  }
+
+  /** Remove os inimigos comuns (ao entrar numa caverna). */
+  clearRegular() {
+    for (const enemy of [...this.enemies]) {
+      if (!enemy.isRaider && !enemy.isQuestEnemy && !enemy.isCaveEnemy) this.remove(enemy);
+    }
   }
 
   populate(timeState) {
@@ -65,8 +75,8 @@ export class EnemyDirector {
     const limit = SPAWNING_CONFIG.activeLimit[period];
     if (this.spawnTimer <= 0) {
       this.spawnTimer = SPAWNING_CONFIG.spawnIntervalMs[period];
-      const regular = this.enemies.filter((enemy) => !enemy.isRaider && !enemy.isQuestEnemy).length;
-      if (regular < limit) this.spawnOne(timeState);
+      const regular = this.enemies.filter((enemy) => !enemy.isRaider && !enemy.isQuestEnemy && !enemy.isCaveEnemy).length;
+      if (regular < limit && !this.scene.regionWorld?.underground) this.spawnOne(timeState);
     }
     this.mineTimer -= delta;
     if (this.mineTimer <= 0) {
@@ -85,7 +95,7 @@ export class EnemyDirector {
     const despawnDistance = SPAWNING_CONFIG.despawnDistance[period];
     for (const enemy of [...this.enemies]) {
       // Invasores e inimigos de missão são controlados pelos seus próprios sistemas.
-      if (enemy.isRaider || enemy.isQuestEnemy) continue;
+      if (enemy.isRaider || enemy.isQuestEnemy || enemy.isCaveEnemy) continue;
       const playerDistance = Phaser.Math.Distance.Between(enemy.x, enemy.y, player.x, player.y);
       const wrongPhase = enemy.definition.period === 'night' && period === 'day';
       const wrongPhaseFar = wrongPhase && playerDistance > 320;
@@ -95,7 +105,16 @@ export class EnemyDirector {
 
   spawnOne(timeState) {
     const period = timeState.isNight ? 'night' : 'day';
+    // Fora do Vale: monstros da região onde o jogador está, em volta dele.
+    const player = this.scene.player;
+    const region = player ? regionAt(player.x, player.y) : 'vale';
+    if (REGION_SPAWNS[region]) return this.spawnInRegion(region, period, timeState);
+    if (region === 'mar') return false;
     const candidates = [];
+    for (const type of player ? VALLEY_EXTRA_SPAWNS[period] ?? [] : []) {
+      const weight = ENEMY_TYPES[type]?.spawnWeight[period] ?? 0;
+      if (weight > 0) candidates.push({ value: { type, zone: null }, weight: weight * 0.6 });
+    }
     for (const zone of Object.values(SPAWN_ZONES)) {
       for (const type of zone.enemies[period] ?? []) {
         const weight = ENEMY_TYPES[type].spawnWeight[period] ?? 0;
@@ -105,17 +124,60 @@ export class EnemyDirector {
     const selected = weightedChoice(candidates, this.random);
     if (!selected) return false;
 
-    const position = this.findSpawnPosition(selected.zone, selected.type);
+    const position = selected.zone
+      ? this.findSpawnPosition(selected.zone, selected.type)
+      : this.findSpawnNearPlayer('vale');
     if (!position) return false;
     const eliteChance = ELITE_CONFIG.chance[period];
     const elite = this.random() < eliteChance;
-    const enemy = new Enemy(this.scene, position.x, position.y, selected.type, {
-      elite,
-      isNight: period === 'night'
-    });
+    this.addEnemy(selected.type, position.x, position.y, { elite, isNight: period === 'night' });
+    return true;
+  }
+
+  spawnInRegion(region, period, timeState) {
+    const list = REGION_SPAWNS[region][period] ?? [];
+    if (list.length === 0) return false;
+    const type = list[Math.floor(this.random() * list.length)];
+    const definition = ENEMY_TYPES[type];
+    const position = this.findSpawnNearPlayer(region);
+    if (!definition || !position) return false;
+    const elite = this.random() < ELITE_CONFIG.chance[period] * 1.5;
+    // Bandos: goblins, lobos do gelo, múmias e piratas andam em grupo.
+    const packSize = definition.packAttack?.enabled ? 1 + Math.floor(this.random() * 3) : 1;
+    for (let index = 0; index < packSize; index += 1) {
+      const x = position.x + (index ? (this.random() - 0.5) * 70 : 0);
+      const y = position.y + (index ? (this.random() - 0.5) * 70 : 0);
+      if (this.scene.regionWorld && !this.scene.regionWorld.walkable(x, y)) continue;
+      this.addEnemy(type, x, y, { elite: elite && index === 0, isNight: period === 'night' });
+    }
+    return true;
+  }
+
+  addEnemy(type, x, y, options) {
+    const enemy = new Enemy(this.scene, x, y, type, options);
     this.enemies.push(enemy);
     this.scene.hudCamera?.ignore(enemy);
-    return true;
+    if (!enemy.definition.ignoresObstacles) this.scene.regionWorld?.collide(enemy);
+    return enemy;
+  }
+
+  /** Ponto livre a 380-820 px do jogador, dentro da mesma região e em chão firme. */
+  findSpawnNearPlayer(region) {
+    const player = this.scene.player;
+    if (!player) return null;
+    const { camp } = this.scene.worldBounds;
+    for (let attempt = 0; attempt < 40; attempt += 1) {
+      const angle = this.random() * Math.PI * 2;
+      const distance = 380 + this.random() * 440;
+      const x = Math.round(player.x + Math.cos(angle) * distance);
+      const y = Math.round(player.y + Math.sin(angle) * distance);
+      if (regionAt(x, y) !== region) continue;
+      if (this.scene.regionWorld && !this.scene.regionWorld.walkable(x, y)) continue;
+      if (Phaser.Math.Distance.Between(x, y, camp.x, camp.y) < SPAWNING_CONFIG.safeZoneRadius + 80) continue;
+      if (this.enemies.some((enemy) => Phaser.Math.Distance.Between(x, y, enemy.x, enemy.y) < 90)) continue;
+      return { x, y };
+    }
+    return null;
   }
 
   findSpawnPosition(zone, type) {
@@ -158,7 +220,7 @@ export class EnemyDirector {
 
   clearNightEnemies() {
     for (const enemy of [...this.enemies]) {
-      if (enemy.definition.period === 'night' && !enemy.isQuestEnemy) this.remove(enemy);
+      if (enemy.definition.period === 'night' && !enemy.isQuestEnemy && !enemy.isCaveEnemy) this.remove(enemy);
     }
   }
 

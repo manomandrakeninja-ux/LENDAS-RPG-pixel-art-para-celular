@@ -13,6 +13,7 @@ import { ENEMY_TYPES } from './enemies.js';
 import { CHEST_LOOT_RECIPES, HARVEST_STRUCTURE_TYPES } from './harvestStructures.js';
 import { NIGHT_RESOURCES } from './nightResources.js';
 import { RESOURCE_NODES } from './resources.js';
+import { CAVES, CAVE_NODES, NODE_REGROW_DAYS, REGION_CENTERS, REGION_INFO, REGION_NODES, TERRAIN_NODES, TERRAIN_REGIONS } from './worldRegions.js';
 import { TRAVELER_GOODS, TRAVELER_QUESTS } from './travelers.js';
 
 /** Descrição curta de cada item (uma só, usada em todas as telas). */
@@ -95,6 +96,19 @@ export function itemSources(type) {
   if (['iron', 'coal', 'gold'].includes(type)) {
     add('gather', 'Mina a nordeste: veios de ferro, carvão e ouro.', { map: 'point', x: MINE_CONFIG.x, y: MINE_CONFIG.y, name: 'Mina' });
   }
+  // Regiões do mundo grande: recursos no chão e minérios das cavernas.
+  const regions = new Set();
+  for (const [terrain, table] of Object.entries(TERRAIN_NODES)) {
+    if (table[type]) for (const region of TERRAIN_REGIONS[terrain] ?? []) regions.add(region);
+  }
+  for (const region of regions) {
+    const node = REGION_NODES[type];
+    const center = REGION_CENTERS[region];
+    add('gather', `${REGION_INFO[region].name}: no chão (${range(node.amount)})${node.requiresPickaxe ? ' • precisa de picareta' : ''} • renasce em ${NODE_REGROW_DAYS} dias.`,
+      { map: 'point', x: center.x, y: center.y, name: REGION_INFO[region].name });
+  }
+  const caves = CAVES.filter((cave) => CAVE_NODES[cave.theme]?.[type]);
+  if (caves.length > 0) add('gather', `Cavernas: ${caves.map((cave) => cave.name).join(', ')}.`);
   for (const [nightType, resource] of Object.entries(NIGHT_RESOURCES)) {
     if (nightType === type) add('gather', `Brota no mapa à noite (${range(resource.amount)} por vez).`);
   }

@@ -81,7 +81,8 @@ test('enemy placeholders use canvas silhouettes instead of an external atlas', (
 
   // Tamanho do desenho (px): normal e elite. Os monstros redesenhados são maiores.
   const expectedSizes = { slime: [32, 40], wolf: [44, 52], boar: [44, 52], skeleton: [40, 48], ghost: [32, 40], spider: [40, 48], werewolf: [40, 48] };
-  for (const [kind, definition] of Object.entries(ENEMY_TYPES)) {
+  // Os monstros das regiões novas não têm silhueta reserva: a arte deles está em monstersRegions.js.
+  for (const [kind, definition] of Object.entries(ENEMY_TYPES).filter(([kind]) => expectedShapes[kind])) {
     assert.equal(definition.placeholder.shape, expectedShapes[kind], `${kind} canvas silhouette`);
     assert.equal(definition.placeholder.size, expectedSizes[kind][0], `${kind} normal canvas size`);
     assert.equal(definition.placeholder.eliteSize, expectedSizes[kind][1], `${kind} elite canvas size`);
