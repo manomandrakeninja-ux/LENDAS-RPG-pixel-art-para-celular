@@ -37,6 +37,9 @@ import { RegionWorld } from './RegionWorld.js';
 import { Bestiary } from './Bestiary.js';
 import { HuntSystem } from './HuntSystem.js';
 import { HuntUI } from './HuntUI.js';
+import { EffectsPanel } from './EffectsPanel.js';
+import { actionForCode, keyCodeFor, loadKeybinds } from './Keybinds.js';
+import { WARD_TIP_TEXT, WARD_TIP_TITLE, isNewbieProtected, shouldShowWardTip } from './NewbieProtection.js';
 import { EnemyProjectiles } from './EnemyProjectiles.js';
 import { BestiaryPanel } from './BestiaryPanel.js';
 import { ShadowSystem } from './ShadowSystem.js';
@@ -187,6 +190,7 @@ export class GameScene extends Phaser.Scene {
     this.itemInfo = new ItemInfoPanel(this);
     this.touch = new TouchControls(this);
     this.settingsPanel = new SettingsPanel(this);
+    this.effectsPanel = new EffectsPanel(this);
     this.bestiaryPanel = new BestiaryPanel(this);
     this.equipmentPanel = new EquipmentPanel(this);
     // Tremor da tela pode ser desligado nas Configurações.
@@ -248,10 +252,16 @@ export class GameScene extends Phaser.Scene {
     });
     this.input.keyboard.on('keydown-F', () => this.restAtCamp());
     this.input.keyboard.on('keydown-R', () => this.sleepAtCamp());
-    this.input.keyboard.on('keydown-E', () => this.interact());
-    this.input.keyboard.on('keydown-J', () => this.attackNearby());
-    this.input.keyboard.on('keydown-Q', () => this.specialAttack());
-    this.input.keyboard.on('keydown-ONE', () => this.useHotkey('1'));
+    // Ataque, especial, esquiva, interagir e poção: teclas configuráveis (Ajustes → Teclas).
+    this.applyKeybinds(loadKeybinds());
+    this.input.keyboard.on('keydown', (event) => {
+      if (event.ctrlKey || event.altKey || event.metaKey) return;
+      const action = actionForCode(this.keybinds, event.code);
+      if (action === 'interact') this.interact();
+      else if (action === 'attack') this.attackNearby();
+      else if (action === 'special') this.specialAttack();
+      else if (action === 'potion') this.useHotkey('1');
+    });
     this.input.keyboard.on('keydown-TWO', () => this.useHotkey('2'));
     this.input.keyboard.on('keydown-THREE', () => this.useHotkey('3'));
     this.input.keyboard.on('keydown-FOUR', () => this.useHotkey('4'));
@@ -591,6 +601,7 @@ export class GameScene extends Phaser.Scene {
       this.enemyDirector.update(delta, this.player, this.timeState);
       this.enemyProjectiles.update(delta, this.player);
       this.huntUI.update();
+      this.effectsPanel?.update(delta);
       this.camp.defense.update(delta, this.enemies);
       this.updateBuildingLabels();
       this.villagers?.update(delta);
@@ -602,8 +613,6 @@ export class GameScene extends Phaser.Scene {
       this.updateGolemLock();
       this.boss?.update(delta, this.player);
       this.campaign?.update(delta);
-      if (Phaser.Input.Keyboard.JustDown(this.keys.attack)) this.attackNearby();
-      if (Phaser.Input.Keyboard.JustDown(this.keys.special)) this.specialAttack();
     }
 
     this.updateMining(delta);
@@ -955,6 +964,19 @@ export class GameScene extends Phaser.Scene {
     this.ui.showMessage(targets.length ? 'Golpe especial!' : 'Golpe especial — sem alvo por perto.');
   }
 
+  /** Aplica as teclas de ação (esquiva usa uma tecla do Phaser; as outras vêm do evento keydown). */
+  applyKeybinds(binds) {
+    this.keybinds = binds;
+    const keyCode = keyCodeFor(binds.dodge);
+    if (keyCode && this.keys) {
+      const old = this.keys.dodge;
+      if (old?.keyCode !== keyCode) {
+        this.keys.dodge = this.input.keyboard.addKey(keyCode);
+        if (old && old.keyCode !== 32) this.input.keyboard.removeKey(old, false);
+      }
+    }
+  }
+
   useHotkey(hotkey) {
     const type = itemForHotkey(hotkey, this.inventory.items, {
       level: this.progression.level,
@@ -1065,8 +1087,12 @@ export class GameScene extends Phaser.Scene {
   }
 
   grantExperience(amount, announce = true) {
+    const levelBefore = this.progression.level;
     const result = this.progression.addXp(amount);
     this.player.recalculateEquipment(this.camp.equipment);
+    if (result.leveledUp && shouldShowWardTip(levelBefore, this.progression.level)) {
+      this.showEpic(WARD_TIP_TITLE, WARD_TIP_TEXT, 7000);
+    }
     if (result.leveledUp) {
       this.worldMap.close();
       this.showLevelUpChoice();
@@ -1219,12 +1245,14 @@ export class GameScene extends Phaser.Scene {
       message = 'A proteção da Casa te trouxe de volta (30% de vida).';
     } else {
       // Bênção da Fogueira ou Amuleto de Proteção: nada da mochila fica para trás.
-      const ward = mode === 'normal' ? this.gear.consumeDeathProtection() : null;
+      // Até o nível 5 (novato) morrer não tira nada: a bênção e o amuleto ficam guardados.
+      const newbie = mode === 'normal' && isNewbieProtected(this.progression.level);
+      const ward = mode === 'normal' && !newbie ? this.gear.consumeDeathProtection() : null;
       if (ward) {
         this.player.recalculateEquipment(this.camp.equipment);
         window.dispatchEvent(new CustomEvent('lendas:gear'));
       }
-      if (mode === 'normal' && !ward) {
+      if (mode === 'normal' && !ward && !newbie) {
         const lost = this.inventory.removeFraction(COMBAT_CONFIG.death.carriedResourceLossRatio);
         if (Object.keys(lost).length > 0) this.deathBackpacks.create(this.player.x, this.player.y, lost);
       }
@@ -1239,7 +1267,9 @@ export class GameScene extends Phaser.Scene {
         ? 'A Fogueira te ressuscitou com 50% de vida.'
         : mode === 'raid'
           ? 'Você caiu no ataque e voltou à fogueira com 30% de vida.'
-          : ward === 'blessing'
+          : newbie
+            ? 'Você caiu, mas a proteção de novato guardou toda a sua mochila.'
+            : ward === 'blessing'
             ? 'Você caiu, mas a Bênção da Fogueira protegeu sua mochila.'
             : ward === 'amulet'
               ? 'Você caiu. O Amuleto de Proteção se quebrou e salvou sua mochila.'

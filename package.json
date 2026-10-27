@@ -37,7 +37,8 @@
     "test:runtime:story": "node scripts/story-runtime-check.mjs",
     "test:runtime:world": "node scripts/world-runtime-check.mjs",
     "test:runtime:gear": "node scripts/gear-runtime-check.mjs",
-    "test:runtime:hunt": "node scripts/hunt-runtime-check.mjs"
+    "test:runtime:hunt": "node scripts/hunt-runtime-check.mjs",
+    "test:runtime:comfort": "node scripts/comfort-runtime-check.mjs"
   },
   "dependencies": {
     "@fontsource/press-start-2p": "^5.2.6",

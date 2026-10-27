@@ -9,6 +9,7 @@ import './map.css';
 import './item-info.css';
 import './world.css';
 import './equipment.css';
+import './comfort.css';
 
 // A fonte Press Start 2P só fica nítida em múltiplos de 8 px e sem suavização.
 // Os textos do mundo são ampliados 2x pela câmera: renderizá-los em resolução 2
@@ -51,3 +52,10 @@ document.fonts.load('10px "Press Start 2P"').then(() => {
   });
   window.__LENDAS__ = game;
 });
+
+// Instalável e offline: o service worker só entra no build de produção (no dev do Vite atrapalharia).
+if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js', { scope: './' }).catch(() => {});
+  });
+}

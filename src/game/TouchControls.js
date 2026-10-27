@@ -3,7 +3,7 @@
 // No computador, abra o jogo com ?toque=1 para ver e testar os controles com o mouse
 // (?toque=0 esconde mesmo num celular).
 
-import { loadSettings } from './Settings.js';
+import { STICK_SIZES, loadSettings } from './Settings.js';
 
 const STICK_RADIUS = 44;
 const DEAD_ZONE = 0.15;
@@ -49,6 +49,7 @@ export class TouchControls {
     this.dodgeQueued = false;
     this.suppressActionClickUntil = 0;
     this.visible = true;
+    this.stickRadius = STICK_RADIUS;
 
     const mode = detectTouchMode();
     this.enabled = false;
@@ -70,6 +71,7 @@ export class TouchControls {
     this.enabled = true;
     document.body.classList.add('is-touch');
     this.root.hidden = false;
+    this.applyLayout();
 
     this.listen(this.zone, 'pointerdown', (event) => this.onStickDown(event));
     this.listen(this.zone, 'pointermove', (event) => this.onStickMove(event));
@@ -104,6 +106,17 @@ export class TouchControls {
     this.scene.ui?.resize?.();
   }
 
+  /** Tamanho e lado do joystick (Configurações → Joystick). */
+  applyLayout(settings = loadSettings()) {
+    const size = STICK_SIZES[settings.stickSize] ?? STICK_SIZES.medium;
+    const right = settings.stickSide === 'right';
+    this.stickRadius = size.radius;
+    this.base.style.width = `${size.base}px`;
+    this.base.style.height = `${size.base}px`;
+    this.root.classList.toggle('stick-right', right);
+    document.body.classList.toggle('stick-right', right);
+  }
+
   /** Volta para o modo computador (Configurações → Interface → Computador). */
   disable() {
     if (!this.enabled) return;
@@ -112,7 +125,7 @@ export class TouchControls {
     this.enabled = false;
     this.resetStick();
     this.dodgeQueued = false;
-    document.body.classList.remove('is-touch');
+    document.body.classList.remove('is-touch', 'stick-right');
     this.root.hidden = true;
     this.root.classList.remove('is-hidden');
     this.visible = true;
@@ -168,7 +181,7 @@ export class TouchControls {
 
   onStickMove(event) {
     if (event.pointerId !== this.stickPointer || !this.origin) return;
-    const result = stickVector(event.clientX - this.origin.x, event.clientY - this.origin.y);
+    const result = stickVector(event.clientX - this.origin.x, event.clientY - this.origin.y, this.stickRadius);
     this.vector = { x: result.x, y: result.y };
     this.knob.style.transform = `translate(${Math.round(result.knobX)}px, ${Math.round(result.knobY)}px)`;
   }

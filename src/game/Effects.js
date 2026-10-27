@@ -220,6 +220,34 @@ export class PixelEffects {
     this.fireflyEmitter.emitParticleAt(x, y - 6, 6);
   }
 
+  /** Redemoinho azul (só visual) no lugar onde um monstro vai nascer. */
+  spawnSwirl(x, y, duration = 600) {
+    const scene = this.scene;
+    const graphics = scene.add.graphics().setPosition(x, y).setDepth(y + 20);
+    scene.hudCamera?.ignore(graphics);
+    const state = { t: 0 };
+    scene.tweens.add({
+      targets: state,
+      t: 1,
+      duration,
+      onUpdate: () => {
+        const t = state.t;
+        graphics.clear();
+        graphics.fillStyle(0x6fd0ff, 0.22 * (1 - t));
+        graphics.fillEllipse(0, 2, 34 * (0.6 + t * 0.4), 16 * (0.6 + t * 0.4));
+        for (let arm = 0; arm < 3; arm += 1) {
+          const angle = t * Math.PI * 5 + arm * 2.09;
+          graphics.lineStyle(2, 0x9fe4ff, 1 - t * 0.7);
+          graphics.beginPath();
+          graphics.arc(0, 0, (18 - arm * 4) * (1 - t * 0.3), angle, angle + 2.1);
+          graphics.strokePath();
+        }
+      },
+      onComplete: () => graphics.destroy()
+    });
+    return graphics;
+  }
+
   spawnHeal(x, y) {
     this.dustEmitter.setParticleTint(0x9ed47a);
     this.dustEmitter.emitParticleAt(x, y, 8);

@@ -1,6 +1,7 @@
 import { PixelCanvas } from '../art/pixel.js';
 import { detectTouchMode } from './TouchControls.js';
 import { loadSettings, saveSettings } from './Settings.js';
+import { ACTION_LABELS, KEY_ACTIONS, DEFAULT_KEYBINDS, keyLabel, loadKeybinds, rebind, saveKeybinds } from './Keybinds.js';
 
 /** Ícone de engrenagem em pixel art (16 x 16) como data URL. */
 function gearIconUrl() {
@@ -25,7 +26,9 @@ const OPTIONS = {
   interface: [['auto', 'Automática'], ['pc', 'Computador'], ['mobile', 'Celular']],
   sound: [[true, 'Ligado'], [false, 'Desligado']],
   shake: [[true, 'Ligado'], [false, 'Desligado']],
-  labels: [['auto', 'Automático'], ['always', 'Sempre'], ['near', 'Só de perto']]
+  labels: [['auto', 'Automático'], ['always', 'Sempre'], ['near', 'Só de perto']],
+  stickSize: [['small', 'Pequeno'], ['medium', 'Médio'], ['large', 'Grande']],
+  stickSide: [['left', 'Esquerda'], ['right', 'Direita']]
 };
 
 /**
@@ -36,6 +39,9 @@ export class SettingsPanel {
   constructor(scene) {
     this.scene = scene;
     this.settings = loadSettings();
+    this.keybinds = loadKeybinds();
+    this.listening = null;
+    this.keyMessage = '';
     const host = document.getElementById('game') ?? document.body;
 
     this.button = document.createElement('button');
@@ -86,7 +92,11 @@ export class SettingsPanel {
         this.confirmRestart = false;
         this.render();
       } else if (action === 'restart-confirm') this.scene.restartFromScratch();
-      else if (action === 'fullscreen') this.scene.touch?.toggleFullscreen();
+      else if (action === 'key') this.startListening(value);
+      else if (action === 'keys-reset') {
+        this.keybinds = { ...DEFAULT_KEYBINDS };
+        this.commitKeybinds('Teclas padrão restauradas.');
+      } else if (action === 'fullscreen') this.scene.touch?.toggleFullscreen();
       else if (action === 'save') {
         this.scene.save();
         this.scene.ui?.showMessage('Jogo salvo.');
@@ -94,6 +104,25 @@ export class SettingsPanel {
       else this.set(action, value === 'true' ? true : value === 'false' ? false : value);
     };
     this.handleKey = (event) => {
+      if (this.listening && this.isOpen) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        if (event.key === 'Escape') {
+          this.listening = null;
+          this.keyMessage = '';
+          this.render();
+          return;
+        }
+        const result = rebind(this.keybinds, this.listening, event.code);
+        if (result.ok) {
+          this.keybinds = result.binds;
+          this.commitKeybinds('');
+        } else {
+          this.keyMessage = result.message;
+          this.render();
+        }
+        return;
+      }
       if (event.key === 'Escape' && this.isOpen) {
         event.stopPropagation();
         this.close();
@@ -158,7 +187,22 @@ export class SettingsPanel {
       if (mode.enabled) scene.touch.enable();
       else scene.touch.disable();
     }
+    if (scene.touch?.enabled) scene.touch.applyLayout(this.settings);
     scene.ui?.resize?.();
+  }
+
+  startListening(action) {
+    this.listening = action;
+    this.keyMessage = 'Aperte a nova tecla (ESC cancela).';
+    this.render();
+  }
+
+  commitKeybinds(message) {
+    this.listening = null;
+    this.keyMessage = message;
+    saveKeybinds(this.keybinds);
+    this.scene.applyKeybinds?.(this.keybinds);
+    this.render();
   }
 
   get shake() {
@@ -182,6 +226,19 @@ export class SettingsPanel {
       </div>`;
   }
 
+  keysSection() {
+    const rows = KEY_ACTIONS.map((action) => `
+        <button type="button" data-settings="key" data-value="${action}" class="${this.listening === action ? 'is-listening' : ''}">${ACTION_LABELS[action]}: ${this.listening === action ? '...' : keyLabel(this.keybinds[action])}</button>`).join('');
+    return `
+      <div class="settings-panel__row settings-panel__keys">
+        <h3>Teclas (computador)</h3>
+        <p>Toque numa ação e aperte a nova tecla.</p>
+        <div class="settings-panel__choices">${rows}</div>
+        <p class="settings-panel__keymsg">${this.keyMessage}</p>
+        <div class="settings-panel__choices"><button type="button" data-settings="keys-reset">TECLAS PADRÃO</button></div>
+      </div>`;
+  }
+
   render() {
     if (!this.isOpen) return;
     const touch = this.scene.touch?.enabled;
@@ -199,6 +256,9 @@ export class SettingsPanel {
       </div>
       ${this.choiceRow('shake', 'Tremor da tela', 'Balanço da câmera nos golpes e explosões.')}
       ${this.choiceRow('labels', 'Nomes dos prédios', 'Automático: no celular só aparecem perto do personagem.')}
+      ${this.choiceRow('stickSize', 'Tamanho do joystick', 'Controles de toque.')}
+      ${this.choiceRow('stickSide', 'Lado do joystick', 'Os botões de ação ficam do outro lado.')}
+      ${touch ? '' : this.keysSection()}
       <div class="settings-panel__row settings-panel__actions">
         <button type="button" data-settings="fullscreen">TELA CHEIA</button>
         <button type="button" data-settings="save">SALVAR AGORA</button>

@@ -1,6 +1,7 @@
 import { WORLD } from './config.js';
 import { MAP_SCALE } from './MapRenderer.js';
 import { DUNGEON_CONFIG } from '../data/buildings.js';
+import { regionCardAt } from './RegionCard.js';
 
 export const WORLD_MAP_MARKER_TYPES = Object.freeze({
   camp: 'camp',
@@ -143,6 +144,24 @@ export class WorldMapOverlay {
       this.setZoom(this.zoomIndex + (event.deltaY < 0 ? 1 : -1));
     };
     this.zoomBar.addEventListener('click', this.handleZoomClick);
+    // Cartão da região: tocar ou clicar no mapa mostra nome, nível, monstros, cavernas e portos.
+    this.card = document.createElement('div');
+    this.card.id = 'region-card';
+    this.card.className = 'region-card';
+    this.card.hidden = true;
+    this.root.append(this.card);
+    this.handleCanvasClick = (event) => {
+      const rect = this.canvas.getBoundingClientRect();
+      if (!rect.width) return;
+      const view = this.view();
+      const x = view.left + ((event.clientX - rect.left) / rect.width) * view.width;
+      const y = view.top + ((event.clientY - rect.top) / rect.height) * view.height;
+      this.showRegionAt(x, y);
+    };
+    this.canvas.addEventListener('click', this.handleCanvasClick);
+    this.card.addEventListener('click', (event) => {
+      if (event.target.closest('[data-card-close]')) this.card.hidden = true;
+    });
     this.canvas.addEventListener('wheel', this.handleWheel, { passive: false });
   }
 
@@ -160,6 +179,27 @@ export class WorldMapOverlay {
     this.render();
   }
 
+  /** Mostra o cartão da região do ponto (x, y) do mundo; sem região (mar), esconde. */
+  showRegionAt(x, y) {
+    const card = regionCardAt(x, y);
+    this.regionCard = card;
+    if (!card) {
+      this.card.hidden = true;
+      return null;
+    }
+    const list = (items) => items.length ? items.join(', ') : '—';
+    this.card.innerHTML = `
+      <button type="button" class="region-card__close" data-card-close aria-label="Fechar cartão">✕</button>
+      <h3>${card.name}</h3>
+      <p>Nível ${card.levels}</p>
+      ${card.banner ? `<p>${card.banner}</p>` : ''}
+      <p><strong>Monstros:</strong> ${list(card.monsters)}</p>
+      <p><strong>Cavernas:</strong> ${list(card.caves)}</p>
+      <p><strong>Portos:</strong> ${list(card.docks)}</p>`;
+    this.card.hidden = false;
+    return card;
+  }
+
   open() {
     this.isOpen = true;
     this.root.hidden = false;
@@ -169,6 +209,7 @@ export class WorldMapOverlay {
   close() {
     this.isOpen = false;
     this.root.hidden = true;
+    this.card.hidden = true;
     this.target = null;
   }
 
@@ -378,5 +419,7 @@ export class WorldMapOverlay {
     this.closeButton.removeEventListener('click', this.handleClose);
     this.zoomBar?.removeEventListener('click', this.handleZoomClick);
     this.canvas.removeEventListener('wheel', this.handleWheel);
+    this.canvas.removeEventListener('click', this.handleCanvasClick);
+    this.card?.remove();
   }
 }

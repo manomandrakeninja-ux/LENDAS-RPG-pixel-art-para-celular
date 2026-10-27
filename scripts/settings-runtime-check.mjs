@@ -7,6 +7,7 @@ await runInChrome({ name: 'settings', port: 9379, width: 1280, height: 800 }, as
     const rect = await evaluate(`(() => {
       const element = document.querySelector(${JSON.stringify(selector)});
       if (!element) return null;
+      element.scrollIntoView({ block: 'center' });
       const r = element.getBoundingClientRect();
       return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
     })()`);

@@ -20,6 +20,8 @@ export function weightedChoice(entries, random = Math.random) {
   return entries[entries.length - 1].value;
 }
 
+const SPAWN_SWIRL_MS = 600;
+
 export class EnemyDirector {
   constructor(scene, enemies = [], options = {}) {
     this.scene = scene;
@@ -131,7 +133,7 @@ export class EnemyDirector {
     if (!position) return false;
     const eliteChance = ELITE_CONFIG.chance[period];
     const elite = this.random() < eliteChance;
-    this.addEnemy(selected.type, position.x, position.y, { elite, isNight: period === 'night' });
+    this.addEnemyWithSwirl(selected.type, position.x, position.y, { elite, isNight: period === 'night' });
     return true;
   }
 
@@ -149,9 +151,21 @@ export class EnemyDirector {
       const x = position.x + (index ? (this.random() - 0.5) * 70 : 0);
       const y = position.y + (index ? (this.random() - 0.5) * 70 : 0);
       if (this.scene.regionWorld && !this.scene.regionWorld.walkable(x, y)) continue;
-      this.addEnemy(type, x, y, { elite: elite && index === 0, isNight: period === 'night', level: levelInRange(definition, REGION_INFO[region]?.levelRange) });
+      this.addEnemyWithSwirl(type, x, y, { elite: elite && index === 0, isNight: period === 'night', level: levelInRange(definition, REGION_INFO[region]?.levelRange) });
     }
     return true;
+  }
+
+  /** Nascimento natural: redemoinho azul por ~0,6 s e só então o monstro aparece. */
+  addEnemyWithSwirl(type, x, y, options) {
+    const scene = this.scene;
+    if (!scene.effects?.spawnSwirl || !scene.time) return this.addEnemy(type, x, y, options);
+    scene.effects.spawnSwirl(x, y, SPAWN_SWIRL_MS);
+    scene.time.delayedCall(SPAWN_SWIRL_MS, () => {
+      if (!scene.sys?.isActive() || scene.gameOver) return;
+      this.addEnemy(type, x, y, options);
+    });
+    return null;
   }
 
   addEnemy(type, x, y, options) {

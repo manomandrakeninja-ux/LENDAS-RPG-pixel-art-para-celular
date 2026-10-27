@@ -791,7 +791,7 @@ body.is-phone .quest-tracker h3 {
 }
 
 .touch-controls:not([hidden]) ~ .hunt-hud {
-  top: 316px;
+  top: 128px;
   left: 12px;
 }
 

@@ -485,7 +485,7 @@ export class GameUI {
     const raid = this.scene.raid;
     if (raid?.statusText) parts.push(raid.statusText);
     if (this.scene.isRaining) parts.push('CHUVA');
-    for (const buff of this.scene.buffs?.list() ?? []) parts.push(buff.name.toUpperCase());
+    // Os buffs agora aparecem como ícones no painel de efeitos (EffectsPanel).
     return parts.join(' • ');
   }
 

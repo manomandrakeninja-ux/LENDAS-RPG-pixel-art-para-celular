@@ -1,0 +1,153 @@
+/* Fase 5: painel de efeitos, cartão da região no mapa, joystick à direita, teclas. */
+
+.effects-panel {
+  position: absolute;
+  left: 20px;
+  top: 160px;
+  z-index: 6;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  max-width: 220px;
+}
+
+.effects-panel[hidden],
+.effects-tip[hidden] {
+  display: none;
+}
+
+.effects-panel__icon {
+  display: grid;
+  justify-items: center;
+  min-width: 30px;
+  padding: 2px 3px;
+  border: 2px solid #d7bf83;
+  background: #26392dee;
+  box-shadow: 2px 2px 0 #101a16;
+  color: #fff1ce;
+  font: 8px var(--pixel-font);
+  cursor: pointer;
+}
+
+.effects-panel__icon b {
+  font-weight: normal;
+  font-size: 11px;
+}
+
+.effects-panel__icon span {
+  font-size: 6px;
+  color: #cfe9ff;
+}
+
+.effects-panel__icon--bad {
+  border-color: #ff8c7a;
+  background: #5a2020ee;
+}
+
+.effects-panel__icon--ward {
+  border-color: #ffe08a;
+}
+
+.effects-panel__icon--hunt {
+  border-color: #8fd38a;
+}
+
+.effects-tip {
+  position: absolute;
+  left: 20px;
+  top: 204px;
+  z-index: 7;
+  display: grid;
+  gap: 4px;
+  max-width: 260px;
+  padding: 8px 10px;
+  border: 2px solid #d7bf83;
+  background: #1a2a22f2;
+  box-shadow: 3px 3px 0 #101a16;
+  color: #fff1ce;
+  font: 8px/1.5 var(--pixel-font);
+}
+
+.effects-tip strong {
+  color: #ffe08a;
+  font-weight: normal;
+}
+
+/* Cartão da região no mapa grande */
+.region-card {
+  position: absolute;
+  left: 50%;
+  bottom: 14px;
+  z-index: 3;
+  display: grid;
+  gap: 5px;
+  width: min(92%, 420px);
+  padding: 10px 12px;
+  transform: translateX(-50%);
+  border: 2px solid #c9a76b;
+  border-radius: 10px;
+  background: linear-gradient(var(--parchment, #f1e2bd), var(--parchment-2, #d9c394));
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5);
+  color: var(--ink, #2a1d12);
+  font: 9px/1.6 var(--pixel-font);
+}
+
+.region-card[hidden] {
+  display: none;
+}
+
+.region-card h3 {
+  margin: 0;
+  font-size: 11px;
+}
+
+.region-card p {
+  margin: 0;
+}
+
+.region-card__close {
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  border: 0;
+  background: transparent;
+  font: 12px var(--pixel-font);
+  cursor: pointer;
+}
+
+/* Joystick à direita: botões de ação passam para a esquerda. */
+.touch-controls.stick-right .touch-stick-zone {
+  left: auto;
+  right: 0;
+}
+
+.touch-controls.stick-right .touch-stick-base {
+  left: auto;
+  right: calc(var(--touch-gap-right) + 8px);
+}
+
+.touch-controls.stick-right .touch-buttons {
+  right: auto;
+  left: var(--touch-gap);
+}
+
+body.stick-right.is-touch .world-action {
+  right: auto;
+  left: var(--touch-gap, 12px);
+}
+
+/* Teclas configuráveis em Ajustes */
+.settings-panel__keys {
+  display: grid;
+  gap: 6px;
+}
+
+.settings-panel__keys button.is-listening {
+  background: #ffe08a;
+  color: #24190f;
+}
+
+.settings-panel__keymsg {
+  min-height: 1.2em;
+  color: #ffb4a4;
+}
