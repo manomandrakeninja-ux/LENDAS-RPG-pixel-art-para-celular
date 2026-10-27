@@ -562,6 +562,7 @@ export class GameScene extends Phaser.Scene {
       this.villagers?.update(delta);
       this.regionWorld.update(delta);
       this.shadows?.update(delta, this.timeState);
+      this.updateLegendAura();
       this.updateEnemyStatus(delta);
       this.updateTraps();
       this.updateGolemLock();
@@ -790,7 +791,8 @@ export class GameScene extends Phaser.Scene {
     const multiplier = finisher
       ? this.progression.hasPerk('rhythm') ? PERK_EFFECTS.rhythmFinisherMultiplier : COMBAT_CONFIG.combo.finisherMultiplier
       : 1;
-    const attack = Math.round(this.player.attack * multiplier);
+    const perkMultiplier = this.progression.damageMultiplier(this.player.health / Math.max(1, this.player.maxHealth));
+    const attack = Math.round(this.player.attack * multiplier * perkMultiplier);
     const angle = swingAngle;
     if (this.bossIsProtected(target)) {
       this.effects.spawnSwingTrail(this.player.x, this.player.y, angle, false);
@@ -1004,6 +1006,20 @@ export class GameScene extends Phaser.Scene {
     this.save();
   }
 
+  /** Nível máximo: aura dourada pulsando no pé do personagem. */
+  updateLegendAura() {
+    if (!this.progression.hasLegendAura) {
+      this.legendAura?.setVisible(false);
+      return;
+    }
+    if (!this.legendAura) {
+      this.legendAura = this.add.ellipse(0, 0, 44, 16, 0xffd56b, 0.35).setStrokeStyle(2, 0xfff1a8, 0.8);
+    }
+    const pulse = 0.25 + 0.15 * Math.sin(this.time.now / 260);
+    this.legendAura.setVisible(true).setPosition(this.player.x, this.player.y + 14)
+      .setFillStyle(0xffd56b, pulse).setDepth(this.player.depth - 1);
+  }
+
   collectExperience(amount) {
     this.grantExperience(amount, true);
     this.audio.playCollect();
@@ -1112,7 +1128,7 @@ export class GameScene extends Phaser.Scene {
     else this.experiencePickups.spawn(enemy.x, enemy.y, enemyXp(enemy.kind, enemy.isElite));
     // Monstros das regiões mais perigosas deixam mais moedas.
     const coinTier = 1 + Math.max(0, (enemy.definition.tier ?? 1) - 2) * 0.5;
-    this.coinPickups.spawn(enemy.x + 9, enemy.y, Math.round(rollCoinDrop(enemy.definition.period, Math.random, enemy.isElite) * coinTier));
+    this.coinPickups.spawn(enemy.x + 9, enemy.y, Math.round(rollCoinDrop(enemy.definition.period, Math.random, enemy.isElite) * coinTier * this.progression.coinMultiplier));
     if (Object.keys(result.remaining).length > 0) {
       this.deathBackpacks.create(enemy.x, enemy.y, result.remaining);
     }

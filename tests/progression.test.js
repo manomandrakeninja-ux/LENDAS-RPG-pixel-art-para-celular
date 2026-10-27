@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { ENEMY_TYPES, enemyXp } from '../src/data/enemies.js';
-import { LEVEL_CHOICES, PlayerProgression, xpRequiredForLevel } from '../src/data/progression.js';
+import { LEVEL_CHOICES, PERK_LEVELS, PlayerProgression, xpRequiredForLevel } from '../src/data/progression.js';
 
 test('XP levels the player and queues one choice per level (+15 vida, +3 ataque, +2 defesa)', () => {
   const progression = new PlayerProgression();
@@ -28,22 +28,47 @@ test('XP levels the player and queues one choice per level (+15 vida, +3 ataque,
     { health: 15, attack: 3, defense: 2 });
 });
 
-test('XP to level up is current level × 100 and progression stops at level 20', () => {
+test('XP to level up is level × 100 up to 20, steeper after, and progression stops at level 150', () => {
   assert.equal(xpRequiredForLevel(1), 100);
   assert.equal(xpRequiredForLevel(2), 200);
   assert.equal(xpRequiredForLevel(19), 1900);
+  assert.equal(xpRequiredForLevel(20), 2000);
+  assert.equal(xpRequiredForLevel(50), 50 * 100 * 2);
+  assert.ok(xpRequiredForLevel(149) > xpRequiredForLevel(100));
 
   const progression = new PlayerProgression();
-  progression.addXp(1_000_000);
-  assert.equal(progression.level, 20);
+  progression.addXp(1_000_000_000);
+  assert.equal(progression.level, 150);
   assert.equal(progression.xp, 0);
   assert.equal(progression.xpToNext, 0);
   assert.equal(progression.xpRatio, 1);
-  assert.equal(progression.pendingLevels.length, 19);
+  assert.equal(progression.pendingLevels.length, 149);
+  assert.deepEqual(progression.pendingPerks, PERK_LEVELS);
+  assert.equal(progression.hasLegendAura, true);
 
   progression.addXp(1000);
-  assert.equal(progression.level, 20);
-  assert.equal(progression.pendingLevels.length, 19);
+  assert.equal(progression.level, 150);
+  assert.equal(progression.pendingLevels.length, 149);
+});
+
+test('late perks change health, attack, defense, damage, coins and XP', () => {
+  const base = new PlayerProgression({ version: 2, level: 60, perks: [], pendingPerks: [] });
+  const strong = new PlayerProgression({ version: 2, level: 60, perks: ['giant', 'titan', 'warlord', 'fortress', 'critical', 'fury', 'goldfinder', 'scholar'], pendingPerks: [] });
+  assert.equal(strong.maxHealth, Math.round((base.maxHealth + 60) * 1.12));
+  assert.equal(strong.attackBonus, base.attackBonus + 15);
+  assert.equal(strong.defenseBonus, base.defenseBonus + 15);
+  assert.equal(strong.coinMultiplier, 1.3);
+  assert.equal(strong.damageMultiplier(1, () => 0.99), 1);
+  assert.equal(strong.damageMultiplier(0.2, () => 0.99), 1.4);
+  assert.ok(Math.abs(strong.damageMultiplier(0.2, () => 0) - 2.8) < 1e-9);
+  assert.equal(strong.addXp(100).gained, 115);
+  // Todo marco precisa ter ao menos 3 talentos para escolher.
+  const all = new PlayerProgression({ version: 2, level: 150, perks: [], pendingPerks: [] });
+  for (const level of PERK_LEVELS) {
+    const offer = all.perkOffer(level);
+    assert.equal(offer.length, 3, `marco ${level}`);
+    all.perks.push(offer[0]);
+  }
 });
 
 test('progression state survives serialization including pending choices', () => {

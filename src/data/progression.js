@@ -1,6 +1,7 @@
-// XP para subir: nível atual × 100. A cada nível, uma escolha entre três bônus.
+// XP para subir: nível atual × 100 até o 20; depois a curva sobe mais (até o 150).
+// A cada nível, uma escolha entre três bônus.
 export const PROGRESSION_CONFIG = Object.freeze({
-  maxLevel: 20,
+  maxLevel: 150,
   xpPerLevel: 100,
   version: 2
 });
@@ -11,7 +12,9 @@ export const LEVEL_CHOICES = Object.freeze({
   defense: Object.freeze({ amount: 2, label: '+2 DEFESA' })
 });
 
-export const PERK_LEVELS = Object.freeze([5, 10, 15, 20]);
+export const PERK_LEVELS = Object.freeze([5, 10, 15, 20, 30, 45, 60, 80, 100, 125, 150]);
+/** Nível da aura dourada no pé do personagem. */
+export const LEGEND_AURA_LEVEL = 150;
 export const PERK_OFFER_SIZE = 3;
 
 export const PERKS = Object.freeze({
@@ -20,7 +23,15 @@ export const PERKS = Object.freeze({
   brute: Object.freeze({ name: 'Golpe Brutal', description: 'O golpe especial (Q) causa 3x o ataque em vez de 2x.' }),
   rhythm: Object.freeze({ name: 'Ritmo de Batalha', description: 'O 3º golpe do combo causa 2x o ataque em vez de 1,5x.' }),
   vitality: Object.freeze({ name: 'Vigor', description: '+25 de vida máxima.' }),
-  scavenger: Object.freeze({ name: 'Saqueador', description: '25% de chance de dobrar os drops de inimigos.' })
+  scavenger: Object.freeze({ name: 'Saqueador', description: '25% de chance de dobrar os drops de inimigos.' }),
+  giant: Object.freeze({ name: 'Colosso', description: '+12% de vida máxima.' }),
+  fortress: Object.freeze({ name: 'Fortaleza', description: '+15 de defesa.' }),
+  warlord: Object.freeze({ name: 'Senhor da Guerra', description: '+15 de ataque.' }),
+  titan: Object.freeze({ name: 'Titã', description: '+60 de vida máxima.' }),
+  critical: Object.freeze({ name: 'Crítico', description: '12% de chance de causar dano dobrado.' }),
+  fury: Object.freeze({ name: 'Fúria', description: 'Abaixo de 40% de vida, causa 40% mais dano.' }),
+  goldfinder: Object.freeze({ name: 'Mão de Ouro', description: 'Inimigos deixam 30% mais moedas.' }),
+  scholar: Object.freeze({ name: 'Sábio', description: '+15% de XP ganho.' })
 });
 
 export const PERK_EFFECTS = Object.freeze({
@@ -30,12 +41,24 @@ export const PERK_EFFECTS = Object.freeze({
   bruteSpecialMultiplier: 3,
   rhythmFinisherMultiplier: 2,
   vitalityHealth: 25,
-  scavengerChance: 0.25
+  scavengerChance: 0.25,
+  giantHealthMultiplier: 1.12,
+  fortressDefense: 15,
+  warlordAttack: 15,
+  titanHealth: 60,
+  criticalChance: 0.12,
+  criticalMultiplier: 2,
+  furyThreshold: 0.4,
+  furyMultiplier: 1.4,
+  goldfinderMultiplier: 1.3,
+  scholarXpMultiplier: 1.15
 });
 
 export function xpRequiredForLevel(level) {
   const normalizedLevel = Math.max(1, Math.floor(Number(level) || 1));
-  return normalizedLevel * PROGRESSION_CONFIG.xpPerLevel;
+  // Até o 20 é linear (como sempre foi); depois cresce para o fim de jogo durar.
+  const lateGame = 1 + Math.max(0, normalizedLevel - 20) / 30;
+  return Math.round(normalizedLevel * PROGRESSION_CONFIG.xpPerLevel * lateGame);
 }
 
 export class PlayerProgression {
@@ -86,8 +109,26 @@ export class PlayerProgression {
   }
 
   get maxHealth() {
-    return this.baseMaxHealth + this.legacy.health + this.healthPoints * LEVEL_CHOICES.health.amount +
-      (this.hasPerk('vitality') ? PERK_EFFECTS.vitalityHealth : 0);
+    const flat = this.baseMaxHealth + this.legacy.health + this.healthPoints * LEVEL_CHOICES.health.amount +
+      (this.hasPerk('vitality') ? PERK_EFFECTS.vitalityHealth : 0) +
+      (this.hasPerk('titan') ? PERK_EFFECTS.titanHealth : 0);
+    return this.hasPerk('giant') ? Math.round(flat * PERK_EFFECTS.giantHealthMultiplier) : flat;
+  }
+
+  /** Multiplicador de dano dos talentos Crítico e Fúria para um golpe. */
+  damageMultiplier(healthRatio = 1, random = Math.random) {
+    let multiplier = 1;
+    if (this.hasPerk('fury') && healthRatio < PERK_EFFECTS.furyThreshold) multiplier *= PERK_EFFECTS.furyMultiplier;
+    if (this.hasPerk('critical') && random() < PERK_EFFECTS.criticalChance) multiplier *= PERK_EFFECTS.criticalMultiplier;
+    return multiplier;
+  }
+
+  get coinMultiplier() {
+    return this.hasPerk('goldfinder') ? PERK_EFFECTS.goldfinderMultiplier : 1;
+  }
+
+  get hasLegendAura() {
+    return this.level >= LEGEND_AURA_LEVEL;
   }
 
   hasPerk(perk) {
@@ -127,11 +168,13 @@ export class PlayerProgression {
   }
 
   get attackBonus() {
-    return this.legacy.attack + this.attackPoints * LEVEL_CHOICES.attack.amount;
+    return this.legacy.attack + this.attackPoints * LEVEL_CHOICES.attack.amount +
+      (this.hasPerk('warlord') ? PERK_EFFECTS.warlordAttack : 0);
   }
 
   get defenseBonus() {
-    return this.legacy.defense + this.defensePoints * LEVEL_CHOICES.defense.amount;
+    return this.legacy.defense + this.defensePoints * LEVEL_CHOICES.defense.amount +
+      (this.hasPerk('fortress') ? PERK_EFFECTS.fortressDefense : 0);
   }
 
   get hasPendingAttribute() {
@@ -147,7 +190,8 @@ export class PlayerProgression {
   }
 
   addXp(amount) {
-    const gained = Math.max(0, Math.floor(Number(amount) || 0));
+    const scholar = this.hasPerk('scholar') ? PERK_EFFECTS.scholarXpMultiplier : 1;
+    const gained = Math.max(0, Math.round((Number(amount) || 0) * scholar));
     if (gained === 0 || this.level >= PROGRESSION_CONFIG.maxLevel) {
       return { gained: 0, levelsGained: 0, leveledUp: false };
     }

@@ -24,3 +24,5 @@ previa-personagens/
 .claude-flow/sessions/
 RETOMAR_TRABALHO.md
 retomar-claude.ps1
+retomada-claude.log
+.retomada.lock
