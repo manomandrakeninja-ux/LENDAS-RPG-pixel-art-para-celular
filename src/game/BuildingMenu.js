@@ -12,6 +12,9 @@ import { MARKET_CATALOG, findCatalogEntry, sellPriceOf } from '../data/economy.j
 import { TRAVELER_GOODS, questById } from '../data/travelers.js';
 import { TORCH_RECIPE } from '../data/itemCatalog.js';
 import { recipeItems, recipesFor } from '../data/craftRecipes.js';
+import { availableHunts, huntReward } from './HuntSystem.js';
+import { REGION_INFO } from '../data/worldRegions.js';
+import { ENEMY_TYPES } from '../data/enemies.js';
 import { GEAR_ITEMS, SLOT_NAMES, blessingPrice, describeStats, gearStats } from '../data/gear.js';
 import { RESOURCE_TYPES } from './config.js';
 import { gearIconHtml } from './gearIconUrl.js';
@@ -94,7 +97,10 @@ export class BuildingMenu {
       // Loja de equipamentos e Bênção chamam a cena direto.
       const direct = {
         'buy-gear': () => this.scene.buyGear?.(button.dataset.arg),
-        'buy-blessing': () => this.scene.buyBlessing?.()
+        'buy-blessing': () => this.scene.buyBlessing?.(),
+        'hunt-accept': () => this.scene.huntAction?.('accept', button.dataset.arg),
+        'hunt-turnin': () => this.scene.huntAction?.('turnin'),
+        'hunt-abandon': () => this.scene.huntAction?.('abandon')
       }[button.dataset.action];
       const result = direct ? direct() : this.scene.buildingMenuAction?.(button.dataset.action, button.dataset.arg, button.dataset.arg2);
       this.scene.lastBuildingMessage = result?.message ?? this.scene.lastBuildingMessage ?? '';
@@ -406,6 +412,43 @@ export class BuildingMenu {
         </article>`;
   }
 
+  /** Mestre de Caça: quadro de caçadas por região e nível. */
+  huntCard() {
+    const scene = this.scene;
+    const hunts = scene.hunts;
+    if (!hunts) return '';
+    const level = scene.progression?.level ?? 1;
+    if (hunts.hunt) {
+      const hunt = hunts.hunt;
+      const reward = huntReward(hunt, hunts.timesDone(hunt.id));
+      return `
+        <article class="building-menu__card" data-hunt-board>
+          <h2>Quadro de Caçadas</h2>
+          <p>${hunts.label()} • ${REGION_INFO[hunt.region]?.name ?? hunt.region}</p>
+          <div class="building-menu__stat">Recompensa: ${reward.xp} XP • ${reward.coins} moedas${hunts.timesDone(hunt.id) ? ' (repetida)' : ''}</div>
+          <div class="building-menu__actions">
+            <button type="button" class="button--primary" data-action="hunt-turnin" ${disabled(!hunts.complete)}>${hunts.complete ? 'ENTREGAR CAÇADA' : 'EM ANDAMENTO'}</button>
+            <button type="button" data-action="hunt-abandon">ABANDONAR</button>
+          </div>
+        </article>`;
+    }
+    const list = availableHunts(level)
+      .sort((a, b) => Math.abs(a.level - level) - Math.abs(b.level - level) || a.level - b.level)
+      .slice(0, 6);
+    const rows = list.map((hunt) => {
+      const reward = huntReward(hunt, hunts.timesDone(hunt.id));
+      const times = hunts.timesDone(hunt.id);
+      return `<div class="building-menu__stat">Derrote ${hunt.count} ${ENEMY_TYPES[hunt.kind].name} (nv ${hunt.level}) • ${REGION_INFO[hunt.region]?.name ?? hunt.region} • ${reward.xp} XP, ${reward.coins} moedas${times ? ' • repetida' : ''}
+        <button type="button" data-action="hunt-accept" data-arg="${hunt.id}">ACEITAR</button></div>`;
+    }).join('');
+    return `
+        <article class="building-menu__card" data-hunt-board>
+          <h2>Quadro de Caçadas</h2>
+          <p>Uma caçada por vez. Repetir a mesma paga menos.</p>
+          ${rows}
+        </article>`;
+  }
+
   renderCampfire() {
     const scene = this.scene;
     const camp = this.camp;
@@ -431,6 +474,7 @@ export class BuildingMenu {
           <div class="building-menu__actions"><button type="button" class="button--primary" data-action="rest-fire">DESCANSAR</button></div>
         </article>
         ${this.blessingCard()}
+        ${this.huntCard()}
         <article class="building-menu__card">
           <h2>Fabricar tocha</h2>
           <p>2 madeiras + 1 tecido → 1 tocha (tecla 3 acende e amplia a luz).</p>

@@ -774,3 +774,79 @@ body.is-phone .quest-tracker h3 {
   color: var(--ink);
   font: 7px/1.7 var(--pixel-font);
 }
+
+/* =====================================================================
+   Caçadas: contador, botão da seta e seta de navegação.
+   ===================================================================== */
+.hunt-hud {
+  position: absolute;
+  z-index: 6;
+  top: 262px;
+  left: 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  pointer-events: none;
+}
+
+.touch-controls:not([hidden]) ~ .hunt-hud {
+  top: 316px;
+  left: 12px;
+}
+
+.hunt-counter,
+.nav-toggle {
+  pointer-events: auto;
+  padding: 6px 8px;
+  border: 2px solid #c9a76b;
+  border-radius: 8px;
+  background: rgba(36, 25, 15, 0.86);
+  color: #f4e6c6;
+  font: 8px/1.5 var(--pixel-font);
+}
+
+.hunt-counter.is-complete {
+  border-color: #6fcf6b;
+  color: #9dff8f;
+}
+
+.nav-toggle {
+  min-height: 32px;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.nav-toggle.is-off {
+  opacity: 0.7;
+}
+
+.nav-arrow {
+  position: absolute;
+  z-index: 7;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.nav-arrow__shape {
+  position: absolute;
+  left: -16px;
+  top: -16px;
+  width: 32px;
+  height: 32px;
+  background: #ffd56b;
+  clip-path: polygon(0 20%, 60% 20%, 60% 0, 100% 50%, 60% 100%, 60% 80%, 0 80%);
+  filter: drop-shadow(0 2px 0 #120c08);
+}
+
+.nav-arrow__label {
+  position: absolute;
+  left: 50%;
+  top: 20px;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  color: #ffe9a8;
+  text-shadow: 0 2px 0 #120c08;
+  font: 8px/1 var(--pixel-font);
+}

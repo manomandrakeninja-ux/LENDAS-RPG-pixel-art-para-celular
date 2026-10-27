@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { COMBAT_CONFIG } from '../data/combat.js';
+import { ShieldBlocker, blockedDamage } from './ShieldBlock.js';
 import { PERK_EFFECTS } from '../data/progression.js';
 import { SWORD_TIERS, drawPickaxe, drawSword, swordTierFor } from '../art/gear.js';
 
@@ -172,8 +173,28 @@ export class Player extends Phaser.GameObjects.Container {
   }
 
   // analog: vetor do joystick de toque (-1 a 1); usado quando nenhuma tecla de movimento está pressionada.
+  /** Escudo da Forja ou peça de escudo vestida. */
+  get hasShield() {
+    return Boolean(this.scene.gear?.equippedItem?.('shield') || this.scene.camp?.equipment?.equipped?.shield);
+  }
+
+  /** Paralisia: o herói não anda nem ataca pelo tempo dado. */
+  paralyze(ms) {
+    this.paralyzedMs = Math.max(this.paralyzedMs ?? 0, ms);
+    this.dodgeTimer = 0;
+    this.sprite.setTint(0xfff27a);
+    this.scene.ui?.showMessage?.('Paralisado!');
+  }
+
   update(delta, keys, cursors, pointerWorld, analog = null) {
     const seconds = delta / 1000;
+    if ((this.paralyzedMs ?? 0) > 0) {
+      this.paralyzedMs = Math.max(0, this.paralyzedMs - delta);
+      this.body.setVelocity(0, 0);
+      this.invulnerable = Math.max(0, this.invulnerable - delta);
+      if (this.paralyzedMs === 0) this.sprite.clearTint();
+      return;
+    }
     this.attackCooldown = Math.max(0, this.attackCooldown - delta);
     this.dodgeCooldown = Math.max(0, this.dodgeCooldown - delta);
     this.dodgeTimer = Math.max(0, this.dodgeTimer - delta);
@@ -258,7 +279,14 @@ export class Player extends Phaser.GameObjects.Container {
     const fireFactor = options.fire ? 1 - this.fireResistance : 1;
     // fullDamage: o Golem de Fogo bate com o dano cheio (só a defesa reduz).
     const scaling = options.fullDamage ? 1 : COMBAT_CONFIG.enemyDamageToPlayer ?? 1;
-    const scaled = amount * fireFactor * scaling;
+    let scaled = amount * fireFactor * scaling;
+    // Escudo: bloqueia boa parte do dano só dos 2 primeiros atacantes de cada janela de ~1 s.
+    this.lastBlockRatio = 0;
+    if (source && this.hasShield) {
+      this.shieldBlocker ??= new ShieldBlocker();
+      this.lastBlockRatio = this.shieldBlocker.tryBlock(source, this.scene.time.now);
+      if (this.lastBlockRatio > 0) scaled = blockedDamage(scaled, this.lastBlockRatio);
+    }
     const dealt = Math.max(1, Math.round(scaled) - this.defense);
     this.health = Math.max(0, this.health - dealt);
     this.invulnerable = 450;
@@ -266,6 +294,7 @@ export class Player extends Phaser.GameObjects.Container {
     this.scene.effects?.spawnHit(this.x, this.y - 9, 0xff9b78, 6);
     this.scene.effects?.spawnDamage(this.x, this.y - 20, dealt, '#ffb59a');
     this.scene.audio?.playHit();
+    if (this.lastBlockRatio > 0) this.scene.effects?.spawnDamage(this.x, this.y - 32, 'BLOQ', '#a9d8ff');
     if (source) {
       const angle = Phaser.Math.Angle.Between(source.x, source.y, this.x, this.y);
       this.knockbackTimer = COMBAT_CONFIG.knockback.durationMs;

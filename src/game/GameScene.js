@@ -35,6 +35,9 @@ import { World } from './World.js';
 import { WorldMapOverlay } from './WorldMapOverlay.js';
 import { RegionWorld } from './RegionWorld.js';
 import { Bestiary } from './Bestiary.js';
+import { HuntSystem } from './HuntSystem.js';
+import { HuntUI } from './HuntUI.js';
+import { EnemyProjectiles } from './EnemyProjectiles.js';
 import { BestiaryPanel } from './BestiaryPanel.js';
 import { ShadowSystem } from './ShadowSystem.js';
 import { GearSystem } from './GearSystem.js';
@@ -105,6 +108,8 @@ export class GameScene extends Phaser.Scene {
     this.obstacles = new Obstacles(this);
     this.regionWorld = new RegionWorld(this, saved?.regions);
     this.bestiary = new Bestiary(saved?.bestiary);
+    // Caçadas do Mestre de Caça (saves antigos não têm o campo: começam sem caçada).
+    this.hunts = new HuntSystem(saved?.hunts);
     this.world = new World(this);
     this.world.create();
     this.camp = new Camp(this, saved?.camp);
@@ -140,6 +145,8 @@ export class GameScene extends Phaser.Scene {
     });
     this.enemies = [];
     this.enemyDirector = new EnemyDirector(this, this.enemies);
+    this.enemyProjectiles = new EnemyProjectiles(this);
+    this.huntUI = new HuntUI(this);
     this.enemyDirector.populate(this.timeState);
     this.camp.defense.setupEnemyCollision(this.enemies);
     this.effects = new PixelEffects(this);
@@ -420,6 +427,30 @@ export class GameScene extends Phaser.Scene {
     return this.afterGearChange({ ok: true, message: `${definition.name} comprado! Vista na tela de Equipamento (V).` });
   }
 
+  /** Quadro de caçadas da Fogueira: aceitar, entregar ou abandonar. */
+  huntAction(action, id) {
+    const hunts = this.hunts;
+    let result;
+    if (action === 'accept') {
+      result = hunts.accept(id, this.progression.level);
+    } else if (action === 'turnin') {
+      result = hunts.turnIn();
+      if (result.ok) {
+        this.economy.addCoins(result.coins);
+        this.audio.playCollect();
+        this.grantExperience(result.xp, false);
+      }
+    } else if (action === 'abandon') {
+      result = { ok: hunts.abandon(), message: 'Caçada abandonada.' };
+    } else {
+      result = { ok: false, message: '' };
+    }
+    this.huntUI.refresh();
+    if (result.ok) this.save();
+    if (result.message) this.ui.showMessage(result.message);
+    return result;
+  }
+
   /** Bênção da Fogueira: protege a mochila na próxima morte. */
   buyBlessing() {
     if (this.gear.blessed) return this.afterGearChange({ ok: false, message: 'Você já está abençoado.' });
@@ -558,6 +589,8 @@ export class GameScene extends Phaser.Scene {
       this.player.dodge(this.keys, this.touch.consumeDodge());
       this.world.revealAround(this.player.x, this.player.y);
       this.enemyDirector.update(delta, this.player, this.timeState);
+      this.enemyProjectiles.update(delta, this.player);
+      this.huntUI.update();
       this.camp.defense.update(delta, this.enemies);
       this.updateBuildingLabels();
       this.villagers?.update(delta);
@@ -767,7 +800,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   attackNearby() {
-    if (this.player.attackCooldown > 0 || this.progression?.hasPendingChoice || this.worldMap?.isOpen || this.buildingMenu?.isOpen || this.itemInfo?.isOpen || this.settingsPanel?.isOpen || this.campaign?.ui?.isBlocking || this.gameOver) return;
+    if (this.player.attackCooldown > 0 || (this.player.paralyzedMs ?? 0) > 0 || this.progression?.hasPendingChoice || this.worldMap?.isOpen || this.buildingMenu?.isOpen || this.itemInfo?.isOpen || this.settingsPanel?.isOpen || this.campaign?.ui?.isBlocking || this.gameOver) return;
     this.player.attackCooldown = COMBAT_CONFIG.basicAttackCooldownMs;
     if (this.mining) this.cancelMining();
     const thrown = this.gear?.weapon?.thrown ? this.gear.weapon : null;
@@ -1128,6 +1161,10 @@ export class GameScene extends Phaser.Scene {
     this.campaign?.onGathered(result.accepted);
     this.campaign?.onEnemyDefeated(enemy);
     this.regionWorld?.onEnemyDefeated(enemy);
+    if (this.hunts.onKill(enemy.kind)) {
+      this.huntUI.refresh();
+      if (this.hunts.complete) this.ui.showMessage('Caçada completa! Entregue na Fogueira.');
+    }
     if (this.bestiary?.recordKill(enemy.kind)) this.ui.showMessage(`Bestiário: ${enemy.definition.name} registrado no Bestiário (tecla K).`);
     // Invasores não deixam cristais: o XP deles volta dobrado na recompensa do ataque.
     if (enemy.isRaider) this.raid.onRaiderDefeated(enemy);
@@ -2079,7 +2116,8 @@ export class GameScene extends Phaser.Scene {
       harvestStructures: this.harvestStructures.serialize(),
       regions: this.regionWorld?.serialize(),
       bestiary: this.bestiary?.serialize(),
-      gear: this.gear?.serialize()
+      gear: this.gear?.serialize(),
+      hunts: this.hunts?.serialize()
     });
   }
 }

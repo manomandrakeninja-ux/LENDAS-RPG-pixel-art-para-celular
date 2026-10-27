@@ -78,6 +78,10 @@ export class Enemy extends Phaser.GameObjects.Container {
     this.add(this.healthBar);
 
     this.cooldown = 0;
+    // À distância: recua 2 passos e depois fica parado lutando por alguns segundos.
+    this.retreatMs = 0;
+    this.retreatSteps = 0;
+    this.holdMs = 0;
     // Efeitos de status: queimadura (dano por segundo), lentidão e atordoamento (muralha, armadilha).
     this.burn = null;
     this.slow = null;
@@ -96,7 +100,47 @@ export class Enemy extends Phaser.GameObjects.Container {
 
   get speed() {
     const slowFactor = this.slow ? 1 - this.slow.ratio : 1;
-    return this.baseSpeed * slowFactor * (this.speedFactor ?? 1);
+    return this.baseSpeed * slowFactor * (this.speedFactor ?? 1) * (this.enraged ? this.definition.rage.speedMultiplier : 1);
+  }
+
+  /** Fúria: abaixo da vida limite (ex.: 30%) a espécie ganha velocidade e dano. */
+  get enraged() {
+    const rage = this.definition.rage;
+    return Boolean(rage) && this.health / this.maxHealth < rage.healthRatio;
+  }
+
+  get currentDamage() {
+    return Math.round(this.damage * (this.enraged ? this.definition.rage.damageMultiplier : 1));
+  }
+
+  /** Movimento de quem ataca de longe (bruxa, pirata...): recua 2 passos e fica parado lutando. */
+  rangedMove(delta, dx, dy, distance) {
+    const ranged = this.definition.ranged;
+    const awayX = distance > 0 ? -dx / distance : 0;
+    const awayY = distance > 0 ? -dy / distance : 0;
+    this.sprite.setFlipX(dx < 0);
+    if (this.holdMs > 0) {
+      this.holdMs = Math.max(0, this.holdMs - delta);
+      this.body.setVelocity(0, 0);
+    } else if (this.retreatMs > 0) {
+      this.retreatMs = Math.max(0, this.retreatMs - delta);
+      this.body.setVelocity(awayX * this.speed * 1.15, awayY * this.speed * 1.15);
+      if (this.retreatMs === 0) {
+        this.retreatSteps += 1;
+        if (this.retreatSteps >= 2) {
+          this.retreatSteps = 0;
+          this.holdMs = 3000;
+        }
+      }
+    } else if (distance < ranged.keepDistance * 0.75) {
+      this.retreatMs = 420;
+      this.body.setVelocity(awayX * this.speed * 1.15, awayY * this.speed * 1.15);
+    } else if (distance > ranged.range * 0.9) {
+      this.retreatSteps = 0;
+      this.body.setVelocity((dx / distance) * this.speed, (dy / distance) * this.speed);
+    } else {
+      this.body.setVelocity(0, 0);
+    }
   }
 
   applyBurn(dps, ms) {
@@ -186,10 +230,14 @@ export class Enemy extends Phaser.GameObjects.Container {
         this.body.setVelocity(Math.cos(fleeAngle) * this.speed, Math.sin(fleeAngle) * this.speed);
       } else if (distance <= (this.perception ?? this.definition.perception)) {
         this.state = 'chase';
-        const targetX = distance > 0 ? dx / distance : 0;
-        const targetY = distance > 0 ? dy / distance : 0;
-        this.body.setVelocity(targetX * this.speed, targetY * this.speed);
-        this.sprite.setFlipX(targetX < 0);
+        if (this.definition.ranged) {
+          this.rangedMove(delta, dx, dy, distance);
+        } else {
+          const targetX = distance > 0 ? dx / distance : 0;
+          const targetY = distance > 0 ? dy / distance : 0;
+          this.body.setVelocity(targetX * this.speed, targetY * this.speed);
+          this.sprite.setFlipX(targetX < 0);
+        }
       } else if (this.definition.behavior === 'patrol' || this.definition.behavior === 'pack') {
         this.state = 'patrol';
         this.patrolAroundHome(delta);
@@ -199,10 +247,16 @@ export class Enemy extends Phaser.GameObjects.Container {
       }
     }
 
-    if (!enemyInSafeZone && !playerInSafeZone &&
+    const ranged = this.definition.ranged;
+    if (ranged && !enemyInSafeZone && !playerInSafeZone && this.state === 'chase' && this.cooldown === 0 &&
+        distance > this.definition.attackRange && distance <= ranged.range && this.scene.enemyProjectiles) {
+      this.scene.enemyProjectiles.fire(this, player);
+      this.cooldown = this.definition.attackCooldown;
+    } else if (!enemyInSafeZone && !playerInSafeZone &&
         distance <= this.definition.attackRange && this.cooldown === 0 && this.canAttackInPack(player)) {
-      if (player.damage(this.damage, this)) {
+      if (player.damage(this.currentDamage, this)) {
         this.cooldown = this.definition.attackCooldown;
+        if (this.definition.paralyze) player.paralyze?.(this.definition.paralyze.durationMs);
       }
     }
 

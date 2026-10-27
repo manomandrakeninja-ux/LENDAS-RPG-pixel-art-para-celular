@@ -371,7 +371,12 @@
         "day": 0,
         "night": 1.25
       },
-      "level": 10
+      "level": 10,
+      "rage": {
+        "healthRatio": 0.3,
+        "speedMultiplier": 1.35,
+        "damageMultiplier": 1.4
+      }
     },
     "rat": {
       "name": "Rato",
@@ -613,7 +618,12 @@
         "day": 2,
         "night": 2
       },
-      "level": 20
+      "level": 20,
+      "rage": {
+        "healthRatio": 0.3,
+        "speedMultiplier": 1.35,
+        "damageMultiplier": 1.4
+      }
     },
     "bear": {
       "name": "Urso",
@@ -659,7 +669,12 @@
         "day": 2,
         "night": 0.5
       },
-      "level": 22
+      "level": 22,
+      "rage": {
+        "healthRatio": 0.3,
+        "speedMultiplier": 1.35,
+        "damageMultiplier": 1.4
+      }
     },
     "treant": {
       "name": "Ent",
@@ -861,7 +876,18 @@
         "day": 0,
         "night": 1.5
       },
-      "level": 38
+      "level": 38,
+      "ranged": {
+        "range": 240,
+        "keepDistance": 170
+      },
+      "projectile": {
+        "speed": 230,
+        "damageMultiplier": 0.9,
+        "color": "#b57cff",
+        "lifetimeMs": 1600,
+        "size": 10
+      }
     },
     "frostWolf": {
       "name": "Lobo do Gelo",
@@ -1011,7 +1037,10 @@
         "day": 0,
         "night": 2.5
       },
-      "level": 66
+      "level": 66,
+      "paralyze": {
+        "durationMs": 1000
+      }
     },
     "scorpion": {
       "name": "Escorpião",
@@ -1213,7 +1242,19 @@
         "day": 3,
         "night": 2
       },
-      "level": 92
+      "level": 92,
+      "ranged": {
+        "range": 230,
+        "keepDistance": 160
+      },
+      "projectile": {
+        "speed": 240,
+        "damageMultiplier": 0.85,
+        "color": "#ff7a3d",
+        "lifetimeMs": 1500,
+        "size": 10,
+        "fire": true
+      }
     },
     "salamander": {
       "name": "Salamandra",
@@ -1415,7 +1456,18 @@
         "day": 0,
         "night": 3
       },
-      "level": 45
+      "level": 45,
+      "ranged": {
+        "range": 260,
+        "keepDistance": 180
+      },
+      "projectile": {
+        "speed": 260,
+        "damageMultiplier": 0.8,
+        "color": "#d9d2c0",
+        "lifetimeMs": 1500,
+        "size": 8
+      }
     },
     "orcChief": {
       "name": "Grokk, o Chefe Orc",
@@ -1895,7 +1947,10 @@
         "day": 3,
         "night": 1
       },
-      "level": 74
+      "level": 74,
+      "paralyze": {
+        "durationMs": 1000
+      }
     },
     "scarab": {
       "name": "Escaravelho Gigante",
@@ -2057,7 +2112,18 @@
         "day": 0,
         "night": 3
       },
-      "level": 92
+      "level": 92,
+      "ranged": {
+        "range": 270,
+        "keepDistance": 190
+      },
+      "projectile": {
+        "speed": 250,
+        "damageMultiplier": 0.9,
+        "color": "#6fd6ff",
+        "lifetimeMs": 1700,
+        "size": 10
+      }
     },
     "lavaHound": {
       "name": "Cão de Lava",
