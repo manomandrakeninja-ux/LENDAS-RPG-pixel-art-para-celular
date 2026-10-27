@@ -6,6 +6,7 @@ const STORAGE_KEY = 'lendas-configuracoes';
 export const DEFAULT_SETTINGS = Object.freeze({
   interface: 'auto', // auto | pc | mobile
   sound: true,
+  music: true,
   volume: 70, // 0 a 100
   shake: true,
   labels: 'auto', // auto | always | near
@@ -43,6 +44,7 @@ export function normalizeSettings(raw = {}) {
   if (CHOICES.stickSize.includes(raw.stickSize)) value.stickSize = raw.stickSize;
   if (CHOICES.stickSide.includes(raw.stickSide)) value.stickSide = raw.stickSide;
   if (typeof raw.sound === 'boolean') value.sound = raw.sound;
+  if (typeof raw.music === 'boolean') value.music = raw.music;
   if (typeof raw.shake === 'boolean') value.shake = raw.shake;
   const volume = Number(raw.volume);
   if (Number.isFinite(volume)) value.volume = Math.max(0, Math.min(100, Math.round(volume / 10) * 10));

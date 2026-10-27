@@ -452,7 +452,7 @@ export class GameScene extends Phaser.Scene {
     if (!this.camp.canPay(cost)) return this.afterGearChange({ ok: false, message: `Faltam materiais (${cost.iron} ferro e ${cost.coins} moedas).` });
     this.camp.pay(cost);
     const result = this.gear.enhance(uid);
-    if (result.success) this.audio.playCollect();
+    this.audio.playEnhance(!!result.success);
     this.achievements?.onEnhance(result);
     return this.afterGearChange(result);
   }
@@ -689,6 +689,11 @@ export class GameScene extends Phaser.Scene {
     this.updateMining(delta);
     this.experiencePickups.update(delta, this.player, (amount) => this.collectExperience(amount));
     this.coinPickups.update(delta, this.player, (amount) => this.collectCoins(amount));
+    this.musicClock = (this.musicClock ?? 0) + delta;
+    if (this.musicClock > 1500) {
+      this.musicClock = 0;
+      this.audio.playMusic(this.regionWorld?.regionOf?.(this.player.x, this.player.y) ?? 'vale');
+    }
     this.companions?.update(delta, paused);
     this.achievements?.update();
     this.arena?.update(delta);
@@ -888,6 +893,7 @@ export class GameScene extends Phaser.Scene {
   attackNearby() {
     if (this.player.attackCooldown > 0 || (this.player.paralyzedMs ?? 0) > 0 || this.progression?.hasPendingChoice || this.worldMap?.isOpen || this.buildingMenu?.isOpen || this.itemInfo?.isOpen || this.settingsPanel?.isOpen || this.campaign?.ui?.isBlocking || this.gameOver) return;
     this.player.attackCooldown = COMBAT_CONFIG.basicAttackCooldownMs;
+    this.audio.playSwing();
     if (this.mining) this.cancelMining();
     const thrown = this.gear?.weapon?.thrown ? this.gear.weapon : null;
     const target = this.nearestEnemy(thrown ? thrown.range * TILE : COMBAT_CONFIG.basicAttackRange);
@@ -1142,7 +1148,7 @@ export class GameScene extends Phaser.Scene {
     this.economy.addCoins(amount);
     this.achievements?.note('coins', amount);
     this.ui.showMessage(`+${amount} moedas`);
-    this.audio.playCollect();
+    this.audio.playCoin();
     this.save();
   }
 
@@ -1258,6 +1264,7 @@ export class GameScene extends Phaser.Scene {
     amount = boosted;
     const result = this.progression.addXp(amount);
     this.player.recalculateEquipment(this.camp.equipment);
+    if (result.leveledUp) this.audio.playLevelUp();
     if (result.leveledUp) this.achievements?.checkAchievements();
     if (result.leveledUp && shouldShowWardTip(levelBefore, this.progression.level)) {
       this.showEpic(WARD_TIP_TITLE, WARD_TIP_TEXT, 7000);

@@ -25,6 +25,7 @@ function gearIconUrl() {
 const OPTIONS = {
   interface: [['auto', 'Automática'], ['pc', 'Computador'], ['mobile', 'Celular']],
   sound: [[true, 'Ligado'], [false, 'Desligado']],
+  music: [[true, 'Ligada'], [false, 'Desligada']],
   shake: [[true, 'Ligado'], [false, 'Desligado']],
   labels: [['auto', 'Automático'], ['always', 'Sempre'], ['near', 'Só de perto']],
   stickSize: [['small', 'Pequeno'], ['medium', 'Médio'], ['large', 'Grande']],
@@ -187,6 +188,7 @@ export class SettingsPanel {
     const { sound, volume } = this.settings;
     scene.audio?.setVolume?.(volume / 100);
     scene.audio?.setMuted?.(!sound);
+    scene.audio?.setMusicOn?.(this.settings.music);
     if (!initial && scene.touch) {
       const mode = detectTouchMode();
       if (mode.enabled) scene.touch.enable();
@@ -253,6 +255,7 @@ export class SettingsPanel {
       ${this.choiceRow('interface', 'Interface', `Agora: ${touch ? 'celular (controles de toque)' : 'computador (teclado e mouse)'}.${forcedByUrl ? ' O endereço da página está forçando um modo.' : ''}`)}
       ${this.choiceRow('gender', 'Personagem', 'Escolha o visual do seu herói. As animações são as mesmas.')}
       ${this.choiceRow('sound', 'Som', '')}
+      ${this.choiceRow('music', 'Música', 'Melodia simples de cada região.')}
       <div class="settings-panel__row">
         <h3>Volume</h3>
         <div class="settings-panel__choices settings-panel__volume">
