@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { CHAPTERS, LORE, MISSIONS, NPCS, SITES } from '../src/data/campaign.js';
+import { CAVES_BY_ID } from '../src/data/worldRegions.js';
 import { ENEMY_TYPES } from '../src/data/enemies.js';
 import { FORGE_RECIPES } from '../src/data/buildingSystems.js';
 import { RESOURCE_TYPES } from '../src/game/config.js';
@@ -8,7 +9,7 @@ import { CampaignState, STATE_OBJECTIVES, eventAmount, rollDailies } from '../sr
 
 const KNOWN_TYPES = new Set(['gather', 'structure', 'kill', 'boss', 'bossPhase', 'owns', 'craft', 'building', 'animal',
   'plant', 'harvest', 'buy', 'sell', 'deliver', 'reach', 'interact', 'rescue', 'talk', 'puzzle', 'defend', 'flag',
-  'seals', 'choice', 'residents']);
+  'seals', 'choice', 'residents', 'level', 'delve']);
 const SITE_TAGS = new Set(Object.values(SITES).flatMap((site) => [site.enemies?.tag, site.boss?.tag].filter(Boolean)));
 const GROUPS = new Set(Object.values(SITES).map((site) => site.group).filter(Boolean));
 
@@ -17,7 +18,8 @@ const fullCtx = {
   owns: () => true,
   buildingLevel: () => 10,
   animalUnlocked: () => true,
-  available: () => 999
+  available: () => 999,
+  level: () => 150
 };
 
 /** Gera os eventos que completam um objetivo de evento. */
@@ -33,6 +35,7 @@ function eventsFor(objective) {
       region: objective.region,
       night: objective.region === 'noite'
     }));
+    case 'delve': return [{ type: 'delve', target: objective.target, floor: objective.floor }];
     case 'buy':
     case 'sell': return [{ type: objective.type, amount: count }];
     case 'rescue': return Array.from({ length: count }, () => ({ type: 'rescue', target: objective.target, group: objective.target }));
@@ -43,11 +46,11 @@ function eventsFor(objective) {
   }
 }
 
-test('campaign has 100 unique missions, 10 per chapter, with valid references', () => {
-  assert.equal(MISSIONS.length, 100);
-  assert.equal(new Set(MISSIONS.map((mission) => mission.id)).size, 100);
-  assert.equal(CHAPTERS.length, 10);
-  for (let chapter = 1; chapter <= 10; chapter += 1) {
+test('campaign has 160 unique missions, 10 per chapter, with valid references', () => {
+  assert.equal(MISSIONS.length, 160);
+  assert.equal(new Set(MISSIONS.map((mission) => mission.id)).size, 160);
+  assert.equal(CHAPTERS.length, 16);
+  for (let chapter = 1; chapter <= 16; chapter += 1) {
     assert.equal(MISSIONS.filter((mission) => mission.chapter === chapter).length, 10, `capítulo ${chapter}`);
   }
   for (const mission of MISSIONS) {
@@ -68,6 +71,7 @@ test('campaign has 100 unique missions, 10 per chapter, with valid references', 
       if (objective.type === 'kill') {
         assert.ok(['any', 'elite'].includes(target) || ENEMY_TYPES[target] || SITE_TAGS.has(target), `${mission.id}: alvo ${target}`);
       }
+      if (objective.type === 'delve') assert.ok(CAVES_BY_ID[target] && objective.floor < CAVES_BY_ID[target].floors, `${mission.id}: andar ${target}`);
       if (objective.type === 'talk') assert.ok(SITES[target] || NPCS[target], `${mission.id}: conversa ${target}`);
       if (objective.type === 'owns') for (const id of target) assert.ok(FORGE_RECIPES[id], `${mission.id}: receita ${id}`);
     }
@@ -179,7 +183,7 @@ test('daily missions unlock after mission 10, are deterministic and pay once', (
   assert.equal(rollDailies(30, true).length, 4, 'pós-jogo ganha um desafio extra');
 });
 
-test('the whole campaign can be completed from mission 1 to 100', () => {
+test('the whole campaign can be completed from mission 1 to 160', () => {
   const state = new CampaignState();
   for (const mission of MISSIONS) {
     assert.equal(state.stateOf(mission.id), 'available', `${mission.id} deveria estar liberada`);
@@ -193,7 +197,7 @@ test('the whole campaign can be completed from mission 1 to 100', () => {
     assert.ok(state.isComplete(mission, fullCtx), `${mission.id} não completou`);
     assert.ok(state.turnIn(mission.id, fullCtx), `${mission.id} não foi entregue`);
   }
-  assert.equal(state.completedCount, 100);
+  assert.equal(state.completedCount, 160);
   assert.ok(state.flags.postGame);
   assert.ok(state.flags.warmClothes && state.flags.desertSupplies && state.flags.ashMasks);
   assert.equal(state.currentMission, null);

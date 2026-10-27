@@ -23,7 +23,7 @@ test('história: todo capítulo tem abertura e ilustração; registros citados e
 });
 
 test('história: objetivos e recompensas das missões não mudaram; Bram reage na missão 9', () => {
-  assert.equal(MISSIONS.length, 100);
+  assert.equal(MISSIONS.length, 160);
   assert.deepEqual(MISSIONS_BY_ID.m009.objectives, [{ type: 'interact', target: 'cristal', count: 1 }]);
   assert.ok(MISSIONS_BY_ID.m009.outro.includes('Bram'));
   assert.ok(MISSIONS_BY_ID.m009.storyLore.includes('fragmento'));

@@ -6,7 +6,7 @@ import { ENEMY_TYPES } from '../src/data/enemies.js';
 import { HARVEST_STRUCTURE_TYPES } from '../src/data/harvestStructures.js';
 import { FORGE_RECIPES } from '../src/data/buildingSystems.js';
 
-// Gera LISTA-MISSOES.md com as 100 missões (para revisar o roteiro). `npm run missions:list`.
+// Gera LISTA-MISSOES.md com as 160 missões (para revisar o roteiro). `npm run missions:list`.
 const item = (type) => RESOURCE_TYPES[type]?.label ?? type;
 const site = (id) => SITES[id]?.name ?? id;
 const enemy = (target) => {
@@ -53,7 +53,7 @@ function rewards(entry) {
   return parts.join(', ');
 }
 
-const lines = ['# LENDAS — As Cinzas do Primeiro Mundo: lista das 100 missões', ''];
+const lines = ['# LENDAS — As Cinzas do Primeiro Mundo: lista das 160 missões', ''];
 lines.push('Gerado a partir de `src/data/campaign.js` (`npm run missions:list`).', '');
 for (const [index, chapter] of CHAPTERS.entries()) {
   const number = index + 1;

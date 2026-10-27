@@ -329,6 +329,7 @@ export class RegionWorld {
     this.clearCaveEnemies();
     this.scene.enemyDirector?.clearRegular?.();
     this.underground = { cave: caveId, floor, room };
+    this.scene.campaign?.emit?.({ type: 'delve', target: caveId, floor });
     this.teleport(point.x + offset, point.y, () => {
       this.populateRoom(room, cave);
       this.scene.ui.showMessage(`${cave.name} • andar ${floor + 1} de ${cave.floors}${cave.tower ? ' • mais forte a cada andar' : ''}`);

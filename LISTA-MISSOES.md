@@ -1,4 +1,4 @@
-# LENDAS — As Cinzas do Primeiro Mundo: lista das 100 missões
+# LENDAS — As Cinzas do Primeiro Mundo: lista das 160 missões
 
 Gerado a partir de `src/data/campaign.js` (`npm run missions:list`).
 
@@ -151,4 +151,94 @@ Gerado a partir de `src/data/campaign.js` (`npm run missions:list`).
 | 98 | **O Último Sacrifício**<br>Proteja os aliados no núcleo enquanto ele se estabiliza: fique perto do núcleo por 45 segundos. | Lia, a Curandeira | Resistir 45 s em Estabilização do Núcleo | 814 XP, 70 moedas |
 | 99 | **O Amanhecer de Eldoria**<br>Conclua o ritual no núcleo. | Bram, o Vigia | Investigar Ritual do Amanhecer | 822 XP, 500 moedas |
 | 100 | **Uma Nova Lenda**<br>Ajude a reconstruir a vila e celebre com todos os moradores. | Tobias, o Construtor | Entregar 30 Madeira<br>Entregar 20 Pedra<br>Conversar com Bram, o Vigia | 830 XP, 800 moedas |
+
+## Capítulo 11 — Brejos e Mares Perdidos (Brejo Sombrio e Ilha Esmeralda)
+
+| Nº | Missão | Quem pede | Objetivos | Recompensa |
+|---|---|---|---|---|
+| 101 | **Além das Cinzas**<br>Eldoria respira, mas o mundo é maior que o vale. Chegue ao nível 30 e prepare-se para o Brejo Sombrio e a Ilha Esmeralda. | Capitã Mirela | level any 30 | 2400 XP, 170 moedas |
+| 102 | **Lama até os Joelhos**<br>Bruxas e mortos-vivos rondam o Brejo Sombrio, a sudoeste. Derrote as bruxas e os zumbis. | Kael, o Caçador | Derrotar 8 Bruxa do Brejo<br>Derrotar 12 Afogado | 2592 XP, 187 moedas |
+| 103 | **Ervas do Pântano**<br>Lia precisa de ectoplasma e ervas do brejo para um antídoto contra a névoa. | Lia, a Curandeira | Coletar 6 Ectoplasma<br>Coletar 10 Ervas | 2784 XP, 204 moedas |
+| 104 | **Metal Afogado**<br>A Gruta Afogada guarda ferro antigo. Desça até o segundo andar e traga minério. | Doran, o Ferreiro | delve gruta-afogada 1<br>Coletar 20 Ferro | 2976 XP, 221 moedas |
+| 105 | **A Torre Afogada**<br>Suba a Torre Afogada, no Brejo: cada andar é mais forte que o anterior. Chegue ao terceiro andar. | Capitã Mirela | delve torre-brejo 1 | 3168 XP, 238 moedas |
+| 106 | **Piratas sem Descanso**<br>Piratas esqueleto tomaram as praias da Ilha Esmeralda. Embarque e limpe a ilha. | Kael, o Caçador | Derrotar 15 Pirata Esqueleto<br>Derrotar 10 Caranguejo | 3360 XP, 255 moedas |
+| 107 | **O Tesouro do Farol**<br>Zeno ouviu falar de um tesouro na Gruta dos Piratas. Alcance o último andar e traga ouro. | Zeno, o Mercador | delve gruta-piratas 1<br>Coletar 10 Ouro | 3552 XP, 272 moedas |
+| 108 | **O Farol da Ilha**<br>Suba a Torre do Farol, na Ilha Esmeralda, até o topo. | Capitã Mirela | delve torre-esmeralda 1 | 3744 XP, 289 moedas |
+| 109 | **Hidra do Brejo**<br>Uma hidra ronda os pântanos. Derrote-a antes que a névoa chegue ao vale. | Lia, a Curandeira | Derrotar 1 Hidra do Brejo<br>Derrotar 12 Fantasma | 3936 XP, 306 moedas |
+| 110 | **Pronto para o Gelo**<br>Os Picos Gelados chamam. Chegue ao nível 45 e leve poções fortes para a viagem. | Capitã Mirela | level any 45<br>Entregar 3 Poção Forte | 4128 XP, 323 moedas |
+
+## Capítulo 12 — O Vento dos Picos Gelados (Picos Gelados)
+
+| Nº | Missão | Quem pede | Objetivos | Recompensa |
+|---|---|---|---|---|
+| 111 | **O Vento dos Picos**<br>Nos Picos Gelados, o vento corta como lâmina. Chegue ao nível 50 e conheça a região. | Capitã Mirela | level any 50 | 7000 XP, 300 moedas |
+| 112 | **Lobos do Vento Branco**<br>Lobos do gelo caçam em matilhas. Derrote-os antes que desçam aos vilarejos. | Kael, o Caçador | Derrotar 15 Lobo do Gelo<br>Derrotar 8 Coruja das Neves | 7560 XP, 330 moedas |
+| 113 | **Couro para o Frio**<br>Roupas melhores para quem sobe os Picos: leve couro e tecido ao Ferreiro. | Doran, o Ferreiro | Entregar 20 Couro<br>Entregar 10 Tecido | 8120 XP, 360 moedas |
+| 114 | **A Fúria do Yeti**<br>Yetis atacam os viajantes nas encostas. Derrote-os. | Lia, a Curandeira | Derrotar 10 Yeti | 8680 XP, 390 moedas |
+| 115 | **A Caverna de Cristal**<br>Desça até o último andar da Caverna de Cristal e traga cristais. | Capitã Mirela | delve caverna-cristal 1<br>Coletar 10 Cristal Azul | 9240 XP, 420 moedas |
+| 116 | **Gigantes de Gelo**<br>Elementais de gelo e mamutes bloqueiam a passagem. Abra caminho. | Kael, o Caçador | Derrotar 12 Elemental de Gelo<br>Derrotar 8 Mamute Peludo | 9800 XP, 450 moedas |
+| 117 | **Núcleo de Titã**<br>O gelo esconde peças de titã. Derrote o Gigante de Gelo e traga um núcleo. | Doran, o Ferreiro | Derrotar 1 Gigante de Gelo<br>Coletar 1 Núcleo do Titã | 10360 XP, 480 moedas |
+| 118 | **A Torre de Gelo**<br>Suba a Torre de Gelo, o ponto mais alto dos Picos. | Capitã Mirela | delve torre-gelo 1 | 10920 XP, 510 moedas |
+| 119 | **O Capitão Fantasma**<br>Um navio fantasma encalhou no gelo. Derrote o Capitão e os espectros. | Lia, a Curandeira | Derrotar 1 Capitão Fantasma<br>Derrotar 15 Fantasma | 11480 XP, 540 moedas |
+| 120 | **Rumo às Dunas**<br>O deserto é o próximo. Chegue ao nível 70 e leve água para a travessia. | Capitã Mirela | level any 70<br>Entregar 20 Água | 12040 XP, 570 moedas |
+
+## Capítulo 13 — Os Reis da Areia (Grande Deserto)
+
+| Nº | Missão | Quem pede | Objetivos | Recompensa |
+|---|---|---|---|---|
+| 121 | **Areia Sem Fim**<br>O Grande Deserto engole quem anda sem rumo. Chegue ao nível 75. | Capitã Mirela | level any 75 | 13000 XP, 420 moedas |
+| 122 | **Ferrões e Presas**<br>Escorpiões e cobras dominam as dunas. Limpe a região. | Kael, o Caçador | Derrotar 15 Escorpião<br>Derrotar 12 Naja Real | 14040 XP, 462 moedas |
+| 123 | **Água Vale Ouro**<br>As caravanas pagam muito por água fresca. Traga peixe e água para o mercado. | Zeno, o Mercador | Entregar 30 Água<br>Entregar 10 Peixe | 15080 XP, 504 moedas |
+| 124 | **Escaravelhos Brilhantes**<br>Escaravelhos carregam fragmentos de cristal na carapaça. Derrote-os e colete cristais. | Doran, o Ferreiro | Derrotar 15 Escaravelho Gigante<br>Coletar 15 Cristal Azul | 16120 XP, 546 moedas |
+| 125 | **A Tumba do Faraó**<br>Entre na Tumba do Faraó e chegue ao último andar. | Capitã Mirela | delve tumba-farao 1 | 17160 XP, 588 moedas |
+| 126 | **Vermes da Areia**<br>Vermes gigantes sobem das dunas. Derrote-os e as múmias que os acompanham. | Kael, o Caçador | Derrotar 10 Verme da Areia<br>Derrotar 12 Múmia | 18200 XP, 630 moedas |
+| 127 | **Maldição do Djinn**<br>Djinns e golens de areia guardam um velho altar. Quebre a maldição. | Lia, a Curandeira | Derrotar 10 Djinn<br>Derrotar 8 Golem de Areia | 19240 XP, 672 moedas |
+| 128 | **A Torre dos Ventos**<br>Suba os quatro andares da Torre dos Ventos. | Capitã Mirela | delve torre-areia 1 | 20280 XP, 714 moedas |
+| 129 | **O Faraó Sem Descanso**<br>O Faraó desperta no coração do deserto. Derrote-o. | Capitã Mirela | Derrotar 1 Faraó Amaldiçoado | 21320 XP, 756 moedas |
+| 130 | **Ferro para o Fogo**<br>A Ilha de Brasa está próxima. Chegue ao nível 90 e traga carvão e ferro para a forja. | Doran, o Ferreiro | level any 90<br>Entregar 30 Carvão<br>Entregar 30 Ferro | 22360 XP, 798 moedas |
+
+## Capítulo 14 — A Ilha que Respira Fogo (Ilha de Brasa)
+
+| Nº | Missão | Quem pede | Objetivos | Recompensa |
+|---|---|---|---|---|
+| 131 | **O Vulcão Desperta**<br>A Ilha de Brasa respira fogo. Chegue ao nível 95 e desembarque. | Capitã Mirela | level any 95 | 22000 XP, 560 moedas |
+| 132 | **Diabretes e Salamandras**<br>Criaturas de fogo cercam o porto. Derrote os diabretes e as salamandras. | Kael, o Caçador | Derrotar 15 Diabrete<br>Derrotar 12 Salamandra | 23760 XP, 616 moedas |
+| 133 | **Cães de Lava**<br>Cães de lava e lesmas de magma queimam as trilhas. Limpe a ilha. | Lia, a Curandeira | Derrotar 12 Cão de Lava<br>Derrotar 12 Gosma de Magma | 25520 XP, 672 moedas |
+| 134 | **Núcleo de Magma**<br>Dentro do Coração do Vulcão há núcleos de magma. Desça ao último andar e traga um. | Doran, o Ferreiro | delve coracao-vulcao 1<br>Coletar 1 Núcleo de Magma | 27280 XP, 728 moedas |
+| 135 | **A Torre de Cinzas**<br>Suba os quatro andares da Torre de Cinzas. | Capitã Mirela | delve torre-brasa 1 | 29040 XP, 784 moedas |
+| 136 | **Elementais de Fogo**<br>Elementais e cavaleiros de obsidiana guardam o topo do vulcão. Derrote-os. | Kael, o Caçador | Derrotar 12 Elemental de Fogo<br>Derrotar 10 Cavaleiro de Obsidiana | 30800 XP, 840 moedas |
+| 137 | **A Fênix Cinzenta**<br>A Fênix Cinzenta renasce das brasas. Derrote-a e a horda de demônios. | Lia, a Curandeira | Derrotar 5 Fênix Cinzenta<br>Derrotar 12 Demônio | 32560 XP, 896 moedas |
+| 138 | **O Dragão da Ilha**<br>O dragão da Ilha de Brasa acordou. Derrote-o. | Capitã Mirela | Derrotar 1 Dragão de Brasa | 34320 XP, 952 moedas |
+| 139 | **O Preço das Brasas**<br>Zeno compra tudo o que brilha na ilha: traga ouro e venda o que puder. | Zeno, o Mercador | Entregar 20 Ouro<br>Vender 10 itens | 36080 XP, 1008 moedas |
+| 140 | **A Boca do Abismo**<br>No fim da ilha abre-se o Abismo de Brasa. Chegue ao nível 115 e leve elixires. | Capitã Mirela | level any 115<br>Entregar 3 Elixir de Força | 37840 XP, 1064 moedas |
+
+## Capítulo 15 — As Portas do Abismo (Abismo de Brasa)
+
+| Nº | Missão | Quem pede | Objetivos | Recompensa |
+|---|---|---|---|---|
+| 141 | **Os Degraus do Abismo**<br>O Abismo de Brasa é a cova mais funda de Eldoria. Entre no primeiro andar e chegue ao nível 118. | Capitã Mirela | delve abismo-brasa 1<br>level any 118 | 36000 XP, 720 moedas |
+| 142 | **Espectros de Cinzas**<br>Espectros e gárgulas infernais vigiam as escadas. Derrote-os. | Kael, o Caçador | Derrotar 12 Espectro de Cinzas<br>Derrotar 10 Gárgula Infernal | 38880 XP, 792 moedas |
+| 143 | **O Sussurro das Cinzas**<br>A cura exige coragem: derrote as serpentes de ossos e colete ossos e seda. | Lia, a Curandeira | Derrotar 10 Serpente de Ossos<br>Coletar 20 Ossos<br>Coletar 10 Seda | 41760 XP, 864 moedas |
+| 144 | **Forja de Obsidiana**<br>Para enfrentar o fundo, só armas novas. Traga núcleos de magma e de titã. | Doran, o Ferreiro | Entregar 2 Núcleo de Magma<br>Entregar 2 Núcleo do Titã | 44640 XP, 936 moedas |
+| 145 | **O Segundo Andar**<br>Desça até o segundo andar do Abismo de Brasa. | Capitã Mirela | delve abismo-brasa 1<br>level any 122 | 47520 XP, 1008 moedas |
+| 146 | **Espreitadores do Vazio**<br>Criaturas do vazio rondam o segundo andar. Derrote-as. | Kael, o Caçador | Derrotar 12 Espreitador do Vazio<br>Derrotar 6 Gigante de Brasa | 50400 XP, 1080 moedas |
+| 147 | **Poções para o Fundo**<br>Lia prepara o que puder para a descida. Entregue poções e poções de vigor. | Lia, a Curandeira | Entregar 5 Poção Grande<br>Entregar 5 Poção de Vigor | 53280 XP, 1152 moedas |
+| 148 | **O Terceiro Andar**<br>Desça até o terceiro andar do Abismo de Brasa. | Capitã Mirela | delve abismo-brasa 1<br>level any 128 | 56160 XP, 1224 moedas |
+| 149 | **Os Carcereiros**<br>Carcereiros infernais guardam as celas do Abismo. Derrote-os. | Kael, o Caçador | Derrotar 8 Carcereiro Infernal<br>Derrotar 8 Verme de Magma | 59040 XP, 1296 moedas |
+| 150 | **Antes da Última Escada**<br>O fundo do Abismo espera. Chegue ao nível 135 e prepare-se. | Capitã Mirela | level any 135 | 61920 XP, 1368 moedas |
+
+## Capítulo 16 — O Fim do Abismo de Brasa (Abismo de Brasa)
+
+| Nº | Missão | Quem pede | Objetivos | Recompensa |
+|---|---|---|---|---|
+| 151 | **O Andar Final**<br>Desça ao quarto e último andar do Abismo de Brasa. | Capitã Mirela | delve abismo-brasa 1<br>level any 138 | 52000 XP, 900 moedas |
+| 152 | **Ceifadores de Almas**<br>Ceifadores colhem almas no fundo do Abismo. Derrote-os. | Kael, o Caçador | Derrotar 10 Ceifador de Almas<br>Derrotar 8 Carcereiro Infernal | 56160 XP, 990 moedas |
+| 153 | **Cães do Abismo**<br>Os cães do Abismo guardam o trono. Derrote-os um a um. | Lia, a Curandeira | Derrotar 10 Cão do Abismo | 60320 XP, 1080 moedas |
+| 154 | **A Última Lâmina**<br>Entregue ferro, carvão e cristais: a última forja de Eldoria. | Doran, o Ferreiro | Entregar 50 Ferro<br>Entregar 50 Carvão<br>Entregar 20 Cristal Azul | 64480 XP, 1170 moedas |
+| 155 | **O Preço da Vitória**<br>Zeno ofereceu tudo o que tinha. Compre e venda pela última vez. | Zeno, o Mercador | Comprar 10 itens<br>Vender 10 itens | 68640 XP, 1260 moedas |
+| 156 | **Elites do Trono**<br>Elites do Abismo cercam o trono. Derrote-as. | Kael, o Caçador | Derrotar 10 elite<br>level any 142 | 72800 XP, 1350 moedas |
+| 157 | **Diante do Trono**<br>Chegue ao nível 145 e converse com a capitã antes do duelo final. | Capitã Mirela | level any 145<br>Conversar com Capitã Mirela | 76960 XP, 1440 moedas |
+| 158 | **O Senhor do Abismo**<br>O Senhor do Abismo ergue-se do trono. Derrote-o. | Lia, a Curandeira | Derrotar 1 Senhor do Abismo | 81120 XP, 1530 moedas |
+| 159 | **A Calma Depois do Fogo**<br>Bram ouviu o silêncio onde havia gritos. Volte e conte a ele o que viu. | Bram, o Vigia | Conversar com Bram, o Vigia | 85280 XP, 1620 moedas |
+| 160 | **Uma Lenda Sem Fim**<br>Chegue ao nível 150, o ápice de um herói de Eldoria, e celebre com o acampamento. | Tobias, o Construtor | level any 150<br>Conversar com Bram, o Vigia | 89440 XP, 1710 moedas |
 

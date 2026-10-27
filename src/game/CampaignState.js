@@ -1,6 +1,7 @@
 import { SECRET_ENDING } from '../data/story.js';
 import {
   CAMPAIGN_VERSION,
+  CHAPTERS,
   DAILY_COUNT,
   DAILY_TEMPLATES,
   DAILY_UNLOCK_MISSION,
@@ -15,7 +16,7 @@ import {
 //   ctx.available(item) ctx.residents() ctx.seals() ctx.flag(name) ctx.choice()
 
 // Objetivos que dependem de um estado do jogo, não de eventos.
-export const STATE_OBJECTIVES = new Set(['owns', 'building', 'animal', 'deliver', 'flag', 'seals', 'choice', 'residents']);
+export const STATE_OBJECTIVES = new Set(['owns', 'building', 'animal', 'deliver', 'flag', 'seals', 'choice', 'residents', 'level']);
 
 const clampInt = (value, min, max) => Math.max(min, Math.min(max, Math.floor(Number(value) || 0)));
 
@@ -44,6 +45,8 @@ export function eventAmount(objective, event) {
     case 'plant':
     case 'harvest':
       return objective.target === 'any' || objective.target === event.target ? 1 : 0;
+    case 'delve':
+      return objective.target === event.target && (event.floor ?? 0) >= (objective.floor ?? 0) ? 1 : 0;
     case 'rescue':
       return objective.target === event.target || objective.target === event.group ? 1 : 0;
     case 'talk':
@@ -165,7 +168,7 @@ export class CampaignState {
   }
 
   get currentChapter() {
-    return this.currentMission?.chapter ?? 10;
+    return this.currentMission?.chapter ?? CHAPTERS.length;
   }
 
   get completedCount() {
@@ -187,6 +190,7 @@ export class CampaignState {
       case 'seals': value = this.seals.length; break;
       case 'choice': value = this.choice ? 1 : 0; break;
       case 'residents': value = this.residents; break;
+      case 'level': value = ctx.level?.() ?? 0; break;
       default: value = 0;
     }
     return Math.min(count, value);

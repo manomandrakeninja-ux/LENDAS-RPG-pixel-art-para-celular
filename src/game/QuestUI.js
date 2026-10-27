@@ -2,6 +2,7 @@ import { BUILDING_DEFS } from '../data/buildings.js';
 import { FARM_CROPS, ANIMAL_PRODUCTS, FORGE_RECIPES } from '../data/buildingSystems.js';
 import { CAMPAIGN_TITLE, CHAPTERS, LORE, MISSIONS, MISSIONS_BY_ID, NPCS, REGIONS, SEALS, SITES } from '../data/campaign.js';
 import { CHAPTER_STORY, SPEAKERS } from '../data/story.js';
+import { CAVES_BY_ID as DUNGEONS_BY_ID } from '../data/worldRegions.js';
 import { ENEMY_TYPES } from '../data/enemies.js';
 import { RESOURCE_TYPES } from './config.js';
 import { resourceIconHtml, textureUrl } from './iconUrls.js';
@@ -150,6 +151,8 @@ export class QuestUI {
       case 'seals': return 'Selos elementais';
       case 'choice': return 'Tomar a decisão final';
       case 'residents': return 'Moradores no acampamento';
+      case 'level': return `Chegar ao nível ${objective.count}`;
+      case 'delve': return `Alcançar o andar ${(objective.floor ?? 0) + 1}: ${DUNGEONS_BY_ID[objective.target]?.name ?? objective.target}`;
       default: return objective.type;
     }
   }

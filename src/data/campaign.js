@@ -25,6 +25,8 @@
 //   seals     {count}                            selos elementais recuperados (estado)
 //   choice    {target: 'golem'}                  decisão do jogador
 //   residents {count}                            moradores no acampamento (estado)
+//   level     {count}                            nível do personagem (estado)
+//   delve     {target: caverna/torre, floor}     chegar ao andar (0 = primeiro) da caverna ou torre
 
 import { BOSS_CONFIG } from './boss.js';
 import { AURELIAN_ECHOES, MISSION_STORY, STORY_LORE } from './story.js';
@@ -42,7 +44,13 @@ export const CHAPTERS = [
   { number: 7, title: 'O Deserto dos Ossos', region: 'deserto' },
   { number: 8, title: 'A Guerra das Cinzas', region: 'acampamento' },
   { number: 9, title: 'A Montanha das Cinzas', region: 'montanha' },
-  { number: 10, title: 'O Destino de Eldoria', region: 'montanha' }
+  { number: 10, title: 'O Destino de Eldoria', region: 'montanha' },
+  { number: 11, title: 'Brejos e Mares Perdidos', region: 'brejoMar' },
+  { number: 12, title: 'O Vento dos Picos Gelados', region: 'picos' },
+  { number: 13, title: 'Os Reis da Areia', region: 'grandeDeserto' },
+  { number: 14, title: 'A Ilha que Respira Fogo', region: 'ilhaBrasa' },
+  { number: 15, title: 'As Portas do Abismo', region: 'abismo' },
+  { number: 16, title: 'O Fim do Abismo de Brasa', region: 'abismo' }
 ];
 
 // Regiões: área tingida no chão, nome ao entrar e, em algumas, um perigo que exige preparo.
@@ -63,6 +71,15 @@ export const REGIONS = {
     hazard: { flag: 'ashMasks', damage: 4, message: 'As cinzas queimam seus pulmões! Fabrique máscaras (missão 82).' }
   }
 };
+
+// Regiões do mundo aberto (sem tinta nem perigo: só dão o nome nas missões dos capítulos 11–16).
+Object.assign(REGIONS, {
+  brejoMar: { name: 'Brejo Sombrio e Ilha Esmeralda', x: 0, y: 0, radius: 0 },
+  picos: { name: 'Picos Gelados', x: 0, y: 0, radius: 0 },
+  grandeDeserto: { name: 'Grande Deserto', x: 0, y: 0, radius: 0 },
+  ilhaBrasa: { name: 'Ilha de Brasa', x: 0, y: 0, radius: 0 },
+  abismo: { name: 'Abismo de Brasa', x: 0, y: 0, radius: 0 }
+});
 
 // Personagens. home = posição relativa à fogueira quando estão no acampamento.
 export const NPCS = {
@@ -315,7 +332,9 @@ const o = {
   flag: (target) => ({ type: 'flag', target, count: 1 }),
   seals: (count) => ({ type: 'seals', target: 'any', count }),
   choice: (target) => ({ type: 'choice', target, count: 1 }),
-  residents: (count) => ({ type: 'residents', target: 'any', count })
+  residents: (count) => ({ type: 'residents', target: 'any', count }),
+  level: (count) => ({ type: 'level', target: 'any', count }),
+  delve: (target, floor = 0) => ({ type: 'delve', target, floor, count: 1 })
 };
 
 function mission(number, npc, title, description, objectives, extra = {}) {
@@ -560,7 +579,129 @@ export const MISSIONS = [
   mission(99, 'vigia', 'O Amanhecer de Eldoria', 'Conclua o ritual no núcleo.',
     [o.interact('ritual')], { lore: 'amanhecer', coins: 500, autoAccept: true }),
   mission(100, 'construtor', 'Uma Nova Lenda', 'Ajude a reconstruir a vila e celebre com todos os moradores.',
-    [o.deliver('wood', 30), o.deliver('stone', 20), o.talk('vigia')], { coins: 800, setsFlag: 'postGame', outro: 'Eldoria renasce. E o seu nome agora é uma lenda.' })
+    [o.deliver('wood', 30), o.deliver('stone', 20), o.talk('vigia')], { coins: 800, setsFlag: 'postGame', outro: 'Eldoria renasce. E o seu nome agora é uma lenda.' }),
+
+  // Capítulos 11–16 — depois do final: o mundo aberto, do nível 30 ao 150
+  mission(101, 'capitao', 'Além das Cinzas', 'Eldoria respira, mas o mundo é maior que o vale. Chegue ao nível 30 e prepare-se para o Brejo Sombrio e a Ilha Esmeralda.',
+    [o.level(30)], { xp: 2400, coins: 170 }),
+  mission(102, 'cacador', 'Lama até os Joelhos', 'Bruxas e mortos-vivos rondam o Brejo Sombrio, a sudoeste. Derrote as bruxas e os zumbis.',
+    [o.kill('witch', 8), o.kill('zombie', 12)], { xp: 2592, coins: 187 }),
+  mission(103, 'curandeira', 'Ervas do Pântano', 'Lia precisa de ectoplasma e ervas do brejo para um antídoto contra a névoa.',
+    [o.gather('ectoplasm', 6), o.gather('herbs', 10)], { xp: 2784, coins: 204 }),
+  mission(104, 'ferreiro', 'Metal Afogado', 'A Gruta Afogada guarda ferro antigo. Desça até o segundo andar e traga minério.',
+    [o.delve('gruta-afogada', 1), o.gather('iron', 20)], { xp: 2976, coins: 221 }),
+  mission(105, 'capitao', 'A Torre Afogada', 'Suba a Torre Afogada, no Brejo: cada andar é mais forte que o anterior. Chegue ao terceiro andar.',
+    [o.delve('torre-brejo', 2)], { xp: 3168, coins: 238 }),
+  mission(106, 'cacador', 'Piratas sem Descanso', 'Piratas esqueleto tomaram as praias da Ilha Esmeralda. Embarque e limpe a ilha.',
+    [o.kill('pirate', 15), o.kill('crab', 10)], { xp: 3360, coins: 255 }),
+  mission(107, 'mercador', 'O Tesouro do Farol', 'Zeno ouviu falar de um tesouro na Gruta dos Piratas. Alcance o último andar e traga ouro.',
+    [o.delve('gruta-piratas', 1), o.gather('gold', 10)], { xp: 3552, coins: 272 }),
+  mission(108, 'capitao', 'O Farol da Ilha', 'Suba a Torre do Farol, na Ilha Esmeralda, até o topo.',
+    [o.delve('torre-esmeralda', 2)], { xp: 3744, coins: 289 }),
+  mission(109, 'curandeira', 'Hidra do Brejo', 'Uma hidra ronda os pântanos. Derrote-a antes que a névoa chegue ao vale.',
+    [o.kill('hydra', 1), o.kill('ghost', 12)], { xp: 3936, coins: 306 }),
+  mission(110, 'capitao', 'Pronto para o Gelo', 'Os Picos Gelados chamam. Chegue ao nível 45 e leve poções fortes para a viagem.',
+    [o.level(45), o.deliver('potionStrong', 3)], { xp: 4128, coins: 323 }),
+  mission(111, 'capitao', 'O Vento dos Picos', 'Nos Picos Gelados, o vento corta como lâmina. Chegue ao nível 50 e conheça a região.',
+    [o.level(50)], { xp: 7000, coins: 300 }),
+  mission(112, 'cacador', 'Lobos do Vento Branco', 'Lobos do gelo caçam em matilhas. Derrote-os antes que desçam aos vilarejos.',
+    [o.kill('frostWolf', 15), o.kill('snowOwl', 8)], { xp: 7560, coins: 330 }),
+  mission(113, 'ferreiro', 'Couro para o Frio', 'Roupas melhores para quem sobe os Picos: leve couro e tecido ao Ferreiro.',
+    [o.deliver('leather', 20), o.deliver('fabric', 10)], { xp: 8120, coins: 360 }),
+  mission(114, 'curandeira', 'A Fúria do Yeti', 'Yetis atacam os viajantes nas encostas. Derrote-os.',
+    [o.kill('yeti', 10)], { xp: 8680, coins: 390 }),
+  mission(115, 'capitao', 'A Caverna de Cristal', 'Desça até o último andar da Caverna de Cristal e traga cristais.',
+    [o.delve('caverna-cristal', 2), o.gather('crystal', 10)], { xp: 9240, coins: 420 }),
+  mission(116, 'cacador', 'Gigantes de Gelo', 'Elementais de gelo e mamutes bloqueiam a passagem. Abra caminho.',
+    [o.kill('iceElemental', 12), o.kill('mammoth', 8)], { xp: 9800, coins: 450 }),
+  mission(117, 'ferreiro', 'Núcleo de Titã', 'O gelo esconde peças de titã. Derrote o Gigante de Gelo e traga um núcleo.',
+    [o.kill('frostGiant', 1), o.gather('titanCore', 1)], { xp: 10360, coins: 480 }),
+  mission(118, 'capitao', 'A Torre de Gelo', 'Suba a Torre de Gelo, o ponto mais alto dos Picos.',
+    [o.delve('torre-gelo', 2)], { xp: 10920, coins: 510 }),
+  mission(119, 'curandeira', 'O Capitão Fantasma', 'Um navio fantasma encalhou no gelo. Derrote o Capitão e os espectros.',
+    [o.kill('ghostCaptain', 1), o.kill('ghost', 15)], { xp: 11480, coins: 540 }),
+  mission(120, 'capitao', 'Rumo às Dunas', 'O deserto é o próximo. Chegue ao nível 70 e leve água para a travessia.',
+    [o.level(70), o.deliver('water', 20)], { xp: 12040, coins: 570 }),
+  mission(121, 'capitao', 'Areia Sem Fim', 'O Grande Deserto engole quem anda sem rumo. Chegue ao nível 75.',
+    [o.level(75)], { xp: 13000, coins: 420 }),
+  mission(122, 'cacador', 'Ferrões e Presas', 'Escorpiões e cobras dominam as dunas. Limpe a região.',
+    [o.kill('scorpion', 15), o.kill('cobra', 12)], { xp: 14040, coins: 462 }),
+  mission(123, 'mercador', 'Água Vale Ouro', 'As caravanas pagam muito por água fresca. Traga peixe e água para o mercado.',
+    [o.deliver('water', 30), o.deliver('fish', 10)], { xp: 15080, coins: 504 }),
+  mission(124, 'ferreiro', 'Escaravelhos Brilhantes', 'Escaravelhos carregam fragmentos de cristal na carapaça. Derrote-os e colete cristais.',
+    [o.kill('scarab', 15), o.gather('crystal', 15)], { xp: 16120, coins: 546 }),
+  mission(125, 'capitao', 'A Tumba do Faraó', 'Entre na Tumba do Faraó e chegue ao último andar.',
+    [o.delve('tumba-farao', 2)], { xp: 17160, coins: 588 }),
+  mission(126, 'cacador', 'Vermes da Areia', 'Vermes gigantes sobem das dunas. Derrote-os e as múmias que os acompanham.',
+    [o.kill('sandworm', 10), o.kill('mummy', 12)], { xp: 18200, coins: 630 }),
+  mission(127, 'curandeira', 'Maldição do Djinn', 'Djinns e golens de areia guardam um velho altar. Quebre a maldição.',
+    [o.kill('djinn', 10), o.kill('sandGolem', 8)], { xp: 19240, coins: 672 }),
+  mission(128, 'capitao', 'A Torre dos Ventos', 'Suba os quatro andares da Torre dos Ventos.',
+    [o.delve('torre-areia', 3)], { xp: 20280, coins: 714 }),
+  mission(129, 'capitao', 'O Faraó Sem Descanso', 'O Faraó desperta no coração do deserto. Derrote-o.',
+    [o.kill('pharaoh', 1)], { xp: 21320, coins: 756 }),
+  mission(130, 'ferreiro', 'Ferro para o Fogo', 'A Ilha de Brasa está próxima. Chegue ao nível 90 e traga carvão e ferro para a forja.',
+    [o.level(90), o.deliver('coal', 30), o.deliver('iron', 30)], { xp: 22360, coins: 798 }),
+  mission(131, 'capitao', 'O Vulcão Desperta', 'A Ilha de Brasa respira fogo. Chegue ao nível 95 e desembarque.',
+    [o.level(95)], { xp: 22000, coins: 560 }),
+  mission(132, 'cacador', 'Diabretes e Salamandras', 'Criaturas de fogo cercam o porto. Derrote os diabretes e as salamandras.',
+    [o.kill('imp', 15), o.kill('salamander', 12)], { xp: 23760, coins: 616 }),
+  mission(133, 'curandeira', 'Cães de Lava', 'Cães de lava e lesmas de magma queimam as trilhas. Limpe a ilha.',
+    [o.kill('lavaHound', 12), o.kill('magmaSlime', 12)], { xp: 25520, coins: 672 }),
+  mission(134, 'ferreiro', 'Núcleo de Magma', 'Dentro do Coração do Vulcão há núcleos de magma. Desça ao último andar e traga um.',
+    [o.delve('coracao-vulcao', 2), o.gather('magmaCore', 1)], { xp: 27280, coins: 728 }),
+  mission(135, 'capitao', 'A Torre de Cinzas', 'Suba os quatro andares da Torre de Cinzas.',
+    [o.delve('torre-brasa', 3)], { xp: 29040, coins: 784 }),
+  mission(136, 'cacador', 'Elementais de Fogo', 'Elementais e cavaleiros de obsidiana guardam o topo do vulcão. Derrote-os.',
+    [o.kill('fireElemental', 12), o.kill('obsidianKnight', 10)], { xp: 30800, coins: 840 }),
+  mission(137, 'curandeira', 'A Fênix Cinzenta', 'A Fênix Cinzenta renasce das brasas. Derrote-a e a horda de demônios.',
+    [o.kill('phoenix', 5), o.kill('demon', 12)], { xp: 32560, coins: 896 }),
+  mission(138, 'capitao', 'O Dragão da Ilha', 'O dragão da Ilha de Brasa acordou. Derrote-o.',
+    [o.kill('dragon', 1)], { xp: 34320, coins: 952 }),
+  mission(139, 'mercador', 'O Preço das Brasas', 'Zeno compra tudo o que brilha na ilha: traga ouro e venda o que puder.',
+    [o.deliver('gold', 20), o.sell(10)], { xp: 36080, coins: 1008 }),
+  mission(140, 'capitao', 'A Boca do Abismo', 'No fim da ilha abre-se o Abismo de Brasa. Chegue ao nível 115 e leve elixires.',
+    [o.level(115), o.deliver('elixir', 3)], { xp: 37840, coins: 1064 }),
+  mission(141, 'capitao', 'Os Degraus do Abismo', 'O Abismo de Brasa é a cova mais funda de Eldoria. Entre no primeiro andar e chegue ao nível 118.',
+    [o.delve('abismo-brasa', 0), o.level(118)], { xp: 36000, coins: 720 }),
+  mission(142, 'cacador', 'Espectros de Cinzas', 'Espectros e gárgulas infernais vigiam as escadas. Derrote-os.',
+    [o.kill('ashWraith', 12), o.kill('gargoyle', 10)], { xp: 38880, coins: 792 }),
+  mission(143, 'curandeira', 'O Sussurro das Cinzas', 'A cura exige coragem: derrote as serpentes de ossos e colete ossos e seda.',
+    [o.kill('boneWyrm', 10), o.gather('bone', 20), o.gather('silk', 10)], { xp: 41760, coins: 864 }),
+  mission(144, 'ferreiro', 'Forja de Obsidiana', 'Para enfrentar o fundo, só armas novas. Traga núcleos de magma e de titã.',
+    [o.deliver('magmaCore', 2), o.deliver('titanCore', 2)], { xp: 44640, coins: 936 }),
+  mission(145, 'capitao', 'O Segundo Andar', 'Desça até o segundo andar do Abismo de Brasa.',
+    [o.delve('abismo-brasa', 1), o.level(122)], { xp: 47520, coins: 1008 }),
+  mission(146, 'cacador', 'Espreitadores do Vazio', 'Criaturas do vazio rondam o segundo andar. Derrote-as.',
+    [o.kill('voidStalker', 12), o.kill('cinderGiant', 6)], { xp: 50400, coins: 1080 }),
+  mission(147, 'curandeira', 'Poções para o Fundo', 'Lia prepara o que puder para a descida. Entregue poções e poções de vigor.',
+    [o.deliver('potionGreat', 5), o.deliver('staminaPotion', 5)], { xp: 53280, coins: 1152 }),
+  mission(148, 'capitao', 'O Terceiro Andar', 'Desça até o terceiro andar do Abismo de Brasa.',
+    [o.delve('abismo-brasa', 2), o.level(128)], { xp: 56160, coins: 1224 }),
+  mission(149, 'cacador', 'Os Carcereiros', 'Carcereiros infernais guardam as celas do Abismo. Derrote-os.',
+    [o.kill('hellWarden', 8), o.kill('lavaWorm', 8)], { xp: 59040, coins: 1296 }),
+  mission(150, 'capitao', 'Antes da Última Escada', 'O fundo do Abismo espera. Chegue ao nível 135 e prepare-se.',
+    [o.level(135)], { xp: 61920, coins: 1368 }),
+  mission(151, 'capitao', 'O Andar Final', 'Desça ao quarto e último andar do Abismo de Brasa.',
+    [o.delve('abismo-brasa', 3), o.level(138)], { xp: 52000, coins: 900 }),
+  mission(152, 'cacador', 'Ceifadores de Almas', 'Ceifadores colhem almas no fundo do Abismo. Derrote-os.',
+    [o.kill('soulReaper', 10), o.kill('hellWarden', 8)], { xp: 56160, coins: 990 }),
+  mission(153, 'curandeira', 'Cães do Abismo', 'Os cães do Abismo guardam o trono. Derrote-os um a um.',
+    [o.kill('abyssHound', 10)], { xp: 60320, coins: 1080 }),
+  mission(154, 'ferreiro', 'A Última Lâmina', 'Entregue ferro, carvão e cristais: a última forja de Eldoria.',
+    [o.deliver('iron', 50), o.deliver('coal', 50), o.deliver('crystal', 20)], { xp: 64480, coins: 1170 }),
+  mission(155, 'mercador', 'O Preço da Vitória', 'Zeno ofereceu tudo o que tinha. Compre e venda pela última vez.',
+    [o.buy(10), o.sell(10)], { xp: 68640, coins: 1260 }),
+  mission(156, 'cacador', 'Elites do Trono', 'Elites do Abismo cercam o trono. Derrote-as.',
+    [o.kill('elite', 10), o.level(142)], { xp: 72800, coins: 1350 }),
+  mission(157, 'capitao', 'Diante do Trono', 'Chegue ao nível 145 e converse com a capitã antes do duelo final.',
+    [o.level(145), o.talk('capitao')], { xp: 76960, coins: 1440 }),
+  mission(158, 'curandeira', 'O Senhor do Abismo', 'O Senhor do Abismo ergue-se do trono. Derrote-o.',
+    [o.kill('abyssLord', 1)], { xp: 81120, coins: 1530 }),
+  mission(159, 'vigia', 'A Calma Depois do Fogo', 'Bram ouviu o silêncio onde havia gritos. Volte e conte a ele o que viu.',
+    [o.talk('vigia')], { xp: 85280, coins: 1620 }),
+  mission(160, 'construtor', 'Uma Lenda Sem Fim', 'Chegue ao nível 150, o ápice de um herói de Eldoria, e celebre com o acampamento.',
+    [o.level(150), o.talk('vigia')], { xp: 89440, coins: 1710, setsFlag: 'abyssClosed', outro: 'O Abismo de Brasa está em silêncio. Seu nome é cantado em todas as ilhas de Eldoria.' })
 ];
 
 // História (src/data/story.js): falas extras, desfechos e registros. Objetivos e recompensas não mudam.

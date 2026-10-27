@@ -57,6 +57,7 @@ export class CampaignSystem {
     const scene = this.scene;
     const camp = scene.camp;
     return {
+      level: () => scene.progression.level,
       owns: (recipes) => recipes.some((id) => camp.equipment.has(id)),
       buildingLevel: (key) => (camp.isBuilt(key) && camp.durability[key] > 0 ? camp.levels[key] : 0),
       animalUnlocked: (product) => scene.farm.unlockedAnimals.includes(product),

@@ -44,6 +44,30 @@ export const CHAPTER_STORY = Object.freeze({
   10: {
     kicker: 'O destino de Eldoria',
     text: 'A última trilha leva ao núcleo. Os cinco selos brilham juntos pela primeira vez em mil anos. Lá dentro espera a verdade sobre a sua origem e uma escolha que o rei Aurelian nunca conseguiu fazer.'
+  },
+  11: {
+    kicker: 'Além do vale, o mundo continua',
+    text: 'O Golem caiu, mas Eldoria é maior que o vale. Ao sul, o Brejo Sombrio esconde grutas e uma torre afogada; no mar, a Ilha Esmeralda guarda piratas que não descansam. O mundo aberto espera.'
+  },
+  12: {
+    kicker: 'O vento que corta como lâmina',
+    text: 'Nos Picos Gelados, lobos, yetis e mamutes dominam as encostas. Uma caverna de cristal e uma torre de gelo guardam segredos que o frio preservou por mil anos.'
+  },
+  13: {
+    kicker: 'Tumbas de reis esquecidos',
+    text: 'O Grande Deserto engole quem anda sem rumo. Sob as dunas, a Tumba do Faraó e a Torre dos Ventos chamam quem tem coragem de ouvir os mortos.'
+  },
+  14: {
+    kicker: 'A ilha que respira fogo',
+    text: 'A Ilha de Brasa treme a cada respiração do vulcão. Demônios, fênix e um dragão guardam o fogo antigo, e uma torre de cinzas sobe até o céu em chamas.'
+  },
+  15: {
+    kicker: 'A cova mais funda de Eldoria',
+    text: 'No fim da ilha abre-se o Abismo de Brasa. Espectros, gárgulas e serpentes de ossos vigiam as escadas que descem para onde nem a luz alcança.'
+  },
+  16: {
+    kicker: 'O fim do Abismo de Brasa',
+    text: 'No último andar, os carcereiros guardam o trono. Ceifadores e cães do abismo servem ao Senhor do Abismo. Se ele cair, o fogo de Eldoria finalmente descansa.'
   }
 });
 
