@@ -695,6 +695,15 @@ export class RegionWorld {
 
   // ---------- Regiões: nome, descoberta e perigos ----------
 
+  /** Região de um ponto (dentro da caverna, a região dela). */
+  regionOf(x, y) {
+    if (y >= OVERWORLD.height) {
+      const room = roomAt(x, y);
+      return room ? CAVES_BY_ID[room.cave].region : 'caverna';
+    }
+    return regionAt(x, y);
+  }
+
   currentRegion() {
     if (this.underground) return 'caverna';
     const player = this.scene.player;

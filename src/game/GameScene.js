@@ -10,7 +10,7 @@ import { LEVEL_CHOICES, PERK_EFFECTS, PERKS, PlayerProgression } from '../data/p
 import { enemyXp } from '../data/enemies.js';
 import { chestCoins, rollCoinDrop } from '../data/economy.js';
 import { BOSS_CONFIG } from '../data/boss.js';
-import { CONSUMABLES, itemForHotkey, useConsumable } from '../data/consumables.js';
+import { CONSUMABLES, HOTKEY_ITEMS, POTION_COOLDOWN_MS, itemForHotkey, useConsumable } from '../data/consumables.js';
 import { ENCHANTMENTS, FARM_CROPS } from '../data/buildingSystems.js';
 import { BUILDING_DEFS, CAMP_COMPLETION_MESSAGE, DUNGEON_CONFIG } from '../data/buildings.js';
 import { isRaining } from '../data/weather.js';
@@ -37,6 +37,9 @@ import { RegionWorld } from './RegionWorld.js';
 import { Bestiary } from './Bestiary.js';
 import { BestiaryPanel } from './BestiaryPanel.js';
 import { ShadowSystem } from './ShadowSystem.js';
+import { GearSystem } from './GearSystem.js';
+import { EquipmentPanel } from './EquipmentPanel.js';
+import { GEAR_ITEMS, RARITIES, blessingPrice, rollGearDrop } from '../data/gear.js';
 import { ExperiencePickups } from './ExperiencePickups.js';
 import { LevelUpOverlay } from './LevelUpOverlay.js';
 import { EconomySystem } from './EconomySystem.js';
@@ -104,6 +107,9 @@ export class GameScene extends Phaser.Scene {
     this.world = new World(this);
     this.world.create();
     this.camp = new Camp(this, saved?.camp);
+    // Equipamento vestido (elmo, peitoral, anel...): cobre a peça da Forja do mesmo espaço.
+    this.gear = new GearSystem(saved?.gear);
+    this.camp.equipment.overrides = () => this.gear.forgeOverrides();
     this.raid = new RaidDirector(this, saved?.raid);
     const inventoryOverflow = this.inventory.takeMigrationOverflow();
     this.progression = new PlayerProgression(saved?.progression);
@@ -174,6 +180,7 @@ export class GameScene extends Phaser.Scene {
     this.touch = new TouchControls(this);
     this.settingsPanel = new SettingsPanel(this);
     this.bestiaryPanel = new BestiaryPanel(this);
+    this.equipmentPanel = new EquipmentPanel(this);
     // Tremor da tela pode ser desligado nas Configurações.
     const camera = this.cameras.main;
     const shake = camera.shake.bind(camera);
@@ -208,6 +215,7 @@ export class GameScene extends Phaser.Scene {
     this.input.keyboard.on('keydown-ESC', () => {
       if (this.worldMap.isOpen) this.worldMap.close();
       else if (this.bestiaryPanel?.isOpen) this.bestiaryPanel.close();
+      else if (this.equipmentPanel?.isOpen) this.equipmentPanel.close();
       else if (this.buildingMenu.isOpen) this.buildingMenu.close();
       else if (this.campaign?.ui.isOpen) this.campaign.ui.toggleJournal(false);
       else if (this.campaign?.ui.dialog && !this.campaign.ui.dialog.hidden) this.campaign.ui.closeDialogue();
@@ -220,6 +228,9 @@ export class GameScene extends Phaser.Scene {
       else if (!this.overlayBlocked()) this.worldMap.open();
     });
     this.input.keyboard.on('keydown-B', () => this.toggleBackpack());
+    this.input.keyboard.on('keydown-V', () => {
+      if (this.equipmentPanel.isOpen || !this.overlayBlocked()) this.equipmentPanel.toggle();
+    });
     this.input.keyboard.on('keydown-K', () => {
       if (this.bestiaryPanel.isOpen || !this.overlayBlocked()) this.bestiaryPanel.toggle();
     });
@@ -307,6 +318,7 @@ export class GameScene extends Phaser.Scene {
       this.touch?.destroy();
       this.worldMap?.destroy();
       this.bestiaryPanel?.destroy();
+      this.equipmentPanel?.destroy();
       this.levelUpOverlay?.destroy();
       document.removeEventListener('visibilitychange', this.handleVisibilityChange);
       window.removeEventListener('pagehide', this.handlePageHide);
@@ -350,6 +362,74 @@ export class GameScene extends Phaser.Scene {
     return chest;
   }
 
+  // ---------- Equipamento (elmo, peitoral, anel...) ----------
+
+  /** Peças que o inimigo deixa: vão direto para a sacola de equipamentos. */
+  dropGear(enemy) {
+    const region = this.regionWorld?.regionOf?.(enemy.x, enemy.y) ?? 'vale';
+    const drops = rollGearDrop({ region, elite: enemy.isElite, boss: enemy.isRegionBoss ? enemy.kind : null });
+    for (const drop of drops) {
+      const item = this.gear.add(drop.id, drop.rarity);
+      const definition = GEAR_ITEMS[drop.id];
+      const rarity = RARITIES[drop.rarity];
+      if (!item) {
+        this.ui.showMessage('Sacola de equipamentos cheia! Venda peças (tecla V).');
+        continue;
+      }
+      this.campaign?.ui?.toast?.(`${rarity.name}: ${definition.name} • Equipamento (V)`, drop.rarity === 'common' ? '' : 'gold');
+    }
+    if (drops.length) window.dispatchEvent(new CustomEvent('lendas:gear'));
+  }
+
+  afterGearChange(result) {
+    if (result?.ok) {
+      this.player.recalculateEquipment(this.camp.equipment);
+      this.player.refreshGear?.();
+      this.save();
+      window.dispatchEvent(new CustomEvent('lendas:gear'));
+    }
+    if (result?.message) this.ui.showMessage(result.message);
+    return result;
+  }
+
+  equipGear(uid) {
+    return this.afterGearChange(this.gear.equip(uid, this.progression.level));
+  }
+
+  unequipGear(slot) {
+    return this.afterGearChange(this.gear.unequip(slot));
+  }
+
+  sellGear(uid) {
+    const removed = this.gear.remove(uid);
+    if (!removed) return this.afterGearChange({ ok: false, message: 'Peça não encontrada.' });
+    this.economy.addCoins(removed.coins);
+    this.audio.playCollect();
+    return this.afterGearChange({ ok: true, message: `${GEAR_ITEMS[removed.item.id].name} vendido • +${removed.coins} moedas` });
+  }
+
+  /** Loja do Ferreiro: compra uma peça básica. */
+  buyGear(id) {
+    const definition = GEAR_ITEMS[id];
+    if (!definition?.shop) return this.afterGearChange({ ok: false, message: 'Este item não está à venda.' });
+    if (this.gear.isFull) return this.afterGearChange({ ok: false, message: 'Sacola de equipamentos cheia.' });
+    if (!this.economy.spendCoins(definition.price)) return this.afterGearChange({ ok: false, message: `Faltam moedas (${definition.price}).` });
+    this.gear.add(id, 'common');
+    this.audio.playCollect();
+    return this.afterGearChange({ ok: true, message: `${definition.name} comprado! Vista na tela de Equipamento (V).` });
+  }
+
+  /** Bênção da Fogueira: protege a mochila na próxima morte. */
+  buyBlessing() {
+    if (this.gear.blessed) return this.afterGearChange({ ok: false, message: 'Você já está abençoado.' });
+    const price = blessingPrice(this.progression.level);
+    if (!this.economy.spendCoins(price)) return this.afterGearChange({ ok: false, message: `A bênção custa ${price} moedas.` });
+    this.gear.blessed = true;
+    this.effects.spawnHeal(this.player.x, this.player.y - 8);
+    this.audio.playCollect();
+    return this.afterGearChange({ ok: true, message: 'Bênção recebida: na próxima morte você não perde nada da mochila.' });
+  }
+
   /** Painéis que não podem ficar por baixo de outro (menu de prédio, mapa, nível, item, configurações, missão concluída). */
   overlayBlocked() {
     return Boolean(
@@ -360,6 +440,7 @@ export class GameScene extends Phaser.Scene {
       this.itemInfo?.isOpen ||
       this.settingsPanel?.isOpen ||
       this.bestiaryPanel?.isOpen ||
+      this.equipmentPanel?.isOpen ||
       (this.campaign?.ui?.reward && !this.campaign.ui.reward.hidden)
     );
   }
@@ -424,6 +505,7 @@ export class GameScene extends Phaser.Scene {
       this.itemInfo?.isOpen ||
       this.settingsPanel?.isOpen ||
       this.bestiaryPanel?.isOpen ||
+      this.equipmentPanel?.isOpen ||
       this.campaign?.ui?.isBlocking
     );
   }
@@ -833,7 +915,10 @@ export class GameScene extends Phaser.Scene {
   }
 
   useHotkey(hotkey) {
-    const type = itemForHotkey(hotkey, this.inventory.items);
+    const type = itemForHotkey(hotkey, this.inventory.items, {
+      level: this.progression.level,
+      missingHealth: this.player.maxHealth - this.player.health
+    });
     if (!type) {
       const missing = {
         1: 'Sem poções de vida.',
@@ -851,9 +936,14 @@ export class GameScene extends Phaser.Scene {
   useItem(type) {
     if (this.progression?.hasPendingChoice || this.worldMap?.isOpen || this.buildingMenu?.isOpen ||
         this.player.health <= 0 || this.gameOver) return;
+    // Poções de vida têm um pequeno intervalo entre um gole e outro.
+    const isHealthPotion = HOTKEY_ITEMS[1].includes(type);
+    if (isHealthPotion && this.time.now - (this.lastPotionAt ?? -Infinity) < POTION_COOLDOWN_MS) return;
     const result = useConsumable(type, this.inventory, this.player);
     const label = RESOURCE_TYPES[type]?.label ?? type;
+    if (result.ok && isHealthPotion) this.lastPotionAt = this.time.now;
     if (!result.ok) {
+      if (result.reason === 'level') this.ui.showMessage(`${label} requer nível ${result.level}.`);
       if (result.reason === 'full-health') this.ui.showMessage('A vida já está cheia.');
       if (result.reason === 'full-stamina') this.ui.showMessage('O vigor já está cheio.');
       return;
@@ -1027,6 +1117,7 @@ export class GameScene extends Phaser.Scene {
       this.deathBackpacks.create(enemy.x, enemy.y, result.remaining);
     }
     if (enemy.isElite || enemy.isQuestBoss) this.dropMonsterChest(enemy, enemy.isQuestBoss ? 'boss' : 'elite');
+    this.dropGear(enemy);
     this.camp.questKills += 1;
     const gained = Object.entries(result.accepted)
       .map(([type, amount]) => `+${amount} ${RESOURCE_TYPES[type]?.label.toLowerCase() ?? type}`)
@@ -1068,7 +1159,13 @@ export class GameScene extends Phaser.Scene {
       this.player.health = Math.max(1, Math.round(this.player.maxHealth * BUILDING_DEFS.house.autoReviveHealthRatio));
       message = 'A proteção da Casa te trouxe de volta (30% de vida).';
     } else {
-      if (mode === 'normal') {
+      // Bênção da Fogueira ou Amuleto de Proteção: nada da mochila fica para trás.
+      const ward = mode === 'normal' ? this.gear.consumeDeathProtection() : null;
+      if (ward) {
+        this.player.recalculateEquipment(this.camp.equipment);
+        window.dispatchEvent(new CustomEvent('lendas:gear'));
+      }
+      if (mode === 'normal' && !ward) {
         const lost = this.inventory.removeFraction(COMBAT_CONFIG.death.carriedResourceLossRatio);
         if (Object.keys(lost).length > 0) this.deathBackpacks.create(this.player.x, this.player.y, lost);
       }
@@ -1083,7 +1180,11 @@ export class GameScene extends Phaser.Scene {
         ? 'A Fogueira te ressuscitou com 50% de vida.'
         : mode === 'raid'
           ? 'Você caiu no ataque e voltou à fogueira com 30% de vida.'
-          : 'Você caiu. Parte da mochila foi deixada no local da morte.';
+          : ward === 'blessing'
+            ? 'Você caiu, mas a Bênção da Fogueira protegeu sua mochila.'
+            : ward === 'amulet'
+              ? 'Você caiu. O Amuleto de Proteção se quebrou e salvou sua mochila.'
+              : 'Você caiu. Parte da mochila foi deixada no local da morte.';
     }
     this.effects.spawnHeal(this.player.x, this.player.y - 8);
     this.audio.playDeath();
@@ -1955,7 +2056,8 @@ export class GameScene extends Phaser.Scene {
       deathBackpacks: this.deathBackpacks.serialize(),
       harvestStructures: this.harvestStructures.serialize(),
       regions: this.regionWorld?.serialize(),
-      bestiary: this.bestiary?.serialize()
+      bestiary: this.bestiary?.serialize(),
+      gear: this.gear?.serialize()
     });
   }
 }

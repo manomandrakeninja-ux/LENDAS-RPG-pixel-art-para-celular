@@ -34,6 +34,8 @@ export class EquipmentSystem {
     this.items = {};
     this.activeEnchant = null;
     this.accessories = new Set();
+    // Espaços cobertos por equipamento vestido (a peça da Forja sai do corpo).
+    this.overrides = () => new Set();
     this.unlockedRecipes = new Set(
       (Array.isArray(unlockedRecipes) ? unlockedRecipes : [])
         .filter((id) => FORGE_RECIPES[id]?.requiresBoss)
@@ -146,7 +148,9 @@ export class EquipmentSystem {
   }
 
   get equipped() {
-    return { weapon: this.bestOf('weapon'), armor: this.bestOf('armor'), shield: this.bestOf('shield') };
+    const covered = this.overrides();
+    const pickFor = (category) => (covered.has(category) ? null : this.bestOf(category));
+    return { weapon: pickFor('weapon'), armor: pickFor('armor'), shield: pickFor('shield') };
   }
 
   canCraft(recipeId) {

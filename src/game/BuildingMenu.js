@@ -12,7 +12,9 @@ import { MARKET_CATALOG, findCatalogEntry, sellPriceOf } from '../data/economy.j
 import { TRAVELER_GOODS, questById } from '../data/travelers.js';
 import { TORCH_RECIPE } from '../data/itemCatalog.js';
 import { recipeItems, recipesFor } from '../data/craftRecipes.js';
+import { GEAR_ITEMS, SLOT_NAMES, blessingPrice, describeStats, gearStats } from '../data/gear.js';
 import { RESOURCE_TYPES } from './config.js';
+import { gearIconHtml } from './gearIconUrl.js';
 import { resourceIconHtml, textureUrl } from './iconUrls.js';
 
 // Desenho de cada prédio no cabeçalho e nos cartões (textura, quadro).
@@ -89,7 +91,12 @@ export class BuildingMenu {
         this.open(button.dataset.arg);
         return;
       }
-      const result = this.scene.buildingMenuAction?.(button.dataset.action, button.dataset.arg, button.dataset.arg2);
+      // Loja de equipamentos e Bênção chamam a cena direto.
+      const direct = {
+        'buy-gear': () => this.scene.buyGear?.(button.dataset.arg),
+        'buy-blessing': () => this.scene.buyBlessing?.()
+      }[button.dataset.action];
+      const result = direct ? direct() : this.scene.buildingMenuAction?.(button.dataset.action, button.dataset.arg, button.dataset.arg2);
       this.scene.lastBuildingMessage = result?.message ?? this.scene.lastBuildingMessage ?? '';
       this.render();
     };
@@ -131,7 +138,8 @@ export class BuildingMenu {
       ],
       forge: [
         { id: 'craft', label: 'Criar' },
-        { id: 'gear', label: 'Equipamento' }
+        { id: 'gear', label: 'Equipamento' },
+        { id: 'shop', label: 'Loja' }
       ],
       house: [
         { id: 'storage', label: 'Armazém' },
@@ -381,6 +389,23 @@ export class BuildingMenu {
 
   // ---------- Fogueira ----------
 
+  /** Bênção da Fogueira: protege a mochila na próxima morte. */
+  blessingCard() {
+    const scene = this.scene;
+    const price = blessingPrice(scene.progression?.level ?? 1);
+    const active = Boolean(scene.gear?.blessed);
+    const coins = scene.economy?.coins ?? 0;
+    return `
+        <article class="building-menu__card">
+          <h2>Bênção</h2>
+          <p>Na próxima morte você não perde nada da mochila. A bênção se gasta nessa morte.</p>
+          <div class="building-menu__stat">Situação: ${active ? 'ATIVA' : 'INATIVA'} • ${price} moedas</div>
+          <div class="building-menu__actions">
+            <button type="button" class="button--primary" data-action="buy-blessing" ${disabled(active || coins < price)}>${active ? 'JÁ ABENÇOADO' : coins < price ? 'FALTAM MOEDAS' : `RECEBER BÊNÇÃO • ${price}`}</button>
+          </div>
+        </article>`;
+  }
+
   renderCampfire() {
     const scene = this.scene;
     const camp = this.camp;
@@ -405,6 +430,7 @@ export class BuildingMenu {
           <p>Recupera a vida e salva.${camp.unlocked('campfire', 'warmth') ? ' Concede Calor da Fogueira: +10% ATQ por 3 min.' : ''}</p>
           <div class="building-menu__actions"><button type="button" class="button--primary" data-action="rest-fire">DESCANSAR</button></div>
         </article>
+        ${this.blessingCard()}
         <article class="building-menu__card">
           <h2>Fabricar tocha</h2>
           <p>2 madeiras + 1 tecido → 1 tocha (tecla 3 acende e amplia a luz).</p>
@@ -547,6 +573,7 @@ export class BuildingMenu {
   renderForge() {
     const equipment = this.camp.equipment;
     if (this.tab === 'gear') return this.renderGear();
+    if (this.tab === 'shop') return this.renderGearShop();
     const recipes = Object.entries(FORGE_RECIPES)
       .filter(([id, recipe]) => !recipe.requiresBoss || equipment.isRecipeUnlocked(id))
       .map(([id, recipe]) => {
@@ -573,6 +600,35 @@ export class BuildingMenu {
         <div class="building-menu__stat">Picareta: ${equipment.pickaxeTier ?? 'NENHUMA'}</div>
       </div>
       <div class="building-menu__grid">${recipes}</div>
+    `;
+  }
+
+  /** Loja do Ferreiro: peças básicas e o Amuleto de Proteção, compradas com moedas. */
+  renderGearShop() {
+    const scene = this.scene;
+    const coins = scene.economy?.coins ?? 0;
+    const level = scene.progression?.level ?? 1;
+    const cards = Object.values(GEAR_ITEMS).filter((item) => item.shop).map((item) => {
+      const stats = describeStats(gearStats(item.id, 'common'));
+      const tooLow = level < item.level;
+      return `
+        <article class="building-menu__card">
+          <span class="gear-shop__icon">${gearIconHtml(item.id, 'common', 40)}</span>
+          <h2>${escapeHtml(item.name)}</h2>
+          <p>${escapeHtml(SLOT_NAMES[item.slot])} • Nível ${item.level}${stats ? ` • ${escapeHtml(stats)}` : ''}</p>
+          ${item.description ? `<p>${escapeHtml(item.description)}</p>` : ''}
+          <div class="building-menu__stat">${item.price} moedas</div>
+          <div class="building-menu__actions">
+            <button type="button" data-action="buy-gear" data-arg="${item.id}" ${disabled(coins < item.price || scene.gear?.isFull)}>${scene.gear?.isFull ? 'SACOLA CHEIA' : coins < item.price ? 'FALTAM MOEDAS' : tooLow ? `COMPRAR (NÍVEL ${item.level})` : 'COMPRAR'}</button>
+          </div>
+        </article>`;
+    }).join('');
+    return `
+      <div class="building-menu__stats">
+        <div class="building-menu__stat">Moedas: ${coins}</div>
+        <div class="building-menu__stat">Peças melhores caem dos monstros das regiões e dos chefes das cavernas.</div>
+      </div>
+      <div class="building-menu__grid">${cards}</div>
     `;
   }
 

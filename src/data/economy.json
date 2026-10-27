@@ -19,7 +19,9 @@
       { "id": "coalBundle", "name": "Pacote de Carvão", "price": 6, "yield": { "coal": 1 }, "maxStock": 3, "level": 4 },
       { "id": "goldBundle", "name": "Ouro Bruto", "price": 15, "yield": { "gold": 1 }, "maxStock": 2, "level": 4 },
       { "id": "staminaPotion", "name": "Poção de Vigor", "price": 8, "yield": { "staminaPotion": 1 }, "maxStock": 3, "level": 5, "rare": true },
-      { "id": "trap", "name": "Armadilha", "price": 12, "yield": { "trap": 1 }, "maxStock": 3, "level": 5, "rare": true }
+      { "id": "trap", "name": "Armadilha", "price": 12, "yield": { "trap": 1 }, "maxStock": 3, "level": 5, "rare": true },
+      { "id": "strongPotion", "name": "Poção Forte", "price": 35, "yield": { "potionStrong": 1 }, "maxStock": 3, "level": 3 },
+      { "id": "greatPotion", "name": "Poção Grande", "price": 90, "yield": { "potionGreat": 1 }, "maxStock": 2, "level": 6 }
     ],
     "traveler": {
       "rare": [
@@ -55,6 +57,8 @@
     "milk": 2,
     "bone": 2,
     "potion": 3,
+    "potionStrong": 10,
+    "potionGreat": 25,
     "staminaPotion": 3,
     "trap": 4,
     "wool": 3,

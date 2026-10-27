@@ -25,6 +25,8 @@ export const RESOURCE_TYPES = {
   coal: { label: 'Carvão', color: 0x25272a, accent: 0x62666a, icon: null, codeIcon: 'coal' },
   gold: { label: 'Ouro', color: 0xb88b24, accent: 0xffdc5a, icon: null, codeIcon: 'gold' },
   potion: { label: 'Poção de Vida', color: 0xb13f57, accent: 0xff7b8f, icon: null, codeIcon: 'potion' },
+  potionStrong: { label: 'Poção Forte', color: 0xc8502a, accent: 0xffa060, icon: null, codeIcon: 'potionStrong' },
+  potionGreat: { label: 'Poção Grande', color: 0x8a2a6a, accent: 0xf08ad0, icon: null, codeIcon: 'potionGreat' },
   torch: { label: 'Tocha', color: 0x8d4d27, accent: 0xffa53d, icon: null, codeIcon: 'torch' },
   egg: { label: 'Ovo', color: 0xc9b994, accent: 0xf4e8c8, icon: null, codeIcon: 'egg' },
   wool: { label: 'Lã', color: 0xbdb9a8, accent: 0xf1eddf, icon: null, codeIcon: 'wool' },

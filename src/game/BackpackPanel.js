@@ -43,6 +43,12 @@ export class BackpackPanel {
     this.handleClick = (event) => {
       const button = event.target.closest('button[data-bag]');
       if (!button || button.disabled) return;
+      if (button.dataset.bag === 'equipment') {
+        // Equipamento: fecha a mochila e abre o painel das peças vestidas.
+        this.close();
+        this.scene.equipmentPanel?.open();
+        return;
+      }
       if (button.dataset.bag === 'info') {
         this.scene.itemInfo?.open(button.dataset.type);
         return;
@@ -113,8 +119,9 @@ export class BackpackPanel {
     }).join('');
     this.grid.innerHTML = slots;
     this.summary.textContent = `${inventory.usedSlots}/${inventory.maxSlots} espaços • ${inventory.total}/${inventory.totalCapacity} itens`;
-    this.footer.innerHTML = storeAll
+    const gearButton = '<div class="backpack-panel__gear"><button type="button" data-bag="equipment">EQUIPAMENTO</button><small>Tecla V</small></div>';
+    this.footer.innerHTML = (storeAll
       ? `<button type="button" class="button--primary" data-bag="store-all" ${inventory.total === 0 ? 'disabled' : ''}>GUARDAR TUDO NA CASA</button>`
-      : '<p>Teclas rápidas: 1 poção • 2 comer • 3 tocha • 4 vigor/armadilha • 5 elixir</p>';
+      : '<p>Teclas rápidas: 1 poção • 2 comer • 3 tocha • 4 vigor/armadilha • 5 elixir</p>') + gearButton;
   }
 }

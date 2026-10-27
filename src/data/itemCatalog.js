@@ -27,6 +27,8 @@ export const ITEM_DESCRIPTIONS = Object.freeze({
   coal: 'Carvão que alimenta a forja nas receitas mais fortes.',
   gold: 'Ouro bruto, raro e valioso. Usado nas peças lendárias.',
   potion: 'Poção vermelha que recupera muita vida de uma vez.',
+  potionStrong: 'Poção Forte: recupera 120 de vida. Precisa de nível 8. Vendida no Mercado (nível 3).',
+  potionGreat: 'Poção Grande: recupera 250 de vida. Precisa de nível 15. Vendida no Mercado (nível 6).',
   torch: 'Tocha de mão que ilumina mais longe durante a noite.',
   egg: 'Ovo fresco das galinhas da Fazenda.',
   wool: 'Lã tosquiada da ovelha da Fazenda.',

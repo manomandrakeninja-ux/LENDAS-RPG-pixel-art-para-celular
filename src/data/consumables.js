@@ -1,6 +1,9 @@
 // Itens que podem ser usados a partir da mochila (teclas 1–5 ou toque no slot).
 export const CONSUMABLES = Object.freeze({
   potion: Object.freeze({ heal: 50, hotkey: '1' }),
+  // Poções mais fortes pedem nível mínimo (como no Berion).
+  potionStrong: Object.freeze({ heal: 120, hotkey: '1', level: 8 }),
+  potionGreat: Object.freeze({ heal: 250, hotkey: '1', level: 15 }),
   food: Object.freeze({ heal: 12, hotkey: '2' }),
   milk: Object.freeze({ heal: 10, hotkey: '2' }),
   egg: Object.freeze({ heal: 8, hotkey: '2' }),
@@ -12,7 +15,7 @@ export const CONSUMABLES = Object.freeze({
 
 // Ordem de preferência quando a tecla agrupa vários itens (ex.: "2" = comida).
 export const HOTKEY_ITEMS = Object.freeze({
-  1: Object.freeze(['potion']),
+  1: Object.freeze(['potion', 'potionStrong', 'potionGreat']),
   2: Object.freeze(['food', 'milk', 'egg']),
   3: Object.freeze(['torch']),
   4: Object.freeze(['staminaPotion', 'trap']),
@@ -23,8 +26,20 @@ export function isConsumable(type) {
   return Object.hasOwn(CONSUMABLES, type);
 }
 
-export function itemForHotkey(hotkey, items = {}) {
-  return (HOTKEY_ITEMS[hotkey] ?? []).find((type) => (items[type] ?? 0) > 0) ?? null;
+/** Tempo mínimo entre duas poções de vida (ms). */
+export const POTION_COOLDOWN_MS = 1500;
+
+/**
+ * Item da tecla. Na tecla 1 (poções) escolhe a menor poção que cura o que falta;
+ * se nenhuma basta, a mais forte que o nível permite.
+ */
+export function itemForHotkey(hotkey, items = {}, { level = Infinity, missingHealth = Infinity } = {}) {
+  const usable = (HOTKEY_ITEMS[hotkey] ?? []).filter((type) => (items[type] ?? 0) > 0 && (CONSUMABLES[type]?.level ?? 1) <= level);
+  if (String(hotkey) === '1' && usable.length > 1) {
+    const sorted = [...usable].sort((a, b) => CONSUMABLES[a].heal - CONSUMABLES[b].heal);
+    return sorted.find((type) => CONSUMABLES[type].heal >= missingHealth) ?? sorted[sorted.length - 1];
+  }
+  return usable[0] ?? null;
 }
 
 /**
@@ -36,6 +51,7 @@ export function useConsumable(type, inventory, player) {
   const definition = CONSUMABLES[type];
   if (!definition) return { ok: false, reason: 'not-consumable' };
   if ((inventory.items[type] ?? 0) < 1) return { ok: false, reason: 'missing' };
+  if ((definition.level ?? 1) > (player.level ?? Infinity)) return { ok: false, reason: 'level', level: definition.level };
 
   if (definition.heal) {
     if (player.health >= player.maxHealth) return { ok: false, reason: 'full-health' };

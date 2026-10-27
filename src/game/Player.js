@@ -89,11 +89,13 @@ export class Player extends Phaser.GameObjects.Container {
   refreshGear() {
     const camp = this.scene.camp;
     const weapon = camp?.equipment?.equipped?.weapon ?? null;
+    // Arma achada/comprada vestida: a espada na mão usa a cor dela.
+    const lootWeapon = this.scene.gear?.weapon ?? null;
     const pickaxe = camp?.pickaxeTier ?? null;
-    const key = `${weapon}|${pickaxe}`;
+    const key = `${weapon}|${lootWeapon?.id}|${pickaxe}`;
     if (key === this.gearKey) return;
     this.gearKey = key;
-    this.weapon.setTexture(`gear-sword-${swordTierFor(weapon)}`);
+    this.weapon.setTexture(`gear-sword-${lootWeapon?.sword ?? swordTierFor(weapon)}`);
     if (pickaxe) {
       this.backPickaxe.setTexture(`gear-pickaxe-${pickaxe === 'iron' ? 'iron' : 'stone'}`);
       this.handTool.setTexture(`gear-pickaxe-${pickaxe === 'iron' ? 'iron' : 'stone'}`);
@@ -296,9 +298,15 @@ export class Player extends Phaser.GameObjects.Container {
     this.health = Math.min(this.maxHealth, this.health + amount);
   }
 
-  /** Recalcula atributos: base + níveis + equipamento + buffs + efeitos do acampamento. */
+  /** Nível do herói (poções fortes e equipamentos pedem nível mínimo). */
+  get level() {
+    return this.progression?.level ?? 1;
+  }
+
+  /** Recalcula atributos: base + níveis + Forja + equipamento vestido + buffs + efeitos do acampamento. */
   recalculateEquipment(equipment) {
     const bonuses = { attack: 0, defense: 0, fireResistance: 0, maxHealth: 0, speedPercent: 0, ...(equipment?.getBonuses?.() ?? {}) };
+    for (const [stat, value] of Object.entries(this.scene.gear?.bonuses?.() ?? {})) bonuses[stat] = (bonuses[stat] ?? 0) + value;
     const buffs = this.scene.buffs?.effects ?? {};
     const camp = this.scene.camp;
     const flatAttack = this.baseAttack + (this.progression?.attackBonus ?? 0) + bonuses.attack + (buffs.attack ?? 0);

@@ -15,6 +15,21 @@ function bottle(canvas, liquid, cork = '#c9a46a') {
   canvas.rect(5, 6, 1, 1, glass[0]);
 }
 
+/** Frasco grande e redondo (poções fortes): gargalo curto, corpo maior. */
+function bigFlask(canvas, liquid, cork = '#c9a46a', band = null) {
+  const glass = ['#7d8c94', '#b8c8cf', '#e3eef2', '#ffffff'];
+  canvas.rect(6, 0, 5, 2, cork);
+  canvas.pixel(6, 0, '#fff0b0');
+  canvas.rect(7, 2, 3, 2, glass[1]);
+  canvas.shadedEllipse(8.5, 9.5, 6.4, 6, ramp(liquid));
+  canvas.rect(7, 3, 3, 1, ramp(liquid)[1]);
+  if (band) canvas.rect(5, 2, 7, 1, band);
+  canvas.pixel(5, 7, '#ffffff');
+  canvas.pixel(5, 8, glass[2]);
+  canvas.pixel(4, 9, glass[2]);
+  canvas.pixel(11, 12, ramp(liquid)[0]);
+}
+
 /** Selo elemental: disco de pedra com a gema do elemento no centro. */
 function seal(canvas, gem) {
   canvas.shadedEllipse(8, 8, 7, 7, ['#4a4146', '#6f6469', '#9a8f94', '#c8bfc4']);
@@ -53,6 +68,15 @@ const DRAW = {
   },
   potion: (c) => bottle(c, '#c7334f'),
   staminaPotion: (c) => bottle(c, '#3f9a5b'),
+  potionStrong: (c) => {
+    bigFlask(c, '#e0552a');
+    c.pixel(10, 8, '#ffc08a');
+  },
+  potionGreat: (c) => {
+    bigFlask(c, '#a0204a', '#e8c15a', '#c99a2b');
+    c.pixel(10, 8, '#ff8ac0');
+    c.pixel(13, 4, '#fff6c8');
+  },
   elixir: (c) => {
     bottle(c, '#8b3fb1', '#d6c27a');
     c.pixel(11, 3, '#f0a6ff');
