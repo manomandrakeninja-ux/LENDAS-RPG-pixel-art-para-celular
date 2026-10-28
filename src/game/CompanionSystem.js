@@ -1,6 +1,9 @@
 import Phaser from 'phaser';
 import { PixelCanvas, darken, lighten } from '../art/pixel.js';
-import { drawHorseFrame, HORSE_W, HORSE_H, HORSE_FRAMES } from '../art/mountHorse.js';
+import {
+  HORSE_DIRS, HORSE_FRAMES, HORSE_GALLOP, HORSE_GROUND, HORSE_H, HORSE_IDLE, HORSE_LAYERS, HORSE_START, HORSE_STOP, HORSE_W,
+  horseFrameName, horseHits, horseSeat, horseSheetPixels
+} from '../art/mountHorse.js';
 import { Companions, PETS, petAbility } from '../data/companions.js';
 import { quantizePixels } from '../art/palette.js';
 import { ensureNpcAnims, hasNpcSheet, npcOriginY, npcSheetKey } from './npcArt.js';
@@ -59,16 +62,30 @@ export function petTexture(scene, id) {
   });
 }
 
-export function mountTexture(scene, frame = 0) {
-  const key = `mount-horse-${frame}`;
+/** Folha da montaria (Fase 23): uma textura com os quadros `<dir>-<camada>-<n>`. */
+export function mountTexture(scene) {
+  const key = 'mount-horse';
   if (scene.textures.exists(key)) return key;
-  const canvas = drawHorseFrame(frame);
-  const texture = scene.textures.createCanvas(key, HORSE_W, HORSE_H);
-  texture.getContext().putImageData(new ImageData(quantizePixels(canvas).data, HORSE_W, HORSE_H), 0, 0);
+  const sheet = horseSheetPixels();
+  const texture = scene.textures.createCanvas(key, sheet.width, sheet.height);
+  texture.getContext().putImageData(new ImageData(sheet.data, sheet.width, sheet.height), 0, 0);
+  HORSE_DIRS.forEach((dir, d) => HORSE_LAYERS.forEach((layer, l) => {
+    for (let f = 0; f < HORSE_FRAMES; f += 1) {
+      texture.add(horseFrameName(dir, layer, f), 0, f * HORSE_W, (d * HORSE_LAYERS.length + l) * HORSE_H, HORSE_W, HORSE_H);
+    }
+  }));
   texture.setFilter(Phaser.Textures.FilterMode.NEAREST);
   texture.refresh();
   return key;
 }
+
+// Herói montado: linha do quadril na folha 56x64 (o corte esconde as pernas; a sela cobre a emenda)
+// e onde ficam os cascos do cavalo em relação ao ponto do herói.
+const RIDER_HIP = 44;
+const MOUNT_GROUND = 9;
+const GALLOP_MS = 68;
+const START_MS = 120;
+const STOP_MS = 200;
 
 export class CompanionSystem {
   constructor(scene, saved) {
@@ -144,11 +161,83 @@ export class CompanionSystem {
       }
     }
     if (this.state.mounted && !this.mountSprite) {
-      this.mountSprite = scene.add.image(scene.player.x, scene.player.y + 12, mountTexture(scene, 1)).setOrigin(0.5, 0.78).setScale(1.2);
+      const key = mountTexture(scene);
+      const dir = scene.player.direction ?? 'down';
+      this.mountSprite = scene.add.image(scene.player.x, scene.player.y, key, horseFrameName(dir, 'back', 8)).setOrigin(0, 0);
+      this.mountFront = scene.add.image(scene.player.x, scene.player.y, key, horseFrameName(dir, 'front', 8)).setOrigin(0, 0);
+      this.mountMode = 'idle';
+      this.mountT = 0;
+      this.mountFrame = -1;
+      this.placeMount(scene.player, 0);
     } else if (!this.state.mounted && this.mountSprite) {
       this.mountSprite.destroy();
+      this.mountFront?.destroy();
       this.mountSprite = null;
+      this.mountFront = null;
+      this.releaseRider(scene.player);
     }
+  }
+
+  /** Quadro da montaria: parado ↔ arrancada → galope → parada → parado. */
+  mountStep(delta, moving) {
+    const mode = this.mountMode;
+    this.mountT += delta;
+    if (moving && (mode === 'idle' || mode === 'stop')) { this.mountMode = 'start'; this.mountT = 0; }
+    else if (!moving && (mode === 'gallop' || mode === 'start')) { this.mountMode = 'stop'; this.mountT = 0; }
+    else if (mode === 'start' && this.mountT >= START_MS) { this.mountMode = 'gallop'; this.mountT = 0; this.mountClock = 0; }
+    else if (mode === 'stop' && this.mountT >= STOP_MS) { this.mountMode = 'idle'; this.mountT = 0; }
+    if (this.mountMode === 'start') return HORSE_START;
+    if (this.mountMode === 'stop') return HORSE_STOP;
+    if (this.mountMode === 'gallop') {
+      this.mountClock += delta;
+      return HORSE_GALLOP[Math.floor(this.mountClock / GALLOP_MS) % HORSE_GALLOP.length];
+    }
+    const total = HORSE_IDLE.reduce((sum, [, ms]) => sum + ms, 0);
+    let t = this.mountT % total;
+    for (const [frame, ms] of HORSE_IDLE) { if (t < ms) return frame; t -= ms; }
+    return HORSE_IDLE[0][0];
+  }
+
+  /** Põe o cavalo sob o herói e encaixa o herói na sela (sobe e desce com o galope, pernas escondidas). */
+  placeMount(player, delta, moving = false) {
+    const dir = HORSE_DIRS.includes(player.direction) ? player.direction : 'down';
+    const frame = this.mountStep(delta, moving);
+    const rest = horseSeat(dir, 8);
+    const seat = horseSeat(dir, frame);
+    const left = Math.round(player.x - rest[0]);
+    const top = Math.round(player.y + MOUNT_GROUND - HORSE_GROUND);
+    this.mountSprite.setFrame(horseFrameName(dir, 'back', frame)).setPosition(left, top).setDepth(player.y + 29.5);
+    this.mountFront.setFrame(horseFrameName(dir, 'front', frame)).setPosition(left, top).setDepth(player.y + 30.5);
+    const sprite = player.sprite;
+    if (!sprite) return;
+    // Montado não anda: o quadro de andar vira o parado da mesma direção.
+    if (sprite.anims?.currentAnim?.key?.includes('-walk-')) {
+      const cols = player.animator?.cols ?? 4;
+      const row = Math.floor(Number(sprite.frame.name) / cols);
+      if (Number.isFinite(row)) sprite.setFrame(row * cols + 1);
+    }
+    const hipRow = Math.round(sprite.frame.height * (RIDER_HIP / 64));
+    if (!sprite.isCropped || this.riderCrop !== hipRow) { sprite.setCrop(0, 0, sprite.frame.width, hipRow); this.riderCrop = hipRow; }
+    // Linha do quadril do herói (no contêiner) vai para o assento do quadro.
+    const hipY = sprite.y + (hipRow - sprite.displayOriginY) * sprite.scaleY;
+    const dy = Math.round(top + seat[1] - player.y - hipY);
+    const dx = Math.round(seat[0] - rest[0]);
+    for (const part of [sprite, player.animator?.back, player.animator?.hand]) {
+      if (part) { part.y += dy; part.x += dx; }
+    }
+    if (frame !== this.mountFrame) {
+      this.mountFrame = frame;
+      for (const [hx, hy] of horseHits(dir, frame)) this.scene.effects?.spawnDust(left + hx, top + hy, 2, 0x9a9a72);
+    }
+  }
+
+  /** Desmontou: devolve o herói inteiro ao chão. */
+  releaseRider(player) {
+    const sprite = player?.sprite;
+    if (!sprite) return;
+    sprite.setCrop();
+    this.riderCrop = null;
+    player.animator?.update?.(0, player.direction, false);
   }
 
   update(delta, paused) {
@@ -156,14 +245,12 @@ export class CompanionSystem {
     const player = scene.player;
     if (!player) return;
     if (this.mountSprite) {
-      if (player.direction === 'left') this.mountSide = -1;
-      else if (player.direction === 'right') this.mountSide = 1;
-      const moving = Math.hypot(player.x - (this.lastPx ?? player.x), player.y - (this.lastPy ?? player.y)) > 0.3;
+      const moved = Math.hypot(player.x - (this.lastPx ?? player.x), player.y - (this.lastPy ?? player.y)) > 0.3;
       this.lastPx = player.x;
       this.lastPy = player.y;
-      if (moving) this.mountClock += delta;
-      const frame = moving ? Math.floor(this.mountClock / 90) % HORSE_FRAMES : 1;
-      this.mountSprite.setTexture(mountTexture(scene, frame)).setPosition(player.x, player.y + 14).setFlipX(this.mountSide < 0).setDepth(player.y + 7);
+      // Tolera um quadro parado no meio do galope (sem piscar para a parada).
+      this.stillMs = moved ? 0 : (this.stillMs ?? 0) + delta;
+      this.placeMount(player, delta, this.stillMs < 90);
     }
     const sprite = this.petSprite;
     if (!sprite) return;
