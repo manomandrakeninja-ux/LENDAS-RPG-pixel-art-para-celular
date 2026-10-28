@@ -1,21 +1,17 @@
 // Fase 22: sprite da arma/ferramenta que o herói leva nas costas e na mão.
-// Usa o mesmo desenho dos ícones (src/art/gearIcons.js): 32 x 32, na diagonal, cabo embaixo à esquerda
-// e ponta em cima à direita (-45 graus). Assim, nas costas e nas poses principais a arma fica nítida
-// (só espelhada), e só gira de verdade no meio do golpe.
+// G-armas: a arte é a mesma pintura dos ícones (scripts/bake-gear.mjs), na escala real do herói 56 x 64:
+// 40 x 40, na diagonal, cabo embaixo à esquerda e ponta em cima à direita (-45 graus). Assim, nas costas e
+// nas poses principais a arma fica nítida (só espelhada), e só gira de verdade no meio do golpe.
 import { PixelCanvas, ramp } from './pixel.js';
 import { drawWeaponArt } from './gearIcons.js';
+import { bakedWeaponHand } from './bakedGear.js';
+import { WEAPON_GRIPS, WEAPON_SPRITE_SIZE } from './weaponGrips.js';
 import { GEAR_ITEMS } from '../data/gear.js';
 import { SWORD_TIERS, swordTierFor } from './gear.js';
 
-export const WEAPON_SPRITE_SIZE = 32;
+export { WEAPON_GRIPS, WEAPON_SPRITE_SIZE };
 /** Ângulo (graus, tela) do cabo para a ponta no desenho original. */
 export const WEAPON_NATIVE_ANGLE = -45;
-
-/** Ponto de empunhadura (onde fica a mão) em cada aparência. */
-export const WEAPON_GRIPS = Object.freeze({
-  sword: [7, 24], dagger: [9, 22], sabre: [7, 24], axe: [9, 25], spear: [11, 22], trident: [11, 23],
-  club: [9, 25], staff: [10, 24], claw: [12, 23], bow: [15, 16], pickaxe: [9, 23], hatchet: [9, 25]
-});
 
 /** Jeito de atacar: corte, estocada (lança), conjuração (cajado), tiro (arco), pancada (maça/machado). */
 export const WEAPON_STYLE = Object.freeze({
@@ -72,12 +68,19 @@ function pickaxe(c, main, accent) {
 
 const EXTRA = { bow, pickaxe };
 
-/** Desenha a arma/ferramenta (PixelCanvas 32 x 32, já com contorno). */
-export function drawWeaponSprite(look, main = '#7d8792', accent = '#c8a030') {
+/**
+ * Desenha a arma/ferramenta (PixelCanvas 40 x 40, já com contorno). Com `id` (peça, espada da Forja,
+ * ferramenta ou arco), usa a arte pintada; sem ela, o desenho antigo de 32 x 32 com 4 px de folga.
+ */
+export function drawWeaponSprite(look, main = '#7d8792', accent = '#c8a030', id = null) {
+  const baked = bakedWeaponHand(id);
+  if (baked) return baked;
+  const small = new PixelCanvas(32, 32);
+  if (EXTRA[look]) EXTRA[look](small, main, accent);
+  else drawWeaponArt(small, look === 'hatchet' ? 'axe' : look, main, accent);
+  small.outline({ strength: 0.85, ink: '#120d12', rim: false });
   const canvas = new PixelCanvas(WEAPON_SPRITE_SIZE, WEAPON_SPRITE_SIZE);
-  if (EXTRA[look]) EXTRA[look](canvas, main, accent);
-  else drawWeaponArt(canvas, look === 'hatchet' ? 'axe' : look, main, accent);
-  canvas.outline({ strength: 0.85, ink: '#120d12', rim: false });
+  canvas.blit(small, 4, 4);
   return canvas.quantize();
 }
 
@@ -89,18 +92,18 @@ export function weaponLookFor({ lootId = null, forgeWeapon = null } = {}) {
   const item = lootId ? GEAR_ITEMS[lootId] : null;
   if (item?.slot === 'weapon') {
     const [main, accent] = item.colors ?? ['#7d8792', '#c8a030'];
-    return { key: `hero-weapon-${lootId}`, look: item.look ?? 'sword', main, accent };
+    return { key: `hero-weapon-${lootId}`, id: lootId, look: item.look ?? 'sword', main, accent };
   }
   const tier = swordTierFor(forgeWeapon);
   const palette = SWORD_TIERS[tier] ?? SWORD_TIERS.rusty;
-  return { key: `hero-weapon-forge-${tier}`, look: 'sword', main: palette.guard, accent: palette.blade[1] };
+  return { key: `hero-weapon-forge-${tier}`, id: `forge-${tier}`, look: 'sword', main: palette.guard, accent: palette.blade[1] };
 }
 
 /** Ferramenta da coleta: picareta (pedra/ferro) ou machadinha. */
 export function toolLookFor(tool = 'pickaxe', tier = 'stone') {
-  if (tool === 'hatchet') return { key: 'hero-tool-hatchet', look: 'hatchet', main: '#6e4628', accent: '#a7b0b8' };
+  if (tool === 'hatchet') return { key: 'hero-tool-hatchet', id: 'tool-hatchet', look: 'hatchet', main: '#6e4628', accent: '#a7b0b8' };
   const accent = tier === 'iron' ? '#9fc0dc' : '#8d9298';
-  return { key: `hero-tool-pickaxe-${tier}`, look: 'pickaxe', main: '#4a2f1e', accent };
+  return { key: `hero-tool-pickaxe-${tier}`, id: `tool-pickaxe-${tier === 'iron' ? 'iron' : 'stone'}`, look: 'pickaxe', main: '#4a2f1e', accent };
 }
 
 /**
@@ -133,4 +136,4 @@ export function weaponPose(look, angle) {
 }
 
 /** Arco Longo da Forja: aparece na mão só no tiro (a arma das costas continua a equipada). */
-export const BOW_LOOK = Object.freeze({ key: 'hero-weapon-longbow', look: 'bow', main: '#6e4628', accent: '#c8a030' });
+export const BOW_LOOK = Object.freeze({ key: 'hero-weapon-longbow', id: 'longbow', look: 'bow', main: '#6e4628', accent: '#c8a030' });

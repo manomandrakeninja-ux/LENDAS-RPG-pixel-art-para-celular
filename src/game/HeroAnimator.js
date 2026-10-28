@@ -77,7 +77,7 @@ export class HeroAnimator {
   ensureLook(look) {
     const textures = this.scene.textures;
     if (textures.exists(`${look.key}-00`)) return;
-    const pixels = quantizePixels(drawWeaponSprite(look.look, look.main, look.accent));
+    const pixels = quantizePixels(drawWeaponSprite(look.look, look.main, look.accent, look.id));
     const size = pixels.width;
     for (const fx of [0, 1]) {
       for (const fy of [0, 1]) {

@@ -35,7 +35,7 @@ function drawWeapon(ox, oy, [hx, hy], angle) {
   ctx.translate(ox + (hx + 0.5) * S, oy + (hy + 0.5) * S);
   ctx.rotate((p.rotation * Math.PI) / 180);
   ctx.scale(p.flipX ? -S : S, p.flipY ? -S : S);
-  const [gx, gy] = [p.flipX ? 31 - p.grip[0] : p.grip[0], p.flipY ? 31 - p.grip[1] : p.grip[1]];
+  const [gx, gy] = [p.flipX ? wpx.width - 1 - p.grip[0] : p.grip[0], p.flipY ? wpx.height - 1 - p.grip[1] : p.grip[1]];
   ctx.drawImage(wc, -gx - 0.5, -gy - 0.5);
   ctx.restore();
 }

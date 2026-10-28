@@ -124,7 +124,8 @@
   min-width: 44px;
   min-height: 44px;
   padding: 2px;
-  border: 2px solid var(--rarity, var(--wood-900));
+  /* A raridade vem na moldura pintada do ícone (G-armas); a borda do botão fica neutra. */
+  border: 2px solid var(--wood-900);
   background: rgba(20, 12, 8, 0.6);
   color: var(--parchment);
   cursor: pointer;
@@ -160,6 +161,21 @@
   width: 40px;
   height: 40px;
   image-rendering: pixelated;
+}
+
+/* Brilho sutil da moldura de raridade (cinza, verde, azul, roxo; dourado nas relíquias de chefe). */
+.gear-icon--uncommon { --glow: rgba(90, 197, 79, 0.45); filter: drop-shadow(0 0 1px var(--glow)); }
+.gear-icon--rare { --glow: rgba(0, 152, 220, 0.6); filter: drop-shadow(0 0 2px var(--glow)); }
+.gear-icon--legendary { --glow: rgba(202, 82, 201, 0.7); filter: drop-shadow(0 0 3px var(--glow)); animation: gear-icon-glow 2.6s ease-in-out infinite; }
+.gear-icon--relic { --glow: rgba(255, 200, 37, 0.7); filter: drop-shadow(0 0 3px var(--glow)); animation: gear-icon-glow 2.6s ease-in-out infinite; }
+
+@keyframes gear-icon-glow {
+  50% { filter: drop-shadow(0 0 1px var(--glow)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gear-icon--legendary,
+  .gear-icon--relic { animation: none; }
 }
 
 .gear-icon--missing {
@@ -209,7 +225,8 @@
 }
 
 .equipment__item.is-locked img {
-  filter: grayscale(0.6) sepia(0.4) hue-rotate(-30deg) saturate(2.2);
+  filter: saturate(0.55) brightness(0.75);
+  animation: none;
 }
 
 .equipment__item.is-locked .equipment__level {
@@ -341,8 +358,7 @@
 .gear-shop__icon {
   float: left;
   margin: 0 8px 4px 0;
-  border: 2px solid var(--rarity, rgba(90, 50, 20, 0.4));
-  background: rgba(20, 12, 8, 0.75);
+  line-height: 0;
 }
 
 @media (pointer: coarse) {
