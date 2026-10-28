@@ -10,6 +10,7 @@ import { levelInRange } from '../data/enemyScaling.js';
 import { rollGearDrop, GEAR_ITEMS, RARITIES } from '../data/gear.js';
 import { WORLD } from './config.js';
 import { drawNpc } from '../art/person.js';
+import { ensureNpcAnims, ensureNpcPortrait, hasNpcSheet, npcOriginY, npcSheetKey } from './npcArt.js';
 import { SPEAKERS } from '../data/story.js';
 import { quantizePixels } from '../art/palette.js';
 
@@ -189,7 +190,7 @@ export class RegionWorld {
   createFeatures() {
     const scene = this.scene;
     // Barqueiro dos portos (o retrato do diálogo usa a mesma textura).
-    if (!scene.textures.exists('npc-barqueiro-0')) {
+    if (!ensureNpcPortrait(scene, 'barqueiro') && !scene.textures.exists('npc-barqueiro-0')) {
       const pixels = drawNpc(SPEAKERS.barqueiro.palette, 0);
       const texture = scene.textures.createCanvas('npc-barqueiro-0', pixels.width, pixels.height);
       texture.getContext().putImageData(new ImageData(quantizePixels(pixels).data, pixels.width, pixels.height), 0, 0);
@@ -208,10 +209,14 @@ export class RegionWorld {
       const pier = scene.add.image(position.x, position.y + 30, 'biome', 'pier').setDepth(position.y - 20);
       const boat = scene.add.image(position.x + 6, position.boatY, 'biome', 'boat').setDepth(position.boatY + 30);
       scene.tweens.add({ targets: boat, y: position.boatY + 3, duration: 1400, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
-      const captain = scene.add.image(position.x - 30, position.y - 4, 'npc-barqueiro-0').setOrigin(0.5, 0.68).setDepth(position.y + 26);
-      scene.tweens.add({ targets: captain, y: position.y - 5, duration: 900, yoyo: true, repeat: -1 });
+      // Pintado (G-npcs): pés 7 px abaixo do ponto antigo, respirando; reserva: desenho antigo balançando.
+      const painted = hasNpcSheet(scene, 'barqueiro') && ensureNpcAnims(scene, 'barqueiro');
+      const captain = painted
+        ? scene.add.sprite(position.x - 30, position.y + 3, npcSheetKey('barqueiro')).setOrigin(0.5, npcOriginY('barqueiro')).setDepth(position.y + 26).play('npcsheet-barqueiro-idle')
+        : scene.add.image(position.x - 30, position.y - 4, 'npc-barqueiro-0').setOrigin(0.5, 0.68).setDepth(position.y + 26);
+      if (!painted) scene.tweens.add({ targets: captain, y: position.y - 5, duration: 900, yoyo: true, repeat: -1 });
       this.features.push({ type: 'dock', dock, x: position.x - 12, y: position.y, sprite: captain, label: `BARCO • ${dock.name}` });
-      this.addHint(captain, position.x - 30, position.y - 40, dock.name);
+      this.addHint(captain, position.x - 30, position.y - (painted ? 64 : 40), dock.name);
       scene.hudCamera?.ignore([pier, boat, captain]);
     }
     // Escadas e baús das salas das cavernas.

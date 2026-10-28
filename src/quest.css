@@ -292,7 +292,7 @@
 }
 
 .quest-portrait {
-  width: 48px;
+  width: 56px;
   height: 64px;
   border: 2px solid var(--parchment-edge);
   border-radius: 10px;
@@ -300,7 +300,7 @@
 }
 
 .quest-portrait--big {
-  width: 72px;
+  width: 84px;
   height: 96px;
 }
 
@@ -472,7 +472,7 @@
 }
 
 .quest-npc img {
-  width: 36px;
+  width: 42px;
   height: 48px;
 }
 
@@ -612,7 +612,7 @@
   }
 
   .quest-portrait--big {
-    width: 48px;
+    width: 56px;
     height: 64px;
   }
 }

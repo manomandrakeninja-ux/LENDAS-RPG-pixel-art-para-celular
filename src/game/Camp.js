@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { ensureNpcAnims, hasNpcSheet, npcOriginY, npcSheetKey } from './npcArt.js';
 import { PixelCanvas } from '../art/pixel.js';
 import { BUILDING_FOOTPRINTS } from './Obstacles.js';
 import { buildingVisual } from '../data/buildingVisuals.js';
@@ -307,7 +308,13 @@ export class Camp {
     const { cx, cy, halfWidth, halfHeight } = this.pen;
     for (const [index, type] of wanted.entries()) {
       let sprite;
-      if (type === 'cow') {
+      if (hasNpcSheet(this.scene, type) && ensureNpcAnims(this.scene, type)) {
+        // Pintados (G-npcs): andam com as patas e param de animar quando param.
+        sprite = this.scene.add.sprite(cx, cy, npcSheetKey(type), 0)
+          .setOrigin(0.5, npcOriginY(type))
+          .setDepth(cy + 20 + index)
+          .play(`${npcSheetKey(type)}-move`);
+      } else if (type === 'cow') {
         sprite = this.scene.add.sprite(cx, cy, 'camp-cow').setOrigin(0.5, 0.84).setDepth(cy + 20 + index);
       } else {
         const frame = type === 'sheep' ? 1 : type === 'pig' ? 5 : 9;
@@ -357,6 +364,7 @@ export class Camp {
     const x = cx + Phaser.Math.Between(-halfWidth + 16, halfWidth - 16);
     const y = cy + Phaser.Math.Between(-halfHeight + 10, halfHeight - 10);
     sprite.setFlipX(x < sprite.x);
+    if (sprite.anims?.isPaused) sprite.anims.resume();
     this.scene.tweens.add({
       targets: sprite,
       x,
@@ -364,10 +372,11 @@ export class Camp {
       duration: Phaser.Math.Between(1800, 3600),
       ease: 'Linear',
       onUpdate: () => sprite.setDepth(sprite.y + 20),
-      onComplete: () => this.scene.time.delayedCall(
-        Phaser.Math.Between(250, 900),
-        () => this.wanderAnimal(animal)
-      )
+      onComplete: () => {
+        // Parado entre um passeio e outro: os pintados param as patas.
+        if (sprite.anims?.currentAnim?.key?.startsWith('npcsheet-')) sprite.anims.pause();
+        this.scene.time.delayedCall(Phaser.Math.Between(250, 900), () => this.wanderAnimal(animal));
+      }
     });
   }
 

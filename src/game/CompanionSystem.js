@@ -3,6 +3,7 @@ import { PixelCanvas, darken, lighten } from '../art/pixel.js';
 import { drawHorseFrame, HORSE_W, HORSE_H, HORSE_FRAMES } from '../art/mountHorse.js';
 import { Companions, PETS, petAbility } from '../data/companions.js';
 import { quantizePixels } from '../art/palette.js';
+import { ensureNpcAnims, hasNpcSheet, npcOriginY, npcSheetKey } from './npcArt.js';
 
 // Parte da cena dos mascotes e da montaria: desenho em pixel, seguir o herói e os efeitos.
 
@@ -136,7 +137,10 @@ export class CompanionSystem {
       if (id) {
         this.px = scene.player.x - 20;
         this.py = scene.player.y + 8;
-        this.petSprite = scene.add.image(this.px, this.py, petTexture(scene, id)).setOrigin(0.5, 0.8);
+        // Pintado (G-npcs): folha de 4 quadros (andar ou bater asas); reserva: desenho 16 x 16.
+        this.petSprite = hasNpcSheet(scene, id) && ensureNpcAnims(scene, id)
+          ? scene.add.sprite(this.px, this.py, npcSheetKey(id), 0).setOrigin(0.5, npcOriginY(id)).play(`${npcSheetKey(id)}-move`)
+          : scene.add.image(this.px, this.py, petTexture(scene, id)).setOrigin(0.5, 0.8);
       }
     }
     if (this.state.mounted && !this.mountSprite) {
@@ -178,6 +182,12 @@ export class CompanionSystem {
       if (Math.abs(Math.cos(angle)) > 0.2) sprite.setFlipX(Math.cos(angle) < 0);
     }
     const flying = PETS[this.petId].role === 'heal';
+    // Pintados: quem anda para as patas quando para; quem voa bate asas sempre.
+    if (sprite.anims?.currentAnim) {
+      const moving = flying || distance > 6;
+      if (moving && sprite.anims.isPaused) sprite.anims.resume();
+      else if (!moving && !sprite.anims.isPaused) sprite.anims.pause(sprite.anims.currentAnim.frames[1]);
+    }
     const lift = flying ? -10 + Math.sin(this.bob / 220) * 3 : -Math.abs(Math.sin(this.bob / 160)) * 1.5;
     sprite.setPosition(this.px, this.py + lift).setDepth(this.py + 8);
     if (!paused) this.runAbility(delta, player);

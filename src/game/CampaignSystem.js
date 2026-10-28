@@ -12,6 +12,7 @@ import {
 } from '../data/campaign.js';
 import { isRainyDay } from '../data/weather.js';
 import { drawNpc } from '../art/person.js';
+import { ensureNpcAnims, ensureNpcPortrait, hasNpcSheet, npcOriginY, npcSheetKey, npcTop } from './npcArt.js';
 import { drawSiteArt } from '../art/sites.js';
 import { CampaignState } from './CampaignState.js';
 import { Enemy } from './Enemies.js';
@@ -79,8 +80,12 @@ export class CampaignSystem {
     };
     const arts = new Set(Object.values(SITES).map((site) => site.art).filter(Boolean));
     for (const art of [...arts, 'pillarLit', 'bridgeFixed']) put(`site-${art}`, drawSiteArt(art));
-    for (const [id, speaker] of Object.entries(SPEAKERS)) put(`npc-${id}-0`, drawNpc(speaker.palette, 0));
+    // Retratos e moradores: arte pintada (folhas de public/assets/npcs); o desenho antigo fica de reserva.
+    for (const [id, speaker] of Object.entries(SPEAKERS)) {
+      if (!ensureNpcPortrait(this.scene, id)) put(`npc-${id}-0`, drawNpc(speaker.palette, 0));
+    }
     for (const [id, npc] of Object.entries(NPCS)) {
+      if (ensureNpcPortrait(this.scene, id) && ensureNpcAnims(this.scene, id)) continue;
       for (const frame of [0, 1]) put(`npc-${id}-${frame}`, drawNpc(npc.palette, frame));
       if (!this.scene.anims.exists(`npc-${id}-idle`)) {
         this.scene.anims.create({
@@ -230,7 +235,9 @@ export class CampaignSystem {
       if (def.kind === 'pillar' && this.pillarLit(def)) texture = 'site-pillarLit';
       sprite = texture
         ? scene.add.image(def.x, def.y, texture).setOrigin(0.5, 0.9)
-        : scene.add.sprite(def.x, def.y, 'livestock', 0).setOrigin(0.5, 0.9).play('sheep-walk');
+        : hasNpcSheet(scene, 'sheep') && ensureNpcAnims(scene, 'sheep')
+          ? scene.add.sprite(def.x, def.y, npcSheetKey('sheep'), 0).setOrigin(0.5, npcOriginY('sheep')).play('npcsheet-sheep-move')
+          : scene.add.sprite(def.x, def.y, 'livestock', 0).setOrigin(0.5, 0.9).play('sheep-walk');
       sprite.setDepth(def.y + 6);
       objects.push(sprite);
     }
@@ -260,11 +267,16 @@ export class CampaignSystem {
     const scene = this.scene;
     const x = scene.camp.x + npc.home.x;
     const y = scene.camp.y + npc.home.y;
-    const sprite = scene.add.sprite(x, y, `npc-${id}-0`).setOrigin(0.5, 0.68).setDepth(y + 30).play(`npc-${id}-idle`);
-    const label = scene.add.text(x, y - 26, npc.role.toUpperCase(), {
+    // Pintado: pés na posição antiga (7 px abaixo de y), escala 1 como as skins do herói.
+    const painted = hasNpcSheet(scene, id);
+    const sprite = painted
+      ? scene.add.sprite(x, y + 7, npcSheetKey(id)).setOrigin(0.5, npcOriginY(id)).setDepth(y + 30).play({ key: `${npcSheetKey(id)}-idle`, startFrame: Math.floor(Math.random() * 4) })
+      : scene.add.sprite(x, y, `npc-${id}-0`).setOrigin(0.5, 0.68).setDepth(y + 30).play(`npc-${id}-idle`);
+    const top = painted ? y + 7 - npcTop(id) : y - 22;
+    const label = scene.add.text(x, top - 4, npc.role.toUpperCase(), {
       fontSize: '8px', color: '#f4e6c6', backgroundColor: '#2a1d14cc', padding: { x: 3, y: 2 }
     }).setOrigin(0.5).setScale(0.5).setDepth(y + 900);
-    const marker = scene.add.text(x, y - 38, '', {
+    const marker = scene.add.text(x, top - 16, '', {
       fontSize: '8px', color: '#ffd76b', stroke: '#2a1d14', strokeThickness: 4
     }).setOrigin(0.5).setDepth(y + 901);
     scene.tweens.add({ targets: marker, y: marker.y - 3, duration: 650, yoyo: true, repeat: -1, ease: 'Sine.inOut' });

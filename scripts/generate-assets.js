@@ -1,7 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { PixelCanvas, darken, dither, hash, lighten, ramp } from '../src/art/pixel.js';
-import { readAtlas, writePng } from './png.js';
+import { readAtlas, readPng, writePng } from './png.js';
+import { NPC_SHEETS } from '../src/art/npcSheets.js';
 import { KNIGHT_FRAME, drawHeroineFrame, drawKnightFrame } from '../src/art/knight.js';
 import { STORY_SCENE_KEYS, drawStoryScene } from '../src/art/storyScenes.js';
 import { valleyPine, valleyRoundTree } from '../src/art/biomeProps.js';
@@ -1193,8 +1194,27 @@ console.log('Pixel art gerada em public/assets/.');
 // As cenas usam os prédios e árvores do jogo, lidos dos atlas gerados acima.
 const storyAtlas = {
   ...readAtlas(path.join(root, 'buildings/camp-atlas.png'), path.join(root, 'buildings/camp-atlas.json')),
-  ...readAtlas(path.join(root, 'nature/nature-atlas.png'), path.join(root, 'nature/nature-atlas.json'))
+  ...readAtlas(path.join(root, 'nature/nature-atlas.png'), path.join(root, 'nature/nature-atlas.json')),
+  ...readNpcPortraits()
 };
+
+/** Quadro parado de frente de cada pessoa pintada (scripts/bake-npcs.mjs), como `npc-<id>`. */
+function readNpcPortraits() {
+  const frames = {};
+  for (const [id, info] of Object.entries(NPC_SHEETS)) {
+    if (info.kind !== 'walker' && info.kind !== 'still') continue;
+    const file = path.join(root, 'npcs', `${id}.png`);
+    if (!fs.existsSync(file)) continue;
+    const image = readPng(file);
+    const sy = info.kind === 'walker' ? info.h * 4 : 0;
+    const data = new Uint8ClampedArray(info.w * info.h * 4);
+    for (let row = 0; row < info.h; row += 1) {
+      data.set(image.data.subarray(((sy + row) * image.width) * 4, ((sy + row) * image.width + info.w) * 4), row * info.w * 4);
+    }
+    frames[`npc-${id}`] = { width: info.w, height: info.h, data };
+  }
+  return frames;
+}
 for (const key of STORY_SCENE_KEYS) {
   writePng(path.join(root, 'story', /^\d+$/.test(key) ? `capitulo-${key}.png` : `${key}.png`), drawStoryScene(key, storyAtlas));
 }

@@ -17,8 +17,13 @@ const SEAL_COLORS = ['#7ac04a', '#4aa0e0', '#e0e0ff', '#ffe27a', '#ff7a2a'];
 // ---------- Personagens e objetos do jogo ----------
 
 const knight = (direction = 0, frame = 1) => drawKnightFrame(direction, frame);
-const npc = (id) => drawNpc((NPCS[id] ?? SPEAKERS[id]).palette, 0);
+// Personagens pintados (G-npcs): quadros de public/assets/npcs entregues no atlas como `npc-<id>`
+// (56 x 64, escala 1). Sem eles, o desenho antigo (24 x 32) na escala 2.
+let PAINTED = {};
+let S = 2;
+const npc = (id) => PAINTED[`npc-${id}`] ?? drawNpc((NPCS[id] ?? SPEAKERS[id]).palette, 0);
 const villager = (id) => {
+  if (PAINTED[`npc-${id}`]) return PAINTED[`npc-${id}`];
   const def = VILLAGERS.find((entry) => entry.id === id);
   return drawVillager(def.palette, def.prop, 0);
 };
@@ -108,7 +113,7 @@ function sceneCampfire(p, atlas) {
   // O herói, com o fragmento vermelho brilhando, e Bram do outro lado do fogo.
   p.sprite(knight(2, 1), 160, 214, { scale: 2, light: '#ffb080', lightAmount: 0.45, rim: '#ffcf8a', rimSide: -1 });
   p.glow(165, 184, 12, '#ff3030', 0.9);
-  p.sprite(npc('vigia'), 240, 214, { scale: 2, flip: true, light: '#ffb080', lightAmount: 0.45, rim: '#ffcf8a', rimSide: 1 });
+  p.sprite(npc('vigia'), 240, 214, { scale: S, flip: true, light: '#ffb080', lightAmount: 0.45, rim: '#ffcf8a', rimSide: 1 });
   p.particles(40, { area: [175, 120, 50, 70], hex: '#ffcf6a', seed: 13, glowHex: '#ff8a3a' });
   p.particles(18, { area: [20, 140, 360, 60], hex: '#9aff8a', seed: 17, glowHex: '#5ae06a' });
   p.vignette(0.6);
@@ -132,15 +137,15 @@ function sceneVillage(p, atlas) {
   for (const [x, y] of [[56, 160], [108, 154], [266, 154], [148, 150]]) p.glow(x, y, 10, '#ffcf6a', 0.5);
   fire(p, 200, 206, 0.8);
   // A criança e os cinco símbolos desenhados no chão.
-  p.sprite(villager('pipo'), 168, 214, { scale: 2, light: '#ffc090', lightAmount: 0.3 });
+  p.sprite(villager('pipo'), 168, 214, { scale: S, light: '#ffc090', lightAmount: 0.3 });
   SEAL_COLORS.forEach((hex, index) => {
     const x = 128 + index * 9;
     p.ellipse(x, 218, 3, 2, hex);
     p.glow(x, 218, 8, hex, 0.5);
   });
-  p.sprite(villager('marta'), 228, 212, { scale: 2, flip: true, light: '#ffc090', lightAmount: 0.3 });
+  p.sprite(villager('marta'), 228, 212, { scale: S, flip: true, light: '#ffc090', lightAmount: 0.3 });
   p.sprite(knight(1, 1), 252, 216, { scale: 2, light: '#ffc090', lightAmount: 0.3 });
-  p.sprite(npc('construtor'), 104, 214, { scale: 2, light: '#ffc090', lightAmount: 0.3 });
+  p.sprite(npc('construtor'), 104, 214, { scale: S, light: '#ffc090', lightAmount: 0.3 });
   smoke(p, 312, 130, 50, 2, '#6a5a6a', 0.35);
   p.vignette(0.4);
 }
@@ -168,12 +173,12 @@ function sceneSiege(p, atlas) {
   p.line(330, 130, 330, 70, '#2a1a12', 2);
   p.rect(331, 70, 30, 22, '#2a1418');
   blackSun(p, 346, 81, 6);
-  const raider = drawNpc({ tunic: '#3a2a2a', scarf: '#1a1a1a', hair: '#1a1a1a', skin: '#a0704a', hat: '#2a2020' }, 0);
-  for (const [x, y] of [[300, 200], [330, 186], [356, 208], [382, 192], [280, 178]]) p.sprite(raider, x, y, { scale: 2, flip: true, light: '#ff9a5a', lightAmount: 0.45 });
+  const raider = PAINTED['npc-saqueador'] ?? drawNpc({ tunic: '#3a2a2a', scarf: '#1a1a1a', hair: '#1a1a1a', skin: '#a0704a', hat: '#2a2020' }, 0);
+  for (const [x, y] of [[300, 200], [330, 186], [356, 208], [382, 192], [280, 178]]) p.sprite(raider, x, y, { scale: S, flip: true, light: '#ff9a5a', lightAmount: 0.45 });
   // Defensores: o herói, a Capitã e um sentinela.
   p.sprite(knight(2, 0), 220, 214, { scale: 2, light: '#ffb080', lightAmount: 0.35, rim: '#ffcf8a', rimSide: -1 });
-  p.sprite(npc('capitao'), 182, 210, { scale: 2, light: '#ffb080', lightAmount: 0.35 });
-  p.sprite(villager('rui'), 248, 222, { scale: 2, light: '#ffb080', lightAmount: 0.35 });
+  p.sprite(npc('capitao'), 182, 210, { scale: S, light: '#ffb080', lightAmount: 0.35 });
+  p.sprite(villager('rui'), 248, 222, { scale: S, light: '#ffb080', lightAmount: 0.35 });
   p.particles(70, { area: [0, 40, W, 140], hex: '#ffb04a', seed: 34, glowHex: '#ff7a2a' });
   p.vignette(0.5);
 }
@@ -202,7 +207,7 @@ function sceneForestTemple(p, atlas) {
     p.glow(x, y - 7, 18, hex, 0.55);
   }
   p.sprite(knight(3, 1), 130, 218, { scale: 2, light: '#80c0a0', lightAmount: 0.5, rim: '#a0ffd0', rimSide: 1 });
-  p.sprite(npc('cacador'), 96, 214, { scale: 2, light: '#80c0a0', lightAmount: 0.5 });
+  p.sprite(npc('cacador'), 96, 214, { scale: S, light: '#80c0a0', lightAmount: 0.5 });
   p.particles(40, { area: [40, 40, 320, 170], hex: '#c0ffd0', seed: 45, glowHex: '#5ae0a0' });
   p.vignette(0.55);
 }
@@ -290,11 +295,11 @@ function sceneDesert(p) {
     for (const angle of [-2.6, -2.2, -1.2, -0.6]) p.line(x + 4, 140, x + 4 + Math.cos(angle) * 18, 148 + Math.sin(angle) * 10, '#3a8a3a', 2);
   }
   // O contrabandista com o sol negro no peito, diante do herói e de Zeno.
-  const smuggler = drawNpc({ tunic: '#1a1a22', scarf: '#2a2a32', hair: '#1a1a1a', skin: '#a0704a', hat: '#101014' }, 0);
-  p.sprite(smuggler, 300, 214, { scale: 2, flip: true });
+  const smuggler = PAINTED['npc-contrabandista'] ?? drawNpc({ tunic: '#1a1a22', scarf: '#2a2a32', hair: '#1a1a1a', skin: '#a0704a', hat: '#101014' }, 0);
+  p.sprite(smuggler, 300, 214, { scale: S, flip: true });
   blackSun(p, 296, 181, 3);
   p.sprite(knight(2, 1), 220, 218, { scale: 2, light: '#ffe0b0', lightAmount: 0.2 });
-  p.sprite(npc('mercador'), 180, 216, { scale: 2, light: '#ffe0b0', lightAmount: 0.2 });
+  p.sprite(npc('mercador'), 180, 216, { scale: S, light: '#ffe0b0', lightAmount: 0.2 });
   p.particles(80, { area: [0, 60, W, 160], hex: '#f8e0b0', alpha: 0.5, seed: 75 });
   p.vignette(0.35);
 }
@@ -325,7 +330,7 @@ function sceneBlackFortress(p) {
     p.sprite(monster('skeleton', 40, index % 3 === 0), 140 + index * 24, 178 + (index % 2) * 6, { scale: 2, silhouette: '#2a0e10', rim: '#ff7a3a', rimSide: -1 });
   }
   p.sprite(knight(3, 1), 120, 222, { scale: 2, light: '#ff8a5a', lightAmount: 0.45, rim: '#ffb06a', rimSide: 1 });
-  p.sprite(npc('capitao'), 84, 220, { scale: 2, light: '#ff8a5a', lightAmount: 0.45 });
+  p.sprite(npc('capitao'), 84, 220, { scale: S, light: '#ff8a5a', lightAmount: 0.45 });
   p.particles(90, { area: [0, 20, W, 200], hex: '#ffb04a', seed: 85, glowHex: '#ff6a2a' });
   p.vignette(0.55);
 }
@@ -361,8 +366,8 @@ function sceneForge(p) {
   p.rect(176, 186, 14, 6, '#3a3a42');
   p.rect(196, 184, 22, 4, '#ff9a3a');
   p.glow(207, 186, 30, '#ffb04a', 0.7);
-  p.sprite(npc('ferreiro'), 166, 220, { scale: 2, light: '#ffb080', lightAmount: 0.4, rim: '#ffcf8a', rimSide: -1 });
-  p.sprite(villager('borin'), 254, 220, { scale: 2, flip: true, light: '#ffb080', lightAmount: 0.4, rim: '#ffcf8a', rimSide: 1 });
+  p.sprite(npc('ferreiro'), 166, 220, { scale: S, light: '#ffb080', lightAmount: 0.4, rim: '#ffcf8a', rimSide: -1 });
+  p.sprite(villager('borin'), 254, 220, { scale: S, flip: true, light: '#ffb080', lightAmount: 0.4, rim: '#ffcf8a', rimSide: 1 });
   p.particles(60, { area: [180, 140, 60, 50], hex: '#ffe27a', seed: 93, glowHex: '#ffb04a' });
   p.vignette(0.55);
 }
@@ -409,7 +414,7 @@ function sceneDawn(p, atlas) {
     if (atlas[name]) p.sprite(atlas[name], x, y, { scale: 1, light: '#ffe0b0', lightAmount: 0.25 });
   }
   fire(p, 200, 214, 0.7);
-  for (const [id, x] of [['vigia', 150], ['curandeira', 168], ['construtor', 232], ['capitao', 250], ['ferreiro', 268]]) p.sprite(npc(id), x, 222, { scale: 2, light: '#ffe0b0', lightAmount: 0.2 });
+  for (const [id, x] of [['vigia', 150], ['curandeira', 168], ['construtor', 232], ['capitao', 250], ['ferreiro', 268]]) p.sprite(npc(id), x, 222, { scale: S, light: '#ffe0b0', lightAmount: 0.2 });
   p.sprite(knight(0, 1), 200, 224, { scale: 2, light: '#ffe0b0', lightAmount: 0.2 });
   p.vignette(0.3);
 }
@@ -433,7 +438,7 @@ function sceneAurelian(p) {
     p.sphere(x, y, 5, '#1a1a1a', hex);
     p.glow(x, y, 16, hex, 0.6);
   });
-  p.sprite(npc('aurelian'), 200, 222, { scale: 3, light: '#ff9a8a', lightAmount: 0.45, rim: '#ffb0a0', rimSide: 1 });
+  p.sprite(npc('aurelian'), 200, 222, { scale: S + 1, light: '#ff9a8a', lightAmount: 0.45, rim: '#ffb0a0', rimSide: 1 });
   // Coroa dourada sobre a cabeça do rei.
   p.rect(184, 128, 32, 6, '#e8c15a');
   for (const dx of [0, 10, 20, 30]) p.polygon([[184 + dx - 2, 128], [184 + dx, 118], [184 + dx + 3, 128]], '#f2d27a');
@@ -455,7 +460,7 @@ function sceneFreedHeart(p) {
   p.sprite(monster('titan', 64), 200, 206, { scale: 2, light: '#c0c0e0', lightAmount: 0.5, alpha: 0.85 });
   for (const [x0, y0, x1, y1] of [[200, 110, 186, 170], [200, 110, 216, 172], [170, 140, 160, 190], [230, 140, 240, 190]]) p.line(x0, y0, x1, y1, '#fff8d0', 2, 0.9);
   p.particles(120, { area: [100, 20, 200, 180], hex: '#fff4c0', seed: 134, glowHex: '#ffe08a' });
-  for (const [id, x] of [['vigia', 70], ['curandeira', 92], ['cacador', 308], ['capitao', 330]]) p.sprite(npc(id), x, 222, { scale: 2, light: '#ffe0c0', lightAmount: 0.3 });
+  for (const [id, x] of [['vigia', 70], ['curandeira', 92], ['cacador', 308], ['capitao', 330]]) p.sprite(npc(id), x, 222, { scale: S, light: '#ffe0c0', lightAmount: 0.3 });
   p.sprite(knight(3, 1), 120, 224, { scale: 2, light: '#ffe0c0', lightAmount: 0.3 });
   p.vignette(0.35);
 }
@@ -483,6 +488,8 @@ export const STORY_SCENE_KEYS = Object.freeze(Object.keys(SCENES));
  * ou do final secreto ('libertar'). atlas = quadros dos prédios e árvores do jogo (opcional).
  */
 export function drawStoryScene(key, atlas = {}) {
+  PAINTED = Object.fromEntries(Object.entries(atlas).filter(([name]) => name.startsWith('npc-')));
+  S = PAINTED['npc-vigia'] ? 1 : 2;
   const painter = new Painter(W, H);
   (SCENES[key] ?? sceneCampfire)(painter, atlas);
   return painter.toPixelCanvas(20);

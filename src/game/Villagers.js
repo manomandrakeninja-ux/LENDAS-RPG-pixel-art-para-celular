@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { drawVillager } from '../art/person.js';
 import { COMBAT_CONFIG } from '../data/combat.js';
 import { VILLAGERS, VILLAGER_STATS } from '../data/villagers.js';
+import { directionOf, ensureNpcAnims, hasNpcSheet, npcOriginY, npcSheetKey, npcTop } from './npcArt.js';
 
 const SIZE_SCALE = { dwarf: { x: 1.1, y: 0.82 }, child: { x: 0.72, y: 0.72 } };
 const DOWN_MS = 60000;
@@ -30,6 +31,8 @@ export class VillagerManager {
 
   ensureTextures(def) {
     const scene = this.scene;
+    // Arte pintada (G-npcs): folha com 4 direções x 4 quadros + parado respirando.
+    if (hasNpcSheet(scene, def.id) && ensureNpcAnims(scene, def.id)) return true;
     for (const frame of [0, 1]) {
       const key = `villager-${def.id}-${frame}`;
       if (scene.textures.exists(key)) continue;
@@ -43,6 +46,7 @@ export class VillagerManager {
     if (!scene.anims.exists(animation)) {
       scene.anims.create({ key: animation, frames: [{ key: `villager-${def.id}-0` }, { key: `villager-${def.id}-1` }], frameRate: 2, repeat: -1 });
     }
+    return false;
   }
 
   /** Cria ou remove moradores conforme o nível atual dos prédios. */
@@ -70,15 +74,20 @@ export class VillagerManager {
 
   spawn(def) {
     const scene = this.scene;
-    this.ensureTextures(def);
+    const painted = this.ensureTextures(def);
     const start = this.randomPoint(this.wanderRadius * 0.6);
     const container = scene.add.container(start.x, start.y);
-    const scale = SIZE_SCALE[def.size] ?? { x: 1, y: 1 };
-    const sprite = scene.add.sprite(0, -2, `villager-${def.id}-0`).setOrigin(0.5, 0.86).setScale(scale.x, scale.y);
-    sprite.play({ key: `villager-${def.id}-idle`, startFrame: Math.random() < 0.5 ? 0 : 1 });
-    const hpBack = scene.add.rectangle(0, -32 * scale.y - 2, 22, 4, 0x2d2624).setVisible(false);
-    const hpFill = scene.add.rectangle(-10, -32 * scale.y - 2, 20, 2, 0x7ad06a).setOrigin(0, 0.5).setVisible(false);
-    const bubble = scene.add.text(0, -32 * scale.y - 6, '', {
+    // Pintados já vêm no tamanho certo (anão e criança desenhados menores), na escala 1 das skins.
+    const scale = painted ? { x: 1, y: 1 } : SIZE_SCALE[def.size] ?? { x: 1, y: 1 };
+    const sprite = painted
+      ? scene.add.sprite(0, -1, npcSheetKey(def.id)).setOrigin(0.5, npcOriginY(def.id))
+      : scene.add.sprite(0, -2, `villager-${def.id}-0`).setOrigin(0.5, 0.86).setScale(scale.x, scale.y);
+    if (painted) sprite.play({ key: `${npcSheetKey(def.id)}-idle`, startFrame: Math.floor(Math.random() * 4) });
+    else sprite.play({ key: `villager-${def.id}-idle`, startFrame: Math.random() < 0.5 ? 0 : 1 });
+    const top = painted ? npcTop(def.id) + 1 : 32 * scale.y;
+    const hpBack = scene.add.rectangle(0, -top - 2, 22, 4, 0x2d2624).setVisible(false);
+    const hpFill = scene.add.rectangle(-10, -top - 2, 20, 2, 0x7ad06a).setOrigin(0, 0.5).setVisible(false);
+    const bubble = scene.add.text(0, -top - 6, '', {
       fontFamily: 'Press Start 2P', fontSize: '8px', color: '#3b2717', align: 'center',
       backgroundColor: '#f4e6c6', padding: { x: 6, y: 5 }, wordWrap: { width: 260 }
     }).setOrigin(0.5, 1).setScale(0.5).setVisible(false);
@@ -104,7 +113,10 @@ export class VillagerManager {
       bubbleMs: 0,
       stuckMs: 0,
       downedUntil: 0,
-      baseScale: scale
+      baseScale: scale,
+      painted,
+      facing: 'down',
+      moving: false
     };
     this.villagers.set(def.id, villager);
     return villager;
@@ -145,7 +157,20 @@ export class VillagerManager {
     const body = villager.container.body;
     const angle = Phaser.Math.Angle.Between(villager.container.x, villager.container.y, x, y);
     body.setVelocity(Math.cos(angle) * speed, Math.sin(angle) * speed);
-    villager.sprite.setFlipX(Math.cos(angle) < 0);
+    if (villager.painted) this.face(villager, directionOf(Math.cos(angle), Math.sin(angle)), true);
+    else villager.sprite.setFlipX(Math.cos(angle) < 0);
+  }
+
+  /** Pintados: anda na direção do movimento; parado = respirando de frente (ou virado para o alvo). */
+  face(villager, direction, moving) {
+    if (!villager.painted) return;
+    if (villager.facing === direction && villager.moving === moving) return;
+    villager.facing = direction;
+    villager.moving = moving;
+    const key = npcSheetKey(villager.def.id);
+    if (moving) villager.sprite.play(`${key}-walk-${direction}`, true);
+    else if (direction === 'down') villager.sprite.play(`${key}-idle`, true);
+    else villager.sprite.stop().setFrame(['down', 'left', 'right', 'up'].indexOf(direction) * 4 + 1);
   }
 
   update(delta) {
@@ -190,6 +215,7 @@ export class VillagerManager {
     const body = container.body;
     if (!villager.target) {
       body.setVelocity(0, 0);
+      this.face(villager, 'down', false);
       villager.idleMs -= delta;
       if (villager.idleMs <= 0) {
         villager.target = this.randomPoint();
@@ -204,6 +230,7 @@ export class VillagerManager {
       villager.target = null;
       villager.idleMs = 1200 + Math.random() * 3500;
       body.setVelocity(0, 0);
+      this.face(villager, 'down', false);
       return;
     }
     this.moveTowards(villager, villager.target.x, villager.target.y, VILLAGER_STATS.speed);
@@ -217,11 +244,13 @@ export class VillagerManager {
       this.moveTowards(villager, enemy.x, enemy.y, VILLAGER_STATS.speed * 1.6);
     } else {
       body.setVelocity(0, 0);
-      villager.sprite.setFlipX(enemy.x < container.x);
+      if (villager.painted) this.face(villager, enemy.x < container.x ? 'left' : 'right', false);
+      else villager.sprite.setFlipX(enemy.x < container.x);
       villager.attackMs -= delta;
       if (villager.attackMs <= 0) {
         villager.attackMs = VILLAGER_STATS.attackCooldownMs;
-        this.scene.tweens.add({ targets: villager.sprite, angle: villager.sprite.flipX ? -18 : 18, duration: 90, yoyo: true });
+        const leftward = villager.painted ? villager.facing === 'left' : villager.sprite.flipX;
+        this.scene.tweens.add({ targets: villager.sprite, angle: leftward ? -18 : 18, duration: 90, yoyo: true });
         this.scene.effects?.spawnSlash(enemy.x, enemy.y - 10, Phaser.Math.Angle.Between(container.x, container.y, enemy.x, enemy.y), 0.7);
         this.scene.damageEnemy(enemy, VILLAGER_STATS.attack, { color: '#a8f0a0' });
       }
@@ -246,6 +275,7 @@ export class VillagerManager {
     if (villager.health <= 0) {
       villager.downedUntil = this.scene.time.now + DOWN_MS;
       villager.container.body.setVelocity(0, 0);
+      if (villager.painted) { villager.sprite.stop(); villager.moving = false; }
       villager.sprite.setAngle(90).setAlpha(0.7);
       this.say(villager, 'Estou ferido! Preciso descansar...', 5000);
     }
@@ -255,6 +285,7 @@ export class VillagerManager {
     villager.downedUntil = 0;
     villager.health = VILLAGER_STATS.health;
     villager.sprite.setAngle(0).setAlpha(1);
+    if (villager.painted) { villager.facing = null; this.face(villager, 'down', false); }
     villager.hpBack.setVisible(false);
     villager.hpFill.setVisible(false);
     this.say(villager, 'Pronto, de pé de novo!');

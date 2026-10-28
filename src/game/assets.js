@@ -1,4 +1,5 @@
 import { SKIN_FRAME } from '../art/skins.js';
+import { NPC_SHEETS } from '../art/npcSheets.js';
 
 export const ASSET_CONFIG = {
   grass: {
@@ -28,6 +29,14 @@ export const ASSET_CONFIG = {
     file: `assets/characters/player-${id}-sheet.png`,
     frameWidth: SKIN_FRAME.width,
     frameHeight: SKIN_FRAME.height
+  }])),
+  // NPCs, animais e mascotes pintados (Fase 20 G-npcs; scripts/bake-npcs.mjs).
+  ...Object.fromEntries(Object.entries(NPC_SHEETS).map(([id, info]) => [`npc-${id}`, {
+    kind: 'spritesheet',
+    key: `npcsheet-${id}`,
+    file: `assets/npcs/${id}.png`,
+    frameWidth: info.w,
+    frameHeight: info.h
   }])),
   livestock: {
     kind: 'spritesheet',
