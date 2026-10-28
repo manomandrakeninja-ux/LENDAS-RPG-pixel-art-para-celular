@@ -1,5 +1,6 @@
 import { ACHIEVEMENTS, Achievements, completedSets, goalOf } from '../data/achievements.js';
 import { GEAR_ITEMS } from '../data/gear.js';
+import { OVERLAY_DEPTH } from './depths.js';
 
 // Parte da cena das conquistas e missões diárias: ouve os eventos, paga recompensas, mostra o título sob o herói e o painel (tecla T).
 
@@ -89,7 +90,7 @@ export class AchievementSystem {
     const name = this.state.titleName;
     if (!name) { this.titleText?.destroy(); this.titleText = null; return; }
     if (!this.titleText) {
-      this.titleText = this.scene.add.text(0, 0, name, { fontFamily: 'monospace', fontSize: '8px', color: '#ffe9a8', stroke: '#1c1426', strokeThickness: 3 }).setOrigin(0.5, 0).setDepth(9000);
+      this.titleText = this.scene.add.text(0, 0, name, { fontFamily: 'monospace', fontSize: '8px', color: '#ffe9a8', stroke: '#1c1426', strokeThickness: 3 }).setOrigin(0.5, 0).setDepth(OVERLAY_DEPTH + 9000);
       this.scene.hudCamera?.ignore(this.titleText);
     } else this.titleText.setText(name);
   }

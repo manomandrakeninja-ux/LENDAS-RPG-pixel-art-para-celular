@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { ARC_FRAMES, ARC_SIZE, ARC_TONES, hexRgb, swingArcTone } from '../art/light.js';
+import { OVERLAY_DEPTH } from './depths.js';
 
 const randomBetween = (min, max) => Math.random() * (max - min) + min;
 
@@ -133,7 +134,7 @@ export class PixelEffects {
   spawnSlash(x, y, angle, size = 1) {
     const slash = this.scene.add.sprite(x, y, 'vfx', 'slash-0')
       .setOrigin(0.5)
-      .setDepth(4200)
+      .setDepth(OVERLAY_DEPTH + 4200)
       .setRotation(angle)
       .setScale(size)
       .setBlendMode(Phaser.BlendModes.ADD);
@@ -148,7 +149,7 @@ export class PixelEffects {
     // Mesmo pivô da espada em Player.poseGear (a espada gira de angle-1,5 a angle+1,5 rad).
     const trail = this.scene.add.sprite(x + Math.cos(angle) * 8, y - 11 + Math.sin(angle) * 5, key, 0)
       .setOrigin(0.5)
-      .setDepth(4205)
+      .setDepth(OVERLAY_DEPTH + 4205)
       .setRotation(angle)
       .setScale(finisher ? 1.3 : 1);
     this.scene.hudCamera?.ignore(trail);
@@ -162,7 +163,7 @@ export class PixelEffects {
   /** Impacto: anel de choque, faíscas e lascas. */
   spawnImpact(x, y, { tint = 0xffe0a0, strong = false } = {}) {
     const ring = this.scene.add.image(x, y, 'vfx', 'ring-1')
-      .setDepth(4210)
+      .setDepth(OVERLAY_DEPTH + 4210)
       .setScale(0.3)
       .setTint(tint)
       .setBlendMode(Phaser.BlendModes.ADD);
@@ -191,7 +192,7 @@ export class PixelEffects {
   spawnSpecial(x, y) {
     const ring = this.scene.add.sprite(x, y, 'vfx', 'ring-0')
       .setOrigin(0.5)
-      .setDepth(4190)
+      .setDepth(OVERLAY_DEPTH + 4190)
       .setScale(1)
       .setBlendMode(Phaser.BlendModes.ADD);
     this.scene.hudCamera?.ignore(ring);
@@ -208,7 +209,7 @@ export class PixelEffects {
     this.sparkEmitter.emitParticleAt(x, y, count);
 
     const flash = this.scene.add.image(x, y, 'vfx', 'spark-0')
-      .setDepth(4210)
+      .setDepth(OVERLAY_DEPTH + 4210)
       .setScale(1)
       .setBlendMode(Phaser.BlendModes.ADD);
     this.scene.hudCamera?.ignore(flash);
@@ -226,7 +227,7 @@ export class PixelEffects {
         strokeThickness: 3
       })
         .setOrigin(0.5)
-        .setDepth(4300)
+        .setDepth(OVERLAY_DEPTH + 4300)
         .setResolution(1)
         .setVisible(false);
       this.scene.hudCamera?.ignore(text);

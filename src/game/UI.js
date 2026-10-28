@@ -7,6 +7,7 @@ import { drawIcon } from '../art/icons.js';
 import { MAP_SCALE, MapRenderer } from './MapRenderer.js';
 import { HOTKEY_ITEMS } from '../data/consumables.js';
 import { quantizePixels } from '../art/palette.js';
+import { OVERLAY_DEPTH } from './depths.js';
 
 const TEXT_STYLE = {
   fontFamily: 'Press Start 2P',
@@ -102,7 +103,7 @@ export class GameUI {
 
   text(x, y, content, style = {}) {
     const item = this.scene.add.text(x, y, content, { ...TEXT_STYLE, ...style })
-      .setScrollFactor(0).setDepth(5000);
+      .setScrollFactor(0).setDepth(OVERLAY_DEPTH + 5000);
     this.fixed.push(item);
     return item;
   }
@@ -110,7 +111,7 @@ export class GameUI {
   makeHud() {
     const { width } = this.scene.scale;
     // Chuva em dias chuvosos (afeta a irrigação da Fazenda nível 6+): riscos em pixel por cima do mundo.
-    this.rain = this.scene.add.graphics().setScrollFactor(0).setDepth(4990);
+    this.rain = this.scene.add.graphics().setScrollFactor(0).setDepth(OVERLAY_DEPTH + 4990);
     this.rainDrops = Array.from({ length: 90 }, () => ({
       x: Math.random() * 1600,
       y: Math.random() * 1000,
@@ -129,26 +130,26 @@ export class GameUI {
       6,
       6,
       6
-    ).setScrollFactor(0).setDepth(4999);
+    ).setScrollFactor(0).setDepth(OVERLAY_DEPTH + 4999);
     this.fixed.push(this.hudBg);
     this.healthLabel = this.text(22, 18, '', { fontSize: '8px' });
     this.healthBar = this.scene.add.rectangle(22, 40, 216, 13, 0x42513c)
-      .setOrigin(0).setScrollFactor(0).setDepth(5000);
+      .setOrigin(0).setScrollFactor(0).setDepth(OVERLAY_DEPTH + 5000);
     this.healthTrail = this.scene.add.rectangle(24, 42, 212, 9, 0xf0b36f)
-      .setOrigin(0).setScrollFactor(0).setDepth(5000.5);
+      .setOrigin(0).setScrollFactor(0).setDepth(OVERLAY_DEPTH + 5000.5);
     this.healthFill = this.scene.add.rectangle(24, 42, 212, 9, 0xd96858)
-      .setOrigin(0).setScrollFactor(0).setDepth(5001);
+      .setOrigin(0).setScrollFactor(0).setDepth(OVERLAY_DEPTH + 5001);
     this.healthShine = this.scene.add.rectangle(24, 42, 212, 2, 0xffe0b4)
-      .setOrigin(0).setScrollFactor(0).setDepth(5002).setAlpha(0.35);
+      .setOrigin(0).setScrollFactor(0).setDepth(OVERLAY_DEPTH + 5002).setAlpha(0.35);
     this.staminaBar = this.scene.add.rectangle(22, 66, 216, 8, 0x42513c)
-      .setOrigin(0).setScrollFactor(0).setDepth(5000);
+      .setOrigin(0).setScrollFactor(0).setDepth(OVERLAY_DEPTH + 5000);
     this.staminaFill = this.scene.add.rectangle(24, 68, 216, 4, 0xe6c66b)
-      .setOrigin(0).setScrollFactor(0).setDepth(5001);
+      .setOrigin(0).setScrollFactor(0).setDepth(OVERLAY_DEPTH + 5001);
     this.xpLabel = this.text(22, 78, '', { fontSize: '8px', color: '#d8c6ff' });
     this.xpBar = this.scene.add.rectangle(22, 55, 216, 5, 0x3b2b50)
-      .setOrigin(0).setScrollFactor(0).setDepth(5000);
+      .setOrigin(0).setScrollFactor(0).setDepth(OVERLAY_DEPTH + 5000);
     this.xpFill = this.scene.add.rectangle(24, 56, 212, 3, 0xa77bdc)
-      .setOrigin(0).setScrollFactor(0).setDepth(5001);
+      .setOrigin(0).setScrollFactor(0).setDepth(OVERLAY_DEPTH + 5001);
     this.fixed.push(
       this.healthBar,
       this.healthTrail,
@@ -164,7 +165,7 @@ export class GameUI {
     this.coinIcon = this.scene.add.image(28, 124, 'coin-hud-icon')
       .setDisplaySize(16, 16)
       .setScrollFactor(0)
-      .setDepth(5001);
+      .setDepth(OVERLAY_DEPTH + 5001);
     this.coinLabel = this.text(42, 120, '', { fontSize: '8px', color: '#ffe987' });
     this.statusLabel = this.text(22, 140, '', { fontSize: '8px', color: '#9fe0ff' });
     // Ferro e carvão ficam sempre visíveis (mochila + armazém), com ícones próprios.
@@ -173,7 +174,7 @@ export class GameUI {
       const icon = this.scene.add.image(x, 124, `resource-code-${type}`)
         .setDisplaySize(16, 16)
         .setScrollFactor(0)
-        .setDepth(5001);
+        .setDepth(OVERLAY_DEPTH + 5001);
       this.fixed.push(icon);
       const label = this.text(x + 12, 120, '', { fontSize: '8px', color: type === 'iron' ? '#d7e0e4' : '#a9adb1' });
       return { type, icon, label };
@@ -183,7 +184,7 @@ export class GameUI {
     this.hint = this.text(22, this.scene.scale.height - 34, '', {
       fontSize: '8px', backgroundColor: '#1d2b24dd', padding: { x: 8, y: 5 }
     }).setScrollFactor(0);
-    this.hint.setDepth(5000);
+    this.hint.setDepth(OVERLAY_DEPTH + 5000);
     this.layoutHint();
 
     this.mapX = width - this.metrics.mapSize / 2 - 12;
@@ -199,7 +200,7 @@ export class GameUI {
       6,
       6,
       6
-    ).setScrollFactor(0).setDepth(4999);
+    ).setScrollFactor(0).setDepth(OVERLAY_DEPTH + 4999);
     this.mapLabel = this.text(this.mapX, 10, 'MAPA • M', {
       fontSize: '8px', fontStyle: 'bold', color: '#ecd99f'
     }).setOrigin(0.5);
@@ -209,7 +210,7 @@ export class GameUI {
     this.minimapTexture = this.scene.textures.createCanvas('minimap-view', 176, 176);
     this.minimapImage = this.scene.add.image(this.mapX, this.mapY, 'minimap-view')
       .setScrollFactor(0)
-      .setDepth(5000);
+      .setDepth(OVERLAY_DEPTH + 5000);
     this.minimapTimer = 0;
     this.minimapStats = { rendered: false, kinds: [] };
     this.drawMapBase();
@@ -219,13 +220,13 @@ export class GameUI {
       fontSize: '8px', fontStyle: 'bold', align: 'center', backgroundColor: '#26392ddd',
       padding: { x: 12, y: 7 }, wordWrap: { width: Math.min(520, width - 32) }
     }).setOrigin(0.5).setAlpha(0);
-    this.message.setDepth(5100);
+    this.message.setDepth(OVERLAY_DEPTH + 5100);
 
     this.warning = this.text(width / 2, 178, '', {
       fontSize: '8px', fontStyle: 'bold', align: 'center', color: '#ffe0a0',
       backgroundColor: '#4b2c27ee', padding: { x: 12, y: 8 }
     }).setOrigin(0.5).setVisible(false);
-    this.warning.setDepth(5150);
+    this.warning.setDepth(OVERLAY_DEPTH + 5150);
   }
 
   /**
@@ -235,15 +236,15 @@ export class GameUI {
   makeQuickBar() {
     const make = (id, texture, frame, size, iconScale, key, label) => {
       const frameBg = this.scene.add.nineslice(0, 0, 'panel', 'panel', size, size, 6, 6, 6, 6)
-        .setOrigin(0).setScrollFactor(0).setDepth(5000);
+        .setOrigin(0).setScrollFactor(0).setDepth(OVERLAY_DEPTH + 5000);
       const icon = this.scene.add.image(0, 0, texture, frame)
-        .setScale(iconScale).setScrollFactor(0).setDepth(5001);
+        .setScale(iconScale).setScrollFactor(0).setDepth(OVERLAY_DEPTH + 5001);
       const count = this.text(0, 0, '', { fontSize: '8px', color: '#fff1ce', stroke: '#140f14', strokeThickness: 3 })
-        .setOrigin(1, 1).setDepth(5002);
+        .setOrigin(1, 1).setDepth(OVERLAY_DEPTH + 5002);
       const keyLabel = this.text(0, 0, key, { fontSize: '8px', color: '#f4d88f', stroke: '#140f14', strokeThickness: 3 })
-        .setOrigin(0, 0).setDepth(5002);
+        .setOrigin(0, 0).setDepth(OVERLAY_DEPTH + 5002);
       const caption = this.text(0, 0, label, { fontSize: '8px', color: '#e9dcb8', stroke: '#140f14', strokeThickness: 3 })
-        .setOrigin(0.5, 0).setDepth(5002);
+        .setOrigin(0.5, 0).setDepth(OVERLAY_DEPTH + 5002);
       this.fixed.push(frameBg, icon);
       return { id, frameBg, icon, count, keyLabel, caption, size, x: 0, y: 0 };
     };
@@ -694,7 +695,7 @@ export class GameUI {
     if (this.messageTimer) this.messageTimer.remove(false);
     this.message.setText(text).setAlpha(1);
     this.message.setPosition(this.scene.scale.width / 2, 120);
-    this.message.setDepth(5100);
+    this.message.setDepth(OVERLAY_DEPTH + 5100);
     this.messageTimer = this.scene.time.delayedCall(1900, () => {
       this.scene.tweens.add({ targets: this.message, alpha: 0, duration: 300 });
     });

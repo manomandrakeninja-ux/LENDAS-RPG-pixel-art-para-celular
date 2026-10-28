@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { CONSUMABLES } from '../data/consumables.js';
 import { GLOW_LEVELS, HALO_RGB, KIND, lightBand } from '../art/light.js';
+import { OVERLAY_DEPTH } from './depths.js';
 
 // Luz local (Fase 20E). Duas camadas em tela, na resolução de 1 célula = 4 px de tela:
 // - `mask`: a escuridão da noite (roxo-azulada, da paleta), aberta por cada fonte em
@@ -31,9 +32,9 @@ export class LightingSystem {
     this.glowTexture.setFilter(Phaser.Textures.FilterMode.NEAREST);
     this.context = this.texture.getContext();
     this.glowContext = this.glowTexture.getContext();
-    this.image = scene.add.image(0, 0, this.key).setOrigin(0).setScrollFactor(0).setDepth(3999);
+    this.image = scene.add.image(0, 0, this.key).setOrigin(0).setScrollFactor(0).setDepth(OVERLAY_DEPTH + 3999);
     // O halo vai por cima da escuridão: soma luz quente ao chão e aos sprites.
-    this.glowImage = scene.add.image(0, 0, this.glowKey).setOrigin(0).setScrollFactor(0).setDepth(4000)
+    this.glowImage = scene.add.image(0, 0, this.glowKey).setOrigin(0).setScrollFactor(0).setDepth(OVERLAY_DEPTH + 4000)
       .setBlendMode(Phaser.BlendModes.ADD);
     this.resize();
   }

@@ -4,14 +4,14 @@ import { PixelCanvas } from '../src/art/pixel.js';
 import { DECOR_KINDS, TILE_PX, UNDER_FRAME_COUNT, UNDER_KINDS, drawBaseTile, drawDecorTile, drawEdgeTile, drawFringeTile, drawUnderTile, drawWallTile } from '../src/art/terrain.js';
 import { BIOME_PROP_ENTRIES } from '../src/art/biomeProps.js';
 import { T, buildTerrainGrid } from '../src/data/worldRegions.js';
-import { BASE_VARIANTS, DECOR_VARIANTS, baseName, decorName, layoutTiles, underName } from '../src/data/terrainLayout.js';
+import { BASE_VARIANTS, DECOR_VARIANTS, UNDER_SUBTILES, baseName, decorName, layoutTiles, underName } from '../src/data/terrainLayout.js';
 import { writePng } from './png.js';
 
 // Gera o chão das regiões novas (folha de ladrilhos) e o atlas de objetos dos biomas.
 // Só desenha as bordas que o mapa realmente usa.
 
 const root = path.resolve('public/assets');
-const SHEET_COLUMNS = 16;
+const SHEET_COLUMNS = 32;
 
 export function generateWorldAssets() {
   const tiles = new Map();
@@ -21,11 +21,15 @@ export function generateWorldAssets() {
   for (const kind of [T.FOREST, T.SWAMP, T.SNOW, T.SAND, T.DUNE, T.BEACH, T.JUNGLE, T.ASH, T.CAVE]) {
     for (let variant = 0; variant < BASE_VARIANTS; variant += 1) add(baseName(kind, variant), () => drawBaseTile(kind, variant));
   }
-  for (const kind of UNDER_KINDS) for (let frame = 0; frame < UNDER_FRAME_COUNT; frame += 1) add(underName(kind, frame), () => drawUnderTile(kind, frame));
+  for (const kind of UNDER_KINDS) {
+    for (let frame = 0; frame < UNDER_FRAME_COUNT; frame += 1) {
+      for (let sub = 0; sub < UNDER_SUBTILES ** 2; sub += 1) add(underName(kind, frame, sub), () => drawUnderTile(kind, frame, sub));
+    }
+  }
 
   // Bordas: só as combinações (terreno, vizinho, lados) que existem no mapa.
   const grid = buildTerrainGrid();
-  const { ground, overlay } = layoutTiles(grid, { x: 1440, y: 1080 });
+  const { ground, overlay, overlay2 } = layoutTiles(grid, { x: 1440, y: 1080 });
   for (const name of ground) {
     if (typeof name === 'string' && name.startsWith('wall')) {
       const [kind, variant, rim] = name.split('-');
@@ -33,13 +37,13 @@ export function generateWorldAssets() {
       continue;
     }
     if (typeof name !== 'string' || !name.startsWith('edge-')) continue;
-    const [, land, under, mask] = name.split('-').map(Number);
-    add(name, () => drawEdgeTile(land, under, mask, 0));
+    const [, land, under, mask, core] = name.split('-').map(Number);
+    add(name, () => drawEdgeTile(land, under, mask, core));
   }
 
   // Camada de cima: decoração solta de cada terreno e as franjas que o mapa usa.
   for (const kind of DECOR_KINDS) for (let n = 0; n < DECOR_VARIANTS; n += 1) add(decorName(kind, n), () => drawDecorTile(kind, n));
-  for (const name of new Set(overlay)) {
+  for (const name of new Set([...overlay, ...overlay2])) {
     if (typeof name !== 'string' || !name.startsWith('fringe-')) continue;
     const [, kind, mask] = name.split('-').map(Number);
     add(name, () => drawFringeTile(kind, mask));

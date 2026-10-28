@@ -1,5 +1,6 @@
 import { Painter, fbm, rgb, mixRgb, clamp01 } from './painter.js';
 import { hash } from './pixel.js';
+import { bakedNature, hasBakedNature } from './bakedNature.js';
 
 // Objetos das regiões novas (árvores, pedras, cactos, cristais...), pintados com
 // luz contínua no Painter e convertidos para pixel art com contorno escuro.
@@ -790,8 +791,7 @@ export function valleyRoundTree(base, fruit = null, seed = 0) {
   return finish(p);
 }
 
-/** Lista de objetos para o atlas 'biome' (nome, tamanho e desenho). */
-export const BIOME_PROP_ENTRIES = [
+const PAINTED_ENTRIES = [
   { name: 'ancient-oak-0', draw: () => ancientOak(0) },
   { name: 'ancient-oak-1', draw: () => ancientOak(1) },
   { name: 'mossy-pine-0', draw: () => mossyPine(0) },
@@ -847,3 +847,10 @@ export const BIOME_PROP_ENTRIES = [
   { name: 'lily-1', draw: () => lilyPads(1) },
   { name: 'cave-crystal', draw: () => iceCrystal(34, ['#3a1a5a', '#5a2a8a', '#8a4ac0', '#b47ae0', '#dcb0f8', '#ffffff'], '#c08aff') }
 ];
+
+/**
+ * Lista de objetos para o atlas 'biome' (nome, tamanho e desenho). Árvores, arbustos, pedras, cogumelos,
+ * troncos, cactos e palmeiras vêm da arte pintada em alta resolução (scripts/bake-nature.mjs); o resto
+ * (cristais, cavernas, ruínas...) continua no Painter acima.
+ */
+export const BIOME_PROP_ENTRIES = PAINTED_ENTRIES.map((entry) => (hasBakedNature(entry.name) ? { name: entry.name, draw: () => bakedNature(entry.name) } : entry));

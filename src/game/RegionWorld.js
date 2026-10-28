@@ -3,7 +3,7 @@ import {
   BLOCKING, BOAT_FARE, DUNGEONS, CAVES_BY_ID, CAVE_NODES, DOCKS, FULL_WORLD, NODE_REGROW_DAYS, OASES, OVERWORLD,
   REGION_INFO, REGION_NODES, ROOM_COLS, T, TERRAIN_NODES, TILE, buildTerrainGrid, dungeonLevelRange, dockPosition, regionAt, roomAt
 } from '../data/worldRegions.js';
-import { layoutTiles, underName } from '../data/terrainLayout.js';
+import { UNDER_SUBTILES, layoutTiles, underName } from '../data/terrainLayout.js';
 import { hash } from '../art/pixel.js';
 import { ENEMY_TYPES } from '../data/enemies.js';
 import { levelInRange } from '../data/enemyScaling.js';
@@ -13,6 +13,7 @@ import { drawNpc } from '../art/person.js';
 import { ensureNpcAnims, ensureNpcPortrait, hasNpcSheet, npcOriginY, npcSheetKey } from './npcArt.js';
 import { SPEAKERS } from '../data/story.js';
 import { quantizePixels } from '../art/palette.js';
+import { OVERLAY_DEPTH } from './depths.js';
 
 // Mundo grande: chão em tilemap (o Phaser só desenha o que a câmera vê), água e lava
 // animadas numa camada de baixo, e objetos/recursos montados por blocos perto do jogador.
@@ -20,7 +21,8 @@ import { quantizePixels } from '../art/palette.js';
 const CHUNK = 16;
 const GRASS_GID = 1;
 const TERRAIN_GID = 100;
-const UNDER_GID = 1000;
+const UNDER_GID = 3000;
+const SUBS = UNDER_SUBTILES * UNDER_SUBTILES;
 // Camada de baixo: mar (bloqueia), mar sob a borda, lava (bloqueia), lava sob a borda, lodo e gelo.
 const UNDER_SLOTS = [[T.SEA, true], [T.SEA, false], [T.LAVA, true], [T.LAVA, false], [T.MURK, false], [T.ICE, false]];
 const ACTIVE_MARGIN = 420;
@@ -109,7 +111,7 @@ export class RegionWorld {
     const terrain = map.addTilesetImage('terrain', 'terrain-tiles', TILE, TILE, 0, 0, TERRAIN_GID);
     // Textura da camada animada: um quadro de cada tipo lado a lado, redesenhada a cada passo.
     if (scene.textures.exists('under-tiles')) scene.textures.remove('under-tiles');
-    this.underTexture = scene.textures.createCanvas('under-tiles', UNDER_SLOTS.length * TILE, TILE);
+    this.underTexture = scene.textures.createCanvas('under-tiles', UNDER_SLOTS.length * SUBS * TILE, TILE);
     this.underTexture.setFilter(Phaser.Textures.FilterMode.NEAREST);
     this.drawUnderFrame(0);
     const under = map.addTilesetImage('under', 'under-tiles', TILE, TILE, 0, 0, UNDER_GID);
@@ -132,38 +134,47 @@ export class RegionWorld {
         if (underKind >= 0) {
           const pure = this.grid.terrain[cell] === underKind;
           const slot = UNDER_SLOTS.findIndex(([kind, block]) => kind === underKind && (block === (pure && BLOCKING.has(kind)) || !BLOCKING.has(kind)));
-          this.underLayer.putTileAt(UNDER_GID + Math.max(0, slot), col, row, false);
+          // Mar/lava/lodo/gelo em blocos de 3x3 ladrilhos diferentes (repetem só a cada 144 px).
+          const sub = (col % UNDER_SUBTILES) + (row % UNDER_SUBTILES) * UNDER_SUBTILES;
+          this.underLayer.putTileAt(UNDER_GID + Math.max(0, slot) * SUBS + sub, col, row, false);
         }
       }
     }
     // Camada de cima do chão: franjas entre terrenos e decoração solta (tufos, flores, seixos).
+    // Duas camadas: a franja do 2º invasor fica por baixo da do 1º (quadrado tocado por dois terrenos).
+    this.overlayLayer2 = map.createBlankLayer('overlay2', terrain).setDepth(-999.5);
     this.overlayLayer = map.createBlankLayer('overlay', terrain).setDepth(-999);
-    const { overlay } = this.layout;
-    for (let cell = 0; cell < overlay.length; cell += 1) {
-      const name = overlay[cell];
-      if (name && index[name] !== undefined) this.overlayLayer.putTileAt(TERRAIN_GID + index[name], cell % cols, Math.floor(cell / cols), false);
+    const { overlay, overlay2 = [] } = this.layout;
+    for (const [names, layer] of [[overlay, this.overlayLayer], [overlay2, this.overlayLayer2]]) {
+      for (let cell = 0; cell < names.length; cell += 1) {
+        const name = names[cell];
+        if (name && index[name] !== undefined) layer.putTileAt(TERRAIN_GID + index[name], cell % cols, Math.floor(cell / cols), false);
+      }
     }
     this.groundLayer.setCollision([...wallIndices]);
-    this.underLayer.setCollision([UNDER_GID + 0, UNDER_GID + 2]);
+    this.underLayer.setCollision([0, 2].flatMap((slot) => Array.from({ length: SUBS }, (_, sub) => UNDER_GID + slot * SUBS + sub)));
     // Paredes das cavernas ganham a cor do tema de cada caverna.
     for (const room of this.grid.rooms) {
       const tint = { ice: 0xb8d8ff, fire: 0xffb8a0, tomb: 0xffe0b0, swamp: 0xc8e0b0, sea: 0xc0d0e0 }[CAVES_BY_ID[room.cave].theme];
       if (!tint) continue;
-      for (const layer of [this.groundLayer, this.overlayLayer]) {
+      for (const layer of [this.groundLayer, this.overlayLayer2, this.overlayLayer]) {
         layer.forEachTile((tile) => { tile.tint = tint; }, null, room.col0, room.row0, ROOM_COLS, room.plan.grid.length / ROOM_COLS);
       }
     }
-    scene.hudCamera?.ignore([this.underLayer, this.groundLayer, this.overlayLayer]);
+    scene.hudCamera?.ignore([this.underLayer, this.groundLayer, this.overlayLayer2, this.overlayLayer]);
   }
 
   drawUnderFrame(frame) {
     const source = this.scene.textures.get('terrain-tiles').getSourceImage();
     const context = this.underTexture.getContext();
     const columns = this.scene.cache.json.get('terrain-index')?.columns ?? 16;
+    const index = this.tileIndex ?? this.scene.cache.json.get('terrain-index')?.index ?? {};
     UNDER_SLOTS.forEach(([kind], slot) => {
-      const position = this.tileIndex?.[underName(kind, kind === T.ICE ? 0 : frame)] ?? this.scene.cache.json.get('terrain-index')?.index?.[underName(kind, frame)];
-      if (position === undefined) return;
-      context.drawImage(source, (position % columns) * TILE, Math.floor(position / columns) * TILE, TILE, TILE, slot * TILE, 0, TILE, TILE);
+      for (let sub = 0; sub < SUBS; sub += 1) {
+        const position = index[underName(kind, kind === T.ICE ? 0 : frame, sub)];
+        if (position === undefined) continue;
+        context.drawImage(source, (position % columns) * TILE, Math.floor(position / columns) * TILE, TILE, TILE, (slot * SUBS + sub) * TILE, 0, TILE, TILE);
+      }
     });
     this.underTexture.refresh();
   }
@@ -240,7 +251,7 @@ export class RegionWorld {
     const label = this.scene.add.text(x, y, text, {
       fontFamily: 'Press Start 2P', fontSize: '7px', color: '#fff3cf',
       backgroundColor: '#1d1712cc', padding: { x: 4, y: 3 }
-    }).setOrigin(0.5).setDepth(9000).setVisible(false);
+    }).setOrigin(0.5).setDepth(OVERLAY_DEPTH + 9000).setVisible(false);
     this.scene.hudCamera?.ignore([target, label]);
     target.hintLabel = label;
   }

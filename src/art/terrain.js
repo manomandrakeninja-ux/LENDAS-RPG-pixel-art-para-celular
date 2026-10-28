@@ -1,63 +1,108 @@
 import { PixelCanvas, hash } from './pixel.js';
 import { T } from '../data/worldRegions.js';
+import { UNDER_SUBTILES, VALLEY_PATH_END_START, VALLEY_PATH_START, WANG_INTERIORS } from '../data/terrainLayout.js';
 
-// Chão do mundo em ladrilhos de 48 px que se repetem sem emenda (Fase 20B).
-// - Base: manchas de cor em 3 escalas, quantizadas em degraus (sem dither: nada de quadriculado).
-// - Detalhe: tufos de grama com luz em cima e sombra embaixo, flores em grupos, seixos, ondulações.
-// - Transições: "franjas" (borda do terreno vizinho invadindo o ladrilho, com cantos arredondados)
-//   numa camada própria, no lugar das antigas manchas 80x60.
-// - Bordas com água/lava/lodo/gelo: recorte por máscara (N=1, L=2, S=4, O=8) com espuma/crosta de 2 px.
+// Chão do mundo em ladrilhos de 48 px (G-terreno, refeito no nível das skins).
+// - Base em "Wang de cantos": variante = 4 bits de canto (classe clara/escura vinda de um ruído do
+//   mundo) + 3 miolos. A borda de cada ladrilho só depende dos 2 cantos dela, então qualquer vizinho
+//   encaixa e as manchas atravessam ladrilhos: some a repetição de 48 px.
+// - Grama: lâminas finas de 1 px (2 a 5 de altura), raiz escura, ponta clara, tufos com luz do alto
+//   à esquerda; lâminas que passam da borda continuam no vizinho (posições periódicas, cor pelo campo local).
+// - Transições e margens: contorno por interpolação dos cantos (marching squares) + ondulação suave,
+//   então diagonais viram curvas e não degraus; a grama passa por cima da terra com pontas soltas.
 // Todas as cores vêm da paleta-mestre (src/art/palette.js).
 
 export const TILE_PX = 48;
+const S = TILE_PX;
+const LAST = S - 1;
 
-// Rampas do chão: [fundo, sombra, base, luz, brilho].
-const GROUND = {
-  [T.VALLEY]: ['#134c4c', '#1e6f50', '#33984b', '#5ac54f', '#99e65f'],
-  [T.FOREST]: ['#0c2e44', '#134c4c', '#1e6f50', '#33984b', '#5ac54f'],
-  [T.JUNGLE]: ['#134c4c', '#1e6f50', '#33984b', '#5ac54f', '#99e65f'],
-  [T.SWAMP]: ['#1c121c', '#2d2e25', '#494834', '#1e6f50', '#33984b'],
-  [T.SNOW]: ['#657392', '#9cc8e6', '#d5e8ef', '#ffffff', '#ffffff'],
-  [T.SAND]: ['#8a4836', '#ad7954', '#cba36f', '#f6ca9f', '#f9e6cf'],
-  [T.DUNE]: ['#5d2c28', '#8a4836', '#ad7954', '#cba36f', '#edab50'],
-  [T.BEACH]: ['#ad7954', '#cba36f', '#f6ca9f', '#f9e6cf', '#ffffff'],
-  [T.ASH]: ['#0e071b', '#1a1932', '#272727', '#3d3d3d', '#5d5d5d'],
-  [T.CAVE]: ['#1c121c', '#3d3d3d', '#5d5d5d', '#775c5b', '#918275']
+// Rampas: [fundo, sombra, base, luz, brilho, faísca].
+const RAMP = {
+  [T.VALLEY]: ['#134c4c', '#1e6f50', '#33984b', '#5ac54f', '#99e65f', '#d3fc7e'],
+  [T.FOREST]: ['#0c2e44', '#134c4c', '#1e6f50', '#33984b', '#5ac54f', '#99e65f'],
+  [T.JUNGLE]: ['#134c4c', '#1e6f50', '#33984b', '#5ac54f', '#99e65f', '#d3fc7e'],
+  [T.SWAMP]: ['#2d2e25', '#494834', '#1e6f50', '#33984b', '#5ac54f', '#99e65f'],
+  [T.SNOW]: ['#657392', '#92a1b9', '#9cc8e6', '#d5e8ef', '#ffffff', '#ffffff'],
+  [T.SAND]: ['#8a4836', '#ad7954', '#cba36f', '#f6ca9f', '#f9e6cf', '#ffffff'],
+  [T.DUNE]: ['#5d2c28', '#8a4836', '#ad7954', '#cba36f', '#e69c69', '#f6ca9f'],
+  [T.BEACH]: ['#ad7954', '#cba36f', '#f6ca9f', '#f9e6cf', '#ffffff', '#ffffff'],
+  [T.ASH]: ['#0e071b', '#1c121c', '#272727', '#2d2e25', '#3d3d3d', '#5d5d5d'],
+  [T.CAVE]: ['#1c121c', '#272727', '#3d3d3d', '#5d5d5d', '#775c5b', '#918275']
 };
-const DIRT = ['#5d2c28', '#8a4836', '#ad7954', '#cba36f', '#f6ca9f'];
-const STONE = ['#3d3d3d', '#5d5d5d', '#858585', '#b4b4b4'];
-const WARM_STONE = ['#5d2c28', '#775c5b', '#918275', '#cba36f'];
+const DIRT = ['#391f21', '#5d2c28', '#8a4836', '#ad7954', '#cba36f', '#e69c69', '#f6ca9f'];
+const STONE = ['#272727', '#3d3d3d', '#5d5d5d', '#858585', '#b4b4b4'];
+const WARM_STONE = ['#391f21', '#5d2c28', '#775c5b', '#918275', '#cba36f'];
+const SNOW_STONE = ['#2a2f4e', '#424c6e', '#657392', '#92a1b9', '#ffffff'];
 const GRASSY = new Set([T.VALLEY, T.FOREST, T.JUNGLE]);
+const BLADED = new Set([T.VALLEY, T.FOREST, T.JUNGLE, T.SWAMP]);
 
-/** Ruído periódico (repete a cada 48 px) para os ladrilhos encaixarem. */
-function periodic(x, y, cells, seed) {
-  const size = TILE_PX / cells;
+const wrap = (value) => ((value % S) + S) % S;
+const clamp = (value, low, high) => Math.max(low, Math.min(high, value));
+const smooth = (t) => t * t * (3 - 2 * t);
+
+/** Ruído de valor periódico (período `period`, em `cells` células). */
+function periodic(x, y, cells, seed, period = S) {
+  const size = period / cells;
   const gx = x / size;
   const gy = y / size;
   const x0 = Math.floor(gx);
   const y0 = Math.floor(gy);
-  const fx = gx - x0;
-  const fy = gy - y0;
+  const fx = smooth(gx - x0);
+  const fy = smooth(gy - y0);
   const corner = (cx, cy) => hash(((cx % cells) + cells) % cells, ((cy % cells) + cells) % cells, seed);
-  const sx = fx * fx * (3 - 2 * fx);
-  const sy = fy * fy * (3 - 2 * fy);
-  const top = corner(x0, y0) + (corner(x0 + 1, y0) - corner(x0, y0)) * sx;
-  const bottom = corner(x0, y0 + 1) + (corner(x0 + 1, y0 + 1) - corner(x0, y0 + 1)) * sx;
-  return top + (bottom - top) * sy;
+  const top = corner(x0, y0) + (corner(x0 + 1, y0) - corner(x0, y0)) * fx;
+  const bottom = corner(x0, y0 + 1) + (corner(x0 + 1, y0 + 1) - corner(x0, y0 + 1)) * fx;
+  return top + (bottom - top) * fy;
 }
 
-const wrap = (value) => ((value % TILE_PX) + TILE_PX) % TILE_PX;
-
-/** Manchas em 3 escalas; o "tremor" vem em blocos de 2 px (aglomerados, não pixels soltos). */
-function patches(x, y, seed, jitter = 0.1) {
-  const n = periodic(x, y, 2, seed) * 0.5 + periodic(x, y, 4, seed + 1) * 0.32 + periodic(x, y, 8, seed + 2) * 0.18;
-  return n + (hash(wrap(x) >> 1, wrap(y) >> 1, seed + 5) - 0.5) * jitter;
+/** Peso do miolo: 0 nas bordas (iguais em todas as variantes), 1 a partir de 12 px para dentro. */
+function inner(x, y) {
+  const edge = Math.min(x, y, LAST - x, LAST - y);
+  return smooth(clamp((edge - 2) / 6, 0, 1));
 }
 
-function scatter(seed, count, callback, margin = 5) {
+/** Classe interpolada dos cantos (0..1) no pixel: TL 1, TR 2, BL 4, BR 8. */
+function wangAt(wang, x, y) {
+  const fx = smooth(x / LAST);
+  const fy = smooth(y / LAST);
+  const top = (wang & 1) + (((wang >> 1) & 1) - (wang & 1)) * fx;
+  const bottom = ((wang >> 2) & 1) + (((wang >> 3) & 1) - ((wang >> 2) & 1)) * fx;
+  return top + (bottom - top) * fy;
+}
+
+/** Campo de tom (0..1) de um terreno: manchas em 3 escalas + classe dos cantos + miolo da variante. */
+function toneField(kind, variant) {
+  const wang = variant & 15;
+  const core = Math.floor(variant / 16);
+  const seed = kind * 31 + 7;
+  const bladed = GRASSY.has(kind);
+  const rocky = kind === T.ASH || kind === T.CAVE || kind === T.SWAMP;
+  // Grama: tufos de 8-16 px. Chão macio e rocha: só grão fino (2-6 px); as manchas grandes vêm dos
+  // cantos Wang (ruído do mundo), então nada de 'figura' que se repita a cada ladrilho.
+  const [c1, c2, c3] = bladed ? [4, 6, 12] : rocky ? [4, 8, 16] : kind === T.SNOW ? [4, 8, 16] : [6, 12, 24];
+  const [o1, o2] = bladed ? [5, 8] : rocky ? [6, 12] : [8, 16];
+  const contrast = bladed ? 1.6 : rocky ? 1.1 : 0.62;
+  const macro = bladed ? 0.38 : rocky ? 0.42 : 0.55;
+  const field = new Float32Array(S * S);
+  for (let y = 0; y < S; y += 1) {
+    for (let x = 0; x < S; x += 1) {
+      const shared = periodic(x, y, c1, seed) * 0.4 + periodic(x, y, c2, seed + 1) * 0.35 + periodic(x, y, c3, seed + 2) * 0.25;
+      const own = periodic(x, y, o1, seed + 11 + core * 5) * 0.55 + periodic(x, y, o2, seed + 12 + core * 5) * 0.45;
+      const w = inner(x, y);
+      // Mistura que preserva o contraste (média simples achataria a faixa da emenda e desenharia uma moldura).
+      const a = 1 - w * 0.9;
+      const b = w * 0.9;
+      const n = 0.5 + ((shared - 0.5) * a + (own - 0.5) * b) / Math.hypot(a, b);
+      field[y * S + x] = clamp(0.5 + (n - 0.5) * contrast + (wangAt(wang, x, y) - 0.5) * macro, 0, 1);
+    }
+  }
+  return field;
+}
+
+function scatterInner(seed, count, callback, margin = 8) {
   for (let index = 0; index < count; index += 1) {
-    const x = margin + Math.floor(hash(index, 1, seed) * (TILE_PX - margin * 2));
-    const y = margin + Math.floor(hash(index, 2, seed) * (TILE_PX - margin * 2));
+    const x = margin + Math.floor(hash(index, 1, seed) * (S - margin * 2));
+    const y = margin + Math.floor(hash(index, 2, seed) * (S - margin * 2));
     callback(x, y, index);
   }
 }
@@ -75,438 +120,476 @@ function stamp(canvas, x, y, rows, colors, flip = false) {
   });
 }
 
-// ---------- Detalhes ----------
+// ---------- Lâminas de grama ----------
 
-const TUFTS = [
-  ['...h.....', '.h.l..h..', '.l.lh.l.h', '.llll.l.l', '..lllll..', '.ddddddd.'],
-  ['.h...h.', 'hl.h.lh', '.l.l.l.', '.lllll.', '..ddd..'],
-  ['h.h.h', 'l.l.l', '.lll.', '.ddd.'],
-  ['..h....h...', '.hl.h..lh.h', '.ll.l.hl..l', '..llllll.l.', '.lllllllll.', '..ddddddd..'],
-  ['.h..h', 'hl.hl', 'l.ll.', '.lll.', 'ddd..']
-];
-
-function tuft(canvas, x, y, kind, shape, flip = false) {
-  const ramp = GROUND[kind] ?? GROUND[T.VALLEY];
-  const colors = kind === T.SWAMP
-    ? { h: '#33984b', l: '#1e6f50', d: ramp[1] }
-    : kind === T.SNOW
-      ? { h: '#cba36f', l: '#ad7954', d: '#9cc8e6' }
-      : kind === T.SAND || kind === T.DUNE || kind === T.BEACH
-        ? { h: '#5ac54f', l: '#33984b', d: ramp[1] }
-        : { h: ramp[4], l: ramp[3], d: ramp[1] };
-  stamp(canvas, x, y, TUFTS[shape % TUFTS.length], colors, flip);
-}
-
-function flower(canvas, x, y, petal, center) {
-  canvas.pixel(x, y - 1, petal);
-  canvas.pixel(x - 1, y, petal);
-  canvas.pixel(x + 1, y, petal);
-  canvas.pixel(x, y + 1, petal);
-  canvas.pixel(x, y, center);
-}
-
-const FLOWER_SETS = [
-  [['#ffffff', '#ffc825'], ['#f9e6cf', '#ffc825']],
-  [['#ffc825', '#e07438'], ['#ffeb57', '#e07438']],
-  [['#f68187', '#ffeb57'], ['#fdd2ed', '#ffc825']],
-  [['#9cc8e6', '#ffffff'], ['#ffffff', '#ffc825']]
-];
-
-/** Grupo de 3 a 5 flores com folhinhas, num raio de ~6 px. */
-function flowerCluster(canvas, x, y, seed, set, leaf = '#1e6f50') {
-  const count = 3 + Math.floor(hash(seed, 3, 7) * 3);
-  for (let index = 0; index < count; index += 1) {
-    const fx = x + Math.round((hash(seed, index, 11) - 0.5) * 12);
-    const fy = y + Math.round((hash(seed, index, 12) - 0.5) * 8);
-    canvas.pixel(fx + 1, fy + 2, leaf);
-    canvas.pixel(fx - 1, fy + 2, leaf);
-    const [petal, center] = FLOWER_SETS[set % FLOWER_SETS.length][index % 2];
-    if (index % 3 === 2) {
-      canvas.pixel(fx, fy, petal);
-      canvas.pixel(fx, fy + 1, leaf);
-    } else flower(canvas, fx, fy, petal, center);
+/**
+ * Lâminas sobre o canvas. `tone(x, y)` dá o tom local (0..1). As raízes ficam numa grade de 2 px com
+ * desvio; perto das bordas a posição é igual em todas as variantes (e a lâmina que passa da borda dá a
+ * volta e aparece no vizinho), no miolo muda com `core`.
+ */
+function blades(canvas, ramp, tone, seed, core, { density = 0.78, min = 2, max = 4, sparkle = 0.18, step = 2, wrapEdges = true, mask = null } = {}) {
+  const list = [];
+  for (let gy = 0; gy < S; gy += step) {
+    for (let gx = 0; gx < S; gx += step) {
+      const edge = Math.min(gx, gy, LAST - gx, LAST - gy);
+      const s = edge >= max + 4 ? seed + 101 * (core + 1) : seed;
+      if (hash(gx, gy, s) > density) continue;
+      const x = gx + Math.floor(hash(gx, gy, s + 1) * step);
+      const y = gy + Math.floor(hash(gx, gy, s + 2) * step);
+      if (mask && !mask(x, y)) continue;
+      const height = min + Math.floor(hash(gx, gy, s + 3) * (max - min + 1));
+      const roll = hash(gx, gy, s + 4);
+      const lean = roll < 0.28 ? -1 : roll > 0.72 ? 1 : 0;
+      list.push({ x, y, height, lean, glint: hash(gx, gy, s + 5) });
+    }
+  }
+  list.sort((a, b) => a.y - b.y);
+  const put = (x, y, hex) => {
+    if (!wrapEdges && (x < 0 || y < 0 || x > LAST || y > LAST)) return;
+    canvas.pixel(wrap(x), wrap(y), hex);
+  };
+  for (const blade of list) {
+    for (let k = 0; k < blade.height; k += 1) {
+      const lvl = k / Math.max(1, blade.height - 1);
+      const px = blade.x + (k === blade.height - 1 && blade.height > 2 ? blade.lean : 0);
+      const py = blade.y - k;
+      const t = tone(wrap(px), wrap(py));
+      let index = Math.round(0.7 + t * 2.4 + lvl * 1.5);
+      if (k === 0) index -= 1;
+      index = clamp(index, 1, 4);
+      if (k === blade.height - 1 && t > 0.58 && blade.glint < sparkle) index = 5;
+      put(px, py, ramp[index]);
+    }
+    // Sombra da lâmina no chão (à direita, embaixo): dá volume ao tufo.
+    const t = tone(wrap(blade.x + 1), wrap(blade.y + 1));
+    if (t < 0.55) put(blade.x + 1, blade.y + 1, ramp[t < 0.35 ? 0 : 1]);
   }
 }
 
+/** Chão debaixo das lâminas: tom quantizado, escuro (é o que aparece entre os tufos). */
+function grassFloor(canvas, ramp, field) {
+  for (let y = 0; y < S; y += 1) {
+    for (let x = 0; x < S; x += 1) {
+      const t = field[y * S + x];
+      canvas.pixel(x, y, ramp[t < 0.3 ? 0 : t < 0.62 ? 1 : 2]);
+    }
+  }
+}
+
+// ---------- Detalhes pequenos ----------
+
+/** Seixo com luz no alto à esquerda, sombra embaixo à direita e sombra de contato. size 0..2. */
 function pebble(canvas, x, y, size, colors, ground) {
-  const [dark, mid, base, light] = colors;
+  const [dark, mid, base, light, glint] = colors;
   if (size === 0) {
     canvas.pixel(x, y, base);
     canvas.pixel(x + 1, y, mid);
-    canvas.pixel(x, y - 1, light);
     canvas.pixel(x, y + 1, ground);
-    canvas.pixel(x + 1, y + 1, ground);
+    canvas.pixel(x + 1, y + 1, dark);
     return;
   }
   stamp(canvas, x, y + 1, size === 1
-    ? ['.lb.', 'lbbm', '.mmd', '.gg.']
-    : ['..lb..', '.lbbb.', 'lbbbbm', '.bbmmd', '..mdd.', '.gggg.'], { l: light, b: base, m: mid, d: dark, g: ground });
+    ? ['.lb.', 'lbbm', 'bbmd', '.gg.']
+    : ['..lbb..', '.gllbm.', 'lbbbbmd', 'bbbbmmd', '.mmmdd.', '..ggg..'], { l: light, b: base, m: mid, d: dark, g: size === 2 ? glint : ground });
+  if (size === 2) { canvas.pixel(x - 2, y - 3, glint); canvas.pixel(x - 1, y + 2, ground); canvas.pixel(x, y + 2, ground); canvas.pixel(x + 1, y + 2, ground); }
 }
 
-/** Mancha irregular (raio ~r) de uma cor, com borda em blocos de 2 px. */
-function blotch(canvas, cx, cy, r, color, seed, ry = r * 0.7) {
-  for (let y = Math.floor(cy - ry - 2); y <= cy + ry + 2; y += 1) {
-    for (let x = Math.floor(cx - r - 2); x <= cx + r + 2; x += 1) {
-      const d = Math.hypot((x - cx) / r, (y - cy) / ry);
-      if (d < 0.75 + (hash(x >> 1, y >> 1, seed) - 0.5) * 0.5) canvas.pixel(x, y, color);
-    }
+const FLOWERS = [['#ffffff', '#ffc825'], ['#ffeb57', '#e07438'], ['#f68187', '#ffeb57'], ['#9cc8e6', '#ffffff'], ['#fdd2ed', '#ffc825']];
+
+/** Florzinha de 3 a 5 px com caule e folha. */
+function flower(canvas, x, y, set, leaf) {
+  const [petal, center] = FLOWERS[set % FLOWERS.length];
+  canvas.pixel(x, y + 1, leaf);
+  canvas.pixel(x - 1, y + 2, leaf);
+  canvas.pixel(x, y - 1, petal);
+  canvas.pixel(x - 1, y, petal);
+  canvas.pixel(x + 1, y, petal);
+  canvas.pixel(x, y, center);
+}
+
+/** Rachadura fina (passeio aleatório) com borda clara do lado da luz. */
+function crack(canvas, x, y, length, seed, dark, light, { glow = null, core = null } = {}) {
+  let cx = x;
+  let cy = y;
+  let dir = hash(seed, 0, 3) < 0.5 ? 1 : -1;
+  for (let step = 0; step < length; step += 1) {
+    canvas.pixel(cx, cy, glow && step % 5 !== 0 ? glow : dark);
+    if (core && step % 4 === 2) canvas.pixel(cx, cy, core);
+    if (light) canvas.pixel(cx, cy - 1, light);
+    const roll = hash(step, seed, 5);
+    if (roll < 0.55) cx += dir;
+    else if (roll < 0.85) cy += 1;
+    else { cy -= 1; cx += dir; }
+    if (hash(step, seed, 6) > 0.86) dir = -dir;
+    cx = clamp(cx, 4, S - 5);
+    cy = clamp(cy, 4, S - 5);
   }
 }
 
-// ---------- Placas de pedra (caverna e cinza vulcânica) ----------
-
-const voronoiCache = new Map();
-
-/** Mapa periódico de placas (Voronoi em grade g x g): id da placa e rejunte de 1 px. */
-function plates(seed, grid = 3) {
-  const key = `${seed}-${grid}`;
-  if (voronoiCache.has(key)) return voronoiCache.get(key);
-  const cell = TILE_PX / grid;
-  const points = [];
-  for (let gy = 0; gy < grid; gy += 1) {
-    for (let gx = 0; gx < grid; gx += 1) {
-      points.push([(gx + 0.2 + hash(gx, gy, seed) * 0.6) * cell, (gy + 0.2 + hash(gx, gy, seed + 1) * 0.6) * cell]);
-    }
+/** Tufo de grama: lâminas num leque, sombra embaixo. Para a decoração e a trilha. */
+function tuftAt(canvas, cx, cy, ramp, seed, { count = 7, min = 3, max = 6, spread = 3 } = {}) {
+  for (let i = -spread; i <= spread; i += 1) canvas.pixel(cx + i, cy + 1, ramp[0], 150);
+  const list = [];
+  for (let i = 0; i < count; i += 1) {
+    const offset = Math.round((hash(i, 1, seed) - 0.5) * spread * 2);
+    list.push({ x: cx + offset, y: cy - (hash(i, 2, seed) < 0.3 ? 1 : 0), h: min + Math.floor(hash(i, 3, seed) * (max - min + 1)), lean: Math.sign(offset) });
   }
-  const id = new Int16Array(TILE_PX * TILE_PX);
-  for (let y = 0; y < TILE_PX; y += 1) {
-    for (let x = 0; x < TILE_PX; x += 1) {
-      let best = Infinity;
-      points.forEach(([px, py], at) => {
-        for (const ox of [-TILE_PX, 0, TILE_PX]) {
-          for (const oy of [-TILE_PX, 0, TILE_PX]) {
-            const d = Math.hypot(x + 0.5 - px - ox, (y + 0.5 - py - oy) * 1.15);
-            if (d < best) { best = d; id[y * TILE_PX + x] = at; }
-          }
-        }
-      });
-    }
-  }
-  const at = (x, y) => id[wrap(y) * TILE_PX + wrap(x)];
-  const grout = new Uint8Array(TILE_PX * TILE_PX);
-  for (let y = 0; y < TILE_PX; y += 1) {
-    for (let x = 0; x < TILE_PX; x += 1) {
-      if (at(x, y) !== at(x + 1, y) || at(x, y) !== at(x, y + 1)) grout[y * TILE_PX + x] = 1;
-    }
-  }
-  const result = { id, grout: (x, y) => grout[wrap(y) * TILE_PX + wrap(x)] === 1, at };
-  voronoiCache.set(key, result);
-  return result;
-}
-
-function plateFloor(canvas, ramp, seed, { grout = ramp[0], moss = null } = {}) {
-  const map = plates(seed);
-  for (let y = 0; y < TILE_PX; y += 1) {
-    for (let x = 0; x < TILE_PX; x += 1) {
-      if (map.grout(x, y)) {
-        canvas.pixel(x, y, moss && periodic(x, y, 4, seed + 7) > 0.62 ? moss : grout);
-        continue;
-      }
-      const plate = map.at(x, y);
-      const n = patches(x, y, seed + plate, 0.12) + (hash(plate, 0, seed) - 0.5) * 0.25;
-      let tone = n < 0.4 ? 1 : n > 0.68 ? 3 : 2;
-      if (map.grout(x - 1, y) || map.grout(x, y - 1)) tone = Math.min(4, tone + 1);
-      else if (map.grout(x + 1, y + 1) || map.grout(x + 1, y)) tone = 1;
-      canvas.pixel(x, y, ramp[tone]);
+  list.sort((a, b) => a.h - b.h);
+  for (const blade of list) {
+    for (let k = 0; k < blade.h; k += 1) {
+      const lvl = k / (blade.h - 1);
+      const px = blade.x + (lvl > 0.6 ? blade.lean : 0);
+      const index = clamp(Math.round(1 + lvl * 2.6 + (blade.x < cx ? 0.4 : -0.3)), 1, 4);
+      canvas.pixel(px, cy - k, ramp[k === blade.h - 1 && blade.x <= cx && hash(blade.x, k, seed) > 0.5 ? Math.min(5, index + 1) : index]);
     }
   }
 }
 
 // ---------- Texturas base ----------
 
-/** Só as manchas de cor (sem detalhes): base dos ladrilhos e das franjas. */
-function groundBase(canvas, kind) {
-  const ramp = GROUND[kind];
-  const seed = kind * 10 + 3;
-  if (kind === T.CAVE) { plateFloor(canvas, ramp, 501); return; }
-  if (kind === T.ASH) { plateFloor(canvas, ramp, 503, { grout: '#0e071b' }); return; }
-  // Grão fino (manchinhas de 2 a 4 px): nenhuma forma grande que denuncie a repetição de 48 px.
-  // As manchas maiores vêm das variantes (longe das bordas) e da camada de decoração.
-  for (let y = 0; y < TILE_PX; y += 1) {
-    for (let x = 0; x < TILE_PX; x += 1) {
-      const v = periodic(x, y, 12, seed) * 0.55 + periodic(x, y, 24, seed + 1) * 0.45 + (hash(x >> 1, y >> 1, seed + 5) - 0.5) * 0.1;
-      const calm = kind === T.SNOW || kind === T.SAND || kind === T.DUNE || kind === T.BEACH;
-      const tone = v < (calm ? 0.24 : 0.3) ? 1 : v > (calm ? 0.76 : 0.72) ? 3 : 2;
-      canvas.pixel(x, y, ramp[tone]);
-    }
-  }
-  if (kind === T.SAND || kind === T.DUNE || kind === T.BEACH || kind === T.SNOW) ripples(canvas, kind, seed);
+const fieldCache = new Map();
+function fieldOf(kind, variant) {
+  const key = `${kind}-${variant}`;
+  if (!fieldCache.has(key)) fieldCache.set(key, toneField(kind, variant));
+  return fieldCache.get(key);
 }
 
-/** Ondulações de vento: crista clara com sombra de 1 px embaixo, em arcos interrompidos. */
-function ripples(canvas, kind, seed) {
-  const ramp = GROUND[kind];
-  const spacing = kind === T.DUNE ? 12 : kind === T.SNOW ? 16 : kind === T.BEACH ? 16 : 12;
-  for (let x = 0; x < TILE_PX; x += 1) {
-    const bend = Math.sin((x / TILE_PX) * Math.PI * 2 * 2 + seed) * 2.2 + periodic(x, 0, 3, seed + 9) * 4;
-    for (let y = 0; y < TILE_PX; y += 1) {
-      const phase = ((((y + bend) % spacing) + spacing) % spacing);
-      const keep = periodic(x, y, 4, seed + 11) > (kind === T.DUNE ? 0.4 : 0.55);
+/** Chão macio (neve, areia, duna, praia): tom suave em 3-4 degraus + grão esparso. */
+function softGround(canvas, kind, field, seed) {
+  const r = RAMP[kind];
+  const steps = {
+    [T.SNOW]: [[0.15, r[2]], [0.62, r[3]], [2, r[4]]],
+    [T.SAND]: [[0.16, r[1]], [0.8, r[2]], [2, r[3]]],
+    [T.DUNE]: [[0.22, r[1]], [0.74, r[2]], [2, r[3]]],
+    [T.BEACH]: [[0.15, r[1]], [0.82, r[2]], [2, r[3]]]
+  }[kind];
+  for (let y = 0; y < S; y += 1) {
+    for (let x = 0; x < S; x += 1) {
+      const t = field[y * S + x];
+      canvas.pixel(x, y, steps.find(([limit]) => t < limit)[1]);
+      const g = hash(x, y, seed);
+      if (g > 0.985) canvas.pixel(x, y, kind === T.SNOW ? '#ffffff' : t > 0.5 ? r[4] : r[0]);
+      else if (g < 0.012 && kind !== T.SNOW) canvas.pixel(x, y, r[1]);
+    }
+  }
+}
+
+/** Ondulações de vento: crista clara com sombra embaixo, em arcos que somem e voltam. */
+function ripples(canvas, kind, field, seed, variant) {
+  const r = RAMP[kind];
+  const spacing = kind === T.DUNE ? 8 : kind === T.SNOW ? 16 : 12;
+  const wang = variant & 15;
+  for (let x = 0; x < S; x += 1) {
+    const bend = Math.sin((x / S) * Math.PI * 2 + seed) * 2.4 + Math.sin((x / S) * Math.PI * 4 + seed * 1.7) * 1.2;
+    for (let y = 0; y < S; y += 1) {
+      const phase = (((y + bend) % spacing) + spacing) % spacing;
+      const keep = periodic(x, y, 4, seed + 11) + (wangAt(wang, x, y) - 0.5) * 0.3 > (kind === T.DUNE ? 0.5 : 0.58);
       if (!keep) continue;
-      if (phase < 1) canvas.pixel(x, y, ramp[3]);
-      else if (phase < 2 && kind !== T.BEACH) canvas.pixel(x, y, ramp[1]);
-      else if (phase < 3 && kind === T.DUNE) canvas.pixel(x, y, ramp[1]);
+      const t = field[y * S + x];
+      if (phase < 1) canvas.pixel(x, y, t > 0.4 ? r[3] : r[2]);
+      else if (phase < 2) canvas.pixel(x, y, r[1]);
+          }
+  }
+}
+
+/** Chão de pedra/cinza: tom em degraus, grão e marcas. */
+function rockGround(canvas, kind, field, seed) {
+  const r = RAMP[kind];
+  const steps = kind === T.CAVE
+    ? [[0.3, r[2]], [0.7, r[3]], [0.9, r[4]], [2, r[5]]]
+    : [[0.22, r[1]], [0.55, r[2]], [0.82, r[3]], [2, r[4]]];
+  for (let y = 0; y < S; y += 1) {
+    for (let x = 0; x < S; x += 1) {
+      const t = field[y * S + x];
+      canvas.pixel(x, y, steps.find(([limit]) => t < limit)[1]);
+      // Luz do alto à esquerda nas "lombadas" do chão.
+      if (kind === T.CAVE && x > 0 && y > 0 && field[y * S + x] - field[(y - 1) * S + x - 1] > 0.075) canvas.pixel(x, y, kind === T.CAVE ? r[5] : r[4]);
+      const g = hash(x, y, seed);
+      if (g > 0.99) canvas.pixel(x, y, kind === T.CAVE ? r[1] : r[0]);
+      else if (g < 0.005) canvas.pixel(x, y, kind === T.CAVE ? r[5] : r[5]);
     }
   }
 }
 
 function base(canvas, kind, variant) {
-  groundBase(canvas, kind);
-  const s = kind * 70 + variant * 31;
-  const ramp = GROUND[kind];
-  if (kind !== T.CAVE && kind !== T.ASH) {
-    scatter(s + 50, 2 + (variant % 2), (x, y, i) => blotch(canvas, x, y, 5 + ((i + variant) % 4), (i + variant) % 2 ? ramp[3] : ramp[1], s + i), 12);
+  const ramp = RAMP[kind];
+  const field = fieldOf(kind, variant);
+  const tone = (x, y) => field[y * S + x];
+  const core = Math.floor(variant / 16);
+  const s = kind * 70 + core * 31 + (variant & 15) * 3;
+  if (BLADED.has(kind)) {
+    grassFloor(canvas, ramp, field);
+    const options = {
+      [T.VALLEY]: { density: 0.82, min: 2, max: 4, sparkle: 0.22 },
+      [T.FOREST]: { density: 0.72, min: 2, max: 4, sparkle: 0.1 },
+      [T.JUNGLE]: { density: 0.88, min: 3, max: 5, sparkle: 0.16 },
+      [T.SWAMP]: { density: 0.5, min: 2, max: 4, sparkle: 0.06 }
+    }[kind];
+    blades(canvas, ramp, tone, kind * 13 + 5, core, options);
+    if (kind === T.FOREST) {
+      // Folhas caídas e gravetos no miolo.
+      scatterInner(s + 1, 2 + core, (x, y, i) => {
+        const leaf = ['#8a4836', '#bf6f4a', '#5d2c28', '#e07438'][(i + core) % 4];
+        canvas.pixel(x, y, leaf); canvas.pixel(x + 1, y, leaf); canvas.pixel(x + 1, y + 1, ramp[0]);
+      });
+      if (core === 2) { canvas.line(16, 30, 26, 27, '#391f21'); canvas.line(16, 31, 26, 28, ramp[0]); canvas.pixel(21, 28, '#5d2c28'); }
+    } else if (kind === T.SWAMP) {
+      // Poça de lama com brilho (só num dos miolos; o resto vem da decoração).
+      scatterInner(s + 2, core === 1 ? 1 : 0, (x, y) => {
+        canvas.ellipse(x, y, 4, 1.8, '#1c121c');
+        canvas.ellipse(x, y, 3, 1.2, '#2a2f4e');
+        canvas.pixel(x - 1, y - 1, '#657392');
+        canvas.pixel(x + 2, y, '#424c6e');
+      }, 10);
+    }
+    return;
   }
-  switch (kind) {
-    case T.FOREST:
-      scatter(s, 3 + variant, (x, y, i) => tuft(canvas, x, y, kind, i + variant, i % 2 === 1));
-      scatter(s + 1, 2 + variant, (x, y, i) => {
-        const leaf = ['#8a4836', '#bf6f4a', '#5d2c28', '#e07438'][(i + variant) % 4];
-        canvas.pixel(x, y, leaf);
-        canvas.pixel(x + 1, y, leaf);
-        canvas.pixel(x + 1, y + 1, ramp[0]);
+  if (kind === T.SNOW || kind === T.SAND || kind === T.DUNE || kind === T.BEACH) {
+    softGround(canvas, kind, field, s);
+    if (kind === T.SAND || kind === T.DUNE) ripples(canvas, kind, field, kind * 3 + 1, variant);
+    if (kind === T.SNOW) {
+      // Montinhos de neve (luz em cima, lado de baixo azulado) e brilhos.
+      scatterInner(s + 3, 1 + (core % 2), (x, y) => {
+        for (let dx = -4; dx <= 4; dx += 1) {
+          const h = Math.round(Math.sqrt(Math.max(0, 1 - (dx / 4.5) ** 2)) * 2);
+          for (let dy = -h; dy <= 0; dy += 1) canvas.pixel(x + dx, y + dy, dy === -h ? '#ffffff' : '#d5e8ef');
+          canvas.pixel(x + dx, y + 1, '#9cc8e6');
+        }
+      }, 10);
+      if (core === 2) pebble(canvas, 26, 28, 1, SNOW_STONE, '#9cc8e6');
+    } else if (kind === T.BEACH) {
+      scatterInner(s + 4, 2 + core, (x, y, i) => {
+        const shell = ['#ffffff', '#f68187', '#fdd2ed', '#ad7954'][(i + core) % 4];
+        canvas.pixel(x, y, shell); canvas.pixel(x + 1, y, shell); canvas.pixel(x, y + 1, RAMP[T.BEACH][1]);
       });
-      if (variant === 2) for (let x = 8; x < 30; x += 1) canvas.pixel(x, 32 + Math.round(Math.sin(x / 4) * 2), '#391f21');
-      if (variant === 3) pebble(canvas, 30, 30, 1, STONE, ramp[0]);
-      break;
-    case T.JUNGLE:
-      scatter(s, 4 + variant, (x, y, i) => tuft(canvas, x, y, kind, i, i % 2 === 0));
-      if (variant >= 2) flowerCluster(canvas, 24, 26, s, 2 + (variant % 2), ramp[1]);
-      break;
-    case T.SWAMP:
-      scatter(s, 2 + variant, (x, y, i) => {
-        if (i % 2) {
-          canvas.ellipse(x, y, 3.2, 1.6, '#134c4c');
-          canvas.pixel(x - 1, y - 1, '#2a2f4e');
-          canvas.pixel(x + 2, y, '#657392');
-        } else tuft(canvas, x, y, kind, i);
-      });
-      if (variant === 3) for (const [x, y] of [[12, 34], [14, 36], [11, 37]]) { canvas.pixel(x, y, '#775c5b'); canvas.pixel(x, y - 1, '#918275'); }
-      break;
-    case T.SNOW:
-      scatter(s + 1, 3 + variant, (x, y, i) => {
-        canvas.pixel(x, y, '#ffffff');
-        if (i % 2) { canvas.pixel(x, y + 1, '#9cc8e6'); canvas.pixel(x + 1, y + 1, '#9cc8e6'); }
-      });
-      if (variant === 2) tuft(canvas, 30, 30, kind, 2);
-      if (variant === 3) pebble(canvas, 22, 28, 1, ['#424c6e', '#657392', '#92a1b9', '#ffffff'], '#9cc8e6');
-      break;
-    case T.SAND:
-    case T.DUNE:
-      scatter(s, 3 + variant, (x, y, i) => canvas.pixel(x, y, i % 2 ? ramp[1] : ramp[4]));
-      if (variant === 3) pebble(canvas, 26, 30, 1, WARM_STONE, ramp[1]);
-      if (variant === 2 && kind === T.SAND) tuft(canvas, 30, 24, kind, 2);
-      break;
-    case T.BEACH:
-      scatter(s, 3 + variant, (x, y, i) => {
-        const shell = ['#ffffff', '#f68187', '#fdd2ed', '#ad7954'][i % 4];
-        canvas.pixel(x, y, shell);
-        if (i % 3 === 0) { canvas.pixel(x + 1, y, shell); canvas.pixel(x, y + 1, ramp[0]); }
-      });
-      if (variant === 2) pebble(canvas, 24, 28, 1, STONE, ramp[0]);
-      break;
-    case T.ASH:
-      if (variant >= 2) emberCrack(canvas, s, variant);
-      scatter(s + 1, 3 + variant, (x, y, i) => {
-        canvas.pixel(x, y, i % 3 ? '#0e071b' : '#5d5d5d');
-        if (i % 3 === 0) canvas.pixel(x + 1, y + 1, '#0e071b');
-      });
-      break;
-    case T.CAVE:
-      scatter(s, 1 + variant, (x, y, i) => pebble(canvas, x, y, i % 2, STONE, ramp[0]), 8);
-      if (variant === 3) {
-        canvas.rect(14, 30, 7, 1, '#f9e6cf');
-        for (const [x, y] of [[13, 29], [13, 31], [21, 29], [21, 31]]) canvas.pixel(x, y, '#f9e6cf');
-        canvas.rect(15, 31, 6, 1, '#918275');
-      }
-      break;
-    default:
-      break;
+    } else if (core === 1) pebble(canvas, 26, 30, 1, WARM_STONE, ramp[1]);
+    return;
   }
-}
-
-/** Rachadura com brasa: borda escura, miolo laranja e ponto amarelo. */
-function emberCrack(canvas, s, variant) {
-  let cx = 8 + Math.floor(hash(variant, 1, s) * 28);
-  let cy = 6 + Math.floor(hash(variant, 2, s) * 14);
-  for (let step = 0; step < 20; step += 1) {
-    canvas.pixel(cx - 1, cy, '#0e071b');
-    canvas.pixel(cx + 1, cy, '#391f21');
-    canvas.pixel(cx, cy, step % 6 === 3 ? '#ffa214' : '#c64524');
-    cx = Math.max(2, Math.min(45, cx + Math.round(hash(step, 3, s) * 2 - 1)));
-    cy = Math.min(45, cy + 1);
+  // Cinza vulcânica e caverna: chão de rocha/cinza sem placas (nada de cara de muro).
+  rockGround(canvas, kind, field, s);
+  if (kind === T.ASH) {
+    scatterInner(s + 5, 3 + core, (x, y, i) => {
+      if (i % 3 === 0) { canvas.pixel(x, y, '#c64524'); canvas.pixel(x + 1, y, '#391f21'); }
+      else { canvas.pixel(x, y, '#5d5d5d'); canvas.pixel(x + 1, y + 1, '#0e071b'); }
+    }, 6);
+    if (core === 2) crack(canvas, 12, 18, 18, s, '#0e071b', null, { glow: '#8e251d', core: '#ffa214' });
+    if (core === 1) pebble(canvas, 30, 28, 1, ['#0e071b', '#1c121c', '#272727', '#3d3d3d', '#5d5d5d'], '#0e071b');
+  } else {
+    crack(canvas, 10 + core * 6, 14 + core * 5, 10 + core * 3, s, '#272727', '#918275');
+    scatterInner(s + 6, 2 + core, (x, y, i) => pebble(canvas, x, y, i % 2, STONE, RAMP[T.CAVE][1]), 8);
   }
 }
 
 export function drawBaseTile(kind, variant = 0) {
-  const canvas = new PixelCanvas(TILE_PX, TILE_PX);
+  const canvas = new PixelCanvas(S, S);
   base(canvas, kind, variant);
   return canvas;
 }
 
-// ---------- Vale (folha 'grass': 16 quadros de 48 px) ----------
+// ---------- Vale (folha 'grass') e trilha de terra ----------
 
-export const VALLEY_FRAMES = 16;
-export const VALLEY_PATH_FRAMES = Object.freeze([4, 5, 8, 9, 12, 13, 14, 15]);
+// Curvas da borda da trilha: senos com zero em y = 0 e y = 48, então qualquer variante encaixa
+// em cima e embaixo, mas cada ladrilho tem o próprio desenho (sem zigue-zague repetido).
+const PATH_WAVES = [[3.2, -1.4, 0.8], [-2.6, 1.8, -0.7], [1.6, 2.2, 1.1], [-3.4, -1.0, 1.3]];
+const PATH_EDGE = 13;
 
-/**
- * Quadros: 0-3, 6, 7, 10, 11 = grama; trilha com grama à esquerda/direita: 4/5 e 12/13 (outra variação);
- * fim da trilha (grama em volta embaixo): 8/9 e 14/15.
- */
+/** Quadros: 0..47 grama Wang; 48..55 trilha (lado x 4 variantes); 56..59 fim da trilha (lado x 2). */
 export function drawValleyTile(frame) {
-  const canvas = new PixelCanvas(TILE_PX, TILE_PX);
-  const kind = T.VALLEY;
-  if (VALLEY_PATH_FRAMES.includes(frame)) {
-    const left = frame % 2 === 0;
-    const end = frame === 8 || frame === 9 || frame === 14 || frame === 15;
-    dirt(canvas, left, frame >= 12 ? 1 : 0);
-    applyFringe(canvas, kind, (left ? 8 : 2) | (end ? 4 : 0));
+  const canvas = new PixelCanvas(S, S);
+  if (frame < VALLEY_PATH_START) {
+    base(canvas, T.VALLEY, frame % (16 * WANG_INTERIORS));
     return canvas;
   }
-  const ramp = GROUND[kind];
-  groundBase(canvas, kind);
-  const s = frame * 37 + 5;
-  // Manchas soltas longe das bordas (quebram a repetição sem criar emenda).
-  scatter(s + 7, 2, (x, y, i) => blotch(canvas, x, y, 5 + (i + frame) % 4, i % 2 ? ramp[3] : ramp[1], s + i), 12);
-  const tufts = { 0: 5, 1: 3, 2: 3, 3: 8, 6: 4, 7: 4, 10: 6, 11: 3 }[frame];
-  scatter(s, tufts, (x, y, i) => tuft(canvas, x, y + 2, kind, i + frame, (i + frame) % 2 === 1), 7);
-  if (frame === 1) flowerCluster(canvas, 24, 22, s, 0);
-  if (frame === 2) { pebble(canvas, 30, 30, 2, STONE, ramp[1]); pebble(canvas, 18, 16, 0, STONE, ramp[1]); }
-  if (frame === 7) scatter(s + 3, 3, (x, y, i) => flower(canvas, x, y, i % 2 ? '#ffffff' : '#ffc825', i % 2 ? '#ffc825' : '#e07438'), 8);
-  if (frame === 10) flowerCluster(canvas, 28, 30, s, 2);
+  const end = frame >= VALLEY_PATH_END_START;
+  const side = end ? Math.floor((frame - VALLEY_PATH_END_START) / 2) % 2 : Math.floor((frame - VALLEY_PATH_START) / 4) % 2;
+  const v = end ? (frame - VALLEY_PATH_END_START) % 2 : (frame - VALLEY_PATH_START) % 4;
+  base(canvas, T.VALLEY, 0);
+  drawPath(canvas, side, v, end);
   return canvas;
 }
 
-/** Trilha de terra batida: manchas, seixos de vários tamanhos e um tufinho perdido. */
-function dirt(canvas, left, variant) {
-  for (let y = 0; y < TILE_PX; y += 1) {
-    for (let x = 0; x < TILE_PX; x += 1) {
-      const v = periodic(x, y, 6, 404) * 0.6 + periodic(x, y, 12, 405) * 0.4 + (hash(x >> 1, y >> 1, 406) - 0.5) * 0.14;
-      canvas.pixel(x, y, DIRT[v < 0.27 ? 1 : v > 0.7 ? 3 : 2]);
+/** Distância (px, > 0 = dentro da terra) até a borda da trilha. */
+function pathDistance(x, y, side, v, end) {
+  const wave = PATH_WAVES[v];
+  const edge = PATH_EDGE + wave.reduce((sum, a, k) => sum + a * Math.sin(((k + 1) * Math.PI * y) / S), 0)
+    + Math.sin((Math.PI * y) / S) * (periodic(x, y, 4, 77 + v) - 0.5) * 2;
+  let d = (side === 0 ? x : LAST - x) - edge;
+  if (end) {
+    // Fim arredondado: elipse sobre os dois ladrilhos (centro na emenda entre eles).
+    const X = side === 0 ? x : x + S;
+    const rx = S - PATH_EDGE;
+    const ry = 26 + (v ? 3 : 0);
+    if (y > 2) {
+      const r = Math.hypot((X - S) / rx, (y - 2) / ry);
+      d = Math.min(d, (1 - r) * Math.min(rx, ry));
     }
   }
-  const s = (left ? 410 : 420) + variant * 5;
-  const colors = ['#5d2c28', '#8a4836', '#cba36f', '#f6ca9f'];
-  scatter(s, 3, (x, y, i) => pebble(canvas, left ? Math.max(18, x) : Math.min(30, x), y, (i + variant) % 3, (i + variant) % 2 ? colors : STONE, DIRT[1]), 7);
-  scatter(s + 1, 4, (x, y) => { canvas.pixel(left ? Math.max(16, x) : Math.min(32, x), y, DIRT[4]); canvas.pixel(left ? Math.max(16, x) : Math.min(32, x), y + 1, DIRT[0]); }, 4);
-  if (variant === 1) scatter(s + 2, 1, (x, y) => tuft(canvas, left ? Math.max(22, x) : Math.min(26, x), y, T.VALLEY, 2), 10);
+  return d;
 }
 
-// ---------- Franjas: o terreno vizinho invadindo a borda do ladrilho ----------
-
-/**
- * Quanto o pixel está "dentro" da borda das células vizinhas marcadas: largura da borda (medida no ponto
- * mais próximo da célula, para a curva só variar ao longo da borda e nunca abrir buracos) menos a distância.
- */
-function cellReach(x, y, cells, edgeAt) {
-  let best = -Infinity;
-  for (const [dx, dy] of cells) {
-    const left = dx * TILE_PX;
-    const top = dy * TILE_PX;
-    const cx = Math.max(left, Math.min(x, left + TILE_PX));
-    const cy = Math.max(top, Math.min(y, top + TILE_PX));
-    best = Math.max(best, edgeAt(wrap(Math.round(cx)), wrap(Math.round(cy))) - Math.hypot(x - cx, y - cy));
+function drawPath(canvas, side, v, end) {
+  const grass = RAMP[T.VALLEY];
+  const grassCopy = new PixelCanvas(S, S);
+  grassCopy.blit(canvas, 0, 0);
+  const dist = new Float32Array(S * S);
+  for (let y = 0; y < S; y += 1) for (let x = 0; x < S; x += 1) dist[y * S + x] = pathDistance(x, y, side, v, end);
+  const seed = 404;
+  for (let y = 0; y < S; y += 1) {
+    for (let x = 0; x < S; x += 1) {
+      const d = dist[y * S + x];
+      if (d <= 0) {
+        // Beirada da grama um tom mais clara (o barranco pega luz).
+        if (d > -1.2 && grassCopy.colorAt(x, y) !== grass[0]) canvas.pixel(x, y, grass[3]);
+        continue;
+      }
+      // Terra batida: manchas em 3 tons, grão fino e duas marcas de roda/pé gastas.
+      const X = side === 0 ? x : x + S;
+      const n = periodic(x, y, 6, seed) * 0.55 + periodic(x, y, 12, seed + 1) * 0.3 + periodic(x, y, 24, seed + 2) * 0.15;
+      let color = DIRT[n < 0.3 ? 2 : n < 0.7 ? 3 : 4];
+      const rut = Math.min(Math.abs(X - 33), Math.abs(X - 63));
+      if (rut < 2 && periodic(x, y, 8, seed + 3) > 0.42) color = rut < 1 ? DIRT[2] : (n < 0.5 ? DIRT[2] : DIRT[3]);
+      const g = hash(x, y, seed + 4);
+      if (g > 0.975) color = DIRT[5];
+      else if (g < 0.02) color = DIRT[1];
+      // Sombra que a grama faz na terra, logo abaixo do barranco.
+      if (d < 1.3) color = DIRT[1];
+      else if (d < 2.6) color = DIRT[2];
+      canvas.pixel(x, y, color);
+    }
   }
-  return best;
+  // Pedrinhas e marcas no miolo da terra (posições diferentes em cada variante).
+  for (let i = 0; i < 5; i += 1) {
+    const x = 6 + Math.floor(hash(i, v, 410 + side) * 36);
+    const y = 6 + Math.floor(hash(i, v, 411 + side) * 36);
+    if (dist[y * S + x] < 5) continue;
+    if (i % 3 === 0) pebble(canvas, x, y, 1, i % 2 ? WARM_STONE : STONE, DIRT[1]);
+    else if (i % 3 === 1) pebble(canvas, x, y, 0, STONE, DIRT[1]);
+    else { canvas.pixel(x, y, DIRT[1]); canvas.pixel(x + 1, y, DIRT[1]); canvas.pixel(x + 2, y + 1, DIRT[1]); canvas.pixel(x, y - 1, DIRT[5]); }
+  }
+  // Grama passando por cima da beirada: lâminas com raiz na grama, inclinadas para a terra.
+  const lean = side === 0 ? 1 : -1;
+  for (let y = 2; y < S - 1; y += 1) {
+    for (let x = 1; x < S - 1; x += 1) {
+      const d = dist[y * S + x];
+      if (d > -0.5 || d < -3 || hash(x, y, 420 + v) > 0.42) continue;
+      const height = 2 + Math.floor(hash(x, y, 421) * 3);
+      for (let k = 0; k < height; k += 1) {
+        const lvl = k / (height - 1);
+        const px = x + (lvl > 0.5 ? lean : 0) + (lvl > 0.9 && height > 3 ? lean : 0);
+        if (px < 0 || px > LAST || y - k < 0) continue;
+        canvas.pixel(px, y - k, grass[clamp(Math.round(1.6 + lvl * 2.4), 1, 4)]);
+      }
+    }
+  }
+  // Um tufinho perdido no meio da terra em algumas variantes.
+  if (v === 2 || (end && v === 1)) {
+    const x = side === 0 ? 30 : 17;
+    if (dist[30 * S + x] > 6) tuftAt(canvas, x, 30, grass, 430 + v, { count: 6, min: 2, max: 4, spread: 2 });
+  }
 }
+
+// ---------- Contorno pelos cantos (franjas entre terrenos e margens de água) ----------
 
 /**
- * Ondulação da borda (-1..1): soma de senos com frequência inteira por ladrilho, então a borda
- * continua no vizinho; a fase muda com o terreno para cada borda ter o próprio desenho.
+ * Fração das 4 células em volta de cada canto que estão marcadas na máscara (bits N 1, L 2, S 4,
+ * O 8, NE 16, SE 32, SO 64, NO 128; 256 = o próprio ladrilho). Ordem: TL, TR, BL, BR.
  */
-function shoreWobble(x, y, kind) {
-  const wave = (t, phase) => Math.sin(((2 * t) / TILE_PX) * Math.PI * 2 + phase) * 0.55
-    + Math.sin(((3 * t) / TILE_PX) * Math.PI * 2 + phase * 2.3) * 0.35 + Math.sin(((5 * t) / TILE_PX) * Math.PI * 2 + phase * 3.7) * 0.06;
-  return wave(x, kind * 1.7 + 0.4) + wave(y, kind * 2.9 + 1.1);
+function cornerFractions(mask) {
+  const bit = (b) => ((mask & b) ? 1 : 0);
+  const self = bit(256);
+  return [
+    (bit(128) + bit(1) + bit(8) + self) / 4,
+    (bit(1) + bit(16) + bit(2) + self) / 4,
+    (bit(8) + bit(64) + bit(4) + self) / 4,
+    (bit(2) + bit(32) + bit(4) + self) / 4
+  ];
 }
 
-/** Células vizinhas da máscara: lados 1 N, 2 L, 4 S, 8 O; cantos 16 NE, 32 SE, 64 SO, 128 NO. */
-function maskCells(mask) {
-  const n = mask & 1;
-  const e = mask & 2;
-  const s = mask & 4;
-  const w = mask & 8;
-  const cells = [];
-  if (n) cells.push([0, -1]);
-  if (e) cells.push([1, 0]);
-  if (s) cells.push([0, 1]);
-  if (w) cells.push([-1, 0]);
-  if ((n && e) || mask & 16) cells.push([1, -1]);
-  if ((s && e) || mask & 32) cells.push([1, 1]);
-  if ((s && w) || mask & 64) cells.push([-1, 1]);
-  if ((n && w) || mask & 128) cells.push([-1, -1]);
-  return cells;
+/** Interpolação bilinear dos cantos (marching squares): diagonal em degrau vira curva. */
+function bilinear(c, x, y) {
+  const fx = (x + 0.5) / S;
+  const fy = (y + 0.5) / S;
+  const top = c[0] + (c[1] - c[0]) * fx;
+  const bottom = c[2] + (c[3] - c[2]) * fx;
+  return top + (bottom - top) * fy;
 }
 
-const FRINGE_STYLE = {
-  grass: { width: 14, wobble: 14, rim: 1, tips: true, shadow: 2, shadowColor: '#0e071b', shadowAlpha: 80 },
-  snow: { width: 15, wobble: 14, rim: 3, tips: false, shadow: 2, shadowColor: '#2a2f4e', shadowAlpha: 70, light: true },
-  swamp: { width: 12, wobble: 12, rim: 0, tips: true, shadow: 1, shadowColor: '#0e071b', shadowAlpha: 70 },
-  sand: { width: 14, wobble: 14, rim: 1, tips: false, grains: true, shadow: 0 },
-  ash: { width: 12, wobble: 12, rim: 0, tips: false, shadow: 1, shadowColor: '#0e071b', shadowAlpha: 90 }
-};
+/** Arredonda a ponta de um canto que só encosta na diagonal (as 3 telhas em volta fazem o mesmo). */
+function cornerFillet(c, x, y, radius = 20) {
+  const points = [[0, 0], [S, 0], [0, S], [S, S]];
+  let bump = 0;
+  c.forEach((value, i) => {
+    if (value !== 0.25) return;
+    const d = Math.hypot(x + 0.5 - points[i][0], y + 0.5 - points[i][1]);
+    bump = Math.max(bump, 0.2 * Math.max(0, 1 - d / radius));
+  });
+  return bump;
+}
 
-const fringeStyle = (kind) => (GRASSY.has(kind) ? FRINGE_STYLE.grass
-  : kind === T.SNOW ? FRINGE_STYLE.snow
-    : kind === T.SWAMP ? FRINGE_STYLE.swamp
-      : kind === T.ASH || kind === T.CAVE ? FRINGE_STYLE.ash : FRINGE_STYLE.sand);
+/** Ondulação suave da borda (periódica: igual dos dois lados da emenda). */
+const edgeWobble = (x, y, seed) => (periodic(x, y, 2, seed) - 0.5) * 0.16 + (periodic(x, y, 3, seed + 3) - 0.5) * 0.14 + (periodic(x, y, 5, seed + 1) - 0.5) * 0.07 + (periodic(x, y, 12, seed + 2) - 0.5) * 0.02;
+
+const FRINGE_THRESHOLD = 0.34;
 
 const baseCache = new Map();
 function baseOf(kind) {
-  if (!baseCache.has(kind)) {
-    const canvas = new PixelCanvas(TILE_PX, TILE_PX);
-    groundBase(canvas, kind);
-    baseCache.set(kind, canvas);
-  }
+  if (!baseCache.has(kind)) baseCache.set(kind, drawBaseTile(kind, 0));
   return baseCache.get(kind);
 }
 
-/** Pinta a borda de `kind` sobre `canvas` nos lados da máscara (curva suave, cantos arredondados). */
+/** Pinta a borda de `kind` invadindo este ladrilho onde a máscara (8 vizinhos) marca `kind`. */
 function applyFringe(canvas, kind, mask) {
   const source = baseOf(kind);
-  const ramp = GROUND[kind];
-  const style = fringeStyle(kind);
-  const cells = maskCells(mask);
+  const ramp = RAMP[kind];
+  const c = cornerFractions(mask & 255);
   const seed = 140 + kind;
-  const reach = new Float32Array(TILE_PX * TILE_PX);
-  for (let y = 0; y < TILE_PX; y += 1) {
-    for (let x = 0; x < TILE_PX; x += 1) {
-      // Curva larga + ondinha curta: borda orgânica, periódica para casar com o vizinho.
-      reach[y * TILE_PX + x] = cellReach(x + 0.5, y + 0.5, cells, (ex, ey) => style.width + shoreWobble(ex, ey, kind) * style.wobble * 0.5 + (periodic(ex, ey, 6, seed + 2) - 0.5) * 2);
-    }
-  }
-  for (let y = 0; y < TILE_PX; y += 1) {
-    for (let x = 0; x < TILE_PX; x += 1) {
-      const r = reach[y * TILE_PX + x];
-      if (r >= 1) {
-        canvas.pixel(x, y, source.colorAt(x, y));
-      } else if (r >= 0) {
-        canvas.pixel(x, y, style.light ? ramp[3] : ramp[style.rim]);
-      } else if (style.tips && r > -2.5 && hash(x, y, seed + 3) > 0.62) {
-        // Pontas de folha passando da borda.
-        canvas.pixel(x, y, r > -1.2 ? ramp[3] : ramp[4]);
-      } else if (style.grains && r > -2 && hash(x, y, seed + 4) > 0.7) {
-        canvas.pixel(x, y, ramp[2]);
-      } else if (style.shadow && r > -1 - style.shadow) {
-        canvas.pixel(x, y, style.shadowColor, style.shadowAlpha);
+  const value = (x, y) => bilinear(c, x, y) + cornerFillet(c, x, y) + edgeWobble(x, y, seed);
+  const dist = new Float32Array(S * S);
+  for (let y = 0; y < S; y += 1) for (let x = 0; x < S; x += 1) dist[y * S + x] = (value(x, y) - FRINGE_THRESHOLD) * 96;
+  const at = (x, y) => dist[clamp(y, 0, LAST) * S + clamp(x, 0, LAST)];
+  const snow = kind === T.SNOW;
+  const grass = GRASSY.has(kind) || kind === T.SWAMP;
+  const sandy = kind === T.SAND || kind === T.DUNE || kind === T.BEACH;
+  for (let y = 0; y < S; y += 1) {
+    for (let x = 0; x < S; x += 1) {
+      const d = dist[y * S + x];
+      // Para onde a borda "olha": dUp > 0 = o terreno invasor está embaixo (borda de cima dele).
+      const dUp = at(x, y + 2) - at(x, y - 2);
+      if (d >= 0) {
+        let color = source.colorAt(x, y);
+        if (snow) {
+          if (d < 1.3) color = dUp > 0 ? ramp[4] : ramp[3];
+          else if (d < 4 && dUp < 0) color = d < 2.5 ? ramp[1] : ramp[2];
+        } else if (grass) {
+          if (d < 1.1) color = dUp >= 0 ? ramp[3] : ramp[1];
+        } else if (sandy) {
+          if (d < 1) color = ramp[1];
+        } else if (d < 1.2) color = ramp[1];
+        canvas.pixel(x, y, color);
+      } else if (d > -2.6) {
+        if (sandy) {
+          if (d > -2 && hash(x, y, seed + 4) > 0.72) canvas.pixel(x, y, ramp[2]);
+        } else if (dUp < 0 || !grass) {
+          // Sombra do barranco no terreno de baixo (mais forte embaixo do invasor).
+          canvas.pixel(x, y, '#0e071b', dUp < 0 ? (d > -1.3 ? 90 : 50) : 40);
+        }
       }
     }
   }
-  // Grama: tufos em cima da borda, para a franja não parecer recortada.
-  if (style.tips && GRASSY.has(kind)) {
-    for (let y = 8; y < TILE_PX - 3; y += 1) {
-      for (let x = 5; x < TILE_PX - 5; x += 1) {
-        const r = reach[y * TILE_PX + x];
-        if (r >= 0 && r < 1 && hash(x, y, seed + 6) > 0.94) tuft(canvas, x, y + 1, kind, hash(x, y, seed + 7) > 0.5 ? 2 : 4, x % 2 === 0);
-      }
-    }
-  }
-  // Neve: lado de baixo do monte em sombra azulada (volume).
-  if (style.light) {
-    for (let y = 1; y < TILE_PX; y += 1) {
-      for (let x = 0; x < TILE_PX; x += 1) {
-        const r = reach[y * TILE_PX + x];
-        if (r >= 1 && r < 3 && reach[(y - 1) * TILE_PX + x] > r) canvas.pixel(x, y, ramp[1]);
+  if (!grass) return;
+  // Lâminas na beirada, com raiz dentro e ponta passando para fora (nada de serrilhado).
+  for (let y = 1; y < S; y += 1) {
+    for (let x = 0; x < S; x += 1) {
+      const d = dist[y * S + x];
+      if (d < 0.3 || d > 3 || hash(x, y, seed + 6) > 0.45) continue;
+      const dx = at(x + 2, y) - at(x - 2, y);
+      const lean = dx > 0.8 ? -1 : dx < -0.8 ? 1 : 0;
+      const height = 2 + Math.floor(hash(x, y, seed + 7) * 3);
+      for (let k = 0; k < height; k += 1) {
+        const lvl = k / (height - 1);
+        const px = x + (lvl > 0.5 ? lean : 0);
+        if (px < 0 || px > LAST || y - k < 0) continue;
+        canvas.pixel(px, y - k, ramp[clamp(Math.round(1.5 + lvl * 2.5), 1, 4)]);
       }
     }
   }
@@ -514,8 +597,51 @@ function applyFringe(canvas, kind, mask) {
 
 /** Ladrilho só com a franja (o resto transparente), para a camada de cima do chão. */
 export function drawFringeTile(kind, mask) {
-  const canvas = new PixelCanvas(TILE_PX, TILE_PX);
+  const canvas = new PixelCanvas(S, S);
   applyFringe(canvas, kind, mask);
+  return canvas;
+}
+
+// ---------- Margens (terra sobre água/lava/lodo/gelo) ----------
+
+const EDGE_STYLE = {
+  [T.SEA]: { lip: '#ffffff', band: '#d5e8ef', wet: '#ad7954', wetWidth: 3.5, sand: '#f6ca9f', sandLight: '#f9e6cf', foam: '#ffffff', foam2: '#94fdff' },
+  [T.LAVA]: { lip: '#ffa214', band: '#8e251d', wet: '#1c121c', wetWidth: 4, sand: null, foam: '#ffeb57', foam2: '#ffa214' },
+  [T.MURK]: { lip: '#1e6f50', band: '#134c4c', wet: '#1c121c', wetWidth: 3, sand: null, foam: null },
+  [T.ICE]: { lip: '#ffffff', band: '#d5e8ef', wet: '#9cc8e6', wetWidth: 1.5, sand: null, foam: null }
+};
+
+/**
+ * Ladrilho de terra (land) sobre `under`. A máscara marca a água entre os 8 vizinhos (bits como em
+ * cornerFractions) e 256 quando o próprio quadrado é água: a terra então só aparece nos cantos.
+ */
+export function drawEdgeTile(land, under, mask, core = 0) {
+  const canvas = drawBaseTile(land, 16 * (core % WANG_INTERIORS));
+  const style = EDGE_STYLE[under];
+  const c = cornerFractions(mask);
+  const sandy = land === T.BEACH || land === T.SAND || land === T.DUNE;
+  const seed = 92 + under;
+  for (let y = 0; y < S; y += 1) {
+    for (let x = 0; x < S; x += 1) {
+      // d = px de terra até a margem (< 0 = água).
+      const water = bilinear(c, x, y);
+      const d = (0.5 - water) * 96 + edgeWobble(x, y, seed) * 48;
+      if (d < 0) {
+        canvas.clearPixel(x, y);
+        if (style.foam && d > -4.5 && d < -2.2 && periodic(x, y, 8, seed + 3) > 0.48) canvas.pixel(x, y, d > -3.2 ? style.foam : style.foam2, 210);
+        continue;
+      }
+      if (d < 1.4) canvas.pixel(x, y, style.lip);
+      else if (d < 2.4) canvas.pixel(x, y, style.band);
+      else if (d < 2.4 + style.wetWidth + (periodic(x, y, 6, seed + 5) - 0.5) * 2.5) canvas.pixel(x, y, style.wet);
+      else if (style.sand && !sandy) {
+        // Faixa de areia entre a mata e o mar, com borda ondulada (a grama passa por cima).
+        const limit = 13 + (periodic(x, y, 4, seed + 7) - 0.5) * 7;
+        if (d < limit) canvas.pixel(x, y, hash(x, y, seed + 8) > 0.93 ? style.sandLight : d > limit - 1.2 ? '#cba36f' : style.sand);
+        else if (d < limit + 1.2 && GRASSY.has(land)) canvas.pixel(x, y, RAMP[land][3]);
+      }
+    }
+  }
   return canvas;
 }
 
@@ -524,80 +650,211 @@ export function drawFringeTile(kind, mask) {
 export const DECOR_COUNT = 6;
 export const DECOR_KINDS = Object.freeze([T.VALLEY, T.FOREST, T.JUNGLE, T.SWAMP, T.SNOW, T.SAND, T.DUNE, T.BEACH, T.ASH, T.CAVE]);
 
-/** Tufos, flores, seixos e manchas soltas por cima do chão (quebram a repetição dos ladrilhos). */
+/** Tufos, flores, seixos e marcas soltas por cima do chão (quebram ainda mais a repetição). */
 export function drawDecorTile(kind, n) {
-  const canvas = new PixelCanvas(TILE_PX, TILE_PX);
-  const ramp = GROUND[kind];
+  const canvas = new PixelCanvas(S, S);
+  const ramp = RAMP[kind];
   const s = 900 + kind * 13 + n * 7;
   const cx = 14 + Math.floor(hash(n, kind, 1) * 20);
   const cy = 16 + Math.floor(hash(n, kind, 2) * 18);
-  const tufts = (count) => scatter(s, count, (x, y, i) => tuft(canvas, cx - 10 + (x % 20), cy - 6 + (y % 14), kind, i + n, i % 2 === 0), 2);
+  const tufts = (count, options) => {
+    for (let i = 0; i < count; i += 1) {
+      tuftAt(canvas, cx - 9 + Math.floor(hash(i, 1, s) * 18), cy - 5 + Math.floor(hash(i, 2, s) * 10), ramp, s + i * 3, options);
+    }
+  };
+  const flowers = (count, set) => {
+    for (let i = 0; i < count; i += 1) flower(canvas, cx + Math.round((hash(i, 3, s) - 0.5) * 14), cy + Math.round((hash(i, 4, s) - 0.5) * 8), set + (i % 2) * 2, ramp[1]);
+  };
   switch (kind) {
     case T.VALLEY:
     case T.JUNGLE:
       if (n === 0) tufts(3);
-      else if (n === 1) { flowerCluster(canvas, cx, cy, s, kind === T.JUNGLE ? 2 : 0); tuft(canvas, cx + 8, cy + 6, kind, 1); }
-      else if (n === 2) flowerCluster(canvas, cx, cy, s, kind === T.JUNGLE ? 1 : 1 + (s % 2));
-      else if (n === 3) { pebble(canvas, cx, cy, 2, STONE, ramp[1]); tuft(canvas, cx - 7, cy + 3, kind, 2); }
-      else if (n === 4) { blotch(canvas, cx, cy, 10, ramp[3], s); tufts(2); }
-      else { blotch(canvas, cx, cy, 8, ramp[1], s); tuft(canvas, cx, cy + 2, kind, 0); }
+      else if (n === 1) { tufts(1); flowers(4, kind === T.JUNGLE ? 2 : 0); }
+      else if (n === 2) flowers(5, kind === T.JUNGLE ? 2 : 1);
+      else if (n === 3) { pebble(canvas, cx, cy, 2, STONE, ramp[0]); tuftAt(canvas, cx - 6, cy + 2, ramp, s, { count: 5, spread: 2 }); }
+      else if (n === 4) tufts(2, { count: 9, min: 4, max: 7, spread: 4 });
+      else { flowers(2, 4); pebble(canvas, cx + 6, cy + 3, 0, STONE, ramp[0]); }
       break;
     case T.FOREST:
-      if (n === 0) tufts(3);
-      else if (n === 1) scatter(s, 6, (x, y, i) => { const leaf = ['#bf6f4a', '#8a4836', '#e07438'][i % 3]; canvas.pixel(cx - 8 + (x % 16), cy - 5 + (y % 10), leaf); canvas.pixel(cx - 7 + (x % 16), cy - 5 + (y % 10), leaf); });
-      else if (n === 2) { canvas.line(cx - 7, cy, cx + 6, cy - 2, '#5d2c28'); canvas.line(cx - 2, cy - 1, cx, cy - 4, '#5d2c28'); canvas.line(cx - 7, cy + 1, cx + 6, cy - 1, ramp[0]); }
-      else if (n === 3) { pebble(canvas, cx, cy, 2, STONE, ramp[0]); blotch(canvas, cx - 2, cy - 3, 3, '#33984b', s); }
-      else if (n === 4) blotch(canvas, cx, cy, 10, ramp[1], s);
-      else { blotch(canvas, cx, cy, 8, ramp[3], s); tuft(canvas, cx, cy + 2, kind, 3); }
+      if (n === 0) tufts(2, { count: 8, min: 3, max: 6 });
+      else if (n === 1) for (let i = 0; i < 6; i += 1) { const leaf = ['#bf6f4a', '#8a4836', '#e07438'][i % 3]; const x = cx - 8 + Math.floor(hash(i, 5, s) * 16); const y = cy - 5 + Math.floor(hash(i, 6, s) * 10); canvas.pixel(x, y, leaf); canvas.pixel(x + 1, y, leaf); canvas.pixel(x + 1, y + 1, ramp[0]); }
+      else if (n === 2) { canvas.line(cx - 7, cy, cx + 6, cy - 2, '#5d2c28'); canvas.line(cx - 2, cy - 1, cx, cy - 4, '#5d2c28'); canvas.line(cx - 7, cy + 1, cx + 6, cy - 1, ramp[0]); canvas.pixel(cx - 5, cy - 1, '#8a4836'); }
+      else if (n === 3) { pebble(canvas, cx, cy, 2, STONE, ramp[0]); for (let i = -2; i <= 1; i += 1) canvas.pixel(cx + i, cy - 3, '#33984b'); }
+      else if (n === 4) { // cogumelinhos
+        for (const [dx, dy] of [[0, 0], [3, 1], [-3, 2]]) { canvas.pixel(cx + dx, cy + dy, '#f9e6cf'); canvas.pixel(cx + dx, cy + dy - 1, '#c42430'); canvas.pixel(cx + dx - 1, cy + dy - 1, '#ea323c'); canvas.pixel(cx + dx + 1, cy + dy - 1, '#891e2b'); canvas.pixel(cx + dx, cy + dy - 2, '#f68187'); canvas.pixel(cx + dx, cy + dy + 1, ramp[0]); }
+      } else tufts(1, { count: 10, min: 4, max: 7, spread: 4 });
       break;
     case T.SWAMP:
-      if (n === 0) { canvas.ellipse(cx, cy, 6, 3, '#134c4c'); canvas.ellipse(cx, cy - 1, 4, 1.5, '#0c2e44'); canvas.pixel(cx - 2, cy - 2, '#657392'); canvas.pixel(cx + 3, cy, '#2a2f4e'); }
-      else if (n === 1) for (let i = 0; i < 4; i += 1) { const x = cx - 4 + i * 3; canvas.line(x, cy, x + (i % 2), cy - 7 - i % 2, '#494834'); canvas.rect(x + (i % 2), cy - 9 - i % 2, 1, 3, '#5d2c28'); canvas.pixel(x, cy + 1, ramp[0]); }
-      else if (n === 2) tufts(3);
-      else if (n === 3) { blotch(canvas, cx, cy, 7, ramp[1], s); canvas.pixel(cx, cy, '#657392'); canvas.pixel(cx + 3, cy + 1, '#657392'); }
-      else if (n === 4) blotch(canvas, cx, cy, 9, '#1e6f50', s);
+      if (n === 0) { canvas.ellipse(cx, cy, 6, 2.6, '#1c121c'); canvas.ellipse(cx, cy, 5, 1.8, '#2a2f4e'); canvas.pixel(cx - 2, cy - 1, '#657392'); canvas.pixel(cx + 3, cy, '#424c6e'); }
+      else if (n === 1) for (let i = 0; i < 4; i += 1) { const x = cx - 4 + i * 3; canvas.line(x, cy, x + (i % 2), cy - 7 - (i % 2), '#494834'); canvas.rect(x + (i % 2), cy - 9 - (i % 2), 1, 3, '#5d2c28'); canvas.pixel(x, cy + 1, ramp[0]); }
+      else if (n === 2) tufts(3, { count: 6, min: 3, max: 6 });
+      else if (n === 3) { canvas.ellipse(cx, cy, 4, 2, '#1e6f50'); canvas.pixel(cx - 1, cy - 1, '#33984b'); canvas.pixel(cx + 2, cy, '#134c4c'); }
+      else if (n === 4) tufts(2);
       else pebble(canvas, cx, cy, 1, WARM_STONE, ramp[0]);
       break;
     case T.SNOW:
-      if (n === 0) { for (let x = -8; x <= 8; x += 1) { const y = cy + Math.round((x * x) / 18); canvas.pixel(cx + x, y, '#ffffff'); canvas.pixel(cx + x, y + 1, '#9cc8e6'); } }
-      else if (n === 1) pebble(canvas, cx, cy, 2, ['#424c6e', '#657392', '#92a1b9', '#ffffff'], '#9cc8e6');
-      else if (n === 2) { tuft(canvas, cx, cy, kind, 0); tuft(canvas, cx + 6, cy + 3, kind, 2); }
-      else if (n === 3) { blotch(canvas, cx, cy, 7, '#9cc8e6', s); canvas.pixel(cx - 2, cy - 1, '#ffffff'); canvas.pixel(cx + 2, cy + 1, '#ffffff'); }
-      else if (n === 4) for (let i = 0; i < 5; i += 1) { canvas.pixel(cx - 8 + i * 4, cy + (i % 2) * 2, '#9cc8e6'); canvas.pixel(cx - 7 + i * 4, cy + (i % 2) * 2, '#9cc8e6'); }
-      else blotch(canvas, cx, cy, 10, '#ffffff', s);
+      if (n === 0) for (let x = -7; x <= 7; x += 1) { const y = cy + Math.round((x * x) / 22); canvas.pixel(cx + x, y, '#ffffff'); canvas.pixel(cx + x, y + 1, '#9cc8e6'); }
+      else if (n === 1) pebble(canvas, cx, cy, 2, SNOW_STONE, '#9cc8e6');
+      else if (n === 2) tuftAt(canvas, cx, cy, ['#391f21', '#5d2c28', '#8a4836', '#ad7954', '#cba36f', '#f6ca9f'], s, { count: 6, min: 2, max: 5 });
+      else if (n === 3) { pebble(canvas, cx, cy, 0, SNOW_STONE, '#9cc8e6'); pebble(canvas, cx + 5, cy + 2, 1, SNOW_STONE, '#9cc8e6'); }
+      else if (n === 4) for (let i = 0; i < 4; i += 1) { canvas.pixel(cx - 8 + i * 5, cy + (i % 2) * 2, '#92a1b9'); canvas.pixel(cx - 7 + i * 5, cy + (i % 2) * 2 + 1, '#9cc8e6'); }
+      else for (let i = 0; i < 5; i += 1) canvas.pixel(cx + Math.round((hash(i, 7, s) - 0.5) * 16), cy + Math.round((hash(i, 8, s) - 0.5) * 10), '#ffffff');
       break;
     case T.SAND:
     case T.DUNE:
     case T.BEACH:
       if (n === 0) { pebble(canvas, cx, cy, 1, kind === T.BEACH ? STONE : WARM_STONE, ramp[1]); pebble(canvas, cx + 6, cy + 3, 0, kind === T.BEACH ? STONE : WARM_STONE, ramp[1]); }
-      else if (n === 1) tuft(canvas, cx, cy, kind, 1);
-      else if (n === 2) blotch(canvas, cx, cy, 10, ramp[1], s);
-      else if (n === 3) blotch(canvas, cx, cy, 9, ramp[3], s);
-      else if (n === 4 && kind === T.BEACH) { for (const [x, y, c] of [[0, 0, '#f68187'], [5, 3, '#ffffff'], [-4, 4, '#fdd2ed']]) { canvas.pixel(cx + x, cy + y, c); canvas.pixel(cx + x + 1, cy + y, c); canvas.pixel(cx + x, cy + y + 1, ramp[0]); } }
+      else if (n === 1) tuftAt(canvas, cx, cy, ['#2d2e25', '#494834', '#775c5b', '#918275', '#cba36f', '#f6ca9f'], s, { count: 7, min: 3, max: 6 });
+      else if (n === 2) pebble(canvas, cx, cy, 2, kind === T.BEACH ? STONE : WARM_STONE, ramp[1]);
+      else if (n === 3) for (let i = 0; i < 6; i += 1) canvas.pixel(cx + Math.round((hash(i, 7, s) - 0.5) * 16), cy + Math.round((hash(i, 8, s) - 0.5) * 10), ramp[0]);
+      else if (n === 4 && kind === T.BEACH) { for (const [x, y, col] of [[0, 0, '#f68187'], [5, 3, '#ffffff'], [-4, 4, '#fdd2ed']]) { canvas.pixel(cx + x, cy + y, col); canvas.pixel(cx + x + 1, cy + y, col); canvas.pixel(cx + x, cy + y + 1, ramp[0]); } }
       else if (n === 4) { canvas.rect(cx - 3, cy, 7, 1, '#f9e6cf'); canvas.pixel(cx - 4, cy - 1, '#f9e6cf'); canvas.pixel(cx + 4, cy - 1, '#f9e6cf'); canvas.rect(cx - 3, cy + 1, 7, 1, ramp[1]); }
       else if (kind === T.BEACH) { canvas.line(cx - 6, cy, cx + 5, cy + 1, '#1e6f50'); canvas.line(cx - 4, cy + 1, cx + 2, cy - 1, '#33984b'); }
-      else { pebble(canvas, cx, cy, 2, WARM_STONE, ramp[1]); }
+      else pebble(canvas, cx, cy, 1, WARM_STONE, ramp[1]);
       break;
     case T.ASH:
-      if (n === 0) emberCrack(canvas, s, 2);
-      else if (n === 1) { stamp(canvas, cx, cy, ['..h.', '.hbd', 'hbbd', '.dd.'], { h: '#424c6e', b: '#1a1932', d: '#0e071b' }); }
-      else if (n === 2) blotch(canvas, cx, cy, 9, ramp[3], s);
-      else if (n === 3) { for (const [x, y] of [[0, 0], [4, 2], [-3, 3]]) { canvas.pixel(cx + x, cy + y, '#ffa214'); canvas.pixel(cx + x + 1, cy + y, '#c64524'); } }
-      else if (n === 4) blotch(canvas, cx, cy, 8, ramp[0], s);
-      else pebble(canvas, cx, cy, 1, ['#0e071b', '#272727', '#3d3d3d', '#5d5d5d'], ramp[0]);
+      if (n === 0) crack(canvas, cx - 6, cy - 4, 14, s, '#0e071b', null, { glow: '#8e251d', core: '#ffa214' });
+      else if (n === 1) pebble(canvas, cx, cy, 2, ['#0e071b', '#1c121c', '#272727', '#3d3d3d', '#5d5d5d'], '#0e071b');
+      else if (n === 2) for (let i = 0; i < 5; i += 1) { const x = cx + Math.round((hash(i, 7, s) - 0.5) * 14); const y = cy + Math.round((hash(i, 8, s) - 0.5) * 8); canvas.pixel(x, y, '#5d5d5d'); canvas.pixel(x + 1, y, '#3d3d3d'); }
+      else if (n === 3) for (const [x, y] of [[0, 0], [4, 2], [-3, 3]]) { canvas.pixel(cx + x, cy + y, '#ffa214'); canvas.pixel(cx + x + 1, cy + y, '#c64524'); canvas.pixel(cx + x, cy + y + 1, '#391f21'); }
+      else if (n === 4) tuftAt(canvas, cx, cy, ['#0e071b', '#1c121c', '#391f21', '#5d2c28', '#775c5b', '#918275'], s, { count: 5, min: 2, max: 5 });
+      else pebble(canvas, cx, cy, 1, ['#0e071b', '#1c121c', '#272727', '#3d3d3d', '#5d5d5d'], '#0e071b');
       break;
     case T.CAVE:
-      if (n === 0) pebble(canvas, cx, cy, 2, STONE, ramp[0]);
-      else if (n === 1) { pebble(canvas, cx, cy, 0, STONE, ramp[0]); pebble(canvas, cx + 5, cy + 2, 1, STONE, ramp[0]); }
-      else if (n === 2) blotch(canvas, cx, cy, 6, '#1e6f50', s);
-      else if (n === 3) { canvas.ellipse(cx, cy, 5, 2.5, '#1a1932'); canvas.pixel(cx - 2, cy - 1, '#657392'); }
-      else if (n === 4) blotch(canvas, cx, cy, 9, ramp[1], s);
-      else { canvas.line(cx - 6, cy - 3, cx, cy, ramp[0]); canvas.line(cx, cy, cx + 5, cy - 1, ramp[0]); }
+      if (n === 0) pebble(canvas, cx, cy, 2, STONE, ramp[1]);
+      else if (n === 1) { pebble(canvas, cx, cy, 0, STONE, ramp[1]); pebble(canvas, cx + 5, cy + 2, 1, STONE, ramp[1]); }
+      else if (n === 2) { canvas.ellipse(cx, cy, 4, 2, '#134c4c'); canvas.pixel(cx - 1, cy - 1, '#1e6f50'); canvas.pixel(cx + 2, cy, '#33984b'); }
+      else if (n === 3) { canvas.ellipse(cx, cy, 5, 2.2, '#1a1932'); canvas.ellipse(cx, cy, 3.6, 1.4, '#2a2f4e'); canvas.pixel(cx - 2, cy - 1, '#657392'); }
+      else if (n === 4) crack(canvas, cx - 5, cy - 3, 12, s, '#272727', '#918275');
+      else { canvas.rect(cx - 3, cy, 7, 1, '#f9e6cf'); canvas.pixel(cx - 4, cy - 1, '#f9e6cf'); canvas.pixel(cx + 4, cy - 1, '#f9e6cf'); canvas.rect(cx - 3, cy + 1, 7, 1, '#918275'); }
       break;
     default:
       break;
   }
   return canvas;
+}
+
+// ---------- Camada de baixo (animada), em blocos de 3x3 ladrilhos ----------
+
+export const UNDER_KINDS = Object.freeze([T.SEA, T.LAVA, T.MURK, T.ICE]);
+export const UNDER_FRAME_COUNT = 4;
+
+const UNDER_TONES = {
+  [T.SEA]: ['#03193f', '#00396d', '#0069aa', '#0098dc', '#00cdf9', '#94fdff'],
+  [T.LAVA]: ['#391f21', '#8e251d', '#c64524', '#e07438', '#ffa214', '#ffeb57'],
+  [T.MURK]: ['#0e071b', '#1a1932', '#134c4c', '#2d2e25', '#1e6f50', '#424c6e'],
+  [T.ICE]: ['#657392', '#92a1b9', '#9cc8e6', '#d5e8ef', '#ffffff', '#ffffff']
+};
+const BIG = S * UNDER_SUBTILES;
+const bigWrap = (v) => ((v % BIG) + BIG) % BIG;
+const underCache = new Map();
+
+/** Bloco inteiro (144 px, periódico) de um quadro; os ladrilhos são recortes dele. */
+function underBlock(kind, frame) {
+  const key = `${kind}-${frame}`;
+  if (underCache.has(key)) return underCache.get(key);
+  const canvas = new PixelCanvas(BIG, BIG);
+  const tones = UNDER_TONES[kind];
+  const seed = 70 + kind;
+  const drift = kind === T.ICE ? 0 : frame * (kind === T.LAVA ? 2 : 3);
+  const noise = (x, y, cells, s) => periodic(x, y, cells, s, BIG);
+  for (let y = 0; y < BIG; y += 1) {
+    for (let x = 0; x < BIG; x += 1) {
+      const sx = bigWrap(x + drift);
+      // Ruído esticado na horizontal (ondas deitadas), sem manchas redondas de camuflagem.
+      const v = noise(sx, (y * 3) % BIG, 8, seed) * 0.5 + noise(sx, (y * 2) % BIG, 16, seed + 1) * 0.3 + noise(x, y, 6, seed + 2) * 0.2;
+      let tone;
+      if (kind === T.SEA) tone = v < 0.2 ? 1 : v < 0.7 ? 2 : 3;
+      else if (kind === T.LAVA) tone = v < 0.3 ? 2 : v < 0.66 ? 3 : 4;
+      else if (kind === T.MURK) tone = v < 0.24 ? 1 : v < 0.78 ? 2 : 4;
+      else tone = v < 0.16 ? 1 : v < 0.68 ? 2 : 3;
+      canvas.pixel(x, y, tones[tone]);
+    }
+  }
+  const put = (x, y, hex, alpha) => canvas.pixel(bigWrap(x), bigWrap(y), hex, alpha);
+  const phase = (index) => (frame + index) % UNDER_FRAME_COUNT;
+  const spots = (count, s) => Array.from({ length: count }, (_, i) => [Math.floor(hash(i, 1, s) * BIG), Math.floor(hash(i, 2, s) * BIG)]);
+  if (kind === T.SEA) {
+    // Cristas de onda em arco (acendem e apagam) e brilhos de sol.
+    spots(46, seed + 10).forEach(([x, y], index) => {
+      const p = phase(index);
+      if (p === 3) return;
+      const length = p === 1 ? 7 : 4;
+      for (let i = 0; i < length; i += 1) {
+        const arc = Math.round(Math.abs(i - (length - 1) / 2) * 0.5);
+        put(x + i, y + arc, i === Math.floor(length / 2) && p === 1 ? tones[5] : tones[4]);
+        put(x + i, y + arc + 1, tones[1]);
+      }
+    });
+    spots(20, seed + 12).forEach(([x, y], index) => { if (phase(index) === 0) put(x, y, '#ffffff'); });
+  } else if (kind === T.LAVA) {
+    // Placas de crosta boiando (escuras, borda acesa) e bolhas.
+    spots(16, seed + 10).forEach(([x, y], index) => {
+      const rx = 3 + (index % 4);
+      for (let dy = -rx; dy <= rx; dy += 1) {
+        for (let dx = -rx - 2; dx <= rx + 2; dx += 1) {
+          const r = Math.hypot(dx / (rx + 1.5), dy / (rx * 0.7)) + (hash(dx + x, dy + y, seed) - 0.5) * 0.25;
+          if (r < 0.7) put(x + dx + drift, y + dy, r < 0.45 ? tones[0] : tones[1]);
+          else if (r < 0.85) put(x + dx + drift, y + dy, tones[4]);
+        }
+      }
+    });
+    spots(14, seed + 11).forEach(([x, y], index) => {
+      const p = phase(index);
+      if (p === 0) { put(x, y, tones[5]); put(x + 1, y, tones[4]); }
+      if (p === 1) { put(x, y - 1, tones[5]); put(x - 1, y, tones[5]); put(x + 1, y, tones[5]); put(x, y, '#ffffff'); }
+    });
+  } else if (kind === T.MURK) {
+    spots(14, seed + 10).forEach(([x, y], index) => { if (phase(index) < 2) { put(x, y, '#657392'); put(x + 1, y, '#424c6e'); } });
+    spots(10, seed + 13).forEach(([x, y]) => { for (let i = -2; i <= 2; i += 1) put(x + i, y + (Math.abs(i) > 1 ? 1 : 0), '#1e6f50'); put(x, y - 1, '#33984b'); });
+  } else {
+    // Gelo: reflexos longos na diagonal (poucos, irregulares) e rachaduras finas com luz.
+    for (const [offset, width, s] of [[18, 2, 1], [70, 1, 2], [111, 3, 3]]) {
+      for (let i = 0; i < BIG; i += 1) {
+        for (let w = 0; w < width; w += 1) {
+          if (noise(i, offset, 12, 88 + s) > 0.46) put(i + offset + w, BIG - 1 - i, w === 0 ? tones[4] : tones[3]);
+        }
+      }
+    }
+    spots(7, seed + 20).forEach(([x, y], index) => {
+      let cx = x; let cy = y;
+      for (let step = 0; step < 14 + (index % 3) * 6; step += 1) {
+        put(cx, cy, tones[0]);
+        put(cx, cy + 1, tones[4]);
+        const roll = hash(step, index, seed);
+        cx += roll < 0.7 ? 1 : 0;
+        cy += roll < 0.35 ? 1 : roll > 0.85 ? -1 : 0;
+      }
+    });
+    spots(18, seed + 21).forEach(([x, y]) => put(x, y, '#ffffff'));
+  }
+  underCache.set(key, canvas);
+  return canvas;
+}
+
+/** Água do mar, lava, lodo e gelo; quadros 0..3 animam; `sub` 0..8 = posição no bloco 3x3. */
+export function drawUnderTile(kind, frame = 0, sub = 0) {
+  const block = underBlock(kind, frame);
+  const canvas = new PixelCanvas(S, S);
+  const ox = (sub % UNDER_SUBTILES) * S;
+  const oy = Math.floor(sub / UNDER_SUBTILES) * S;
+  for (let y = 0; y < S; y += 1) for (let x = 0; x < S; x += 1) canvas.pixel(x, y, block.colorAt(ox + x, oy + y));
+  return canvas;
+}
+
+// ---------- Paredes da caverna (sem mudança) ----------
+
+function patches(x, y, seed, jitter = 0.1) {
+  const n = periodic(x, y, 2, seed) * 0.5 + periodic(x, y, 4, seed + 1) * 0.32 + periodic(x, y, 8, seed + 2) * 0.18;
+  return n + (hash(wrap(x) >> 1, wrap(y) >> 1, seed + 5) - 0.5) * jitter;
+}
+
+function scatter(seed, count, callback, margin = 5) {
+  for (let index = 0; index < count; index += 1) {
+    const x = margin + Math.floor(hash(index, 1, seed) * (S - margin * 2));
+    const y = margin + Math.floor(hash(index, 2, seed) * (S - margin * 2));
+    callback(x, y, index);
+  }
 }
 
 // ---------- Paredes da caverna ----------
@@ -645,120 +902,6 @@ export function drawWallTile(face, variant = 0, rim = 0) {
     if (rim & 1) { canvas.pixel(i, wobble, ROCK[5]); canvas.pixel(i, wobble + 1, ROCK[4]); }
     if (rim & 2) { canvas.pixel(TILE_PX - 1 - wobble, i, ROCK[5]); canvas.pixel(TILE_PX - 2 - wobble, i, ROCK[3]); }
     if (rim & 8) { canvas.pixel(wobble, i, ROCK[5]); canvas.pixel(wobble + 1, i, ROCK[4]); }
-  }
-  return canvas;
-}
-
-// ---------- Camada de baixo (animada) ----------
-
-export const UNDER_KINDS = Object.freeze([T.SEA, T.LAVA, T.MURK, T.ICE]);
-export const UNDER_FRAME_COUNT = 4;
-
-const UNDER_TONES = {
-  [T.SEA]: ['#0c2e44', '#00396d', '#0069aa', '#0098dc', '#00cdf9'],
-  [T.LAVA]: ['#8e251d', '#c64524', '#e07438', '#ffa214', '#ffeb57'],
-  [T.MURK]: ['#0e071b', '#1a1932', '#134c4c', '#2d2e25', '#1e6f50'],
-  [T.ICE]: ['#657392', '#92a1b9', '#9cc8e6', '#d5e8ef', '#ffffff']
-};
-
-/** Água do mar, lava, lodo e gelo; quadros 0..3 animam ondas e brilhos. */
-export function drawUnderTile(kind, frame = 0) {
-  const canvas = new PixelCanvas(TILE_PX, TILE_PX);
-  const tones = UNDER_TONES[kind];
-  const seed = 70 + kind;
-  // Grão fino que "corre" 1 px por quadro (água e lava escorrem; gelo fica parado).
-  const drift = kind === T.ICE ? 0 : frame * (kind === T.LAVA ? 2 : 3);
-  for (let y = 0; y < TILE_PX; y += 1) {
-    for (let x = 0; x < TILE_PX; x += 1) {
-      const sx = wrap(x + drift);
-      const v = periodic(sx, y, 12, seed) * 0.55 + periodic(sx, y, 24, seed + 1) * 0.45 + (hash(sx >> 1, y >> 1, seed + 2) - 0.5) * 0.1;
-      let tone = v < 0.3 ? 1 : v > 0.72 ? 3 : 2;
-      if (kind === T.MURK) tone = v < 0.3 ? 0 : v > 0.74 ? 4 : 2;
-      if (kind === T.ICE) tone = v > 0.7 ? 3 : 2;
-      canvas.pixel(x, y, tones[tone]);
-    }
-  }
-  const phase = (index) => (frame + index) % UNDER_FRAME_COUNT;
-  if (kind === T.SEA) {
-    // Cristas de onda: traços curtos que acendem e apagam.
-    scatter(seed + 10, 9, (x, y, index) => {
-      const p = phase(index);
-      if (p === 3) return;
-      const length = p === 1 ? 5 : 3;
-      for (let i = 0; i < length; i += 1) canvas.pixel(wrap(x + i - (length >> 1)), y, i === length >> 1 && p === 1 ? '#94fdff' : tones[4]);
-      if (p === 1) canvas.pixel(wrap(x), y + 1, tones[1]);
-    }, 2);
-  } else if (kind === T.LAVA) {
-    // Placas de crosta boiando (escuras, com borda acesa) e bolhas.
-    scatter(seed + 10, 5, (x, y, index) => {
-      blotch(canvas, x, y, 3 + (index % 3), '#8e251d', seed + index);
-      blotch(canvas, x, y, 1.6 + (index % 2), '#391f21', seed + index + 9);
-    }, 9);
-    scatter(seed + 11, 4, (x, y, index) => {
-      const p = phase(index);
-      if (p === 0) { canvas.pixel(x, y, tones[4]); canvas.pixel(x + 1, y, tones[3]); }
-      if (p === 1) { canvas.pixel(x, y - 1, tones[4]); canvas.pixel(x - 1, y, tones[4]); canvas.pixel(x + 1, y, tones[4]); canvas.pixel(x, y, '#ffffff'); }
-    }, 4);
-  } else if (kind === T.MURK) {
-    scatter(seed + 10, 4, (x, y, index) => {
-      if (phase(index) < 2) { canvas.pixel(x, y, '#657392'); canvas.pixel(x + 1, y, '#424c6e'); }
-    }, 4);
-  } else {
-    // Gelo: reflexos em diagonal e rachaduras finas com luz de um lado.
-    for (let i = 0; i < TILE_PX; i += 1) {
-      for (const [offset, width] of [[6, 2], [31, 1]]) {
-        for (let w = 0; w < width; w += 1) {
-          const x = wrap(i + offset + w);
-          if (periodic(x, i, 4, 88) > 0.42) canvas.pixel(x, wrap(TILE_PX - 1 - i), tones[4]);
-        }
-      }
-    }
-    for (const [x0, y0, x1, y1] of [[10, 16, 18, 20], [31, 36, 37, 34]]) {
-      canvas.line(x0, y0, x1, y1, tones[3]);
-      canvas.line(x0, y0 + 1, x1, y1 + 1, tones[4]);
-    }
-  }
-  return canvas;
-}
-
-// ---------- Bordas (terra recortada sobre água/lava/lodo/gelo) ----------
-
-const EDGE_STYLE = {
-  // inner = 2 px colados na água (espuma/crosta), band = 1-2 px de transição, wet = faixa molhada na terra.
-  [T.SEA]: { inner: '#ffffff', band: '#94fdff', wetColor: '#ad7954', wetWidth: 4, sand: '#f6ca9f', foam: '#d5e8ef', width: 9 },
-  [T.LAVA]: { inner: '#ffa214', band: '#391f21', wetColor: '#1c121c', wetWidth: 4, sand: null, foam: '#ffeb57', width: 8 },
-  [T.MURK]: { inner: '#1e6f50', band: '#2d2e25', wetColor: '#1c121c', wetWidth: 3, sand: null, foam: null, width: 8 },
-  [T.ICE]: { inner: '#ffffff', band: '#9cc8e6', wetColor: '#9cc8e6', wetWidth: 2, sand: null, foam: null, width: 7 }
-};
-
-/**
- * Ladrilho de terra (land) cuja borda encosta em `under` nos lados da máscara.
- * Lados: 1 = norte, 2 = leste, 4 = sul, 8 = oeste; diagonais entram quando os dois lados vizinhos são água.
- */
-export function drawEdgeTile(land, under, mask, variant = 0) {
-  const canvas = drawBaseTile(land, variant);
-  const style = EDGE_STYLE[under];
-  const cells = maskCells(mask & 15);
-  const sandy = land === T.BEACH || land === T.SAND || land === T.DUNE;
-  for (let y = 0; y < TILE_PX; y += 1) {
-    for (let x = 0; x < TILE_PX; x += 1) {
-      // Borda ondulada suave (periódica nos dois eixos para casar com os vizinhos); d < 0 = água.
-      const d = -cellReach(x + 0.5, y + 0.5, cells, (ex, ey) => style.width + shoreWobble(ex, ey, under) * 3.5 + (periodic(ex, ey, 12, 92 + under) - 0.5) * 2);
-      if (d < 0) {
-        canvas.clearPixel(x, y);
-        // Espuma/brilho solto na água, a 2-3 px da margem.
-        if (style.foam && d > -4 && d < -2.5 && periodic(x, y, 8, 95 + under) > 0.5) canvas.pixel(x, y, style.foam);
-      } else if (d < 2) {
-        canvas.pixel(x, y, style.inner);
-      } else if (d < 3) {
-        canvas.pixel(x, y, style.band);
-      } else if (d < 3 + style.wetWidth) {
-        if (!(d > 3 + style.wetWidth - 1.5 && hash(x >> 1, y >> 1, 93) > 0.5)) canvas.pixel(x, y, style.wetColor);
-      } else if (style.sand && !sandy && d < 16) {
-        // Faixa de areia entre a mata e o mar, com borda em blocos.
-        if (d < 12 + (hash(x >> 1, y >> 1, 91) - 0.5) * 6) canvas.pixel(x, y, (hash(x, y, 94) > 0.9) ? '#f9e6cf' : style.sand);
-      }
-    }
   }
   return canvas;
 }

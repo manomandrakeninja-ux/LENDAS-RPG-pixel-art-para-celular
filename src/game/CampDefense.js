@@ -4,6 +4,7 @@ import { PixelCanvas, ramp } from '../art/pixel.js';
 import { buildingVisual } from '../data/buildingVisuals.js';
 import { quantizePixels } from '../art/palette.js';
 import { bakedBuilding } from '../art/bakedBuildings.js';
+import { OVERLAY_DEPTH } from './depths.js';
 
 const WALL = BUILDING_DEFS.wall;
 const TOWER = BUILDING_DEFS.tower;
@@ -490,7 +491,7 @@ export class CampDefense {
       const torchX = gateX + side * 30;
       this.track(this.scene.add.image(torchX, gateY + 2, 'gate-torch').setOrigin(0.5, 1).setDepth(gateY + 4), this.wallObjects);
       const glow = this.track(this.scene.add.image(torchX, gateY - 20, 'buildings', 'warm-glow')
-        .setScale(1.4).setBlendMode(Phaser.BlendModes.ADD).setAlpha(0.05).setDepth(4502), this.wallObjects);
+        .setScale(1.4).setBlendMode(Phaser.BlendModes.ADD).setAlpha(0.05).setDepth(OVERLAY_DEPTH + 4502), this.wallObjects);
       this.gateLights.push(glow);
     }
     if (this.wallStat('gates')) {
@@ -690,7 +691,7 @@ export class CampDefense {
       }
       sprites.push(sprite);
       const lantern = this.track(this.scene.add.image(x, y - top + 6, 'buildings', 'warm-glow')
-        .setScale(1.6).setBlendMode(Phaser.BlendModes.ADD).setAlpha(0.05).setDepth(4502), this.towerObjects);
+        .setScale(1.6).setBlendMode(Phaser.BlendModes.ADD).setAlpha(0.05).setDepth(OVERLAY_DEPTH + 4502), this.towerObjects);
       this.towerLights.push(lantern);
       if (this.scene.obstacles) this.towerObstacles.push(this.scene.obstacles.add(x, y - 6, 18, 10));
       this.towers.push({ x, y: y - 50, cooldown: 600 * index, cannonCooldown: TOWER.cannon.intervalMs });
@@ -780,7 +781,7 @@ export class CampDefense {
     const damage = this.towerStat('damage');
     const startX = tower.x + (index - 1.5) * 4;
     const startY = tower.y;
-    const arrow = this.scene.add.rectangle(startX, startY, 7, 2, ARROW_COLORS[kind]).setDepth(9000);
+    const arrow = this.scene.add.rectangle(startX, startY, 7, 2, ARROW_COLORS[kind]).setDepth(OVERLAY_DEPTH + 9000);
     this.scene.hudCamera?.ignore(arrow);
     arrow.rotation = Phaser.Math.Angle.Between(startX, startY, target.x, target.y - 8);
     const distance = Phaser.Math.Distance.Between(startX, startY, target.x, target.y);
@@ -823,7 +824,7 @@ export class CampDefense {
 
   drawLightning(chain) {
     if (chain.length < 2) return;
-    const bolt = this.scene.add.graphics().setDepth(9001);
+    const bolt = this.scene.add.graphics().setDepth(OVERLAY_DEPTH + 9001);
     this.scene.hudCamera?.ignore(bolt);
     bolt.lineStyle(2, 0xd5b8ff, 1);
     for (let index = 1; index < chain.length; index += 1) {
@@ -833,7 +834,7 @@ export class CampDefense {
   }
 
   fireCannon(tower, target) {
-    const ball = this.scene.add.circle(tower.x + 12, tower.y + 6, 3, 0x26282b).setDepth(9000);
+    const ball = this.scene.add.circle(tower.x + 12, tower.y + 6, 3, 0x26282b).setDepth(OVERLAY_DEPTH + 9000);
     this.scene.hudCamera?.ignore(ball);
     const impactX = target.x;
     const impactY = target.y;

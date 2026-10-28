@@ -22,7 +22,7 @@ await runInChrome({ name: 'world', port: 9391, width: 1280, height: 800 }, async
     valleyTile: scene.regionWorld.groundLayer.getTileAt(30, 22)?.index,
     region: scene.regionWorld.currentRegion()
   }));
-  check(base.width === 7200 && base.height > 5376 && base.valleyTile >= 1 && base.valleyTile <= 8 && base.region === 'vale', `Mundo base: ${JSON.stringify(base)}`);
+  check(base.width === 7200 && base.height > 5376 && base.valleyTile >= 1 && base.valleyTile <= 64 && base.region === 'vale', `Mundo base: ${JSON.stringify(base)}`);
   await capture('mundo-vale.png');
 
   // 2. Cada região: objetos aparecem perto do jogador e monstros da região nascem.

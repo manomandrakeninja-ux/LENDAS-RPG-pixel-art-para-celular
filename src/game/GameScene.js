@@ -82,6 +82,7 @@ const GOLEM_UNLOCK_MISSION = GOLEM_MISSION ? MISSIONS.find((mission) => mission.
 import { CRAFT_RECIPES_BY_ID, CRAFT_STATIONS, recipeItems } from '../data/craftRecipes.js';
 import { quantizePixels } from '../art/palette.js';
 import { BOW_LOOK } from '../art/weaponSprites.js';
+import { OVERLAY_DEPTH } from './depths.js';
 
 export const PICKAXE_MESSAGE = 'Você precisa de uma picareta para minerar isso.';
 // Mineração: segure o botão por 4 s (picareta de ferro: 2 s).
@@ -205,9 +206,9 @@ export class GameScene extends Phaser.Scene {
     this.zoomLevel = loadSettings().zoom;
 
     this.duskTint = this.add.rectangle(0, 0, this.scale.width, this.scale.height, 0xd88952, 0)
-      .setOrigin(0).setScrollFactor(0).setDepth(3997);
+      .setOrigin(0).setScrollFactor(0).setDepth(OVERLAY_DEPTH + 3997);
     this.damageFlash = this.add.rectangle(0, 0, this.scale.width, this.scale.height, 0xff6b57, 0)
-      .setOrigin(0).setScrollFactor(0).setDepth(5000);
+      .setOrigin(0).setScrollFactor(0).setDepth(OVERLAY_DEPTH + 5000);
     this.lighting = new LightingSystem(this, this.camp);
     this.applyCameraZoom();
 
@@ -1014,7 +1015,7 @@ export class GameScene extends Phaser.Scene {
         Phaser.Math.Distance.Between(right.x, right.y, this.player.x, this.player.y));
     const target = candidates[0];
     if (!target) return false;
-    const arrow = this.add.rectangle(this.player.x, this.player.y - 8, 8, 2, 0xf3e3b0).setDepth(9000);
+    const arrow = this.add.rectangle(this.player.x, this.player.y - 8, 8, 2, 0xf3e3b0).setDepth(OVERLAY_DEPTH + 9000);
     this.hudCamera?.ignore(arrow);
     arrow.rotation = Phaser.Math.Angle.Between(this.player.x, this.player.y - 8, target.x, target.y - 8);
     const distance = Phaser.Math.Distance.Between(this.player.x, this.player.y, target.x, target.y);
@@ -1686,14 +1687,14 @@ export class GameScene extends Phaser.Scene {
     node?.setTint(0xffd9a0);
     this.player.startMining(x, y);
     if (!this.miningBar) {
-      this.miningBar = this.add.graphics().setDepth(9500);
+      this.miningBar = this.add.graphics().setDepth(OVERLAY_DEPTH + 9500);
       this.miningLabel = this.add.text(0, 0, '', {
         fontFamily: 'Press Start 2P',
         fontSize: '8px',
         color: '#ffe9b0',
         stroke: '#2a1d1a',
         strokeThickness: 3
-      }).setOrigin(0.5, 1).setDepth(9501).setResolution(2);
+      }).setOrigin(0.5, 1).setDepth(OVERLAY_DEPTH + 9501).setResolution(2);
       this.hudCamera?.ignore([this.miningBar, this.miningLabel]);
     }
     this.miningBar.setVisible(true);

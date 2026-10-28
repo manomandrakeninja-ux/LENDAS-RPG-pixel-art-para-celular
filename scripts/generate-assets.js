@@ -4,7 +4,7 @@ import { PixelCanvas, darken, dither, hash, lighten, ramp } from '../src/art/pix
 import { readAtlas, readPng, writePng } from './png.js';
 import { NPC_SHEETS } from '../src/art/npcSheets.js';
 import { STORY_SCENE_KEYS, drawStoryScene } from '../src/art/storyScenes.js';
-import { valleyPine, valleyRoundTree } from '../src/art/biomeProps.js';
+import { bakedNature } from '../src/art/bakedNature.js';
 import { generateWorldAssets } from './generate-world-assets.js';
 import { drawValleyTile } from '../src/art/terrain.js';
 import { bakedBuilding } from '../src/art/bakedBuildings.js';
@@ -98,7 +98,7 @@ function tuft(canvas, x, y, tall = 3) {
   canvas.pixel(x + 2, y - 2, GRASS[5]);
 }
 
-makeSheet('tiles/grass-sheet.png', 48, 48, 4, 4, (canvas, frame) => canvas.blit(drawValleyTile(frame), 0, 0), { outline: false });
+makeSheet('tiles/grass-sheet.png', 48, 48, 8, 8, (canvas, frame) => canvas.blit(drawValleyTile(frame), 0, 0), { outline: false });
 
 // Couro (usado nos ícones da interface).
 const LEATHER = ['#3e2618', '#6a4228', '#8d5c36'];
@@ -402,29 +402,16 @@ function drawRock(canvas, cx, cy, width, height, colors = STONE) {
   canvas.pixel(cx - width * 0.5, cy - height * 0.3, colors[4]);
 }
 
-// Árvores do Vale pintadas com luz contínua (src/art/biomeProps.js); a sombra agora segue o sol no jogo.
-const paintedTree = (painted) => (canvas) => canvas.blit(painted, 0, 0);
+// Vegetação pintada em alta resolução (scripts/bake-nature.mjs → src/art/natureSprites.js): já vem com contorno,
+// luz de borda e sombra de contato; a sombra das árvores segue o sol no jogo.
+const baked = (name) => {
+  const sprite = bakedNature(name);
+  return { name, width: sprite.width, height: sprite.height, outline: false, draw: (canvas) => canvas.blit(sprite, 0, 0) };
+};
 const natureEntries = [
-  ...[0, 1, 2].map((frame) => ({
-    name: `pine-${frame}`, width: 40, height: 56, outline: false,
-    draw: paintedTree(valleyPine(frame === 1 ? -1 : frame === 2 ? 1 : 0))
-  })),
-  { name: 'autumn-tree', width: 48, height: 56, outline: false, draw: paintedTree(valleyRoundTree('autumn', null, 1)) },
-  { name: 'oak-tree', width: 48, height: 56, outline: false, draw: paintedTree(valleyRoundTree('oak', null, 2)) },
-  { name: 'fruit-tree', width: 48, height: 56, outline: false, draw: paintedTree(valleyRoundTree('fruit', '#e8413a', 3)) },
-  {
-    name: 'bush', width: 32, height: 24,
-    draw: (canvas) => {
-      canvas.shadow(16, 21, 13, 3, 105);
-      // Folhagem escura e fechada: o verde-limão da rampa automática chamava atenção demais.
-      const colors = ['#134c4c', '#1e6f50', '#33984b', '#5ac54f'];
-      for (const [x, y, rx, ry] of [[10, 14, 7, 6], [21, 13, 8, 8], [16, 9, 6, 5], [25, 16, 5, 4.5]]) canvas.shadedEllipse(x, y, rx, ry, colors);
-      for (const [x, y] of [[9, 12], [19, 10], [24, 15], [14, 16]]) {
-        canvas.rect(x, y, 2, 2, '#c8453c');
-        canvas.pixel(x, y, '#f28a6c');
-      }
-    }
-  },
+  baked('pine-0'), baked('pine-1'), baked('pine-2'),
+  baked('autumn-tree'), baked('oak-tree'), baked('fruit-tree'),
+  baked('bush'),
   {
     name: 'resource-wood', width: 28, height: 28,
     draw: (canvas) => {
@@ -447,31 +434,8 @@ const natureEntries = [
       canvas.pixel(21, 3, STONE[4]);
     }
   },
-  {
-    name: 'resource-stone', width: 28, height: 28,
-    draw: (canvas) => {
-      canvas.shadow(14, 23, 12, 3, 110);
-      drawRock(canvas, 13, 15, 10, 8);
-      drawRock(canvas, 21, 19, 4, 3);
-      canvas.pixel(6, 19, '#5f9650');
-      canvas.pixel(7, 20, '#4a7b48');
-    }
-  },
-  {
-    name: 'resource-herbs', width: 28, height: 28,
-    draw: (canvas) => {
-      canvas.shadow(14, 24, 10, 3, 100);
-      const leaf = ['#3d7a3a', '#5f9e45', '#8cc55c', '#c3e88a'];
-      for (const [x, y, angle] of [[9, 15, -0.6], [19, 14, 0.6], [11, 10, -0.3], [17, 9, 0.3], [14, 17, 0]]) {
-        canvas.line(14, 23, x, y, leaf[0]);
-        canvas.shadedEllipse(x, y, 3, 2 + Math.abs(angle), leaf);
-      }
-      for (const [x, y] of [[10, 7], [18, 6], [14, 5]]) {
-        canvas.pixel(x, y, '#f2efb0');
-        canvas.pixel(x, y + 1, '#d9cf6a');
-      }
-    }
-  },
+  baked('resource-stone'),
+  baked('resource-herbs'),
   {
     name: 'resource-moonherb', width: 28, height: 28,
     draw: (canvas) => {
@@ -553,19 +517,7 @@ const natureEntries = [
       canvas.line(12, 6, 17, 4, '#8e6130');
     }
   },
-  {
-    name: 'detail-mushroom', width: 16, height: 16,
-    draw: (canvas) => {
-      canvas.shadow(8, 14, 5, 1.5, 90);
-      canvas.rect(6, 9, 4, 5, '#e8dcc0');
-      canvas.rect(8, 9, 2, 5, '#c8b996');
-      canvas.forEllipse(8, 8, 5.5, 3.6, (x, y) => { if (y <= 8) canvas.pixel(x, y, '#c43f35'); });
-      canvas.forEllipse(7, 6, 3, 1.6, (x, y) => canvas.pixel(x, y, '#e2584a'));
-      canvas.pixel(5, 6, '#fbeedd');
-      canvas.pixel(9, 5, '#fbeedd');
-      canvas.pixel(11, 7, '#fbeedd');
-    }
-  }
+  baked('detail-mushroom')
 ];
 makeAtlas('nature/nature-atlas.json', natureEntries, { occlusion: true });
 

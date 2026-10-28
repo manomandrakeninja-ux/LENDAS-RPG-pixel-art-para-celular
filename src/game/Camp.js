@@ -23,6 +23,7 @@ import { EquipmentSystem } from './EquipmentSystem.js';
 import { CampDefense } from './CampDefense.js';
 import { freeUnitsFor, slotsUsed, storeBundle, canStoreBundle } from './storageSlots.js';
 import { quantizePixels } from '../art/palette.js';
+import { OVERLAY_DEPTH } from './depths.js';
 
 export const BUILDINGS = BUILDING_DEFS;
 
@@ -96,7 +97,7 @@ export class Camp {
       .setScale(4)
       .setBlendMode(Phaser.BlendModes.ADD)
       .setAlpha(0.12)
-      .setDepth(4500);
+      .setDepth(OVERLAY_DEPTH + 4500);
     this.lightGlows.push(this.fireGlow);
     this.fire = scene.add.sprite(this.x, this.y + 16, 'buildings', 'campfire-0')
       .setOrigin(0.5, 0.84)
@@ -134,7 +135,7 @@ export class Camp {
         .setScale(1)
         .setBlendMode(Phaser.BlendModes.ADD)
         .setAlpha(0.08)
-        .setDepth(4501 + y / 1000);
+        .setDepth(OVERLAY_DEPTH + 4501 + y / 1000);
       this.lightGlows.push(glow);
       const lamp = scene.add.image(x, y, 'buildings', 'lamp').setOrigin(0.5, 0.95).setDepth(y + 12);
       scene.obstacles?.add(x, y - 2, 8, 6);
@@ -187,7 +188,7 @@ export class Camp {
       .setScale(key === 'forge' ? 2.6 : 2.2)
       .setBlendMode(Phaser.BlendModes.ADD)
       .setAlpha(0.05)
-      .setDepth(4501 + y / 1000);
+      .setDepth(OVERLAY_DEPTH + 4501 + y / 1000);
     if (key === 'forge') glow.setTint(0xff9a4a);
     this.lightGlows.push(glow);
     const base = BUILDING_FOOTPRINTS[key];

@@ -1,4 +1,5 @@
 import { sunShadow } from '../data/sunlight.js';
+import { OVERLAY_DEPTH } from './depths.js';
 import { fitScreenRect } from './cameraZoom.js';
 
 // Sombras que acompanham o sol: de manhã apontam para oeste e ficam compridas,
@@ -52,7 +53,7 @@ export class ShadowSystem {
     this.timer = 0;
     this.current = sunShadow(8);
     this.grade = scene.add.rectangle(0, 0, scene.scale.width, scene.scale.height, 0xffc890, 0)
-      .setOrigin(0).setScrollFactor(0).setDepth(3996);
+      .setOrigin(0).setScrollFactor(0).setDepth(OVERLAY_DEPTH + 3996);
     scene.scale.on('resize', () => fitScreenRect(this.grade, scene.cameras.main, scene.scale.width, scene.scale.height));
     fitScreenRect(this.grade, scene.cameras.main, scene.scale.width, scene.scale.height);
   }

@@ -4,146 +4,146 @@
       "frame": {
         "x": 2,
         "y": 2,
-        "w": 40,
-        "h": 56
+        "w": 64,
+        "h": 88
       },
       "rotated": false,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
         "y": 0,
-        "w": 40,
-        "h": 56
+        "w": 64,
+        "h": 88
       },
       "sourceSize": {
-        "w": 40,
-        "h": 56
+        "w": 64,
+        "h": 88
       }
     },
     "pine-1": {
       "frame": {
-        "x": 44,
+        "x": 68,
         "y": 2,
-        "w": 40,
-        "h": 56
+        "w": 64,
+        "h": 88
       },
       "rotated": false,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
         "y": 0,
-        "w": 40,
-        "h": 56
+        "w": 64,
+        "h": 88
       },
       "sourceSize": {
-        "w": 40,
-        "h": 56
+        "w": 64,
+        "h": 88
       }
     },
     "pine-2": {
       "frame": {
-        "x": 86,
+        "x": 134,
         "y": 2,
-        "w": 40,
-        "h": 56
+        "w": 64,
+        "h": 88
       },
       "rotated": false,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
         "y": 0,
-        "w": 40,
-        "h": 56
+        "w": 64,
+        "h": 88
       },
       "sourceSize": {
-        "w": 40,
-        "h": 56
+        "w": 64,
+        "h": 88
       }
     },
     "autumn-tree": {
       "frame": {
-        "x": 128,
-        "y": 2,
-        "w": 48,
-        "h": 56
+        "x": 2,
+        "y": 92,
+        "w": 72,
+        "h": 88
       },
       "rotated": false,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
         "y": 0,
-        "w": 48,
-        "h": 56
+        "w": 72,
+        "h": 88
       },
       "sourceSize": {
-        "w": 48,
-        "h": 56
+        "w": 72,
+        "h": 88
       }
     },
     "oak-tree": {
       "frame": {
-        "x": 178,
-        "y": 2,
-        "w": 48,
-        "h": 56
+        "x": 76,
+        "y": 92,
+        "w": 72,
+        "h": 88
       },
       "rotated": false,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
         "y": 0,
-        "w": 48,
-        "h": 56
+        "w": 72,
+        "h": 88
       },
       "sourceSize": {
-        "w": 48,
-        "h": 56
+        "w": 72,
+        "h": 88
       }
     },
     "fruit-tree": {
       "frame": {
-        "x": 2,
-        "y": 60,
-        "w": 48,
-        "h": 56
+        "x": 150,
+        "y": 92,
+        "w": 72,
+        "h": 88
       },
       "rotated": false,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
         "y": 0,
-        "w": 48,
-        "h": 56
+        "w": 72,
+        "h": 88
       },
       "sourceSize": {
-        "w": 48,
-        "h": 56
+        "w": 72,
+        "h": 88
       }
     },
     "bush": {
       "frame": {
-        "x": 52,
-        "y": 60,
-        "w": 32,
-        "h": 24
+        "x": 2,
+        "y": 182,
+        "w": 40,
+        "h": 30
       },
       "rotated": false,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
         "y": 0,
-        "w": 32,
-        "h": 24
+        "w": 40,
+        "h": 30
       },
       "sourceSize": {
-        "w": 32,
-        "h": 24
+        "w": 40,
+        "h": 30
       }
     },
     "resource-wood": {
       "frame": {
-        "x": 86,
-        "y": 60,
+        "x": 44,
+        "y": 182,
         "w": 28,
         "h": 28
       },
@@ -162,8 +162,8 @@
     },
     "resource-stone": {
       "frame": {
-        "x": 116,
-        "y": 60,
+        "x": 74,
+        "y": 182,
         "w": 28,
         "h": 28
       },
@@ -182,8 +182,8 @@
     },
     "resource-herbs": {
       "frame": {
-        "x": 146,
-        "y": 60,
+        "x": 104,
+        "y": 182,
         "w": 28,
         "h": 28
       },
@@ -202,8 +202,8 @@
     },
     "resource-moonherb": {
       "frame": {
-        "x": 176,
-        "y": 60,
+        "x": 134,
+        "y": 182,
         "w": 28,
         "h": 28
       },
@@ -222,8 +222,8 @@
     },
     "resource-ectoplasm": {
       "frame": {
-        "x": 206,
-        "y": 60,
+        "x": 164,
+        "y": 182,
         "w": 28,
         "h": 28
       },
@@ -242,8 +242,8 @@
     },
     "death-backpack": {
       "frame": {
-        "x": 2,
-        "y": 118,
+        "x": 194,
+        "y": 182,
         "w": 28,
         "h": 28
       },
@@ -262,8 +262,8 @@
     },
     "detail-grass": {
       "frame": {
-        "x": 32,
-        "y": 118,
+        "x": 224,
+        "y": 182,
         "w": 20,
         "h": 16
       },
@@ -282,8 +282,8 @@
     },
     "detail-flowers": {
       "frame": {
-        "x": 54,
-        "y": 118,
+        "x": 2,
+        "y": 214,
         "w": 20,
         "h": 16
       },
@@ -302,8 +302,8 @@
     },
     "detail-pebbles": {
       "frame": {
-        "x": 76,
-        "y": 118,
+        "x": 24,
+        "y": 214,
         "w": 20,
         "h": 12
       },
@@ -322,8 +322,8 @@
     },
     "detail-leaves": {
       "frame": {
-        "x": 98,
-        "y": 118,
+        "x": 46,
+        "y": 214,
         "w": 20,
         "h": 12
       },
@@ -342,8 +342,8 @@
     },
     "detail-mushroom": {
       "frame": {
-        "x": 120,
-        "y": 118,
+        "x": 68,
+        "y": 214,
         "w": 16,
         "h": 16
       },
@@ -368,7 +368,7 @@
     "format": "RGBA8888",
     "size": {
       "w": 256,
-      "h": 148
+      "h": 232
     },
     "scale": "1"
   }
