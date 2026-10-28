@@ -5,6 +5,7 @@ import { exportSaveCode, importSaveCode } from './saveBackup.js';
 import { ACTION_LABELS, KEY_ACTIONS, DEFAULT_KEYBINDS, keyLabel, loadKeybinds, rebind, saveKeybinds } from './Keybinds.js';
 import { HERO_LABELS, HERO_SKINS, heroTexture } from './HeroStyle.js';
 import { heroFrameSize } from '../art/skins.js';
+import { HERO_COLS } from '../art/heroRig.js';
 
 /** Ícone de engrenagem em pixel art (16 x 16) como data URL. */
 function gearIconUrl() {
@@ -264,7 +265,7 @@ export class SettingsPanel {
     const frame = heroFrameSize(heroTexture(skin));
     const scale = 80 / frame.height;
     const w = Math.round(frame.width * scale);
-    return `width:${w}px;background-size:${w * 4}px 320px;--skin-strip:-${w * 4}px;`;
+    return `width:${w}px;background-size:${w * HERO_COLS}px 320px;--skin-strip:-${w * 4}px;`;
   }
 
   /** Skins do herói: cartões com prévia animada (andando) de cada uma. */

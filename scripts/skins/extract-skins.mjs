@@ -348,10 +348,14 @@ export function buildAll() {
 if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) {
   const parts = buildAll();
   const { compose } = await import('./compose-skins.mjs');
-  const sheets = compose(parts, { blank, put, px, clone, flipX, blit, parse, dbg, FW, FH, FEET });
+  const { sheets, rigs } = compose(parts, { blank, put, px, clone, flipX, blit, parse, dbg, FW, FH, FEET });
   for (const [id, sheet] of Object.entries(sheets)) {
     save(path.join(OUT, `player-${id}-sheet.png`), sheet);
     if (DEBUG) dbg(`sheet-${id}`, sheet, 3);
     console.log(`ok player-${id}-sheet.png (${sheet.w}x${sheet.h})`);
   }
+  // Ajustes da mão (heroRig.js) para as skins extraídas; as guerreiras de outra cor herdam os da Guerreira.
+  const rigFile = path.join(ROOT, 'src/art/skinRigs.js');
+  const body = JSON.stringify(rigs).replace(/"(\d+)":/g, '$1:').replace(/"([a-z]+)":/g, '$1:');
+  fs.writeFileSync(rigFile, `// Ajustes do esqueleto da mão (heroRig.js) para as skins extraídas (Espadachim e Guerreiras).\n// GERADO por scripts/skins/extract-skins.mjs (não editar à mão). Formato: { textura: { dir: { hands: { coluna: [x, y] }, back: { grip } } } }.\nexport const SKIN_RIGS = ${body};\n`);
 }

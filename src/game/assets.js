@@ -1,4 +1,5 @@
 import { SKIN_FRAME } from '../art/skins.js';
+import { createHeroAnimations } from './HeroAnimator.js';
 import { NPC_SHEETS } from '../art/npcSheets.js';
 
 export const ASSET_CONFIG = {
@@ -13,15 +14,15 @@ export const ASSET_CONFIG = {
     kind: 'spritesheet',
     key: 'player',
     file: 'assets/characters/player-sheet.png',
-    frameWidth: 32,
-    frameHeight: 40
+    frameWidth: SKIN_FRAME.width,
+    frameHeight: SKIN_FRAME.height
   },
   playerFemale: {
     kind: 'spritesheet',
     key: 'player-female',
     file: 'assets/characters/player-female-sheet.png',
-    frameWidth: 32,
-    frameHeight: 40
+    frameWidth: SKIN_FRAME.width,
+    frameHeight: SKIN_FRAME.height
   },
   ...Object.fromEntries(['swordsman', 'warrior', 'warrior-blue', 'warrior-green', 'warrior-black'].map((id) => [`player-${id}`, {
     kind: 'spritesheet',
@@ -92,24 +93,9 @@ export function preloadGameAssets(scene) {
 }
 
 export function createGameAnimations(scene) {
-  const playerDirections = ['down', 'left', 'right', 'up'];
-  // Cavaleiro ('player') e heroína ('player-female'): mesmas animações, uma folha cada.
+  // Herói (todas as skins): folha 12 x 4 do padrão da Fase 22 (src/art/heroRig.js); andar, respirar e piscar.
   for (const prefix of ['player', 'player-female', 'player-swordsman', 'player-warrior', 'player-warrior-blue', 'player-warrior-green', 'player-warrior-black']) {
-    playerDirections.forEach((direction, row) => {
-      const first = row * 4;
-      scene.anims.create({
-        key: `${prefix}-walk-${direction}`,
-        frames: scene.anims.generateFrameNumbers(prefix, { frames: [first, first + 1, first + 2, first + 3] }),
-        frameRate: 9,
-        repeat: -1
-      });
-      scene.anims.create({
-        key: `${prefix}-idle-${direction}`,
-        frames: [{ key: prefix, frame: first + 1 }],
-        frameRate: 1,
-        repeat: -1
-      });
-    });
+    createHeroAnimations(scene, prefix);
   }
 
   for (const [name, start] of [['sheep', 0], ['pig', 4], ['chicken', 8]]) {

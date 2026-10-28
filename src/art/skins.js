@@ -14,18 +14,18 @@ export const CAPE_COLORS = Object.freeze({
   black: '#2a2a32'
 });
 
-/** Definição das skins novas. `id` vira o sufixo da textura (player-<id>); `sword`: a espada já vem no desenho. */
+/** Definição das skins novas. `id` vira o sufixo da textura (player-<id>). Desde a Fase 22 nenhuma traz arma no desenho. */
 export const SKINS = Object.freeze([
-  { id: 'swordsman', label: 'Espadachim', sword: true },
+  { id: 'swordsman', label: 'Espadachim' },
   ...Object.keys(CAPE_COLORS).map((key) => ({
     id: key === 'wine' ? 'warrior' : `warrior-${key}`,
     label: { wine: 'Guerreira Vinho', blue: 'Guerreira Azul', green: 'Guerreira Verde', black: 'Guerreira Negra' }[key],
-    cape: key,
-    sword: true
+    cape: key
   }))
 ]);
 
 /** Tamanho do quadro da folha de uma textura do herói (skins antigas: 32 x 40). */
 export function heroFrameSize(textureKey) {
-  return SKINS.some((skin) => `player-${skin.id}` === textureKey) ? SKIN_FRAME : { width: 32, height: 40, feet: 38, scale: 1 };
+  void textureKey; // Fase 22: cavaleiro e heroína também são 56 x 64.
+  return SKIN_FRAME;
 }

@@ -9,6 +9,9 @@
 // - Andar: cabeça e tronco ficam iguais; só as pernas (e a barra da capa, nas costas) se mexem.
 
 import { SWORDSMAN_BACK, WARRIOR_BACK, SWORDSMAN_PALETTE, WARRIOR_PALETTE } from './back-maps.mjs';
+import { cleanSwordsmanFront, cleanSwordsmanBack, cleanWarriorFront, cleanWarriorSide, cleanWarriorBack } from './clean.mjs';
+import { buildPoses, drawLimb } from './poses.mjs';
+import { SKIN_CFG } from './skin-cfg.mjs';
 
 /** Tons de vinho da capa no sprite da frente (os mesmos letras U V Y X S T a R W de WARRIOR_PALETTE). */
 const WINE = ['#a6243b', '#8d1d34', '#6c142a', '#510f24', '#400b1e', '#300818', '#250915', '#1e0510', '#0f030a'];
@@ -72,72 +75,116 @@ export function compose(parts, k) {
     return frames;
   }
 
-  /** Junta 4 direções (baixo, esquerda, direita, cima) x 4 quadros numa folha. */
+  /** Posição do sprite no quadro (mesma conta do andar). */
+  function placement(sprite, { x0, x1 }) {
+    let foot = 0;
+    each(sprite, (x, y, c) => { if (c[3] > 127) foot = y; });
+    return { ox: Math.max(0, Math.min(FW - sprite.w, Math.round(FW / 2 - (x0 + x1 + 1) / 2))), oy: FEET - foot };
+  }
+  const mirrorFrame = (f) => { const o = blank(f.w, f.h); each(f, (x, y, c) => { if (c[3] > 127) put(o, f.w - 1 - x, y, c); }); return o; };
+
+  /** Junta 4 direções (baixo, esquerda, direita, cima) x 12 quadros numa folha. */
   function sheetOf(rows) {
-    const sheet = blank(FW * 4, FH * 4);
+    const sheet = blank(FW * 12, FH * 4);
     rows.forEach((frames, r) => frames.forEach((frame, f) => blit(sheet, frame, f * FW, r * FH)));
     return sheet;
   }
 
+
+  const rigs = {};
+  const rgb = (h) => parse(h);
+  /** Uma direção: andar (0-3) + poses (4-11); devolve quadros e pontos da mão (em coordenadas do quadro). */
+  function dirSet(base, armless, legs, cfg) {
+    const { ox, oy } = placement(base, legs);
+    const walkFrames = walk(base, legs);
+    const frames = [...walkFrames];
+    const style = { ...cfg.style, up: cfg.style.up.map(rgb), fore: cfg.style.fore.map(rgb), hand: cfg.style.hand.map(rgb), line: rgb(cfg.style.line) };
+    const full = { ...cfg, style, hip: legs.hip, mid: legs.mid };
+    const { frames: poses, hands } = buildPoses({ base, armless, cfg: full, ox, oy, k: { blank, put, px, clone }, FW, FH });
+    for (let c = 4; c <= 11; c += 1) frames.push(poses[c]);
+    const bob = [-1, 0, -1, 1];
+    const hp = [0, 1, 2, 3].map((f) => [ox + cfg.hang[0], oy + cfg.hang[1] + bob[f]]).concat([4, 5, 6, 7, 8, 9, 10, 11].map((c) => hands[c]));
+    const grip = [ox + cfg.J[0] - cfg.outward * 2, oy + cfg.neckY];
+    return { frames, hands: hp, grip };
+  }
+  const flipSet = (set) => ({ frames: set.frames.map(mirrorFrame), hands: set.hands.map(([x, y]) => [FW - 1 - x, y]), grip: [FW - 1 - set.grip[0], set.grip[1]] });
+  const rigOf = (id, sets) => {
+    const out = {};
+    for (const [dir, set] of Object.entries(sets)) {
+      out[dir] = { hands: Object.fromEntries(set.hands.map((h, i) => [i, h])), back: { grip: set.grip } };
+    }
+    rigs[id] = out;
+  };
   const sheets = {};
+  const finish = (id, down, right, up) => {
+    const left = flipSet(right);
+    sheets[id] = sheetOf([down.frames, left.frames, right.frames, up.frames]);
+    return { down, left, right, up };
+  };
 
   // ================= Espadachim =================
-  const swFront = clone(parts.swordsman.front);
-  // Fundo branco puro preso entre as pernas e a sombra cinza do chão (as 2 últimas linhas).
-  const shadow = new Set(['#6b6c83', '#ffffff']);
-  each(swFront, (x, y, c) => {
-    if (c[3] < 128) return;
-    if (hexOf(c) === '#ffffff' || (y >= swFront.h - 2 && shadow.has(hexOf(c)))) put(swFront, x, y, [0, 0, 0, 0]);
-  });
-  // Lado: a cabeça (linhas 0-13, da coluna 14 em diante) anda 1 px para a direita; a coluna 13 se repete.
-  const swSide = clone(swFront);
-  each(swFront, (x, y, c) => { if (y <= 13 && x >= 14) put(swSide, x, y, px(swFront, x - 1, y)); });
-  const swBack = fromMap(SWORDSMAN_BACK, SWORDSMAN_PALETTE);
-  const swLegs = { hip: 46, x0: 11, x1: 30, mid: 20 };
-  const swLegsBack = { hip: 46, x0: 7, x1: 26, mid: 17 };
-  sheets.swordsman = sheetOf([
-    walk(swFront, swLegs),
-    walk(flipX(swSide), { ...swLegs, x0: swSide.w - 1 - swLegs.x1, x1: swSide.w - 1 - swLegs.x0, mid: swSide.w - swLegs.mid }),
-    walk(swSide, swLegs),
-    walk(swBack, swLegsBack)
-  ]);
-  dbg('c-sw-front', swFront);
-  dbg('c-sw-side', swSide);
-  dbg('c-sw-back', swBack);
+  {
+    const C = SKIN_CFG.swordsman;
+    const raw = clone(parts.swordsman.front);
+    const shadow = new Set(['#6b6c83', '#ffffff']);
+    each(raw, (x, y, c) => { if (c[3] >= 128 && y >= raw.h - 2 && shadow.has(hexOf(c))) put(raw, x, y, [0, 0, 0, 0]); });
+    const front = cleanSwordsmanFront(raw, { blank, put, px, clone });
+    const side = clone(front);
+    each(front, (x, y, c) => { if (y <= 13 && x >= 14) put(side, x, y, px(front, x - 1, y)); });
+    const back = cleanSwordsmanBack(front, fromMap(SWORDSMAN_BACK, SWORDSMAN_PALETTE), { blank, put, px, clone });
+    const mk = (img, cfg) => {
+      const armless = clone(img);
+      const [x0, y0, x1, y1] = cfg.mask;
+      for (let y = y0; y <= y1; y += 1) for (let x = x0; x <= x1; x += 1) put(armless, x, y, [0, 0, 0, 0]);
+      return armless;
+    };
+    const down = dirSet(front, mk(front, C.down), C.legs.down, C.down);
+    const right = dirSet(side, mk(side, C.right), C.legs.down, C.right);
+    const up = dirSet(back, mk(back, C.up), C.legs.up, C.up);
+    rigOf('player-swordsman', finish('swordsman', down, right, up));
+    dbg('c-sw-front', front); dbg('c-sw-back', back);
+  }
 
   // ================= Guerreira =================
-  const W = parts.warrior;
-  const wFront = W.down.original;
-  const wSide = W.side;
-  const wBack = fromMap(WARRIOR_BACK, WARRIOR_PALETTE);
-  const wLegs = { hip: 42, x0: 17, x1: 42, mid: 31 };
-  const sLegs = { hip: 44, x0: 12, x1: 47, mid: 29 };
-  const bLegs = { hip: 47, x0: 2, x1: 23, mid: 13, sway: 36 };
-  /** Troca os tons de vinho pela rampa da cor nova (só na capa: abaixo do rosto e acima das botas). */
-  const recolor = (im, ramp, { top, bottom }) => {
-    if (!ramp) return im;
-    const out = clone(im);
-    each(im, (x, y, c) => {
-      if (c[3] < 128 || y > bottom) return;
-      const i = WINE.indexOf(hexOf(c));
-      // Acima do pescoço só os tons claros (gola da capa); os escuros ali são sombra do rosto e do cabelo.
-      if (i >= 0 && (y >= top || i <= 3)) put(out, x, y, parse(ramp[i]));
-    });
-    return out;
-  };
-  const capes = { warrior: null, 'warrior-blue': 'blue', 'warrior-green': 'green', 'warrior-black': 'black' };
-  for (const [id, color] of Object.entries(capes)) {
-    const ramp = color && CAPE_RAMPS[color];
-    const front = recolor(wFront, ramp, { top: 16, bottom: 50 });
-    const side = recolor(wSide, ramp, { top: 17, bottom: 50 });
-    const back = recolor(wBack, ramp, { top: 0, bottom: wBack.h });
-    sheets[id] = sheetOf([
-      walk(front, wLegs),
-      walk(flipX(side), { ...sLegs, x0: side.w - 1 - sLegs.x1, x1: side.w - 1 - sLegs.x0, mid: side.w - sLegs.mid }),
-      walk(side, sLegs),
-      walk(back, bLegs)
-    ]);
-    dbg(`c-${id}-down`, front);
+  {
+    const C = SKIN_CFG.warrior;
+    const tools = { blank, put, px, clone };
+    const wFront = cleanWarriorFront(parts.warrior.down.original, tools);
+    const wSide = cleanWarriorSide(parts.warrior.side, tools);
+    const wBack = cleanWarriorBack(fromMap(WARRIOR_BACK, WARRIOR_PALETTE), tools);
+    /** Troca os tons de vinho pela rampa da cor nova (só na capa: abaixo do rosto e acima das botas). */
+    const recolor = (im, ramp, { top, bottom }) => {
+      if (!ramp) return im;
+      const out = clone(im);
+      each(im, (x, y, c) => {
+        if (c[3] < 128 || y > bottom) return;
+        const i = WINE.indexOf(hexOf(c));
+        if (i >= 0 && (y >= top || i <= 3)) put(out, x, y, parse(ramp[i]));
+      });
+      return out;
+    };
+    const capes = { warrior: null, 'warrior-blue': 'blue', 'warrior-green': 'green', 'warrior-black': 'black' };
+    const styleFor = (cfg) => cfg;
+    for (const [id, color] of Object.entries(capes)) {
+      const ramp = color && CAPE_RAMPS[color];
+      const f = recolor(wFront, ramp, { top: 16, bottom: 50 });
+      const s = recolor(wSide, ramp, { top: 17, bottom: 50 });
+      const b = recolor(wBack, ramp, { top: 0, bottom: wBack.h });
+      const withHang = (armless, legs, cfg) => {
+        const base = clone(armless);
+        if (cfg.drawHang) {
+          const st = { ...cfg.style, up: cfg.style.up.map(rgb), fore: cfg.style.fore.map(rgb), hand: cfg.style.hand.map(rgb), line: rgb(cfg.style.line) };
+          drawLimb(base, { put, px }, [cfg.J[0] + 0.5, cfg.J[1] + 0.5], [cfg.hang[0] + 0.5, cfg.hang[1] + 0.5], st, cfg.outward);
+        }
+        return base;
+      };
+      const down = dirSet(withHang(f, C.legs.down, C.down), f, C.legs.down, C.down);
+      const right = dirSet(withHang(s, C.legs.right, C.right), s, C.legs.right, C.right);
+      const up = dirSet(withHang(b, C.legs.up, C.up), b, C.legs.up, C.up);
+      const sets = finish(id, down, right, up);
+      if (id === 'warrior') rigOf('player-warrior', sets);
+      dbg("c-" + id + "-down", f);
+    }
   }
-  return sheets;
+  return { sheets, rigs };
 }

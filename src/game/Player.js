@@ -2,13 +2,10 @@ import Phaser from 'phaser';
 import { COMBAT_CONFIG } from '../data/combat.js';
 import { ShieldBlocker, blockedDamage } from './ShieldBlock.js';
 import { heroTexture, normalizeGender } from './HeroStyle.js';
-import { SKINS, heroFrameSize } from '../art/skins.js';
+import { heroFrameSize } from '../art/skins.js';
 import { PERK_EFFECTS } from '../data/progression.js';
-import { SWORD_TIERS, drawPickaxe, drawSword, swordTierFor } from '../art/gear.js';
-import { quantizePixels } from '../art/palette.js';
-
-const SWING_MS = 170;
-const PICK_SWING_MS = 480;
+import { weaponLookFor } from '../art/weaponSprites.js';
+import { HeroAnimator } from './HeroAnimator.js';
 
 const BASE_ATTACK = 12;
 const BASE_DEFENSE = 0;
@@ -63,119 +60,60 @@ export class Player extends Phaser.GameObjects.Container {
     this.knockbackY = 0;
     this.sprite.play('player-idle-down');
 
-    // Equipamento visível: espada na mão, picareta nas costas (e na mão ao minerar).
-    this.ensureGearTextures();
-    this.backPickaxe = scene.add.image(-4, -10, 'gear-pickaxe-stone').setOrigin(0.5, 0.85).setRotation(-0.7).setVisible(false);
-    this.weapon = scene.add.image(7, -8, 'gear-sword-rusty').setOrigin(0.5, 0.82);
-    this.handTool = scene.add.image(0, 0, 'gear-pickaxe-stone').setOrigin(0.5, 0.85).setVisible(false);
-    this.addAt(this.backPickaxe, 0);
-    this.add([this.weapon, this.handTool]);
-    this.swingTimer = 0;
-    this.swingAngle = 0;
+    // Fase 22: a arma equipada fica nas costas; o HeroAnimator saca, golpeia, segura 5 s e guarda.
+    this.animator = new HeroAnimator(scene, this, this.sprite, {
+      onStep: () => this.scene.effects?.spawnDust(this.x - this.facing.x * 4 + (Math.random() - 0.5) * 4, this.y + 6, 2, 0x9a9a72)
+    });
     this.miningTarget = null;
-    this.miningClock = 0;
-    this.gearKey = '';
-    this.gearTimer = 0;
+    this.refreshGear();
   }
 
-  ensureGearTextures() {
-    const textures = this.scene.textures;
-    const put = (key, pixels) => {
-      if (textures.exists(key)) return;
-      const texture = textures.createCanvas(key, pixels.width, pixels.height);
-      texture.getContext().putImageData(new ImageData(quantizePixels(pixels).data, pixels.width, pixels.height), 0, 0);
-      texture.setFilter(Phaser.Textures.FilterMode.NEAREST);
-      texture.refresh();
-    };
-    for (const tier of Object.keys(SWORD_TIERS)) put(`gear-sword-${tier}`, drawSword(tier));
-    for (const tier of ['stone', 'iron']) put(`gear-pickaxe-${tier}`, drawPickaxe(tier));
-  }
-
-  /** Atualiza a espada (cor da arma forjada) e a picareta (tem ou não, pedra ou ferro). */
+  /** Arma real equipada agora (peça vestida ou espada da Forja): troca nas costas e na mão na hora. */
   refreshGear() {
     const camp = this.scene.camp;
-    const weapon = camp?.equipment?.equipped?.weapon ?? null;
-    // Arma achada/comprada vestida: a espada na mão usa a cor dela.
-    const lootWeapon = this.scene.gear?.weapon ?? null;
-    const pickaxe = camp?.pickaxeTier ?? null;
-    const key = `${weapon}|${lootWeapon?.id}|${pickaxe}`;
-    if (key === this.gearKey) return;
-    this.gearKey = key;
-    this.weapon.setTexture(`gear-sword-${lootWeapon?.sword ?? swordTierFor(weapon)}`);
-    if (pickaxe) {
-      this.backPickaxe.setTexture(`gear-pickaxe-${pickaxe === 'iron' ? 'iron' : 'stone'}`);
-      this.handTool.setTexture(`gear-pickaxe-${pickaxe === 'iron' ? 'iron' : 'stone'}`);
-    }
+    const look = weaponLookFor({
+      lootId: this.scene.gear?.weapon?.id ?? null,
+      forgeWeapon: camp?.equipment?.equipped?.weapon ?? null
+    });
+    this.animator.setWeapon(look);
+    return look;
   }
 
-  /** Golpe: a espada faz um arco na direção do ataque. */
-  swingWeapon(angle = Math.atan2(this.facing.y, this.facing.x)) {
-    this.swingAngle = angle;
-    this.swingTimer = SWING_MS;
+  /** Golpe: vira para o alvo, saca se preciso e golpeia com a arma equipada. */
+  swingWeapon(angle = Math.atan2(this.facing.y, this.facing.x), options = {}) {
+    if (Math.abs(Math.cos(angle)) > 0.01 || Math.abs(Math.sin(angle)) > 0.01) {
+      this.direction = Math.abs(Math.cos(angle)) >= Math.abs(Math.sin(angle))
+        ? (Math.cos(angle) < 0 ? 'left' : 'right')
+        : (Math.sin(angle) < 0 ? 'up' : 'down');
+    }
+    this.refreshGear();
+    this.animator.attack(options);
   }
 
   startMining(x, y) {
     this.miningTarget = { x, y };
-    this.miningClock = 0;
+    const angle = Math.atan2(y - this.y, x - this.x);
+    this.direction = Math.abs(Math.cos(angle)) >= Math.abs(Math.sin(angle))
+      ? (Math.cos(angle) < 0 ? 'left' : 'right')
+      : (Math.sin(angle) < 0 ? 'up' : 'down');
+    this.animator.startTool('pickaxe', this.scene.camp?.pickaxeTier === 'iron' ? 'iron' : 'stone');
   }
 
   stopMining() {
     this.miningTarget = null;
+    this.animator.stopTool();
   }
 
-  /** Pose da espada e da picareta a cada quadro. */
-  poseGear(delta) {
-    this.gearTimer -= delta;
-    if (this.gearTimer <= 0) {
-      this.gearTimer = 400;
-      this.refreshGear();
-    }
-    const hasPickaxe = Boolean(this.scene.camp?.pickaxeTier);
-    const behind = this.direction === 'up';
-    if (this.miningTarget) {
-      // Picaretando: a ferramenta sobe e desce em direção à rocha.
-      this.miningClock += delta;
-      const angle = Math.atan2(this.miningTarget.y - this.y, this.miningTarget.x - this.x);
-      const phase = (this.miningClock % PICK_SWING_MS) / PICK_SWING_MS;
-      const lift = phase < 0.7 ? phase / 0.7 : 1 - (phase - 0.7) / 0.3;
-      const side = Math.cos(angle) < 0 ? -1 : 1;
-      this.weapon.setVisible(false);
-      this.backPickaxe.setVisible(false);
-      this.handTool.setVisible(true)
-        .setPosition(side * 8, -9)
-        .setFlipX(side < 0)
-        .setRotation(side * (1.4 - lift * 2.1));
-      return;
-    }
-    this.handTool.setVisible(false);
-    // Skins que já trazem a espada no desenho: a arma equipada só aparece no golpe.
-    this.weapon.setVisible(!this.skinHasSword || this.swingTimer > 0);
-    this.backPickaxe.setVisible(hasPickaxe);
-    // Nas costas: olhando para a esquerda, as costas ficam do lado direito da tela.
-    const backSide = this.direction === 'left' ? 1 : -1;
-    this.backPickaxe.setPosition(backSide * 4, -10).setFlipX(backSide > 0).setRotation(backSide * 0.7);
-    this.moveTo(this.backPickaxe, behind ? this.list.length - 1 : 0);
-    if (this.swingTimer > 0) {
-      this.swingTimer = Math.max(0, this.swingTimer - delta);
-      const t = 1 - this.swingTimer / SWING_MS;
-      const eased = 1 - (1 - t) * (1 - t);
-      const angle = this.swingAngle;
-      this.weapon
-        .setPosition(Math.cos(angle) * 8, -11 + Math.sin(angle) * 5)
-        .setFlipX(false)
-        .setRotation(angle + Math.PI / 2 + (-1.5 + eased * 3));
-      this.moveTo(this.weapon, this.list.length - 1);
-      return;
-    }
-    const poses = {
-      down: [7, -8, 0.45],
-      right: [1, -8, 0.35],
-      left: [-1, -8, -0.35],
-      up: [7, -9, 0.3]
-    };
-    const [x, y, rotation] = poses[this.direction] ?? poses.down;
-    this.weapon.setPosition(x, y).setRotation(rotation).setFlipX(this.direction === 'left');
-    this.moveTo(this.weapon, behind ? 0 : this.list.length - 1);
+  /** Coleta rápida (madeira com machadinha): um golpe da ferramenta e guarda. */
+  gestureTool(tool = 'hatchet') {
+    if (this.miningTarget) return;
+    this.animator.startTool(tool, 'iron', 1);
+  }
+
+  /** Pose da arma e da ferramenta a cada quadro. */
+  poseGear(delta, moving = false) {
+    this.refreshGear();
+    this.animator.update(delta, this.direction, moving);
   }
 
   // analog: vetor do joystick de toque (-1 a 1); usado quando nenhuma tecla de movimento está pressionada.
@@ -199,6 +137,7 @@ export class Player extends Phaser.GameObjects.Container {
       this.body.setVelocity(0, 0);
       this.invulnerable = Math.max(0, this.invulnerable - delta);
       if (this.paralyzedMs === 0) this.sprite.clearTint();
+      this.poseGear(delta, false);
       return;
     }
     this.attackCooldown = Math.max(0, this.attackCooldown - delta);
@@ -228,20 +167,9 @@ export class Player extends Phaser.GameObjects.Container {
       this.direction = Math.abs(movement.x) > Math.abs(movement.y)
         ? movement.x < 0 ? 'left' : 'right'
         : movement.y < 0 ? 'up' : 'down';
-      const walk = `${this.animPrefix}-walk-${this.direction}`;
-      if (this.sprite.anims.currentAnim?.key !== walk) this.sprite.play(walk);
-      if (this.stepTimer === 0) {
-        this.stepTimer = 240;
-        this.scene.effects?.spawnDust(this.x - this.facing.x * 6, this.y + 9, 2, 0x9a9a72);
-      }
     } else if (pointerWorld) {
       const aim = new Phaser.Math.Vector2(pointerWorld.x - this.x, pointerWorld.y - this.y);
       if (aim.lengthSq() > 0) this.facing.copy(aim.normalize());
-      const idle = `${this.animPrefix}-idle-${this.direction}`;
-      if (this.sprite.anims.currentAnim?.key !== idle) this.sprite.play(idle);
-    } else {
-      const idle = `${this.animPrefix}-idle-${this.direction}`;
-      if (this.sprite.anims.currentAnim?.key !== idle) this.sprite.play(idle);
     }
     if (this.knockbackTimer > 0) {
       this.body.setVelocity(this.knockbackX, this.knockbackY);
@@ -253,7 +181,7 @@ export class Player extends Phaser.GameObjects.Container {
       const speed = 130 * this.speedMultiplier * terrainFactor * (this.scene.companions?.speed ?? 1);
       this.body.setVelocity(movement.x * speed, movement.y * speed);
     }
-    this.poseGear(delta);
+    this.poseGear(delta, movement.lengthSq() > 0 && this.knockbackTimer === 0);
     this.setDepth(this.y + 30);
   }
 
@@ -299,7 +227,7 @@ export class Player extends Phaser.GameObjects.Container {
     this.health = Math.max(0, this.health - dealt);
     this.invulnerable = 450;
     this.scene.companions?.onPlayerDamaged();
-    this.sprite.setTint(0xffc2a8);
+    this.animator.hurt();
     this.scene.effects?.spawnHit(this.x, this.y - 9, 0xff9b78, 6);
     this.scene.effects?.spawnDamage(this.x, this.y - 20, dealt, '#ffb59a');
     this.scene.audio?.playHit();
@@ -319,17 +247,12 @@ export class Player extends Phaser.GameObjects.Container {
       COMBAT_CONFIG.screenShake.playerHit.intensity,
       true
     );
-    this.scene.time.delayedCall(110, () => {
-      if (this.sprite?.active) this.sprite.clearTint();
-    });
     this.scene.onPlayerDamaged?.(dealt);
     return true;
   }
 
-  showAttack(angle) {
-    this.sprite.setTint(0xffe4a5);
-    this.swingWeapon(angle);
-    this.scene.time.delayedCall(90, () => this.sprite.clearTint());
+  showAttack(angle, options = {}) {
+    this.swingWeapon(angle, options);
   }
 
   heal(amount) {
@@ -350,7 +273,7 @@ export class Player extends Phaser.GameObjects.Container {
     const frame = heroFrameSize(this.animPrefix);
     this.sprite.setOrigin(0.5, (frame.feet + 1 - 8.2 / frame.scale) / frame.height);
     this.sprite.setScale(frame.scale);
-    this.skinHasSword = SKINS.some((skin) => skin.sword && `player-${skin.id}` === this.animPrefix);
+    this.animator?.setSkin(this.animPrefix);
     this.sprite.play(`${this.animPrefix}-idle-${this.direction}`);
   }
 

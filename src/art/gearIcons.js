@@ -396,6 +396,12 @@ function setMark(c, set, slot, item) {
 
 const WEAPONS = { sword, dagger, sabre, axe, spear, trident, club, staff, claw };
 
+/** Só o desenho da arma (sem glifo do conjunto nem contorno), na diagonal do ícone: cabo embaixo à esquerda. */
+export function drawWeaponArt(canvas, look, main, accent) {
+  (WEAPONS[look] ?? sword)(canvas, main, accent);
+  return canvas;
+}
+
 /** Ícone 32 x 32 de uma peça (`id` de GEAR_ITEMS). */
 export function drawGearIcon(id, rarity = 'common') {
   const canvas = new PixelCanvas(GEAR_ICON_SIZE, GEAR_ICON_SIZE);

@@ -45,10 +45,10 @@ await runInChrome({ name: 'gear', port: 9393, width: 1280, height: 800 }, async 
     if (legendary) scene.equipGear(legendary.uid);
     return {
       gained: scene.gear.bag.length - before, legendary: legendary?.id, forgeWeapon: scene.camp.equipment.equipped.weapon,
-      attack: scene.player.attack, texture: scene.player.weapon.texture.key
+      attack: scene.player.attack, texture: scene.player.refreshGear().key
     };
   });
-  check(drop.gained === 2 && drop.legendary === 'dragonClaw' && drop.forgeWeapon === null && drop.texture === 'gear-sword-dragon',
+  check(drop.gained === 2 && drop.legendary === 'dragonClaw' && drop.forgeWeapon === null && drop.texture === 'hero-weapon-dragonClaw',
     `Drop do chefe: ${JSON.stringify(drop)}`);
 
   // 4. Morte: bênção protege primeiro, depois o amuleto se quebra; sem proteção perde parte da mochila.

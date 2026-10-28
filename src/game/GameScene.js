@@ -79,6 +79,7 @@ const GOLEM_MISSION = MISSIONS.find((mission) => mission.objectives.some((object
 const GOLEM_UNLOCK_MISSION = GOLEM_MISSION ? MISSIONS.find((mission) => mission.number === GOLEM_MISSION.number - 1) : null;
 import { CRAFT_RECIPES_BY_ID, CRAFT_STATIONS, recipeItems } from '../data/craftRecipes.js';
 import { quantizePixels } from '../art/palette.js';
+import { BOW_LOOK } from '../art/weaponSprites.js';
 
 export const PICKAXE_MESSAGE = 'Você precisa de uma picareta para minerar isso.';
 // Mineração: segure o botão por 4 s (picareta de ferro: 2 s).
@@ -904,7 +905,7 @@ export class GameScene extends Phaser.Scene {
     const swingAngle = target
       ? Phaser.Math.Angle.Between(this.player.x, this.player.y - 8, target.x, target.y - 8)
       : Math.atan2(facing.y, facing.x);
-    this.player.showAttack(swingAngle);
+    this.player.showAttack(swingAngle, !target && this.camp.equipment.hasBow ? { handLook: BOW_LOOK } : {});
     if (!target) {
       this.effects.spawnSwingTrail(this.player.x, this.player.y, swingAngle, false);
       this.comboStep = 0;
@@ -1523,6 +1524,8 @@ export class GameScene extends Phaser.Scene {
           onDone: gather
         });
       } else {
+        // Madeira: um golpe de machadinha (a arma continua nas costas).
+        if (resource.type === 'wood') this.player.gestureTool?.('hatchet');
         gather();
       }
       return;

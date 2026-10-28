@@ -69,7 +69,7 @@ await runInChrome({ name: 'mining', port: 9353 }, async ({ inScene, capture, fre
     scene.interact();
     let barSeen = false;
     while (scene.inventory.items.iron === 0 && performance.now() - started < 7000) {
-      barSeen ||= Boolean(scene.miningBar?.visible && scene.player.handTool.visible);
+      barSeen ||= Boolean(scene.miningBar?.visible && scene.player.animator.snapshot().item === 'tool');
       await new Promise((resolve) => setTimeout(resolve, 50));
     }
     scene.actionHeld = false;
