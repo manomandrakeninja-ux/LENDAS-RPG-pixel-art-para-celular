@@ -11,7 +11,6 @@ export class World {
     this.scene = scene;
     this.resources = [];
     this.nightResources = [];
-    this.groundDetails = [];
     // Posições de árvores e arbustos, usadas para desenhar o terreno do mapa e do minimapa.
     this.trees = [];
     this.treeSprites = [];
@@ -25,7 +24,7 @@ export class World {
 
   create() {
     // O chão (Vale e regiões novas) é desenhado pelo tilemap do RegionWorld.
-    this.drawGroundDetails();
+    // Tufos, flores e seixos do chão ficam na camada "overlay" do RegionWorld (determinística).
     this.drawForest();
     this.createResources(WORLD.camp);
     this.createNightResources(WORLD.camp);
@@ -39,28 +38,6 @@ export class World {
     if (roll < 0.80) return 2;
     if (roll < 0.89) return 3;
     return Phaser.Math.Between(6, 7);
-  }
-
-  drawGroundDetails() {
-    const { width, height } = VALLEY;
-    const { tileSize } = WORLD;
-    // Sem cogumelos decorativos: eles se confundiam com os coletáveis da missão 2.
-    const frames = ['detail-grass', 'detail-flowers', 'detail-pebbles', 'detail-leaves'];
-    for (let y = tileSize; y < height - tileSize; y += tileSize) {
-      for (let x = tileSize; x < width - tileSize; x += tileSize) {
-        if (Phaser.Math.Between(1, 100) > 16) continue;
-        const frame = Phaser.Math.RND.pick(frames);
-        const detail = this.scene.add.image(
-          x + Phaser.Math.Between(-8, 8),
-          y + Phaser.Math.Between(-5, 5),
-          'nature',
-          frame
-        )
-          .setDepth(-995)
-          .setAlpha(frame === 'detail-flowers' ? 1 : 0.9);
-        this.groundDetails.push(detail);
-      }
-    }
   }
 
   drawForest() {

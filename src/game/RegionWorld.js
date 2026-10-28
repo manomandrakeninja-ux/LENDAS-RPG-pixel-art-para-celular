@@ -1,9 +1,9 @@
 import Phaser from 'phaser';
 import {
   BLOCKING, BOAT_FARE, DUNGEONS, CAVES_BY_ID, CAVE_NODES, DOCKS, FULL_WORLD, NODE_REGROW_DAYS, OASES, OVERWORLD,
-  REGION_INFO, REGION_NODES, ROOM_COLS, T, TERRAIN_NODES, TILE, buildTerrainGrid, dungeonLevelRange, fractal, dockPosition, regionAt, roomAt
+  REGION_INFO, REGION_NODES, ROOM_COLS, T, TERRAIN_NODES, TILE, buildTerrainGrid, dungeonLevelRange, dockPosition, regionAt, roomAt
 } from '../data/worldRegions.js';
-import { layoutTiles, transitionCells, underName } from '../data/terrainLayout.js';
+import { layoutTiles, underName } from '../data/terrainLayout.js';
 import { hash } from '../art/pixel.js';
 import { ENEMY_TYPES } from '../data/enemies.js';
 import { levelInRange } from '../data/enemyScaling.js';
@@ -133,22 +133,24 @@ export class RegionWorld {
         }
       }
     }
-    // Variação suave de luz entre ladrilhos (quebra a repetição do padrão).
-    this.groundLayer.forEachTile((tile) => {
-      if (tile.index < TERRAIN_GID) return;
-      const n = fractal(tile.x / 6, tile.y / 6, 77, 2);
-      const v = Math.round(255 * (0.86 + n * 0.14));
-      tile.tint = (v << 16) | (v << 8) | Math.min(255, v + 4);
-    });
+    // Camada de cima do chão: franjas entre terrenos e decoração solta (tufos, flores, seixos).
+    this.overlayLayer = map.createBlankLayer('overlay', terrain).setDepth(-999);
+    const { overlay } = this.layout;
+    for (let cell = 0; cell < overlay.length; cell += 1) {
+      const name = overlay[cell];
+      if (name && index[name] !== undefined) this.overlayLayer.putTileAt(TERRAIN_GID + index[name], cell % cols, Math.floor(cell / cols), false);
+    }
     this.groundLayer.setCollision([...wallIndices]);
     this.underLayer.setCollision([UNDER_GID + 0, UNDER_GID + 2]);
     // Paredes das cavernas ganham a cor do tema de cada caverna.
     for (const room of this.grid.rooms) {
       const tint = { ice: 0xb8d8ff, fire: 0xffb8a0, tomb: 0xffe0b0, swamp: 0xc8e0b0, sea: 0xc0d0e0 }[CAVES_BY_ID[room.cave].theme];
       if (!tint) continue;
-      this.groundLayer.forEachTile((tile) => { tile.tint = tint; }, null, room.col0, room.row0, ROOM_COLS, room.plan.grid.length / ROOM_COLS);
+      for (const layer of [this.groundLayer, this.overlayLayer]) {
+        layer.forEachTile((tile) => { tile.tint = tint; }, null, room.col0, room.row0, ROOM_COLS, room.plan.grid.length / ROOM_COLS);
+      }
     }
-    scene.hudCamera?.ignore([this.underLayer, this.groundLayer]);
+    scene.hudCamera?.ignore([this.underLayer, this.groundLayer, this.overlayLayer]);
   }
 
   drawUnderFrame(frame) {
@@ -619,30 +621,8 @@ export class RegionWorld {
         }
       }
     }
-    // Manchas de transição entre regiões (neve no mato, areia na grama...).
-    const blobs = [];
-    for (const cell of this.transitions(cx, cy)) {
-      const shape = Math.floor(hash(cell.col, cell.row, 221) * 3);
-      const bx = (cell.col + 0.5 + cell.dx * 0.5) * TILE + (hash(cell.col, cell.row, 222) - 0.5) * 30;
-      const by = (cell.row + 0.5 + cell.dy * 0.5) * TILE + (hash(cell.col, cell.row, 223) - 0.5) * 24;
-      const first = hash(cell.col, cell.row, 224) < 0.5;
-      blobs.push({ frame: `blob-${first ? cell.kind : cell.other}-${shape}`, x: bx, y: by });
-    }
-    return { props, nodes, blobs };
-  }
-
-  transitions(cx, cy) {
-    if (!this.transitionIndex) {
-      this.transitionIndex = new Map();
-      for (const cell of transitionCells(this.grid)) {
-        // Uma mancha a cada 2 quadrados da fronteira já basta.
-        if ((cell.col + cell.row) % 2) continue;
-        const key = this.chunkKey(Math.floor(cell.col / CHUNK), Math.floor(cell.row / CHUNK));
-        if (!this.transitionIndex.has(key)) this.transitionIndex.set(key, []);
-        this.transitionIndex.get(key).push(cell);
-      }
-    }
-    return this.transitionIndex.get(this.chunkKey(cx, cy)) ?? [];
+    // As transições entre regiões são franjas na camada de cima do chão (buildTilemap).
+    return { props, nodes };
   }
 
   activateChunk(cx, cy) {
@@ -653,9 +633,6 @@ export class RegionWorld {
     chunk.active = true;
     const scene = this.scene;
     const created = [];
-    for (const blob of chunk.plan.blobs) {
-      created.push(scene.add.image(blob.x, blob.y, 'biome', blob.frame).setDepth(-999));
-    }
     for (const prop of chunk.plan.props) {
       const image = scene.add.image(prop.x, prop.y, 'biome', prop.frame).setOrigin(0.5, 0.92).setDepth(prop.flat ? -997 : prop.y);
       image.castsShadow = Boolean(prop.solid);

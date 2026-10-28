@@ -89,8 +89,8 @@ test('bestiário: conta abates, avisa na primeira vez e fica salvo', () => {
 
 test('chão: todo ladrilho usado pelo mapa existe na folha gerada', () => {
   const sheet = JSON.parse(fs.readFileSync('public/assets/tiles/terrain-sheet.json', 'utf8'));
-  const { ground } = layoutTiles(grid, { x: 1440, y: 1080 });
-  const missing = new Set(ground.filter((name) => typeof name === 'string' && sheet.index[name] === undefined));
+  const { ground, overlay } = layoutTiles(grid, { x: 1440, y: 1080 });
+  const missing = new Set([...ground, ...overlay].filter((name) => typeof name === 'string' && sheet.index[name] === undefined));
   assert.deepEqual([...missing], []);
   const atlas = JSON.parse(fs.readFileSync('public/assets/nature/biome-atlas.json', 'utf8'));
   const nature = JSON.parse(fs.readFileSync('public/assets/nature/nature-atlas.json', 'utf8'));

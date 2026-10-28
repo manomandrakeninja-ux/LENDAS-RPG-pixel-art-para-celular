@@ -1,10 +1,10 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { PixelCanvas } from '../src/art/pixel.js';
-import { BLOB_KINDS, BLOB_SHAPES, TILE_PX, UNDER_FRAME_COUNT, UNDER_KINDS, drawBaseTile, drawBlob, drawEdgeTile, drawUnderTile, drawWallTile } from '../src/art/terrain.js';
+import { DECOR_KINDS, TILE_PX, UNDER_FRAME_COUNT, UNDER_KINDS, drawBaseTile, drawDecorTile, drawEdgeTile, drawFringeTile, drawUnderTile, drawWallTile } from '../src/art/terrain.js';
 import { BIOME_PROP_ENTRIES } from '../src/art/biomeProps.js';
 import { T, buildTerrainGrid } from '../src/data/worldRegions.js';
-import { BASE_VARIANTS, baseName, layoutTiles, underName } from '../src/data/terrainLayout.js';
+import { BASE_VARIANTS, DECOR_VARIANTS, baseName, decorName, layoutTiles, underName } from '../src/data/terrainLayout.js';
 import { writePng } from './png.js';
 
 // Gera o chão das regiões novas (folha de ladrilhos) e o atlas de objetos dos biomas.
@@ -25,7 +25,7 @@ export function generateWorldAssets() {
 
   // Bordas: só as combinações (terreno, vizinho, lados) que existem no mapa.
   const grid = buildTerrainGrid();
-  const { ground } = layoutTiles(grid, { x: 1440, y: 1080 });
+  const { ground, overlay } = layoutTiles(grid, { x: 1440, y: 1080 });
   for (const name of ground) {
     if (typeof name === 'string' && name.startsWith('wall')) {
       const [kind, variant, rim] = name.split('-');
@@ -35,6 +35,14 @@ export function generateWorldAssets() {
     if (typeof name !== 'string' || !name.startsWith('edge-')) continue;
     const [, land, under, mask] = name.split('-').map(Number);
     add(name, () => drawEdgeTile(land, under, mask, 0));
+  }
+
+  // Camada de cima: decoração solta de cada terreno e as franjas que o mapa usa.
+  for (const kind of DECOR_KINDS) for (let n = 0; n < DECOR_VARIANTS; n += 1) add(decorName(kind, n), () => drawDecorTile(kind, n));
+  for (const name of new Set(overlay)) {
+    if (typeof name !== 'string' || !name.startsWith('fringe-')) continue;
+    const [, kind, mask] = name.split('-').map(Number);
+    add(name, () => drawFringeTile(kind, mask));
   }
 
   const names = [...tiles.keys()];
@@ -49,11 +57,8 @@ export function generateWorldAssets() {
   writePng(path.join(root, 'tiles/terrain-sheet.png'), sheet);
   fs.writeFileSync(path.join(root, 'tiles/terrain-sheet.json'), JSON.stringify({ columns: SHEET_COLUMNS, tile: TILE_PX, index }));
 
-  // Atlas dos objetos e das manchas de transição.
+  // Atlas dos objetos dos biomas (as transições agora são franjas na folha de ladrilhos).
   const entries = BIOME_PROP_ENTRIES.map((entry) => ({ name: entry.name, canvas: entry.draw() }));
-  for (const kind of BLOB_KINDS) {
-    for (let shape = 0; shape < BLOB_SHAPES; shape += 1) entries.push({ name: `blob-${kind}-${shape}`, canvas: drawBlob(kind, shape) });
-  }
   const atlasWidth = 512;
   let x = 2;
   let y = 2;

@@ -6,6 +6,7 @@ import { KNIGHT_FRAME, drawHeroineFrame, drawKnightFrame } from '../src/art/knig
 import { STORY_SCENE_KEYS, drawStoryScene } from '../src/art/storyScenes.js';
 import { valleyPine, valleyRoundTree } from '../src/art/biomeProps.js';
 import { generateWorldAssets } from './generate-world-assets.js';
+import { drawValleyTile } from '../src/art/terrain.js';
 
 // Gera toda a pixel art do jogo (PNG + atlas da Phaser) em public/assets/.
 // Rode com `npm run assets:generate`. Os tamanhos e nomes dos quadros são usados
@@ -82,42 +83,9 @@ const BARK = ['#3f2a1f', '#5b3d29', '#7a5236', '#9a6c45'];
 const WOOD = ['#5a3b26', '#7c5434', '#a0723f', '#c49556'];
 const STONE = ['#4c5257', '#6c7377', '#8d9496', '#b6bcb8', '#dad9cc'];
 
-// ---------- Chão (48 x 48, 1 pixel da arte = 1 pixel do mundo) ----------
+// ---------- Chão do Vale (48 x 48; desenho em src/art/terrain.js) ----------
 
-// Ruído suave e periódico em 48 px: o mesmo em todos os quadros, então as
-// emendas entre ladrilhos diferentes não aparecem.
-function smoothNoise(x, y, cell = 12, seed = 7) {
-  const cells = 48 / cell;
-  const gx = x / cell;
-  const gy = y / cell;
-  const x0 = Math.floor(gx);
-  const y0 = Math.floor(gy);
-  const fx = gx - x0;
-  const fy = gy - y0;
-  const corner = (cx, cy) => hash(((cx % cells) + cells) % cells, ((cy % cells) + cells) % cells, seed);
-  const sx = fx * fx * (3 - 2 * fx);
-  const sy = fy * fy * (3 - 2 * fy);
-  const top = corner(x0, y0) + (corner(x0 + 1, y0) - corner(x0, y0)) * sx;
-  const bottom = corner(x0, y0 + 1) + (corner(x0 + 1, y0 + 1) - corner(x0, y0 + 1)) * sx;
-  return top + (bottom - top) * sy;
-}
-
-function grassBase(canvas, ox = 0, oy = 0, width = 48, height = 48) {
-  for (let y = oy; y < oy + height; y += 1) {
-    for (let x = ox; x < ox + width; x += 1) {
-      const n = smoothNoise(x, y) * 0.7 + smoothNoise(x, y, 6, 3) * 0.3;
-      const d = hash(x, y, 71);
-      let tone = 2;
-      if (n > 0.66 && d < (n - 0.62) * 3) tone = 3;
-      else if (n < 0.34 && d < (0.38 - n) * 3) tone = 1;
-      canvas.pixel(x, y, GRASS[tone]);
-      const speck = hash(x, y, 11);
-      if (speck > 0.985) canvas.pixel(x, y, GRASS[4]);
-      else if (speck < 0.012) canvas.pixel(x, y, GRASS[1]);
-    }
-  }
-}
-
+// Tufo solto, usado no detalhe "detail-grass" do atlas da natureza.
 function tuft(canvas, x, y, tall = 3) {
   canvas.pixel(x, y, GRASS[1]);
   canvas.pixel(x - 1, y, GRASS[1]);
@@ -128,93 +96,7 @@ function tuft(canvas, x, y, tall = 3) {
   canvas.pixel(x + 2, y - 2, GRASS[5]);
 }
 
-function scatter(seed, count, callback, margin = 4) {
-  for (let index = 0; index < count; index += 1) {
-    const x = margin + Math.floor(hash(index, 1, seed) * (48 - margin * 2));
-    const y = margin + 2 + Math.floor(hash(index, 2, seed) * (48 - margin * 2 - 2));
-    callback(x, y, index);
-  }
-}
-
-function drawGroundTile(canvas, frame) {
-  if (frame === 4 || frame === 5) {
-    drawDirtTile(canvas, frame === 4 ? 'left' : 'right');
-    return;
-  }
-  grassBase(canvas);
-  scatter(frame * 31 + 5, frame === 3 ? 9 : 5, (x, y) => tuft(canvas, x, y, 2 + Math.floor(hash(x, y, 2) * 2)));
-  if (frame === 1) {
-    scatter(91, 3, (x, y, index) => {
-      const petal = index % 2 ? '#f4efe0' : '#f2d36b';
-      canvas.pixel(x, y - 1, petal); canvas.pixel(x - 1, y, petal); canvas.pixel(x + 1, y, petal); canvas.pixel(x, y + 1, petal);
-      canvas.pixel(x, y, index % 2 ? '#e9b949' : '#c8643e');
-    }, 6);
-  } else if (frame === 2) {
-    scatter(57, 2, (x, y, index) => {
-      const size = 1 + (index % 2);
-      canvas.ellipse(x, y + 1, size + 1, size, '#2c4a34', 120);
-      canvas.ellipse(x, y, size + 0.5, size, STONE[1]);
-      canvas.pixel(x - 1, y - 1, STONE[3]);
-    }, 6);
-  } else if (frame === 6) {
-    scatter(77, 4, (x, y) => {
-      for (const [dx, dy] of [[0, -1], [-1, 0], [1, 0]]) canvas.ellipse(x + dx * 1.5, y + dy * 1.5, 1.2, 1.2, GRASS[1]);
-      canvas.pixel(x - 1, y - 2, GRASS[3]);
-    }, 6);
-  } else if (frame === 7) {
-    scatter(13, 3, (x, y, index) => canvas.pixel(x, y, index % 2 ? '#e7d47a' : '#d9e3f0'), 5);
-  }
-}
-
-function drawDirtTile(canvas, side) {
-  // Borda irregular de grama, periódica em 48 px para os ladrilhos se encaixarem na vertical.
-  const edgeWidth = (y) => 5 + Math.round(2 * Math.sin((y / 48) * Math.PI * 2) + 1.4 * Math.sin((y / 48) * Math.PI * 6 + 1));
-  for (let y = 0; y < 48; y += 1) {
-    const edge = edgeWidth(y);
-    for (let x = 0; x < 48; x += 1) {
-      const fromEdge = side === 'left' ? x : 47 - x;
-      if (fromEdge < edge) continue;
-      const n = smoothNoise(x, y, 8, 21);
-      const d = hash(x, y, 72);
-      let tone = 2;
-      if (n > 0.64 && d < (n - 0.6) * 3) tone = 3;
-      else if (n < 0.36 && d < (0.4 - n) * 3) tone = 1;
-      if (fromEdge === edge || fromEdge === edge + 1) tone = Math.max(0, tone - 1);
-      canvas.pixel(x, y, DIRT[tone]);
-      const speck = hash(x, y, 33);
-      if (speck > 0.975) canvas.pixel(x, y, DIRT[4]);
-      else if (speck < 0.02) canvas.pixel(x, y, DIRT[1]);
-    }
-  }
-  // Grama da borda.
-  for (let y = 0; y < 48; y += 1) {
-    const edge = edgeWidth(y);
-    for (let fromEdge = 0; fromEdge < edge; fromEdge += 1) {
-      const x = side === 'left' ? fromEdge : 47 - fromEdge;
-      const n = smoothNoise(x, y);
-      canvas.pixel(x, y, fromEdge === edge - 1 ? GRASS[3] : n > 0.6 ? GRASS[3] : GRASS[2]);
-    }
-    if (y % 5 === 0) {
-      const x = side === 'left' ? edge : 47 - edge;
-      canvas.pixel(x, y, GRASS[4]);
-      canvas.pixel(x, y + 1, GRASS[2]);
-    }
-  }
-  // Pedrinhas e marcas de passos.
-  scatter(side === 'left' ? 41 : 42, 5, (x, y, index) => {
-    const px = side === 'left' ? Math.max(14, x) : Math.min(33, x);
-    if (index % 2) {
-      canvas.pixel(px, y, DIRT[4]);
-      canvas.pixel(px + 1, y, DIRT[3]);
-      canvas.pixel(px, y + 1, DIRT[0]);
-    } else {
-      canvas.pixel(px, y, DIRT[1]);
-      canvas.pixel(px + 1, y + 1, DIRT[1]);
-    }
-  }, 6);
-}
-
-makeSheet('tiles/grass-sheet.png', 48, 48, 4, 2, drawGroundTile, { outline: false });
+makeSheet('tiles/grass-sheet.png', 48, 48, 4, 4, (canvas, frame) => canvas.blit(drawValleyTile(frame), 0, 0), { outline: false });
 
 // Couro (usado nos ícones da interface).
 const LEATHER = ['#3e2618', '#6a4228', '#8d5c36'];
@@ -540,7 +422,8 @@ const natureEntries = [
     name: 'bush', width: 32, height: 24,
     draw: (canvas) => {
       canvas.shadow(16, 21, 13, 3, 105);
-      const colors = ramp('#4a8448');
+      // Folhagem escura e fechada: o verde-limão da rampa automática chamava atenção demais.
+      const colors = ['#134c4c', '#1e6f50', '#33984b', '#5ac54f'];
       for (const [x, y, rx, ry] of [[10, 14, 7, 6], [21, 13, 8, 8], [16, 9, 6, 5], [25, 16, 5, 4.5]]) canvas.shadedEllipse(x, y, rx, ry, colors);
       for (const [x, y] of [[9, 12], [19, 10], [24, 15], [14, 16]]) {
         canvas.rect(x, y, 2, 2, '#c8453c');
