@@ -1,7 +1,8 @@
 import Phaser from 'phaser';
 import { ENEMY_TYPES } from '../data/enemies.js';
 import { PixelCanvas, darken, lighten, ramp } from '../art/pixel.js';
-import { MONSTER_SIZES, drawMonsterFrame, hasMonsterArt } from '../art/monsters.js';
+import { MONSTER_SIZES, drawMonsterFrame, hasMonsterArt, monsterAttackFrame, monsterFrameCount } from '../art/monsters.js';
+import { isBakedMonster } from '../art/bakedMonsters.js';
 import { quantizePixels } from '../art/palette.js';
 
 // Inimigos desenhados em pixel art no navegador, com as cores de enemies.json.
@@ -420,6 +421,8 @@ export function drawEnemyFrame(kind, size, frame, elite = false) {
 export function enemyCanvasSize(kind, elite = false) {
   const placeholder = ENEMY_TYPES[kind]?.placeholder;
   const sizes = MONSTER_SIZES[kind];
+  // Monstros pintados (Fase 20G) têm o tamanho do próprio desenho.
+  if (isBakedMonster(kind)) return elite ? sizes.elite : sizes.size;
   if (elite) return placeholder?.eliteSize ?? sizes?.elite ?? 40;
   return placeholder?.size ?? sizes?.size ?? 32;
 }
@@ -429,33 +432,36 @@ function ensureCanvasTexture(scene, kind, elite) {
   const textureKey = `enemy-canvas-${kind}-${elite ? 'elite' : 'normal'}`;
   const animationKey = `enemy-canvas-${kind}-${elite ? 'elite' : 'normal'}-walk`;
 
+  // Pintados: quadros 0..3 de andar + 1 de ataque; antigos: 2 quadros.
+  const count = hasMonsterArt(kind) ? monsterFrameCount(kind) : 2;
+  const attack = hasMonsterArt(kind) ? monsterAttackFrame(kind) : null;
+  const walkFrames = attack === null ? count : attack;
+
   if (!scene.textures.exists(textureKey)) {
-    const texture = scene.textures.createCanvas(textureKey, size * 2, size);
+    const texture = scene.textures.createCanvas(textureKey, size * count, size);
     const context = texture.getContext();
-    context.clearRect(0, 0, size * 2, size);
-    for (let frame = 0; frame < 2; frame += 1) {
+    context.clearRect(0, 0, size * count, size);
+    for (let frame = 0; frame < count; frame += 1) {
       const pixels = drawEnemyFrame(kind, size, frame, elite);
       context.putImageData(new ImageData(quantizePixels(pixels).data, size, size), frame * size, 0);
     }
     texture.setFilter(Phaser.Textures.FilterMode.NEAREST);
     texture.refresh();
-    texture.add('frame-0', 0, 0, 0, size, size);
-    texture.add('frame-1', 0, size, 0, size, size);
+    for (let frame = 0; frame < count; frame += 1) {
+      texture.add(frame === attack ? 'frame-attack' : `frame-${frame}`, 0, frame * size, 0, size, size);
+    }
   }
 
   if (!scene.anims.exists(animationKey)) {
     scene.anims.create({
       key: animationKey,
-      frames: [
-        { key: textureKey, frame: 'frame-0' },
-        { key: textureKey, frame: 'frame-1' }
-      ],
-      frameRate: 5,
+      frames: Array.from({ length: walkFrames }, (_, frame) => ({ key: textureKey, frame: `frame-${frame}` })),
+      frameRate: walkFrames > 2 ? 8 : 5,
       repeat: -1
     });
   }
 
-  return { textureKey, animationKey, size };
+  return { textureKey, animationKey, size, attackFrame: attack === null ? null : 'frame-attack' };
 }
 
 export function createEnemyCanvasTexture(scene, kind, elite = false) {
@@ -468,6 +474,7 @@ export function resolveEnemyVisual(scene, kind, elite = false) {
     texture: visual.textureKey,
     frame: 'frame-0',
     animation: visual.animationKey,
+    attackFrame: visual.attackFrame,
     shape: ENEMY_TYPES[kind]?.placeholder?.shape ?? kind,
     size: visual.size,
     isPlaceholder: true,

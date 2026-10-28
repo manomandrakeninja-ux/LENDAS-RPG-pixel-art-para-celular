@@ -72,6 +72,9 @@ export class Enemy extends Phaser.GameObjects.Container {
     this.sprite = scene.add.sprite(0, -2, texture, frame).setOrigin(0.5, 0.82);
     this.add(this.sprite);
     if (visual.animation && scene.anims.exists(visual.animation)) this.sprite.play(visual.animation);
+    this.walkAnimation = visual.animation;
+    this.attackFrameName = visual.attackFrame ?? null;
+    this.attackPoseMs = 0;
 
     const barY = -Math.max(22, Math.round((visual.size ?? 32) * 0.72));
     this.healthBarBack = scene.add.rectangle(0, barY, 28, 4, 0x2d2624).setVisible(false);
@@ -254,21 +257,35 @@ export class Enemy extends Phaser.GameObjects.Container {
         distance > this.definition.attackRange && distance <= ranged.range && this.scene.enemyProjectiles) {
       this.scene.enemyProjectiles.fire(this, player);
       this.cooldown = this.definition.attackCooldown;
+      this.showAttackPose();
     } else if (!enemyInSafeZone && !playerInSafeZone &&
         distance <= this.definition.attackRange && this.cooldown === 0 && this.canAttackInPack(player)) {
       if (player.damage(this.currentDamage, this)) {
         this.cooldown = this.definition.attackCooldown;
+        this.showAttackPose();
         if (this.definition.paralyze) player.paralyze?.(this.definition.paralyze.durationMs);
       }
     }
 
     this.setDepth(this.y + 20);
     this.updateHealthBar();
+    if (this.attackPoseMs > 0) {
+      this.attackPoseMs -= delta;
+      if (this.attackPoseMs <= 0 && this.walkAnimation && this.sprite.anims) this.sprite.play(this.walkAnimation);
+    }
     if (this.eliteAura) {
       this.eliteAura.rotation += delta * 0.0015;
       this.eliteAura.setAlpha(0.36 + Math.sin(this.scene.time.now / 220 + this.phase) * 0.08);
     }
     this.sprite.y = Math.sin(this.scene.time.now / 260 + this.phase) > 0.72 ? -1 : -2;
+  }
+
+  /** Quadro de ataque (monstros pintados): segura a pose por um instante e volta a andar. */
+  showAttackPose() {
+    if (!this.attackFrameName || !this.sprite?.anims) return;
+    this.sprite.anims.stop();
+    this.sprite.setFrame(this.attackFrameName);
+    this.attackPoseMs = 280;
   }
 
   patrolAroundHome(delta) {

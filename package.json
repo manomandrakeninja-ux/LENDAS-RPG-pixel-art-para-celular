@@ -50,6 +50,7 @@
     "phaser": "^3.90.0"
   },
   "devDependencies": {
+    "@napi-rs/canvas": "^1.0.13",
     "culori": "^4.0.2",
     "image-q": "^4.0.0",
     "pngjs": "^7.0.0",

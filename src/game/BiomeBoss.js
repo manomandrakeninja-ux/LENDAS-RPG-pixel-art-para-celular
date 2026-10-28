@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { PixelCanvas } from '../art/pixel.js';
-import { drawMonsterFrame } from '../art/monsters.js';
+import { MONSTER_SIZES, drawMonsterFrame } from '../art/monsters.js';
 import { BOSS_CONFIG } from '../data/boss.js';
 import { quantizePixels } from '../art/palette.js';
 
@@ -48,7 +48,7 @@ export class BiomeBoss extends Phaser.GameObjects.Container {
 
     this.ensureTexture();
     this.ensureProjectileTexture();
-    this.sprite = scene.add.sprite(0, -3, BOSS_TEXTURE).setOrigin(0.5, 0.84);
+    this.sprite = scene.add.sprite(0, -3, BOSS_TEXTURE).setOrigin(0.5, 0.9);
     this.add(this.sprite);
     this.aura = scene.add.image(0, 0, 'vfx', 'ring-0')
       .setBlendMode(Phaser.BlendModes.ADD)
@@ -69,10 +69,11 @@ export class BiomeBoss extends Phaser.GameObjects.Container {
 
   ensureTexture() {
     if (this.scene.textures.exists(BOSS_TEXTURE)) return;
-    const texture = this.scene.textures.createCanvas(BOSS_TEXTURE, 64, 64);
+    const size = MONSTER_SIZES.titan.size;
+    const texture = this.scene.textures.createCanvas(BOSS_TEXTURE, size, size);
     // Titã de lava: blocos de rocha escura com rachaduras incandescentes (src/art/monsters.js).
-    const golem = drawMonsterFrame('titan', 64, 0);
-    texture.getContext().putImageData(new ImageData(quantizePixels(golem).data, 64, 64), 0, 0);
+    const golem = drawMonsterFrame('titan', size, 0);
+    texture.getContext().putImageData(new ImageData(quantizePixels(golem).data, size, size), 0, 0);
     texture.setFilter(Phaser.Textures.FilterMode.NEAREST);
     texture.refresh();
   }

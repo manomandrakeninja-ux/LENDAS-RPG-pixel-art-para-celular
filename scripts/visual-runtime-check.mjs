@@ -31,9 +31,10 @@ await runInChrome({ name: 'visual', port: 9357, width: 1280, height: 800 }, asyn
     scene.enemies.push(enemy);
     const source = scene.textures.get(enemy.sprite.texture.key).getSourceImage();
     const context = source.getContext('2d');
-    const corners = [[0, 0], [source.width / 2 - 1, 0], [0, source.height - 1], [source.width / 2 - 1, source.height - 1]]
+    // Quadros quadrados lado a lado (2 nos antigos, 5 nos pintados): olha só o primeiro.
+    const corners = [[0, 0], [source.height - 1, 0], [0, source.height - 1], [source.height - 1, source.height - 1]]
       .map(([x, y]) => context.getImageData(x, y, 1, 1).data[3]);
-    const center = context.getImageData(source.width / 4, source.height * 0.6, 1, 1).data[3];
+    const center = context.getImageData(source.height / 2, source.height * 0.75, 1, 1).data[3];
     return { corners, center };
   });
   check(elite.corners.every((alpha) => alpha === 0), `Moldura no elite: ${JSON.stringify(elite)}`);
