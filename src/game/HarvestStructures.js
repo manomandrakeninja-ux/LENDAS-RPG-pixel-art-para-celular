@@ -6,6 +6,7 @@ import {
 } from '../data/harvestStructures.js';
 import { WORLD } from './config.js';
 import { PixelCanvas, dither, ramp } from '../art/pixel.js';
+import { bakedBuilding } from '../art/bakedBuildings.js';
 import { quantizePixels } from '../art/palette.js';
 
 const TEXTURE_SIZE = 32;
@@ -203,9 +204,13 @@ export class HarvestStructures {
       const key = `${TEXTURE_KEY_PREFIX}${type}`;
       if (this.scene.textures.exists(key)) continue;
       const texture = this.scene.textures.createCanvas(key, TEXTURE_SIZE, TEXTURE_SIZE);
-      const pixels = new PixelCanvas(TEXTURE_SIZE, TEXTURE_SIZE);
-      (STRUCTURE_DRAWERS[type] ?? drawTree)(pixels);
-      pixels.outline();
+      // Baú e mina pintados em alta resolução (Fase 20 G-predios); o resto segue desenhado aqui.
+      const baked = bakedBuilding(`harvest-${type}`);
+      const pixels = baked ?? new PixelCanvas(TEXTURE_SIZE, TEXTURE_SIZE);
+      if (!baked) {
+        (STRUCTURE_DRAWERS[type] ?? drawTree)(pixels);
+        pixels.outline();
+      }
       texture.getContext().putImageData(new ImageData(quantizePixels(pixels).data, TEXTURE_SIZE, TEXTURE_SIZE), 0, 0);
       texture.setFilter(Phaser.Textures.FilterMode.NEAREST);
       texture.refresh();

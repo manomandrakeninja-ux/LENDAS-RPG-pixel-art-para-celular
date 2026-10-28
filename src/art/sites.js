@@ -1,4 +1,5 @@
 import { PixelCanvas, dither, hash, lighten, ramp } from './pixel.js';
+import { bakedBuilding } from './bakedBuildings.js';
 
 // Desenhos dos locais de missão da campanha (todos com contorno e volume).
 const STONE = ['#3f454a', '#5d6569', '#7f878a', '#a7aeab', '#cfd0c4'];
@@ -360,6 +361,9 @@ const ARTS = {
 export const SITE_ART_NAMES = Object.keys(ARTS);
 
 export function drawSiteArt(name) {
+  // Estruturas pintadas em alta resolução (Fase 20 G-predios).
+  const baked = bakedBuilding(`site-${ARTS[name] ? name : 'sign'}`);
+  if (baked) return baked;
   const art = ARTS[name] ?? ARTS.sign;
   const canvas = new PixelCanvas(art.size, art.size);
   art.draw(canvas);

@@ -3,6 +3,7 @@ import { Obstacles } from './Obstacles.js';
 import { BackpackPanel } from './BackpackPanel.js';
 import { CampaignSystem } from './CampaignSystem.js';
 import { PixelCanvas } from '../art/pixel.js';
+import { bakedBuilding } from '../art/bakedBuildings.js';
 import { COMBAT_CONFIG } from '../data/combat.js';
 import { DAY_NIGHT_CONFIG } from '../data/dayNight.js';
 import { HARVEST_STRUCTURE_TYPES } from '../data/harvestStructures.js';
@@ -1788,22 +1789,26 @@ export class GameScene extends Phaser.Scene {
     if (!this.textures.exists('dungeon-entrance')) {
       const texture = this.textures.createCanvas('dungeon-entrance', 40, 30);
       // Portal de pedra escura com runas e brilho vermelho do Dragão.
-      const gate = new PixelCanvas(40, 30);
-      const stone = ['#1f1a1d', '#3a3337', '#544a50', '#6f6469', '#8a7f84'];
-      gate.shadow(20, 28, 18, 2, 120);
-      gate.forPolygon([[1, 30], [3, 9], [10, 3], [30, 3], [37, 9], [39, 30]], (x, y) => {
-        const seam = y % 5 === 4 || (x + (Math.floor(y / 5) % 2) * 4) % 8 === 0;
-        gate.pixel(x, y, seam ? stone[0] : x < 12 ? stone[3] : x > 28 ? stone[1] : stone[2]);
-      });
-      gate.forEllipse(20, 18, 9, 12, (x, y) => { if (y >= 9) gate.pixel(x, y, '#0c0809'); });
-      gate.forEllipse(20, 22, 5, 6, (x, y) => gate.pixel(x, y, '#2a0c0c'));
-      gate.rect(18, 18, 4, 3, '#e2463f');
-      gate.pixel(19, 18, '#ffb0a0');
-      for (const [x, y] of [[6, 14], [6, 20], [33, 14], [33, 20], [20, 5]]) {
-        gate.rect(x, y, 2, 2, '#e2463f');
-        gate.pixel(x, y, '#ff9a7a');
+      // Arte pintada em alta resolução (Fase 20 G-predios); o desenho abaixo fica de reserva.
+      const baked = bakedBuilding('dungeon-entrance');
+      const gate = baked ?? new PixelCanvas(40, 30);
+      if (!baked) {
+        const stone = ['#1f1a1d', '#3a3337', '#544a50', '#6f6469', '#8a7f84'];
+        gate.shadow(20, 28, 18, 2, 120);
+        gate.forPolygon([[1, 30], [3, 9], [10, 3], [30, 3], [37, 9], [39, 30]], (x, y) => {
+          const seam = y % 5 === 4 || (x + (Math.floor(y / 5) % 2) * 4) % 8 === 0;
+          gate.pixel(x, y, seam ? stone[0] : x < 12 ? stone[3] : x > 28 ? stone[1] : stone[2]);
+        });
+        gate.forEllipse(20, 18, 9, 12, (x, y) => { if (y >= 9) gate.pixel(x, y, '#0c0809'); });
+        gate.forEllipse(20, 22, 5, 6, (x, y) => gate.pixel(x, y, '#2a0c0c'));
+        gate.rect(18, 18, 4, 3, '#e2463f');
+        gate.pixel(19, 18, '#ffb0a0');
+        for (const [x, y] of [[6, 14], [6, 20], [33, 14], [33, 20], [20, 5]]) {
+          gate.rect(x, y, 2, 2, '#e2463f');
+          gate.pixel(x, y, '#ff9a7a');
+        }
+        gate.outline();
       }
-      gate.outline();
       texture.getContext().putImageData(new ImageData(quantizePixels(gate).data, 40, 30), 0, 0);
       texture.setFilter(Phaser.Textures.FilterMode.NEAREST);
       texture.refresh();

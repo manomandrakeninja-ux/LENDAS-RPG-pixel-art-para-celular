@@ -28,7 +28,7 @@ export const BUILDING_VISUALS = Object.freeze({
     8: { frame: 'house-8' }
   },
   forge: {
-    1: { frame: 'forge-1', smoke: { x: -10, y: -14 } },
+    1: { frame: 'forge-1', smoke: { x: -10, y: -37 } },
     4: { frame: 'forge', smoke: { x: 17, y: -43 } },
     8: { frame: 'forge-8', smoke: { x: 21, y: -62 } }
   },

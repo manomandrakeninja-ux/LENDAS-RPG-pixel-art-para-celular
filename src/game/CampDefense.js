@@ -3,6 +3,7 @@ import { BUILDING_DEFS, buildingStat } from '../data/buildings.js';
 import { PixelCanvas, ramp } from '../art/pixel.js';
 import { buildingVisual } from '../data/buildingVisuals.js';
 import { quantizePixels } from '../art/palette.js';
+import { bakedBuilding } from '../art/bakedBuildings.js';
 
 const WALL = BUILDING_DEFS.wall;
 const TOWER = BUILDING_DEFS.tower;
@@ -18,9 +19,13 @@ const MATERIAL_COLORS = {
 function drawTexture(scene, key, width, height, draw) {
   if (scene.textures.exists(key)) return;
   const texture = scene.textures.createCanvas(key, width, height);
-  const pixels = new PixelCanvas(width, height);
-  draw(pixels);
-  pixels.outline();
+  // Arte pintada em alta resolução (Fase 20 G-predios), quando existir; senão, o desenho abaixo.
+  const baked = bakedBuilding(key);
+  const pixels = baked && baked.width === width && baked.height === height ? baked : new PixelCanvas(width, height);
+  if (!baked) {
+    draw(pixels);
+    pixels.outline();
+  }
   texture.getContext().putImageData(new ImageData(quantizePixels(pixels).data, width, height), 0, 0);
   texture.setFilter(Phaser.Textures.FilterMode.NEAREST);
   texture.refresh();

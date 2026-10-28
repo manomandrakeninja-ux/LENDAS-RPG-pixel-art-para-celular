@@ -7,6 +7,7 @@ import { STORY_SCENE_KEYS, drawStoryScene } from '../src/art/storyScenes.js';
 import { valleyPine, valleyRoundTree } from '../src/art/biomeProps.js';
 import { generateWorldAssets } from './generate-world-assets.js';
 import { drawValleyTile } from '../src/art/terrain.js';
+import { bakedBuilding } from '../src/art/bakedBuildings.js';
 
 // Gera toda a pixel art do jogo (PNG + atlas da Phaser) em public/assets/.
 // Rode com `npm run assets:generate`. Os tamanhos e nomes dos quadros são usados
@@ -1153,6 +1154,14 @@ function enhanceBuilding(canvas) {
   }
   // Oclusão de contato na base das paredes (3 px, tom da sombra da rampa).
   canvas.baseOcclusion();
+}
+// Fase 20 G-predios: prédios, fogueira, cerca e lampião pintados em alta resolução
+// (scripts/bake-buildings.mjs) substituem o desenho acima; já vêm com contorno, paleta e sombra.
+for (const entry of buildingEntries) {
+  const [, stage, frame] = entry.name.match(/^(campfire\d?)-(\d)$/) ?? [];
+  const baked = stage ? bakedBuilding(stage, Number(frame)) : bakedBuilding(entry.name);
+  if (!baked) continue;
+  Object.assign(entry, { draw: (sprite) => sprite.blit(baked, 0, 0), enhance: false, outline: false });
 }
 makeAtlas('buildings/camp-atlas.json', buildingEntries, { enhance: enhanceBuilding });
 
