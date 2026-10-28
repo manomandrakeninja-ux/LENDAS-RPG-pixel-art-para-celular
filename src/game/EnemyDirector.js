@@ -95,13 +95,15 @@ export class EnemyDirector {
     };
     for (const enemy of [...this.enemies]) enemy.update(delta, player, context);
 
-    const despawnDistance = SPAWNING_CONFIG.despawnDistance[period];
+    // Com a câmera afastada a tela mostra mais mundo: nascer/sumir sempre fora da área visível.
+    const reach = this.scene.viewReach?.() ?? 0;
+    const despawnDistance = Math.max(SPAWNING_CONFIG.despawnDistance[period], reach + 500);
     for (const enemy of [...this.enemies]) {
       // Invasores e inimigos de missão são controlados pelos seus próprios sistemas.
       if (enemy.isRaider || enemy.isQuestEnemy || enemy.isCaveEnemy || enemy.isInvader) continue;
       const playerDistance = Phaser.Math.Distance.Between(enemy.x, enemy.y, player.x, player.y);
       const wrongPhase = enemy.definition.period === 'night' && period === 'day';
-      const wrongPhaseFar = wrongPhase && playerDistance > 320;
+      const wrongPhaseFar = wrongPhase && playerDistance > Math.max(320, reach + 40);
       if (playerDistance > despawnDistance || wrongPhaseFar) this.remove(enemy);
     }
   }
@@ -188,7 +190,8 @@ export class EnemyDirector {
     const { camp } = this.scene.worldBounds;
     for (let attempt = 0; attempt < 40; attempt += 1) {
       const angle = this.random() * Math.PI * 2;
-      const distance = 380 + this.random() * 440;
+      const minDistance = Math.max(380, (this.scene.viewReach?.() ?? 0) + 40);
+      const distance = minDistance + this.random() * 440;
       const x = Math.round(player.x + Math.cos(angle) * distance);
       const y = Math.round(player.y + Math.sin(angle) * distance);
       if (regionAt(x, y) !== region) continue;
@@ -217,7 +220,7 @@ export class EnemyDirector {
       if (!insideZone || x < 32 || y < 32 || x > width - 32 || y > height - 32) continue;
       if (Phaser.Math.Distance.Between(x, y, camp.x, camp.y) < safeRadius + 45) continue;
       const player = this.scene.player;
-      if (player && Phaser.Math.Distance.Between(x, y, player.x, player.y) < 330) continue;
+      if (player && Phaser.Math.Distance.Between(x, y, player.x, player.y) < Math.max(330, (this.scene.viewReach?.() ?? 0) + 40)) continue;
       const crowded = this.enemies.some((enemy) => Phaser.Math.Distance.Between(x, y, enemy.x, enemy.y) < 90);
       if (crowded) continue;
       return { x: Math.round(x), y: Math.round(y) };

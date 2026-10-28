@@ -1,4 +1,5 @@
 import { sunShadow } from '../data/sunlight.js';
+import { fitScreenRect } from './cameraZoom.js';
 
 // Sombras que acompanham o sol: de manhã apontam para oeste e ficam compridas,
 // ao meio-dia encolhem, à tarde viram para leste; à noite quase somem.
@@ -52,7 +53,8 @@ export class ShadowSystem {
     this.current = sunShadow(8);
     this.grade = scene.add.rectangle(0, 0, scene.scale.width, scene.scale.height, 0xffc890, 0)
       .setOrigin(0).setScrollFactor(0).setDepth(3996);
-    scene.scale.on('resize', () => this.grade.setSize(scene.scale.width, scene.scale.height));
+    scene.scale.on('resize', () => fitScreenRect(this.grade, scene.cameras.main, scene.scale.width, scene.scale.height));
+    fitScreenRect(this.grade, scene.cameras.main, scene.scale.width, scene.scale.height);
   }
 
   register(images = []) {

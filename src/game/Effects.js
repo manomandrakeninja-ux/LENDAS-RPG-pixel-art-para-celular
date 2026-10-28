@@ -235,15 +235,17 @@ export class PixelEffects {
     }
     label.active = true;
     const crit = tint === '#ffe28a';
+    // Câmera afastada: o texto cresce para continuar legível (zoom 2 ou mais = tamanho normal).
+    const boost = Math.max(1, 1.5 / (this.scene.cameras.main.zoom || 1));
     label.text
       .setText(crit ? `${amount}!` : String(amount))
       .setPosition(x + randomBetween(-4, 4), y - 18)
       .setAlpha(1)
-      .setScale(crit ? 1.9 : 1.4)
+      .setScale((crit ? 1.9 : 1.4) * boost)
       .setVisible(true)
       .setColor(tint);
     // Salta ao aparecer e depois sobe sumindo.
-    this.scene.tweens.add({ targets: label.text, scale: crit ? 1.3 : 1, duration: 120, ease: 'Back.out' });
+    this.scene.tweens.add({ targets: label.text, scale: (crit ? 1.3 : 1) * boost, duration: 120, ease: 'Back.out' });
     this.scene.tweens.add({
       targets: label.text,
       y: y - 44,

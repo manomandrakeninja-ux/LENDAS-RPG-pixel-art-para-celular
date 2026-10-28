@@ -70,6 +70,8 @@ import { TORCH_RECIPE } from '../data/itemCatalog.js';
 import { ItemInfoPanel } from './ItemInfoPanel.js';
 import { VillagerManager } from './Villagers.js';
 import { SettingsPanel } from './SettingsPanel.js';
+import { loadSettings } from './Settings.js';
+import { fitScreenRect, viewReach, zoomFor } from './cameraZoom.js';
 import { rollMonsterChest } from '../data/monsterChests.js';
 import { MISSIONS } from '../data/campaign.js';
 
@@ -199,13 +201,15 @@ export class GameScene extends Phaser.Scene {
     this.shadows.register(this.world.treeSprites);
     this.playerContact = this.shadows.attachContact(this.player);
     this.cameras.main.startFollow(this.player, true, 0.08, 0.08);
-    this.cameras.main.setZoom(this.worldZoom()).setRoundPixels(true);
+    this.cameras.main.setRoundPixels(true);
+    this.zoomLevel = loadSettings().zoom;
 
     this.duskTint = this.add.rectangle(0, 0, this.scale.width, this.scale.height, 0xd88952, 0)
       .setOrigin(0).setScrollFactor(0).setDepth(3997);
     this.damageFlash = this.add.rectangle(0, 0, this.scale.width, this.scale.height, 0xff6b57, 0)
       .setOrigin(0).setScrollFactor(0).setDepth(5000);
     this.lighting = new LightingSystem(this, this.camp);
+    this.applyCameraZoom();
 
     this.ui = new GameUI(this);
     this.levelUpOverlay = new LevelUpOverlay(this);
@@ -342,12 +346,11 @@ export class GameScene extends Phaser.Scene {
     this.game.canvas.addEventListener('pointerdown', this.handleCanvasPointerDown);
 
     this.scale.on('resize', () => {
-      this.duskTint.setSize(this.scale.width, this.scale.height);
-      this.damageFlash.setSize(this.scale.width, this.scale.height);
-      this.lighting.resize();
       this.hudCamera.setViewport(0, 0, this.scale.width, this.scale.height);
-      this.ui.resize();
       this.cameras.main.setZoom(this.worldZoom());
+      this.applyCameraZoom();
+      this.lighting.resize();
+      this.ui.resize();
     });
 
     this.handleVisibilityChange = () => {
@@ -393,7 +396,24 @@ export class GameScene extends Phaser.Scene {
 
   /** Zoom do mundo: 2 em telas até ~1440 px de altura, mais em telas maiores (2K/4K). */
   worldZoom() {
-    return Math.max(2, Math.round(this.scale.height / 540));
+    return zoomFor(this.zoomLevel ?? loadSettings().zoom, this.scale.width, this.scale.height);
+  }
+
+  /** Aplica o nível de zoom (Ajustes) e reencaixa tudo que depende dele: máscara de luz, véus de tela cheia. */
+  applyCameraZoom(level = this.zoomLevel) {
+    this.zoomLevel = level;
+    const camera = this.cameras.main;
+    camera.setZoom(this.worldZoom());
+    const { width, height } = this.scale;
+    for (const rect of [this.duskTint, this.damageFlash, this.shadows?.grade]) {
+      if (rect) fitScreenRect(rect, camera, width, height);
+    }
+    this.lighting?.place();
+  }
+
+  /** Metade da diagonal da área visível em px do mundo. */
+  viewReach() {
+    return viewReach(this.scale.width, this.scale.height, this.cameras.main.zoom || 1);
   }
 
   toggleJournal() {

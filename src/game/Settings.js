@@ -11,7 +11,8 @@ export const DEFAULT_SETTINGS = Object.freeze({
   shake: true,
   labels: 'auto', // auto | always | near
   stickSize: 'medium', // small | medium | large
-  stickSide: 'left' // left | right
+  stickSide: 'left', // left | right
+  zoom: 'normal' // near | normal | far | farthest (zoom da câmera)
 });
 
 // Tamanho do joystick de toque: diâmetro da base e raio de movimento do dedo (px).
@@ -25,7 +26,8 @@ const CHOICES = {
   interface: ['auto', 'pc', 'mobile'],
   labels: ['auto', 'always', 'near'],
   stickSize: ['small', 'medium', 'large'],
-  stickSide: ['left', 'right']
+  stickSide: ['left', 'right'],
+  zoom: ['near', 'normal', 'far', 'farthest']
 };
 
 function storage() {
@@ -43,6 +45,7 @@ export function normalizeSettings(raw = {}) {
   if (CHOICES.labels.includes(raw.labels)) value.labels = raw.labels;
   if (CHOICES.stickSize.includes(raw.stickSize)) value.stickSize = raw.stickSize;
   if (CHOICES.stickSide.includes(raw.stickSide)) value.stickSide = raw.stickSide;
+  if (CHOICES.zoom.includes(raw.zoom)) value.zoom = raw.zoom;
   if (typeof raw.sound === 'boolean') value.sound = raw.sound;
   if (typeof raw.music === 'boolean') value.music = raw.music;
   if (typeof raw.shake === 'boolean') value.shake = raw.shake;

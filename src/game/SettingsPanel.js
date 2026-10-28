@@ -34,6 +34,7 @@ const OPTIONS = {
   labels: [['auto', 'Automático'], ['always', 'Sempre'], ['near', 'Só de perto']],
   stickSize: [['small', 'Pequeno'], ['medium', 'Médio'], ['large', 'Grande']],
   stickSide: [['left', 'Esquerda'], ['right', 'Direita']],
+  zoom: [['near', 'Perto'], ['normal', 'Normal'], ['far', 'Longe'], ['farthest', 'Muito longe']],
 };
 
 /**
@@ -207,6 +208,7 @@ export class SettingsPanel {
       else scene.touch.disable();
     }
     if (scene.touch?.enabled) scene.touch.applyLayout(this.settings);
+    scene.applyCameraZoom?.(this.settings.zoom);
     scene.ui?.resize?.();
   }
 
@@ -354,6 +356,7 @@ export class SettingsPanel {
     const forcedByUrl = /[?&](toque|touch)=/.test(window.location.search);
     this.body.innerHTML = `
       ${this.choiceRow('interface', 'Interface', `Agora: ${touch ? 'celular (controles de toque)' : 'computador (teclado e mouse)'}.${forcedByUrl ? ' O endereço da página está forçando um modo.' : ''}`)}
+      ${this.choiceRow('zoom', 'Zoom da câmera', 'Longe mostra mais mapa e deixa os personagens menores.')}
       ${this.skinsRow()}
       ${this.choiceRow('sound', 'Som', '')}
       ${this.choiceRow('music', 'Música', 'Melodia simples de cada região.')}
