@@ -4,7 +4,7 @@
 // Folha: 4 direções (baixo, esquerda, direita, cima) x 4 quadros (andando; o quadro 1 é o "parado").
 
 /** Quadro das skins novas: 56 x 64, maior que o cavaleiro (32 x 40), pés na linha 62. */
-export const SKIN_FRAME = Object.freeze({ width: 56, height: 64, feet: 62, scale: 0.75 });
+export const SKIN_FRAME = Object.freeze({ width: 56, height: 64, feet: 62, scale: 1 });
 
 /** Cores da capa da guerreira (as mesmas da folha de referência). */
 export const CAPE_COLORS = Object.freeze({
