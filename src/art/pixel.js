@@ -52,6 +52,17 @@ export function hash(x, y, seed = 0) {
 
 export const dither = (x, y) => (BAYER[((y % 4) + 4) % 4][((x % 4) + 4) % 4] + 0.5) / 16;
 
+function colorDistance(a, b) {
+  const [ar, ag, ab] = hexToRgb(a);
+  const [br, bg, bb] = hexToRgb(b);
+  return Math.hypot(ar - br, ag - bg, ab - bb);
+}
+
+function lumaOf(hex) {
+  const [red, green, blue] = hexToRgb(hex);
+  return (0.299 * red + 0.587 * green + 0.114 * blue) / 255;
+}
+
 export class PixelCanvas {
   constructor(width, height) {
     this.width = width;
@@ -216,22 +227,34 @@ export class PixelCanvas {
   }
 
   /**
-   * Contorno de 1 px em volta das partes sólidas, na cor escurecida do vizinho
-   * (estilo "sel-out"), o que separa o objeto do chão sem ficar duro.
+   * Contorno seletivo + luz de borda (padrão de todos os sprites).
+   * `rim: false` pula a luz de borda (efeitos, peças finas); `rim: 'strong'` reforça a luz nas cores
+   * escuras (monstros escuros sobre chão escuro).
    */
-  outline({ strength = 0.72, solid = 200, ink = '#140f14' } = {}) {
+  outline({ strength = 0.72, solid = 200, ink = '#140f14', rim = true } = {}) {
+    if (rim) this.rimLight({ solid, strong: rim === 'strong' });
+    return this.selectiveOutline({ strength, solid, ink });
+  }
+
+  /**
+   * Contorno de 1 px só na silhueta externa. Embaixo e à direita (lado da sombra) é escuro, o tom
+   * vizinho puxado para `ink`; em cima e à esquerda (lado da luz) usa a sombra da rampa local,
+   * sem preto, para a forma não parecer recortada.
+   */
+  selectiveOutline({ strength = 0.72, solid = 200, ink = '#140f14' } = {}) {
     const marks = [];
     for (let y = 0; y < this.height; y += 1) {
       for (let x = 0; x < this.width; x += 1) {
         if (this.alphaAt(x, y) >= solid) continue;
-        let neighbor = null;
-        for (const [dx, dy] of [[0, -1], [-1, 0], [1, 0], [0, 1]]) {
-          if (this.alphaAt(x + dx, y + dy) >= solid) {
-            neighbor = this.colorAt(x + dx, y + dy);
-            break;
-          }
+        // Objeto acima ou à esquerda deste pixel: ele está no lado da sombra.
+        const dark = [[0, -1], [-1, 0]].find(([dx, dy]) => this.alphaAt(x + dx, y + dy) >= solid);
+        const lit = [[0, 1], [1, 0]].find(([dx, dy]) => this.alphaAt(x + dx, y + dy) >= solid);
+        if (dark) {
+          marks.push([x, y, mix(this.colorAt(x + dark[0], y + dark[1]), ink, strength)]);
+        } else if (lit) {
+          const shadow = ramp(this.colorAt(x + lit[0], y + lit[1]))[0];
+          marks.push([x, y, mix(shadow, ink, Math.max(0, strength - 0.55))]);
         }
-        if (neighbor) marks.push([x, y, mix(neighbor, ink, strength)]);
       }
     }
     for (const [x, y, hex] of marks) {
@@ -245,15 +268,44 @@ export class PixelCanvas {
     return this;
   }
 
-  /** Escurece a borda inferior/direita das partes sólidas (luz do alto à esquerda). */
-  rimShade(amount = 0.22, solid = 200) {
+  /**
+   * Luz de borda: 1 px do tom claro da rampa na borda de cima e da esquerda (luz do alto à
+   * esquerda), só onde a peça tem 2 px ou mais de espessura. Com `strong`, cores escuras sobem um
+   * degrau a mais, para silhuetas escuras se lerem sobre chão escuro.
+   */
+  rimLight({ solid = 200, strong = false } = {}) {
+    const depth = Math.max(1, Math.round(Math.max(this.width, this.height) / 56));
     const marks = [];
     for (let y = 0; y < this.height; y += 1) {
       for (let x = 0; x < this.width; x += 1) {
         if (this.alphaAt(x, y) < solid) continue;
-        if (this.alphaAt(x, y + 1) < solid || this.alphaAt(x + 1, y) < solid) {
-          marks.push([x, y, darken(this.colorAt(x, y), amount)]);
+        // Sprites grandes (desenhados em grade lógica) ganham borda mais grossa.
+        let top = false;
+        let left = false;
+        for (let step = 1; step <= depth; step += 1) {
+          top ||= this.alphaAt(x, y - step) < solid && this.alphaAt(x, y + 1) >= solid;
+          left ||= this.alphaAt(x - step, y) < solid && this.alphaAt(x + 1, y) >= solid;
         }
+        if (!top && !left) continue;
+        // Base: o tom mais claro da área logo para dentro (a borda costuma estar na sombra do desenho).
+        const own = this.colorAt(x, y);
+        let color = own;
+        let luma = lumaOf(color);
+        if (luma > 0.82) continue;
+        for (let step = 1; step <= 3; step += 1) {
+          for (const [dx, dy] of [[step, 0], [0, step], [step, step]]) {
+            if (this.alphaAt(x + dx, y + dy) < solid) continue;
+            const inner = this.colorAt(x + dx, y + dy);
+            const value = lumaOf(inner);
+            // Só tons da mesma área (brasas, olhos e detalhes de outra cor ficam de fora).
+            if (value > luma && value <= 0.82 && colorDistance(own, inner) < 100) { color = inner; luma = value; }
+          }
+        }
+        const tones = ramp(color);
+        let hex = top && left ? tones[3] : tones[2];
+        // Muito escuro: a luz da rampa ainda some no chão; sobe mais um degrau.
+        if (strong && luma < 0.25) hex = ramp(tones[3])[top && left ? 3 : 2];
+        marks.push([x, y, hex]);
       }
     }
     for (const [x, y, hex] of marks) this.pixel(x, y, hex);
