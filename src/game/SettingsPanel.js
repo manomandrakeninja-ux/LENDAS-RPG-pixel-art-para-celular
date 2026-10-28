@@ -4,6 +4,7 @@ import { loadSettings, saveSettings } from './Settings.js';
 import { exportSaveCode, importSaveCode } from './saveBackup.js';
 import { ACTION_LABELS, KEY_ACTIONS, DEFAULT_KEYBINDS, keyLabel, loadKeybinds, rebind, saveKeybinds } from './Keybinds.js';
 import { HERO_LABELS, HERO_SKINS, heroTexture } from './HeroStyle.js';
+import { heroFrameSize } from '../art/skins.js';
 
 /** Ícone de engrenagem em pixel art (16 x 16) como data URL. */
 function gearIconUrl() {
@@ -258,13 +259,21 @@ export class SettingsPanel {
     return this.skinUrls[skin];
   }
 
+  /** Prévia de 80 px de altura: as folhas novas (56 x 64) ficam menores que a do cavaleiro (32 x 40). */
+  skinPreviewStyle(skin) {
+    const frame = heroFrameSize(heroTexture(skin));
+    const scale = 80 / frame.height;
+    const w = Math.round(frame.width * scale);
+    return `width:${w}px;background-size:${w * 4}px 320px;--skin-strip:-${w * 4}px;`;
+  }
+
   /** Skins do herói: cartões com prévia animada (andando) de cada uma. */
   skinsRow() {
     const cards = HERO_SKINS.map((skin) => {
       const src = this.skinSheetUrl(skin);
       const active = this.scene.heroGender === skin;
       return `<button type="button" data-settings="gender" data-value="${skin}" aria-pressed="${active}" class="skin-card ${active ? 'is-active' : ''}">
-        <span class="skin-card__preview" style="background-image:url('${src}')"></span>
+        <span class="skin-card__preview" style="${this.skinPreviewStyle(skin)}background-image:url('${src}')"></span>
         <span class="skin-card__name">${HERO_LABELS[skin]}</span>
       </button>`;
     }).join('');

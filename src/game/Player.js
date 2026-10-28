@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { COMBAT_CONFIG } from '../data/combat.js';
 import { ShieldBlocker, blockedDamage } from './ShieldBlock.js';
 import { heroTexture, normalizeGender } from './HeroStyle.js';
+import { SKINS, heroFrameSize } from '../art/skins.js';
 import { PERK_EFFECTS } from '../data/progression.js';
 import { SWORD_TIERS, drawPickaxe, drawSword, swordTierFor } from '../art/gear.js';
 
@@ -146,7 +147,8 @@ export class Player extends Phaser.GameObjects.Container {
       return;
     }
     this.handTool.setVisible(false);
-    this.weapon.setVisible(true);
+    // Skins que já trazem a espada no desenho: a arma equipada só aparece no golpe.
+    this.weapon.setVisible(!this.skinHasSword || this.swingTimer > 0);
     this.backPickaxe.setVisible(hasPickaxe);
     // Nas costas: olhando para a esquerda, as costas ficam do lado direito da tela.
     const backSide = this.direction === 'left' ? 1 : -1;
@@ -343,6 +345,11 @@ export class Player extends Phaser.GameObjects.Container {
     this.gender = normalizeGender(gender);
     this.animPrefix = heroTexture(this.gender);
     this.sprite.setTexture(this.animPrefix, 1);
+    // Pés sempre no mesmo ponto: folhas maiores (skins novas) mudam a origem vertical.
+    const frame = heroFrameSize(this.animPrefix);
+    this.sprite.setOrigin(0.5, (frame.feet + 1 - 8.2 / frame.scale) / frame.height);
+    this.sprite.setScale(frame.scale);
+    this.skinHasSword = SKINS.some((skin) => skin.sword && `player-${skin.id}` === this.animPrefix);
     this.sprite.play(`${this.animPrefix}-idle-${this.direction}`);
   }
 

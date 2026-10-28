@@ -1,3 +1,5 @@
+import { SKIN_FRAME } from '../art/skins.js';
+
 export const ASSET_CONFIG = {
   grass: {
     kind: 'spritesheet',
@@ -24,8 +26,8 @@ export const ASSET_CONFIG = {
     kind: 'spritesheet',
     key: `player-${id}`,
     file: `assets/characters/player-${id}-sheet.png`,
-    frameWidth: 32,
-    frameHeight: 40
+    frameWidth: SKIN_FRAME.width,
+    frameHeight: SKIN_FRAME.height
   }])),
   livestock: {
     kind: 'spritesheet',

@@ -426,4 +426,4 @@ body.is-phone .settings-button {
 .skin-card.is-active { border-color: #e8c24e; background: rgba(74, 52, 24, 0.75); }
 .skin-card__preview { display: block; width: 64px; height: 80px; image-rendering: pixelated; background-repeat: no-repeat; background-size: 256px 320px; background-position: 0 0; animation: skin-walk 0.45s steps(4) infinite; }
 .skin-card__name { font-size: 8px; line-height: 1.2; text-align: center; }
-@keyframes skin-walk { from { background-position-x: 0; } to { background-position-x: -256px; } }
+@keyframes skin-walk { from { background-position-x: 0; } to { background-position-x: var(--skin-strip, -256px); } }

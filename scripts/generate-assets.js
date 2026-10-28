@@ -3,7 +3,6 @@ import path from 'node:path';
 import { PixelCanvas, darken, dither, hash, lighten, ramp } from '../src/art/pixel.js';
 import { readAtlas, writePng } from './png.js';
 import { KNIGHT_FRAME, drawHeroineFrame, drawKnightFrame } from '../src/art/knight.js';
-import { SKINS, drawSkinFrame } from '../src/art/skins.js';
 import { STORY_SCENE_KEYS, drawStoryScene } from '../src/art/storyScenes.js';
 import { valleyPine, valleyRoundTree } from '../src/art/biomeProps.js';
 import { generateWorldAssets } from './generate-world-assets.js';
@@ -230,12 +229,7 @@ makeSheet('characters/player-female-sheet.png', KNIGHT_FRAME.width, KNIGHT_FRAME
   canvas.blit(drawHeroineFrame(Math.floor(frameIndex / 4), frameIndex % 4), 0, 0);
 }, { outline: false });
 
-// Skins novas (src/art/skins.js): espadachim e guerreira em 4 cores de capa, mesma folha 4 x 4.
-for (const skin of SKINS) {
-  makeSheet(`characters/player-${skin.id}-sheet.png`, KNIGHT_FRAME.width, KNIGHT_FRAME.height, 4, 4, (canvas, frameIndex) => {
-    canvas.blit(drawSkinFrame(skin.id, Math.floor(frameIndex / 4), frameIndex % 4), 0, 0);
-  }, { outline: false });
-}
+// Skins novas (Espadachim e Guerreira): saem das referências do autor (scripts/skins/extract-skins.mjs).
 
 // ---------- Animais da fazenda (24 x 24, virados para a direita) ----------
 
