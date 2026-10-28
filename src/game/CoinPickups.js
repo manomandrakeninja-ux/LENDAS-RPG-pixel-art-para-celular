@@ -29,7 +29,7 @@ export class CoinPickups {
   spawn(x, y, amount) {
     const coins = Math.max(0, Math.floor(Number(amount) || 0));
     if (coins <= 0) return null;
-    const image = this.scene.add.image(x, y - 5, COIN_TEXTURE).setDepth(y + 12);
+    const image = this.scene.add.image(x, y - 5, COIN_TEXTURE).setDepth(y + 12).setScale(1.3);
     const label = this.scene.add.text(x, y - 18, `${coins}`, {
       fontFamily: 'Press Start 2P',
       fontSize: '8px',

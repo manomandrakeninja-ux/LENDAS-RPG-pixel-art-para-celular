@@ -45,6 +45,7 @@ await runInChrome({ name: 'campaign', port: 9358, width: 1280, height: 800 }, as
 
   // 3. Missão 2 aceita pelo Diário; cogumelos na clareira de missão.
   const mushrooms = await inScene(async (scene) => {
+    while (scene.progression.hasPendingChoice) scene.chooseLevelUp('health');
     scene.campaign.ui.reward.hidden = true;
     // A missão 2 é oferecida na hora, num diálogo com ACEITAR.
     const offered = !scene.campaign.ui.dialog.hidden && scene.campaign.ui.dialog.textContent.includes('O Preço da Fome');
@@ -70,11 +71,16 @@ await runInChrome({ name: 'campaign', port: 9358, width: 1280, height: 800 }, as
 
   // 4. Missão 3: forjar a espada no Ferreiro e derrotar os ratos do depósito.
   const rats = await inScene(async (scene) => {
+    // A diária "Coletar recursos" (10 itens) paga XP; como a madeira/cogumelos rendem quantidades aleatórias,
+    // às vezes o herói sobe de nível aqui e a escolha de nível PAUSA o jogo (o local não gera os ratos).
+    // O jogador escolheria; o teste escolhe também.
+    while (scene.progression.hasPendingChoice) scene.chooseLevelUp('health');
     scene.campaign.ui.reward.hidden = true;
     scene.campaign.accept('m003');
     // A conversa ao aceitar pausa o jogo até o jogador fechar.
     scene.campaign.ui.closeDialogue();
     const crafted = scene.buildingMenuAction('craft', 'simpleSword');
+    while (scene.progression.hasPendingChoice) scene.chooseLevelUp('health');
     const site = scene.campaign.sites.get('deposito');
     scene.player.body.reset(site.def.x, site.def.y + 120);
     await new Promise((resolve) => setTimeout(resolve, 600));

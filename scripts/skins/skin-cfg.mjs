@@ -24,14 +24,16 @@ const W_STYLE = {
 
 export const SKIN_CFG = {
   swordsman: {
-    legs: { down: { hip: 46, x0: 11, x1: 30, mid: 20 }, up: { hip: 46, x0: 8, x1: 27, mid: 18 } },
+    legs: { down: { hip: 46, x0: 11, x1: 30, mid: 20 }, right: { hip: 47, x0: 5, x1: 21, mid: 12 }, up: { hip: 46, x0: 8, x1: 27, mid: 18 } },
     down: { J: [9, 30], hang: [8, 37], mask: [5, 34, 11, 42], cover: [5, 25, 12, 33], neckY: 15, outward: -1, style: SW_STYLE, rel: REL_DOWN, body: BODY_DOWN, headShift: { 10: [1, 0] }, eyes: { closed: [[19, 9, '#fdbf79'], [20, 9, '#fdbf79'], [24, 9, '#fdbf79']], squint: [[19, 9, '#fdbf79'], [20, 9, '#fdbf79'], [24, 9, '#fdbf79']] } },
-    right: { J: [32, 30], hang: [34, 37], mask: [31, 34, 37, 42], cover: [27, 25, 36, 33], neckY: 15, outward: 1, style: SW_STYLE, rel: REL_SIDE, body: BODY_SIDE, headShift: { 10: [-1, 0] }, stride: { 8: [2, -1] }, eyes: { closed: [[20, 9, '#fdbf79'], [21, 9, '#fdbf79'], [25, 9, '#fdbf79']], squint: [[20, 9, '#fdbf79'], [21, 9, '#fdbf79'], [25, 9, '#fdbf79']] } },
+    // Perfil próprio (SWORDSMAN_SIDE): ombro no meio do tronco; armRows/armCols = braço tirado nas poses.
+    right: { J: [12, 20], hang: [11, 36], armRows: [24, 39], armCols: [8, 15], cover: [6, 16, 17, 23], neckY: 15, outward: 1, style: SW_STYLE, rel: REL_SIDE, body: BODY_SIDE, headShift: { 10: [-1, 0] }, stride: { 8: [2, -1] }, eyes: { closed: [[14, 10, '#fdbf79'], [13, 11, '#0b030c']], squint: [[14, 10, '#fdbf79'], [13, 11, '#0b030c']] } },
     up: { J: [29, 30], hang: [30, 37], mask: [27, 34, 33, 42], cover: [26, 25, 33, 33], neckY: 15, outward: 1, style: SW_STYLE, rel: REL_UP, body: BODY_UP, headShift: { 10: [-1, 0] } }
   },
   warrior: {
     legs: { down: { hip: 42, x0: 17, x1: 42, mid: 31 }, right: { hip: 44, x0: 12, x1: 47, mid: 29 }, up: { hip: 47, x0: 2, x1: 23, mid: 13 } },
-    down: { J: [23, 26], hang: [20, 37], drawHang: true, neckY: 17, outward: -1, style: W_STYLE, rel: REL_DOWN, body: BODY_DOWN, headShift: { 10: [1, 0] }, eyes: { closed: [[30, 11, '#d2704e']], squint: [[30, 11, '#d2704e']] } },
+    // backGrip/backAngle: de frente o cabo da espada nas costas sai acima do ombro, à esquerda do cabelo.
+    down: { J: [23, 26], hang: [20, 37], drawHang: true, neckY: 17, backGrip: [19, 12], backAngle: 58, outward: -1, style: W_STYLE, rel: REL_DOWN, body: BODY_DOWN, headShift: { 10: [1, 0] }, eyes: { closed: [[30, 11, '#d2704e']], squint: [[30, 11, '#d2704e']] } },
     right: { J: [31, 26], hang: [31, 38], drawHang: true, neckY: 18, outward: 1, style: W_STYLE, rel: REL_SIDE, body: BODY_SIDE, headShift: { 10: [-1, 0] }, stride: { 8: [2, -1] } },
     up: { J: [21, 27], hang: [22, 38], neckY: 14, outward: 1, style: W_STYLE, rel: REL_UP, body: BODY_UP, headShift: { 10: [-1, 0] } }
   }

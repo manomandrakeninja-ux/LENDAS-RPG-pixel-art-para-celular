@@ -25,8 +25,8 @@ const LEATHER = '#6a4228';
 const GOLD = '#d99a2b';
 
 export const SPECS = {
-  knight: { id: 'knight', accent: '#b8231d', plume: '#b8231d', tabard: '#e3e7ee', cross: '#b8231d', skirt: null, hair: null, waist: 0 },
-  heroine: { id: 'heroine', accent: '#a8309a', plume: '#a8309a', tabard: null, cross: '#a8309a', skirt: '#7a3a8a', hair: '#d99a2b', waist: 0.9 }
+  knight: { id: 'knight', cape: '#b8231d', accent: '#b8231d', plume: '#b8231d', tabard: '#e3e7ee', cross: '#b8231d', skirt: null, hair: null, waist: 0 },
+  heroine: { id: 'heroine', accent: '#a8309a', plume: null, tabard: null, cross: '#a8309a', skirt: '#7a3a8a', hair: '#d99a2b', waist: 0.9, face: true, skin: '#f6ca9f', iris: '#3b5dc9' }
 };
 
 // lean: [para a frente, para cima]; stance: pernas; squint/blink: viseira; tilt: inclinação da cabeça (graus).
@@ -168,13 +168,13 @@ function body(ctx, spec, r) {
       : [[CX - 6.6, wy + 0.5], [CX + 6, wy + 0.5], [CX + 7.2 + sway, hemY], [CX - 7.4 + sway, hemY]];
     const cp = poly(ctx, pts, true);
     C(ctx, cp, cloth, { d: [1.4, 0.8], h: [0.8, 0.5] });
-    inside(ctx, cp, () => { ctx.fillStyle = cd; ctx.fillRect(0, hemY - 1.6, 56, 1.6); stroke(ctx, [[CX - 1, wy + 3], [CX - 1.6 + sway, hemY - 1]], 0.8, cs); });
+    inside(ctx, cp, () => { ctx.fillStyle = cd; ctx.fillRect(0, hemY - 1.6, 56, 1.6); ctx.fillStyle = R(GOLD)[2]; ctx.fillRect(0, Math.round(hemY - 3), 56, 1); ctx.fillStyle = R(GOLD)[3]; ctx.fillRect(0, Math.round(hemY - 3), 56, 0.5); stroke(ctx, [[CX - 1, wy + 3], [CX - 1.6 + sway, hemY - 1]], 0.8, cs); });
   } else {
     const wide = spec.skirt ? 11 : 8.6;
     const cp = poly(ctx, [[CX - 7.8, wy + 0.5], [CX + 7.8, wy + 0.5], [CX + wide + sway * 0.4, hemY], [CX - wide + sway * 0.4, hemY]], true);
     C(ctx, cp, cloth, { d: [1.5, 0.8], h: [0.9, 0.5] });
     inside(ctx, cp, () => {
-      ctx.fillStyle = cd; ctx.fillRect(0, hemY - 1.6, 56, 1.6);
+      ctx.fillStyle = cd; ctx.fillRect(0, hemY - 1.6, 56, 1.6); ctx.fillStyle = R(GOLD)[2]; ctx.fillRect(0, Math.round(hemY - 3), 56, 1); ctx.fillStyle = R(GOLD)[3]; ctx.fillRect(0, Math.round(hemY - 3), 56, 0.5);
       const folds = spec.skirt ? [-6, -2, 2.4, 6.4] : [-4.6, 4.6];
       folds.forEach((f, i) => stroke(ctx, [[CX + f * 0.55, wy + 3], [CX + f * 1.05 + (i % 2 ? 0.5 : -0.5), hemY - 1]], 0.9, cs));
     });
@@ -195,14 +195,65 @@ function body(ctx, spec, r) {
     px(ctx, CX - 1.5, wy - 1, GOLD, 3, 2);
     px(ctx, CX - 1.5, wy - 1, R(GOLD)[3], 2, 1);
   }
+  engrave(ctx, spec, r, path);
   return path;
+}
+
+// Gravuras douradas, frisos gravados e o brilho do metal polido no peitoral (as três direções).
+function gilt(ctx, pts, w = 1.1) {
+  const [, gs, gb, gl] = R(GOLD);
+  stroke(ctx, pts, w + 0.3, gs);
+  stroke(ctx, pts, w, gb);
+  stroke(ctx, pts.map(([x, y]) => [x - 0.3, y - 0.35]), w * 0.5, gl);
+}
+function engrave(ctx, spec, r, path) {
+  const { dir, sY, bob } = r;
+  const ux = r.ux;
+  const [, sh, , li, shine] = R(STEEL);
+  inside(ctx, path, () => {
+    if (dir === 'down') {
+      // Gola dourada, volutas dos lados do peito, lâminas do ventre e o reflexo.
+      gilt(ctx, [[CX - 6 + ux, sY - 0.6], [CX + ux, sY + 1.6], [CX + 6 + ux, sY - 0.6]]);
+      for (const sd of [-1, 1]) {
+        gilt(ctx, [[CX + sd * 8.6 + ux, sY + 2.4], [CX + sd * 7.4 + ux, sY + 7], [CX + sd * 5.2 + ux, sY + 9.2], [CX + sd * 4.6 + ux, sY + 7.2], [CX + sd * 5.8 + ux, sY + 6.4]], 0.9);
+      }
+      for (const yy of [33.2, 35.4]) stroke(ctx, [[CX - 9, yy + bob], [CX, yy + 1.2 + bob], [CX + 9, yy + bob]], 0.8, sh);
+      stroke(ctx, [[CX - 9, 34.2 + bob], [CX, 35.4 + bob], [CX + 9, 34.2 + bob]], 0.6, li);
+      stroke(ctx, [[CX - 6.6 + ux, sY + 2.6], [CX - 5.8 + ux, sY + 7.4]], 1.3, shine);
+    } else if (dir === 'right') {
+      gilt(ctx, [[CX + 0.4 + ux, sY - 0.8], [CX + 5.6 + ux, sY + 3.4], [CX + 6 + ux, sY + 8.6]]);
+      gilt(ctx, [[CX - 1 + ux, sY + 4.4], [CX + 2.6 + ux, sY + 7.6], [CX + 1.4 + ux, sY + 9.4], [CX + 0.4 + ux, sY + 8]], 0.9);
+      for (const yy of [33.2, 35.4]) stroke(ctx, [[CX - 7, yy + bob], [CX + 7, yy + 0.6 + bob]], 0.8, sh);
+      stroke(ctx, [[CX - 3.4 + ux, sY + 2.4], [CX - 2.6 + ux, sY + 8]], 1.3, shine);
+    } else {
+      // Costas: espinha dourada e omoplatas gravadas.
+      gilt(ctx, [[CX - 7 + ux, sY + 0.6], [CX + ux, sY + 2.4], [CX + 7 + ux, sY + 0.6]]);
+      for (const sd of [-1, 1]) gilt(ctx, [[CX + sd * 2 + ux, sY + 4], [CX + sd * 6.4 + ux, sY + 5.6], [CX + sd * 6.8 + ux, sY + 9], [CX + sd * 4.4 + ux, sY + 9.6]], 0.9);
+      stroke(ctx, [[CX + ux, sY + 3.6], [CX + ux * 0.5, 36]], 0.9, R(GOLD)[1]);
+      stroke(ctx, [[CX - 7.4 + ux, sY + 3.4], [CX - 6.6 + ux, sY + 8]], 1.3, shine);
+    }
+  });
 }
 
 function pauldron(ctx, spec, r, x, dark) {
   const y = r.sY + 1.6 + (r.dir === 'right' ? 1 : 0);
   const col = dark ? STEEL_DK : STEEL_LT;
   C(ctx, ell(ctx, x, y, r.dir === 'right' ? 3.8 : 4.8, 3.9), col, { d: [1, 1], h: [0.8, 0.7] });
-  if (!dark) px(ctx, x - 2, y - 2, R(STEEL_LT)[4], 3, 1);
+  if (!dark) {
+    const rx = r.dir === 'right' ? 3.8 : 4.8;
+    const pp = ell(ctx, x, y, rx, 3.9);
+    inside(ctx, pp, () => {
+      const [, gs, gb] = R(GOLD);
+      ctx.save(); ctx.beginPath(); ctx.rect(x - 8, y + 0.8, 16, 8); ctx.clip();
+      ctx.strokeStyle = gs; ctx.lineWidth = 2.2; ctx.stroke(pp);
+      ctx.strokeStyle = gb; ctx.lineWidth = 1.3; ctx.stroke(pp);
+      ctx.restore();
+      px(ctx, x - 0.5, y - 0.5, R(GOLD)[3], 1, 1);
+      stroke(ctx, [[x - rx + 1.2, y + 0.6], [x + rx - 1.2, y + 0.6]], 0.8, R(STEEL_LT)[1]);
+    });
+    px(ctx, x - 2, y - 2, R(STEEL_LT)[4], 3, 1);
+    px(ctx, x - 1, y - 1, R(STEEL_LT)[4], 1, 1);
+  }
 }
 
 function arm(ctx, spec, r, S, H, dark) {
@@ -268,21 +319,134 @@ function hairBack(ctx, spec, r, sway) {
 function hairLocks(ctx, spec, r, sway) {
   const { head, sY } = r;
   for (const side of [-1, 1]) {
-    const x = head.x + side * 9.3;
+    const x = head.x + side * 7.8;
     const p = poly(ctx, [[x - 1.8, head.y + 1], [x + 1.8, head.y + 1], [x + 2.2 + side * 0.4, sY + 6 + sway * side * 0.3], [x, sY + 9.6 + sway * side * 0.3], [x - 2.2 - side * 0.4, sY + 6]], true);
     C(ctx, p, spec.hair, { d: [0.9, 1], h: [0.7, 0.7] });
     inside(ctx, p, () => stroke(ctx, [[x - 0.4, head.y + 3], [x + 0.2, sY + 7]], 0.7, R(spec.hair)[1]));
   }
 }
 
+// Heroína de rosto à mostra: cabelo dourado comprido, tiara com gema, olhos, sobrancelhas e boca na grade.
+function hairBehindFront(ctx, spec, r, sway) {
+  const { head: hd, sY } = r;
+  const p = poly(ctx, [[hd.x - 8.4, hd.y - 2], [hd.x + 8.4, hd.y - 2], [hd.x + 9.8 + sway * 0.4, sY + 3], [hd.x + 9.6 + sway * 0.6, sY + 9], [hd.x + 7, sY + 11.4], [hd.x - 7, sY + 11.4], [hd.x - 9.6 + sway * 0.6, sY + 9], [hd.x - 9.8 + sway * 0.4, sY + 3]], true);
+  C(ctx, p, R(spec.hair)[1], { d: [1.2, 1.2], h: [0.6, 0.6] });
+}
+
+function faceHead(ctx, spec, r, sway) {
+  const { dir, head: hd, sY } = r;
+  const squint = r.pose.squint; const blink = r.pose.blink;
+  const skin = spec.skin; const hair = spec.hair;
+  const [hdp, hsh, , hli, hshine] = R(hair);
+  const [, ssh, , sli] = R(skin);
+  const [gdp, gs, gb, gl] = R(GOLD);
+  const top = hd.y - 8.2;
+  const ey = Math.round(hd.y + 1.4);
+  ctx.save();
+  if (r.pose.tilt) { ctx.translate(hd.x, hd.y + 6); ctx.rotate((r.pose.tilt * Math.PI) / 180); ctx.translate(-hd.x, -(hd.y + 6)); }
+  if (dir !== 'down') hairBack(ctx, spec, r, sway);
+  // Pescoço.
+  if (dir !== 'up') C(ctx, limb(ctx, [hd.x + (dir === 'right' ? -0.6 : 0), hd.y + 5], [hd.x + (dir === 'right' ? -0.8 : 0), sY - 1.6], 3.8, 4), skin, { d: [0.6, 0.6], h: [0.3, 0.3] });
+  if (dir === 'up') {
+    const p = ell(ctx, hd.x, hd.y - 0.4, 7.6, 8.2);
+    C(ctx, p, hair, { d: [1.5, 1.3], h: [1, 0.9] });
+    inside(ctx, p, () => {
+      for (const dx of [-5, -2.4, 0.2, 2.8, 5.2]) stroke(ctx, [[hd.x + dx * 0.4, top + 1.2], [hd.x + dx, hd.y + 8]], 0.85, hsh);
+      stroke(ctx, [[hd.x - 5, top + 3], [hd.x - 1.6, top + 1.4], [hd.x + 1.4, top + 1.3]], 1, hli);
+      px(ctx, hd.x - 3, top + 2, hshine, 2, 1);
+      // Aro da tiara por trás.
+      stroke(ctx, [[hd.x - 8, hd.y - 2.4], [hd.x, hd.y - 1], [hd.x + 8, hd.y - 2.4]], 1.1, gs);
+      stroke(ctx, [[hd.x - 8, hd.y - 2.8], [hd.x, hd.y - 1.4], [hd.x + 8, hd.y - 2.8]], 0.6, gb);
+    });
+    ctx.restore();
+    return;
+  }
+  if (dir === 'right') {
+    const face = poly(ctx, [[hd.x - 5.6, hd.y - 4], [hd.x - 2, hd.y - 7.6], [hd.x + 3, hd.y - 7.4], [hd.x + 5.8, hd.y - 4.2], [hd.x + 6.2, hd.y - 0.6], [hd.x + 7.6, hd.y + 2.2], [hd.x + 6.2, hd.y + 3.2], [hd.x + 6.4, hd.y + 4.8], [hd.x + 5, hd.y + 7.2], [hd.x + 1, hd.y + 7.8], [hd.x - 3, hd.y + 5.6], [hd.x - 5.6, hd.y + 1.6]], true);
+    C(ctx, face, skin, { d: [1, 1], h: [0.5, 0.6] });
+    // Cabelo: capa por trás da cabeça e franja.
+    const cap = poly(ctx, [[hd.x - 7.6, hd.y + 6.4], [hd.x - 8.2, hd.y - 2], [hd.x - 4.4, top - 0.6], [hd.x + 3, top - 0.6], [hd.x + 6.8, hd.y - 4.4], [hd.x + 6.6, hd.y - 1.4], [hd.x + 4.2, hd.y - 3.4], [hd.x + 1.6, hd.y - 2.4], [hd.x + 0.2, hd.y + 0.4], [hd.x - 0.8, hd.y + 4], [hd.x - 3.4, hd.y + 6]], true);
+    C(ctx, cap, hair, { d: [1.4, 1.2], h: [0.9, 0.8] });
+    inside(ctx, cap, () => {
+      stroke(ctx, [[hd.x - 6, top + 2.2], [hd.x - 1.6, hd.y - 4], [hd.x + 3, hd.y - 3.6]], 0.85, hsh);
+      stroke(ctx, [[hd.x - 6.8, hd.y - 2], [hd.x - 5.6, hd.y + 4]], 0.85, hsh);
+      stroke(ctx, [[hd.x - 3.4, hd.y - 1], [hd.x - 2.6, hd.y + 4.4]], 0.85, hdp);
+      stroke(ctx, [[hd.x - 4, top + 1.6], [hd.x + 2, top + 1.2]], 1, hli);
+      px(ctx, hd.x - 2, top + 1, hshine, 2, 1);
+    });
+    // Tiara.
+    stroke(ctx, [[hd.x - 7.4, hd.y - 1.6], [hd.x - 1, hd.y - 4.2], [hd.x + 5, hd.y - 5]], 1.2, gs);
+    stroke(ctx, [[hd.x - 7.4, hd.y - 2], [hd.x - 1, hd.y - 4.6], [hd.x + 5, hd.y - 5.4]], 0.6, gl);
+    px(ctx, hd.x + 3.6, hd.y - 6.6, R(spec.accent)[2], 2, 2);
+    px(ctx, hd.x + 3.6, hd.y - 6.6, R(spec.accent)[4], 1, 1);
+    // Orelha, olho, nariz, boca.
+    C(ctx, ell(ctx, hd.x - 1.4, ey + 1.4, 1.3, 1.8), skin, { d: [0.5, 0.5], h: [0.3, 0.3] });
+    px(ctx, hd.x - 1.5, ey + 1, ssh, 1, 1);
+    const ex = Math.round(hd.x + 3);
+    if (blink) px(ctx, ex, ey + 1, INK, 3, 1);
+    else if (squint) { px(ctx, ex, ey + 1, INK, 3, 1); px(ctx, ex + 1, ey - 1, hdp, 2, 1); }
+    else {
+      px(ctx, ex, ey, INK, 2, 2);
+      px(ctx, ex + 1, ey + 1, spec.iris, 1, 1);
+      px(ctx, ex + 1, ey, '#f9e6cf', 1, 1);
+      px(ctx, ex - 1, ey - 1, INK, 2, 1);
+      px(ctx, ex, ey - 3, hdp, 3, 1);
+    }
+    px(ctx, Math.round(hd.x + 5), ey + 4, '#a8304a', 2, 1);
+    px(ctx, Math.round(hd.x + 2), ey + 3, '#e69c69', 2, 1);
+    ctx.restore();
+    return;
+  }
+  // De frente.
+  const face = ell(ctx, hd.x, hd.y + 0.8, 6.6, 7.4);
+  C(ctx, face, skin, { d: [1.1, 1], h: [0.6, 0.6] });
+  inside(ctx, face, () => { px(ctx, hd.x + 4.4, hd.y + 1, ssh, 2, 5); });
+  // Olhos (2x2 com brilho e íris), cílios, sobrancelhas.
+  const lx = Math.round(hd.x - 4); const rx = Math.round(hd.x + 2);
+  for (const [x, outer] of [[lx, -1], [rx, 1]]) {
+    if (blink) { px(ctx, x, ey + 1, INK, 2, 1); continue; }
+    if (squint) { px(ctx, x, ey + 1, INK, 2, 1); px(ctx, outer < 0 ? x : x, ey - 1, hdp, 2, 1); continue; }
+    px(ctx, x, ey, INK, 2, 2);
+    px(ctx, x, ey, '#f9e6cf', 1, 1);
+    px(ctx, x + 1, ey + 1, spec.iris, 1, 1);
+    px(ctx, outer < 0 ? x - 1 : x + 2, ey - 1, INK, 1, 1);
+    px(ctx, outer < 0 ? x - 1 : x, ey - 2, hsh, 3, 1);
+  }
+  px(ctx, Math.round(hd.x), ey + 3, ssh, 1, 1);
+  px(ctx, Math.round(hd.x - 1), ey + 5, '#a8304a', 2, 1);
+  px(ctx, lx - 1, ey + 3, '#e69c69', 2, 1); px(ctx, rx + 1, ey + 3, '#e69c69', 2, 1);
+  // Cabelo: topo com risca de lado e franja em mechas.
+  const fy = hd.y - 1.6;
+  const cap = poly(ctx, [[hd.x - 8, hd.y + 4], [hd.x - 8.2, hd.y - 3.6], [hd.x - 4.4, top - 0.6], [hd.x + 4.4, top - 0.6], [hd.x + 8.2, hd.y - 3.6], [hd.x + 8, hd.y + 4],
+    [hd.x + 6.4, hd.y - 0.6], [hd.x + 5, fy - 1.4], [hd.x + 2.6, fy + 0.2], [hd.x + 0.6, fy - 1.6], [hd.x - 2, fy - 0.2], [hd.x - 4, fy - 1.8], [hd.x - 5.6, fy + 0.4], [hd.x - 6.6, hd.y]], true);
+  C(ctx, cap, hair, { d: [1.2, 1.2], h: [0.8, 0.9] });
+  inside(ctx, cap, () => {
+    for (const lxx of [-4.6, -1.6, 1.6, 4.6]) stroke(ctx, [[hd.x + lxx * 0.3 + 1, top + 0.8], [hd.x + lxx, fy - 0.4]], 0.85, hsh);
+    stroke(ctx, [[hd.x - 7.6, hd.y - 1.5], [hd.x - 7, hd.y + 3]], 0.8, hsh);
+    stroke(ctx, [[hd.x + 7.6, hd.y - 1.5], [hd.x + 7, hd.y + 3]], 0.8, hdp);
+    stroke(ctx, [[hd.x - 5, top + 2.8], [hd.x - 2, top + 1.3], [hd.x + 1.4, top + 1.1]], 1, hli);
+    px(ctx, hd.x - 4, top + 2, hshine, 2, 1);
+  });
+  // Tiara dourada com gema.
+  stroke(ctx, [[hd.x - 7.6, hd.y - 3.2], [hd.x, hd.y - 5.4], [hd.x + 7.6, hd.y - 3.2]], 1.2, gs);
+  stroke(ctx, [[hd.x - 7.6, hd.y - 3.6], [hd.x, hd.y - 5.8], [hd.x + 7.6, hd.y - 3.6]], 0.6, gl);
+  px(ctx, Math.round(hd.x) - 1, Math.round(hd.y - 7), gb, 2, 1);
+  px(ctx, Math.round(hd.x) - 1, Math.round(hd.y - 6.6), R(spec.accent)[2], 2, 2);
+  px(ctx, Math.round(hd.x) - 1, Math.round(hd.y - 6.6), R(spec.accent)[4], 1, 1);
+  void gdp;
+  hairLocks(ctx, spec, r, sway);
+  ctx.restore();
+}
+
 function head(ctx, spec, r, sway) {
+  if (spec.face) { faceHead(ctx, spec, r, sway); return; }
   const { dir, head: hd } = r;
   const squint = r.pose.squint; const blink = r.pose.blink;
   const hx = Math.round(hd.x);
   ctx.save();
   if (r.pose.tilt) { ctx.translate(hd.x, hd.y + 6); ctx.rotate((r.pose.tilt * Math.PI) / 180); ctx.translate(-hd.x, -(hd.y + 6)); }
   if (spec.hair && dir !== 'down') hairBack(ctx, spec, r, sway);
-  plume(ctx, spec, r, [hd.x + (dir === 'right' ? -1 : 0), hd.y - 7.6], sway);
+  if (spec.plume) plume(ctx, spec, r, [hd.x + (dir === 'right' ? -1 : 0), hd.y - 7.6], sway);
   if (dir === 'down' && spec.hair) hairLocks(ctx, spec, r, sway);
   const shape = dir === 'right'
     ? poly(ctx, [[hd.x - 6.6, hd.y - 3], [hd.x - 3, hd.y - 8], [hd.x + 3, hd.y - 8.4], [hd.x + 6.6, hd.y - 4.6], [hd.x + 7.6, hd.y + 1.4], [hd.x + 7.4, hd.y + 5.6], [hd.x + 5.4, hd.y + 8.6], [hd.x - 1, hd.y + 8.8], [hd.x - 5.8, hd.y + 6.2], [hd.x - 7.4, hd.y + 2]], true)
@@ -293,6 +457,21 @@ function head(ctx, spec, r, sway) {
     const [dp, sh, , li, shine] = R(STEEL);
     stroke(ctx, dir === 'right' ? [[hd.x - 6.8, hd.y - 4.2], [hd.x, hd.y - 6.2], [hd.x + 6.6, hd.y - 3.4]] : [[hd.x - 7, hd.y - 3.6], [hd.x, hd.y - 5.8], [hd.x + 7, hd.y - 3.6]], 0.9, sh);
     px(ctx, hd.x - 4.4, hd.y - 6.4, shine, 3, 1);
+    // Elmo gravado: crista e testeira douradas, rebites e o reflexo vertical do aço polido.
+    if (dir === 'down') {
+      gilt(ctx, [[hd.x - 8, hd.y - 2.2], [hd.x, hd.y - 3.8], [hd.x + 8, hd.y - 2.2]], 1);
+      gilt(ctx, [[hd.x, hd.y - 9], [hd.x, hd.y - 4]], 1.3);
+      for (const sx of [-6, 5]) px(ctx, hx + sx, Math.round(hd.y + 3.6), R(GOLD)[2], 1, 1);
+      stroke(ctx, [[hd.x - 5.4, hd.y - 5], [hd.x - 5.8, hd.y - 2.6]], 1, shine);
+    } else if (dir === 'right') {
+      gilt(ctx, [[hd.x - 7, hd.y - 2], [hd.x, hd.y - 2.8], [hd.x + 7.4, hd.y - 2.6]], 1);
+      gilt(ctx, [[hd.x - 6, hd.y - 5.4], [hd.x - 1, hd.y - 8.4], [hd.x + 4, hd.y - 7.6]], 1.2);
+      px(ctx, hx - 4, Math.round(hd.y + 4), R(GOLD)[2], 1, 1);
+      stroke(ctx, [[hd.x - 4.8, hd.y - 4.6], [hd.x - 5.2, hd.y - 1.6]], 1, shine);
+    } else {
+      gilt(ctx, [[hd.x, hd.y - 9], [hd.x, hd.y + 8]], 1.2);
+      gilt(ctx, [[hd.x - 8, hd.y - 1.2], [hd.x, hd.y - 0.2], [hd.x + 8, hd.y - 1.2]], 1);
+    }
     const vy = Math.round(hd.y + 0.2);
     const slitH = blink ? 1 : squint ? 1 : 2;
     if (dir === 'down') {
@@ -312,11 +491,36 @@ function head(ctx, spec, r, sway) {
       stroke(ctx, [[hd.x - 2.4, hd.y - 3], [hd.x - 2.6, hd.y + 7]], 0.8, sh);
     } else {
       px(ctx, hd.x - 6.4, hd.y - 4, li, 1, 2);
-      stroke(ctx, [[hd.x, hd.y - 6], [hd.x, hd.y + 8]], 0.9, sh);
       for (const dx of [-4, 3]) for (let k = 0; k < 3; k += 1) px(ctx, hx + dx, hd.y - 1 + k * 3, sh, 1, 1);
     }
   });
   ctx.restore();
+}
+
+// Capa curta do cavaleiro: atrás do corpo (frente/perfil) ou cobrindo as costas.
+function cape(ctx, spec, r, sway) {
+  const { dir, sY } = r;
+  const [cdp, csh, , cli] = R(spec.cape);
+  const hem = 54 + r.bob * 0.4;
+  if (dir === 'right') {
+    const p = poly(ctx, [[CX - 3.6, sY - 0.6], [CX - 0.6, sY + 1.4], [CX - 4 - sway * 0.8, hem], [CX - 9.6 - sway * 1.6, hem - 1.6], [CX - 8.6 - sway * 0.6, sY + 8], [CX - 6.4, sY + 1]], true);
+    C(ctx, p, spec.cape, { d: [1.4, 1], h: [0.8, 0.6] });
+    inside(ctx, p, () => { stroke(ctx, [[CX - 4.4, sY + 4], [CX - 7.4 - sway, hem - 1]], 0.9, csh); stroke(ctx, [[CX - 2.6, sY + 3], [CX - 4.6 - sway * 0.8, hem - 1]], 0.7, cli); });
+    return;
+  }
+  if (dir === 'down') {
+    const p = poly(ctx, [[CX - 9, sY + 1], [CX + 9, sY + 1], [CX + 11.6 + sway * 0.5, hem], [CX - 11.6 + sway * 0.5, hem]], true);
+    C(ctx, p, csh, { d: [1, 0.8], h: [0.6, 0.5] });
+    inside(ctx, p, () => { for (const f of [-9.6, 9.4]) stroke(ctx, [[CX + f * 0.9, sY + 6], [CX + f + sway * 0.4, hem - 1]], 0.8, cdp); });
+    return;
+  }
+  const p = poly(ctx, [[CX - 9 + r.ux, sY - 0.4], [CX + 9 + r.ux, sY - 0.4], [CX + 10.8 + sway * 0.5, hem], [CX + 4 + sway * 0.5, hem + 1.2], [CX - 3 + sway * 0.5, hem + 0.4], [CX - 10.8 + sway * 0.5, hem]], true);
+  C(ctx, p, spec.cape, { d: [1.6, 1], h: [1, 0.6] });
+  inside(ctx, p, () => {
+    for (const f of [-6, -2, 2.4, 6.4]) stroke(ctx, [[CX + f * 0.6 + r.ux, sY + 3], [CX + f + sway * 0.5, hem - 0.6]], 0.9, csh);
+    for (const f of [-4, 0.2, 4.4]) stroke(ctx, [[CX + f * 0.6 + r.ux, sY + 4], [CX + f + sway * 0.5, hem - 2]], 0.6, cli);
+    ctx.fillStyle = R(GOLD)[2]; ctx.fillRect(0, Math.round(sY), 56, 1);
+  });
 }
 
 // ---------------------------------------------------------------- montagem
@@ -336,6 +540,7 @@ export function paintHero(ctx, spec, { dir = 'down', flip = false, col = 4, hand
   else freeH = col <= 3 ? [CX + farSign * 10.8 + r.ux * 0.6, 40 + (col === 0 ? -0.5 : col === 2 ? 0.5 : 0)] : [CX + farSign * fr[0] + r.ux * 0.6, fr[1]];
 
   if (side) {
+    if (spec.cape) cape(ctx, spec, r, sway);
     arm(ctx, spec, r, farS, freeH, true);
     const L = legsSide(ctx, r);
     L.far();
@@ -346,9 +551,12 @@ export function paintHero(ctx, spec, { dir = 'down', flip = false, col = 4, hand
     if (!layerBack) arm(ctx, spec, r, nearS, hand, false);
     pauldron(ctx, spec, r, CX + 0.8 + r.ux, false);
   } else {
+    if (spec.face && dir === 'down') hairBehindFront(ctx, spec, r, sway);
+    if (spec.cape && dir === 'down') cape(ctx, spec, r, sway);
     if (layerBack) arm(ctx, spec, r, nearS, hand, false);
     legsFront(ctx, r);
     body(ctx, spec, r);
+    if (spec.cape && dir === 'up') cape(ctx, spec, r, sway);
     if (!layerBack) arm(ctx, spec, r, nearS, hand, false);
     arm(ctx, spec, r, farS, freeH, false);
     shield(ctx, spec, freeH, dir === 'up');

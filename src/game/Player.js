@@ -264,6 +264,17 @@ export class Player extends Phaser.GameObjects.Container {
     return this.progression?.level ?? 1;
   }
 
+  /** Altura do topo da cabeça no mundo (as folhas 56x64 têm ~4 px vazios em cima). Barras e textos vão acima. */
+  headTopY() {
+    const s = this.sprite;
+    return this.y + (this.animator?.baseY ?? s.y) - s.displayOriginY * s.scaleY + 4 * s.scaleY;
+  }
+
+  /** Linha dos pés no mundo (base do quadro, onde o contorno das botas termina). */
+  feetY() {
+    return this.y + (this.animator?.baseY ?? this.sprite.y) + 8.2;
+  }
+
   /** Troca o desenho do herói (cavaleiro ou heroína); as animações são as mesmas. */
   setGender(gender) {
     this.gender = normalizeGender(gender);

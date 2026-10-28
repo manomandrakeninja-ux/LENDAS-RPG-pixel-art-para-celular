@@ -323,8 +323,9 @@ function cobra(ctx, f, o) {
 }
 
 // ---------------------------------------------------------------- Escaravelho sagrado
-const SCB = ['#0e071b', '#0c2e44', '#134c4c', '#1e6f50', '#33984b', '#99e65f'];
-const SCB_FAR = ['#0e071b', '#0e071b', '#0c2e44', '#134c4c', '#1e6f50'];
+// Fase 22c: escaravelho sagrado de lápis-lazúli e ouro (o verde lia como besouro comum), com o disco solar.
+const SCB = ['#0e071b', '#03193f', '#00396d', '#0069aa', '#0098dc', '#00cdf9'];
+const SCB_FAR = ['#0e071b', '#0e071b', '#03193f', '#00396d', '#0069aa'];
 const GOLD = ['#5d2c28', '#8a4836', '#edab50', '#ffc825', '#ffeb57'];
 
 function beetleLeg(ctx, base, a, far, at) {
@@ -375,8 +376,8 @@ function scarab(ctx, f, o) {
   // Tórax (pronoto) com borda dourada.
   const thor = P(ctx, 'M38,38 C40,32 47,31 50.4,35 C52.6,38 53,44 51,48 C48,51 41,51 38.6,48 C37,45 37,41 38,38 Z');
   shade(ctx, thor, SCB, [37, 31, 16, 20], { lx: 0.35, ly: 0.15, ao: 0.45 });
-  stroke(ctx, [[39.6, 35.6], [44, 32.6], [49, 34]], 1, '#99e65f');
-  glint(ctx, 41.6, 37, 2.4, '#d3fc7e', { lw: 0.9, angle: -0.7 });
+  stroke(ctx, [[39.6, 35.6], [44, 32.6], [49, 34]], 1.2, '#ffc825');
+  glint(ctx, 41.6, 37, 2.4, '#ffffff', { lw: 0.9, angle: -0.7 });
   // Élitros: grande domo metálico.
   const lift = at ? -2.4 : 0;
   const shell = P(ctx, `M10,47 C8,36 15,${27 + lift} 26,${26 + lift} C35,${25.4 + lift} 41,30 42,38 C42.6,44 41,49 36,50.6 L14,50.6 C11.4,50.4 10.2,49 10,47 Z`);
@@ -384,8 +385,11 @@ function scarab(ctx, f, o) {
   inside(ctx, shell, () => {
     // Sulcos longitudinais e iridescência azul.
     for (const k of [0, 1, 2]) stroke(ctx, [[12 + k * 2, 46 - k * 5], [22, 33 - k * 3 + lift], [38, 36 - k * 4 + lift]], 0.8, '#0c2e44');
-    stroke(ctx, [[15, 36 + lift], [24, 30 + lift], [34, 30.4 + lift]], 1.6, '#99e65f');
-    stroke(ctx, [[18, 33.6 + lift], [24, 31 + lift]], 1, '#d3fc7e');
+    stroke(ctx, [[15, 36 + lift], [24, 30 + lift], [34, 30.4 + lift]], 1.6, '#00cdf9');
+    stroke(ctx, [[18, 33.6 + lift], [24, 31 + lift]], 1, '#ffffff');
+    // Faixas de ouro (élitros de joia).
+    stroke(ctx, [[26, 27 + lift], [26, 50]], 1.4, '#edab50');
+    stroke(ctx, [[25.6, 27 + lift], [25.6, 50]], 0.6, '#ffeb57');
     stroke(ctx, [[30, 44], [37, 41], [40, 36]], 1.3, hexA('#00cdf9', 0.65));
     stroke(ctx, [[12, 44], [20, 45.6]], 1.1, hexA('#0098dc', 0.6));
     // Hieróglifos dourados gravados.
@@ -399,6 +403,13 @@ function scarab(ctx, f, o) {
   stroke(ctx, [[11, 48.6], [24, 50.4], [38, 49.4]], 1.8, '#8a4836');
   stroke(ctx, [[11, 48], [24, 49.6], [38, 48.6]], 1, '#ffc825');
   glint(ctx, 22, 30.4 + lift, 3, '#ffffff', { lw: 1, angle: -0.25 });
+  // Disco solar flutuando sobre o casco (marca do escaravelho sagrado).
+  {
+    const sy = 15 + lift + (at ? -2 : Math.sin(ph) * 0.8);
+    glow(ctx, 26, sy, 9, '#ffa214', { core: '#ffeb57', alpha: 0.75 });
+    shade(ctx, ell(ctx, 26, sy, 5.4, 5.4), ['#8a4836', '#edab50', '#ffc825', '#ffeb57'], [20.6, sy - 5.4, 10.8, 10.8], { lx: 0.3, ly: 0.3, ao: 0.2 });
+    stroke(ctx, [[22.6, sy + 5], [26, sy + 6.6], [29.4, sy + 5]], 1, '#8a4836');
+  }
   ctx.restore();
   // Patas de cá.
   for (let i = 0; i < 3; i += 1) beetleLeg(ctx, [19 + i * 10, 49], at ? 0.2 : Math.sin(ph + i * 2.1 + Math.PI) * 0.6, false, at);

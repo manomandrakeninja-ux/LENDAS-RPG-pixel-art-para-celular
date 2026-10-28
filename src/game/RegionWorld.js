@@ -510,7 +510,11 @@ export class RegionWorld {
     const exit = this.roomPoint(room, room.plan.exit);
     const x = exit.x + TILE;
     const y = exit.y;
-    const sprite = this.scene.add.image(x, y, 'biome', 'boss-chest').setOrigin(0.5, 0.85).setDepth(y);
+    // Fase 22c: o baú de tesouro do chefe usa o baú pintado (mesmo das coletas e dos monstros), maior.
+    const painted = this.scene.textures.exists('harvest-structure-chest');
+    const sprite = painted
+      ? this.scene.add.image(x, y, 'harvest-structure-chest').setOrigin(0.5, 0.88).setScale(1.6).setDepth(y)
+      : this.scene.add.image(x, y, 'biome', 'boss-chest').setOrigin(0.5, 0.85).setDepth(y);
     this.scene.hudCamera?.ignore(sprite);
     this.features.push({ type: 'chest', cave, x, y, sprite, label: 'ABRIR TESOURO' });
   }

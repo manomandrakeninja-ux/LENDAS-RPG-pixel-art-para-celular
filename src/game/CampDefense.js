@@ -468,7 +468,10 @@ export class CampDefense {
       const length = Math.hypot(dx, dy);
       const ux = dx / length;
       const uy = dy / length;
-      const step = Math.min(Math.abs(ux) > 0.01 ? 13 / Math.abs(ux) : Infinity, Math.abs(uy) > 0.01 ? 7 / Math.abs(uy) : Infinity);
+      // Diagonal (Fase 22c): blocos a cada 3 px de altura, bem sobrepostos, para a muralha subir em rampa
+      // contínua em vez dos degraus de 7 px de antes.
+      const diagonal = Math.abs(ux) > 0.3 && Math.abs(uy) > 0.3;
+      const step = diagonal ? 3 / Math.abs(uy) : Math.min(Math.abs(ux) > 0.01 ? 13 / Math.abs(ux) : Infinity, Math.abs(uy) > 0.01 ? 7 / Math.abs(uy) : Infinity);
       for (let along = 0; along <= length; along += step) {
         const x = from.x + ux * along;
         const y = from.y + uy * along;

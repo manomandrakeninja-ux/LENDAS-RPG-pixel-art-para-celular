@@ -3,12 +3,15 @@
 // - Frente (baixo): o sprite extraído, pixel a pixel, sem retoque de rosto. Só sai o fundo branco preso
 //   entre as pernas e a sombra do chão do Espadachim, que são fundo da referência.
 // - Lados: a Guerreira usa a figura de lado da referência (o rosto já vem no estilo da frente); o
-//   Espadachim usa a frente com a cabeça virada 1 px para o lado (mesmo rosto, mesmo cabelo).
+//   Espadachim tem um perfil próprio desenhado pixel a pixel (back-maps.mjs, SWORDSMAN_SIDE).
+// - Esquerda: não é só o espelho. A luz continua vindo do alto à esquerda (relightLeft): a borda da
+//   silhueta virada para a esquerda (rosto, peito, frente das pernas) ganha o tom de luz da própria rampa
+//   e a borda das costas, que no espelho ficaria iluminada, desce para a sombra.
 // - Costas: desenhadas pixel a pixel em back-maps.mjs, com a paleta da frente.
 // - Cores da capa: só os tons de vinho mudam; rosto, cabelo, pele e botas ficam iguais ao alvo.
 // - Andar: cabeça e tronco ficam iguais; só as pernas (e a barra da capa, nas costas) se mexem.
 
-import { SWORDSMAN_BACK, WARRIOR_BACK, SWORDSMAN_PALETTE, WARRIOR_PALETTE } from './back-maps.mjs';
+import { SWORDSMAN_BACK, SWORDSMAN_SIDE, WARRIOR_BACK, SWORDSMAN_PALETTE, WARRIOR_PALETTE } from './back-maps.mjs';
 import { cleanSwordsmanFront, cleanSwordsmanBack, cleanWarriorFront, cleanWarriorSide, cleanWarriorBack } from './clean.mjs';
 import { buildPoses, drawLimb } from './poses.mjs';
 import { SKIN_CFG } from './skin-cfg.mjs';
@@ -104,14 +107,51 @@ export function compose(parts, k) {
     for (let c = 4; c <= 11; c += 1) frames.push(poses[c]);
     const bob = [-1, 0, -1, 1];
     const hp = [0, 1, 2, 3].map((f) => [ox + cfg.hang[0], oy + cfg.hang[1] + bob[f]]).concat([4, 5, 6, 7, 8, 9, 10, 11].map((c) => hands[c]));
-    const grip = [ox + cfg.J[0] - cfg.outward * 2, oy + cfg.neckY];
-    return { frames, hands: hp, grip };
+    // backGrip (coordenadas do sprite): cabo da arma nas costas onde ele aparece (ex.: acima do ombro, fora do cabelo).
+    const grip = cfg.backGrip ? [ox + cfg.backGrip[0], oy + cfg.backGrip[1]] : [ox + cfg.J[0] - cfg.outward * 2, oy + cfg.neckY];
+    return { frames, hands: hp, grip, backAngle: cfg.backAngle };
   }
-  const flipSet = (set) => ({ frames: set.frames.map(mirrorFrame), hands: set.hands.map(([x, y]) => [FW - 1 - x, y]), grip: [FW - 1 - set.grip[0], set.grip[1]] });
+  /** Relê a luz do espelho: luz do alto à esquerda (rampas tiradas das cores do próprio quadro). */
+  function relightLeft(frame) {
+    const out = clone(frame);
+    const L = (c) => 0.299 * c[0] + 0.587 * c[1] + 0.114 * c[2];
+    const chrom = (c) => { const t = c[0] + c[1] + c[2] + 1; return [c[0] / t, c[1] / t, c[2] / t]; };
+    const list = [];
+    const seen = new Set();
+    each(frame, (x, y, c) => { const h = hexOf(c); if (c[3] > 127 && !seen.has(h)) { seen.add(h); list.push(c); } });
+    const memo = new Map();
+    const step = (c, dir) => {
+      const key = hexOf(c) + dir;
+      if (memo.has(key)) return memo.get(key);
+      const l = L(c); const ch = chrom(c);
+      let best = c; let bl = dir > 0 ? Infinity : -Infinity;
+      for (const d of list) {
+        const ld = L(d);
+        if (dir > 0 ? (ld <= l + 8 || ld > l + 80) : (ld >= l - 8 || ld < l - 80)) continue;
+        const cd = chrom(d);
+        if (Math.hypot(cd[0] - ch[0], cd[1] - ch[1], cd[2] - ch[2]) > 0.07) continue;
+        if (dir > 0 ? ld < bl : ld > bl) { bl = ld; best = d; }
+      }
+      memo.set(key, best);
+      return best;
+    };
+    const solid = (x, y) => x >= 0 && y >= 0 && x < frame.w && y < frame.h && px(frame, x, y)[3] > 127;
+    const dark = (c) => L(c) < 30;
+    // Borda de verdade: vizinho vazio, ou contorno escuro com o vazio logo depois.
+    const edge = (x, y, dx) => !solid(x + dx, y) || (dark(px(frame, x + dx, y)) && !solid(x + 2 * dx, y));
+    each(frame, (x, y, c) => {
+      if (c[3] < 128 || dark(c)) return;
+      const le = edge(x, y, -1); const re = edge(x, y, 1);
+      if (le && !re) put(out, x, y, step(c, 1));
+      else if (re && !le) put(out, x, y, step(c, -1));
+    });
+    return out;
+  }
+  const flipSet = (set) => ({ frames: set.frames.map((f) => relightLeft(mirrorFrame(f))), hands: set.hands.map(([x, y]) => [FW - 1 - x, y]), grip: [FW - 1 - set.grip[0], set.grip[1]] });
   const rigOf = (id, sets) => {
     const out = {};
     for (const [dir, set] of Object.entries(sets)) {
-      out[dir] = { hands: Object.fromEntries(set.hands.map((h, i) => [i, h])), back: { grip: set.grip } };
+      out[dir] = { hands: Object.fromEntries(set.hands.map((h, i) => [i, h])), back: set.backAngle != null ? { grip: set.grip, angle: set.backAngle } : { grip: set.grip } };
     }
     rigs[id] = out;
   };
@@ -129,8 +169,12 @@ export function compose(parts, k) {
     const shadow = new Set(['#6b6c83', '#ffffff']);
     each(raw, (x, y, c) => { if (c[3] >= 128 && y >= raw.h - 2 && shadow.has(hexOf(c))) put(raw, x, y, [0, 0, 0, 0]); });
     const front = cleanSwordsmanFront(raw, { blank, put, px, clone });
-    const side = clone(front);
-    each(front, (x, y, c) => { if (y <= 13 && x >= 14) put(side, x, y, px(front, x - 1, y)); });
+    // Perfil próprio; sem o braço, o tronco/cinto atrás dele é continuado com a cor da linha logo à frente.
+    const side = fromMap(SWORDSMAN_SIDE, SWORDSMAN_PALETTE);
+    const sideArmless = clone(side);
+    for (let y = C.right.armRows[0]; y <= C.right.armRows[1]; y += 1) {
+      for (let x = C.right.armCols[0]; x <= C.right.armCols[1]; x += 1) put(sideArmless, x, y, px(side, C.right.armCols[1] + 2, y));
+    }
     const back = cleanSwordsmanBack(front, fromMap(SWORDSMAN_BACK, SWORDSMAN_PALETTE), { blank, put, px, clone });
     const mk = (img, cfg) => {
       const armless = clone(img);
@@ -139,7 +183,7 @@ export function compose(parts, k) {
       return armless;
     };
     const down = dirSet(front, mk(front, C.down), C.legs.down, C.down);
-    const right = dirSet(side, mk(side, C.right), C.legs.down, C.right);
+    const right = dirSet(side, sideArmless, C.legs.right, C.right);
     const up = dirSet(back, mk(back, C.up), C.legs.up, C.up);
     rigOf('player-swordsman', finish('swordsman', down, right, up));
     dbg('c-sw-front', front); dbg('c-sw-back', back);

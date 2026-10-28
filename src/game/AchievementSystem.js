@@ -95,7 +95,7 @@ export class AchievementSystem {
   }
 
   update() {
-    if (this.titleText && this.scene.player) this.titleText.setPosition(this.scene.player.x, this.scene.player.y + 14);
+    if (this.titleText && this.scene.player) this.titleText.setPosition(this.scene.player.x, Math.round((this.scene.player.feetY?.() ?? this.scene.player.y + 6) + 2));
   }
 
   serialize() { return this.state.serialize(); }

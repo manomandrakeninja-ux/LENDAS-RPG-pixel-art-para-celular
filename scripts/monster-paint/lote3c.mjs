@@ -136,6 +136,20 @@ function boneWyrm(ctx, f, o) {
   // Brilho espectral verde dentro das costelas.
   fill(ctx, P(ctx, `M${s[12][0]},${s[12][1]} C${s[12][0] - 4},${s[12][1] + 8} ${s[20][0] - 4},${s[20][1] + 14} ${s[20][0] + 2},${s[20][1] + 8} Z`), hexA('#134c4c', 0.9));
   glow(ctx, 30, 46, 10, '#33984b', { core: '#5ac54f', alpha: 0.7 });
+  // Fase 22c: asa de serpe esquelética (ossos dos dedos + membrana rasgada) para ler como "serpe".
+  {
+    const [sx, sy] = s[19];
+    const flap = at ? -3 : Math.sin(ph) * 2.2;
+    const tips = [[sx - 22, sy - 16 + flap], [sx - 13, sy - 27 + flap], [sx - 2, sy - 30 + flap * 0.6]];
+    const elbowW = [sx - 6, sy - 15 + flap * 0.5];
+    fill(ctx, P(ctx, `M${sx},${sy} L${elbowW[0]},${elbowW[1]} L${tips[0][0]},${tips[0][1]} L${sx - 17},${sy - 7} L${sx - 12},${sy - 9} L${sx - 9},${sy - 3} Z`), hexA('#2a2f4e', 0.85));
+    fill(ctx, P(ctx, `M${elbowW[0]},${elbowW[1]} L${tips[0][0]},${tips[0][1]} L${tips[1][0]},${tips[1][1]} L${tips[2][0]},${tips[2][1]} L${sx - 1},${sy - 12} Z`), hexA('#134c4c', 0.8));
+    for (const [x, y] of [[sx - 14, sy - 14 + flap], [sx - 8, sy - 20 + flap]]) fill(ctx, ell(ctx, x, y, 1.4, 1), hexA('#0e071b', 0.9));
+    stroke(ctx, [[sx, sy], elbowW], 2.2, '#2d2e25');
+    stroke(ctx, [[sx, sy], elbowW], 1.4, '#f6ca9f');
+    for (const t of tips) { stroke(ctx, [elbowW, t], 1.5, '#2d2e25'); stroke(ctx, [elbowW, t], 0.9, '#cba36f'); }
+    fill(ctx, ell(ctx, elbowW[0], elbowW[1], 1.4, 1.4), '#f6ca9f');
+  }
   // Costelas de lá.
   for (let i = 0; i < 4; i += 1) {
     const [x, y] = s[11 + i * 3];
@@ -277,10 +291,23 @@ function cinderGiant(ctx, f, o) {
   ctx.translate(hand[0], hand[1]);
   ctx.rotate(ang);
   shade(ctx, P(ctx, 'M-1.8,6 L1.8,6 L2.6,-16 L-2.6,-16 Z'), ['#1c121c', '#391f21', '#5d2c28', '#8a4836'], [-2.6, -16, 5.2, 22], { lx: 0.2, ao: 0 });
-  const club = P(ctx, 'M-5,-14 C-7,-20 -6,-28 0,-30 C6,-28 7,-20 5,-14 C3,-12 -3,-12 -5,-14 Z');
-  vol(ctx, o, club, ASHR, [-7, -30, 14, 18], { lx: 0.3, ly: 0.2, ao: 0.3, rim: '#ffa214' });
-  inside(ctx, club, () => { glow(ctx, 0, -26, 6, '#ff5000', { alpha: 0.7 }); lavaCrack(ctx, [[-3, -18], [0, -23], [-1, -28]], 1); lavaCrack(ctx, [[3, -16], [3.4, -22]], 0.8); });
-  for (const [x, y] of [[-6, -22], [6, -21], [0, -30.4], [-4.6, -27], [4.6, -27]]) shade(ctx, ell(ctx, x, y, 1.5, 1.5), ['#1a1932', '#424c6e', '#92a1b9'], [x - 1.5, y - 1.5, 3, 3], { ao: 0 });
+  // Fase 22c: clava de basalto (sem chama na ponta, que lia como tocha): tora de pedra larga e reta,
+  // duas cintas de ferro rebitadas e cravos de ferro saindo dos lados e do topo.
+  for (const [x, y, dx] of [[-6.4, -17, -1], [-6.6, -24, -1], [6.4, -18.6, 1], [6.6, -25.6, 1]]) {
+    shade(ctx, poly(ctx, [[x, y - 1.6], [x + dx * 3.6, y], [x, y + 1.6]]), ['#1a1932', '#424c6e', '#92a1b9', '#c7cfdd'], [x - 4, y - 2, 8, 4], { ao: 0 });
+  }
+  for (const x of [-3, 2.6]) shade(ctx, poly(ctx, [[x - 1.6, -31], [x, -35], [x + 1.6, -31]]), ['#1a1932', '#424c6e', '#92a1b9', '#c7cfdd'], [x - 2, -35, 4, 4], { ao: 0 });
+  const club = P(ctx, 'M-4,-12 L-6.2,-15 L-6.8,-29 C-6.8,-31 -5,-32 0,-32 C5,-32 6.8,-31 6.8,-29 L6.2,-15 L4,-12 Z');
+  vol(ctx, o, club, ['#1c121c', '#3d3d3d', '#5b5b5b', '#858585', '#b4b4b4'], [-7, -32, 14, 20], { lx: 0.3, ly: 0.2, ao: 0.35, rim: '#c7cfdd' });
+  inside(ctx, club, () => {
+    for (const y of [-27.6, -18.6]) {
+      fill(ctx, P(ctx, `M-8,${y} L8,${y - 0.6} L8,${y + 2.4} L-8,${y + 3} Z`), '#424c6e');
+      stroke(ctx, [[-8, y + 0.4], [8, y - 0.2]], 0.8, '#92a1b9');
+      for (const x of [-4, 0, 4]) fill(ctx, ell(ctx, x, y + 1.3, 0.8, 0.8), '#c7cfdd');
+    }
+    stroke(ctx, [[-2, -14], [-3, -22]], 0.8, '#1c121c');
+    stroke(ctx, [[3, -21], [2, -25]], 0.8, '#1c121c');
+  });
   ctx.restore();
   if (at) for (const [x, y] of [[44, 2], [58, 4], [61, 14], [40, 6]]) ember(ctx, x, y, 1);
   // Braço de cá.

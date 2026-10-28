@@ -222,8 +222,9 @@ function fireElemental(ctx, f, o) {
 }
 
 // ---------------------------------------------------------------- Cavaleiro de obsidiana
-const OBS = ['#0e071b', '#1a1932', '#2a2f4e', '#3b1443', '#622461', '#93388f'];
-const OBS_FAR = ['#0e071b', '#0e071b', '#1a1932', '#2a2f4e', '#3b1443'];
+// Fase 22c: obsidiana um degrau mais clara (lia como mancha escura, sumia à noite na Brasa) + fendas de lava.
+const OBS = ['#0e071b', '#2a2f4e', '#3b1443', '#622461', '#93388f', '#ca52c9'];
+const OBS_FAR = ['#0e071b', '#1a1932', '#2a2f4e', '#3b1443', '#622461'];
 const CAPE = ['#3b1443', '#571c27', '#891e2b', '#c42430'];
 
 /** Faceta vítrea: faixa de brilho reto (vidro vulcânico). */
@@ -255,6 +256,7 @@ function obsidianKnight(ctx, f, o) {
     shade(ctx, boot, ramp, [foot[0] - 4, foot[1] - 4, 11, 5], { ao: 0.2 });
     fill(ctx, poly(ctx, [[knee[0] - 3, knee[1] - 2], [knee[0] + 3.6, knee[1] - 3], [knee[0] + 2, knee[1] + 2], [knee[0] - 2.4, knee[1] + 1.6]]), ramp === OBS ? '#622461' : '#2a2f4e');
     if (ramp === OBS) sheen(ctx, [knee[0] - 1.6, knee[1] - 1.4], [knee[0] + 1.6, knee[1] - 2], 0.9);
+    lavaCrack(ctx, [[knee[0] - 1, knee[1] + 3], [foot[0], foot[1] - 4]], 0.8);
   }
   // Braço de lá com escudo de vidro vulcânico.
   const sh = poly(ctx, [[10, 24], [19, 22], [21, 33], [15, 42], [9, 34]]);
@@ -269,8 +271,11 @@ function obsidianKnight(ctx, f, o) {
     stroke(ctx, [[19, 27.4], [33, 30], [45, 27]], 1, '#0e071b');
     sheen(ctx, [22, 20.6], [28, 27], 1.3);
     sheen(ctx, [36, 31.4], [40, 36], 0.9);
+    // Fendas de lava entre as facetas (brilham no escuro).
+    lavaCrack(ctx, [[21, 23], [25, 26], [24, 31], [27, 36]], 1);
+    lavaCrack(ctx, [[42, 21], [39, 25], [41, 30]], 0.9);
     // Runa vermelha incandescente.
-    glow(ctx, 32, 33.6, 4, '#ea323c', { alpha: 0.7 });
+    glow(ctx, 32, 33.6, 5, '#ff5000', { alpha: 0.85 });
     stroke(ctx, [[30.4, 31.6], [32, 35.6], [33.6, 31.6]], 1, '#f68187');
   });
   // Cinto e saiote de placas.

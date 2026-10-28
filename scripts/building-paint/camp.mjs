@@ -609,6 +609,23 @@ function fence(ctx) {
   grassTufts(ctx, 0, 16, 32, { seed: 3, density: 0.4, flowers: 0.05 });
 }
 
+// Fase 22c: cerca correndo de norte a sul (lados do curral), vista de cima: mourões um atrás do outro e as
+// travessas como duas tábuas em pé ligando os mourões (antes era a cerca horizontal girada 90°).
+function fenceV(ctx) {
+  const P = WOOD;
+  // Duas travessas em pé (alta e baixa) correndo para o fundo, ao lado dos mourões.
+  for (const [x, tone] of [[6, P.tones[0]], [8, P.dark]]) {
+    rect(ctx, x, 4, 2, 25, tone); rect(ctx, x, 4, 1, 25, x === 6 ? P.light : P.tones[0]);
+    for (let y = 7; y < 28; y += 5) px(ctx, x + 1, y, P.dark);
+  }
+  for (const y0 of [2, 19]) {
+    rect(ctx, 3, y0, 3, 10, P.tones[0]); rect(ctx, 3, y0, 1, 10, P.light); rect(ctx, 5, y0, 1, 10, P.dark);
+    rect(ctx, 3, y0, 3, 1, P.hi); px(ctx, 4, y0 + 4, C.g1);
+    rect(ctx, 3, y0 + 8, 3, 2, 'rgba(26,25,50,0.4)');
+  }
+  grassTufts(ctx, 0, 32, 12, { seed: 4, density: 0.5, flowers: 0.05 });
+}
+
 function lamp(ctx) {
   // Poste de ferro com braço, lanterna acesa e base de pedra.
   const cx = 10;
@@ -651,5 +668,6 @@ export const CAMP_PIECES = {
   campfire4: { w: 32, h: 32, frames: 4, shadow: [16, 28, 13, 3], paint: (ctx, f) => campfire(ctx, f, { w: 32, h: 32, base: 29, rx: 10, ry: 4.2, n: 11, flameH: 19, flameW: 5.6, logsN: 4, size: 2.3 }) },
   campfire8: { w: 40, h: 40, frames: 4, shadow: [20, 36, 17, 3.5], paint: (ctx, f) => campfire(ctx, f, { w: 40, h: 40, base: 36, rx: 11, ry: 4.6, n: 12, flameH: 23, flameW: 6.4, logsN: 5, size: 2.6, extra: (c, fr) => { brazier(c, 4, 38, fr, 0.9); brazier(c, 36, 38, fr, 0.9); } }) },
   fence: { w: 32, h: 16, paint: fence },
+  'fence-v': { w: 12, h: 32, paint: fenceV },
   lamp: { w: 20, h: 36, shadow: [10, 34, 5, 1.5], paint: lamp }
 };

@@ -1077,6 +1077,11 @@ const buildingEntries = [
     }
   })),
   {
+    // Fase 22c: lado do curral (cerca norte-sul); a arte vem pintada de bake-buildings (camp.mjs, fenceV).
+    name: 'fence-v', width: 12, height: 32,
+    draw: (canvas) => { canvas.rect(4, 2, 4, 28, WOOD[2]); }
+  },
+  {
     name: 'fence', width: 32, height: 16,
     draw: (canvas) => {
       canvas.shadow(16, 15, 15, 1.5, 90);

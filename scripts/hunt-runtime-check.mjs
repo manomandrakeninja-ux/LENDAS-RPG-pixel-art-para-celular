@@ -95,8 +95,13 @@ await runInChrome({ name: 'hunt', port: 9394, width: 1280, height: 800 }, async 
     scene.player.setPosition(3950, 2850);
     scene.player.paralyze(1000);
     const frozen = scene.player.paralyzedMs;
-    await new Promise((resolve) => setTimeout(resolve, 1300));
-    const freed = scene.player.paralyzedMs;
+    // A paralisia corre no delta do jogo, que o Phaser suaviza e corta (quadros > 200 ms, aba sem foco):
+    // com a máquina carregada, 1,3 s de relógio podiam ser < 1 s de jogo. Espera pelo jogo, com limite.
+    const t0 = performance.now();
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    const stillFrozen = scene.player.paralyzedMs > 0;
+    while (scene.player.paralyzedMs > 0 && performance.now() - t0 < 8000) await new Promise((resolve) => setTimeout(resolve, 50));
+    const freed = stillFrozen ? scene.player.paralyzedMs : -1;
     const orc = scene.enemyDirector.addEnemy('orc', 3000, 3000, {});
     const calm = { speed: orc.speed, damage: orc.currentDamage, enraged: orc.enraged };
     orc.health = Math.floor(orc.maxHealth * 0.25);
@@ -119,7 +124,10 @@ await runInChrome({ name: 'hunt', port: 9394, width: 1280, height: 800 }, async 
     scene.equipGear(scene.gear.bag[scene.gear.bag.length - 1].uid);
     const equipped = player.hasShield;
     const first = hit(a); const second = hit(b); const third = hit(c);
-    await new Promise((resolve) => setTimeout(resolve, 1100));
+    // A janela do escudo usa scene.time.now (atualizado só a cada quadro): com quadros lentos, 1,1 s de
+    // relógio podia não passar de 1 s no jogo. Espera o relógio do jogo andar 1,05 s.
+    const w0 = scene.time.now;
+    while (scene.time.now - w0 < 1050) await new Promise((resolve) => setTimeout(resolve, 50));
     const nextWindow = hit(c);
     return { equipped, noShield, first, second, third, nextWindow };
   });

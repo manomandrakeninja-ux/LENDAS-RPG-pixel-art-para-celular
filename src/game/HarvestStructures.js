@@ -11,6 +11,8 @@ import { quantizePixels } from '../art/palette.js';
 
 const TEXTURE_SIZE = 32;
 const TEXTURE_KEY_PREFIX = 'harvest-structure-';
+/** Escala dos objetos de coleta no chão (baú, arbusto de ervas, cogumelos, pedras e veios). */
+export const GROUND_SCALE = 1.3;
 
 const STONE = ['#3f454a', '#5d6569', '#7f878a', '#a7aeab', '#cfd0c4'];
 const WOOD = ['#4a2f1e', '#6e4628', '#94633a', '#b98450'];
@@ -227,8 +229,10 @@ export class HarvestStructures {
     )
       .setOrigin(0.5, 0.9)
       .setDepth(structure.y + 8);
-    if (definition.poi) node.setScale(1.45);
-    const hintY = structure.y - (structure.type === 'tree' ? 42 : 31);
+    // Fase 22c: baús, arbustos, cogumelos e pedras na escala do herói 56x64 (antes eram do cavaleiro 32x40).
+    const scale = definition.poi ? 1.45 : structure.type === 'tree' ? 1 : GROUND_SCALE;
+    node.setScale(scale);
+    const hintY = structure.y - (structure.type === 'tree' ? 42 : Math.round(31 * scale));
     const hint = definition.poi ? null : this.scene.add.text(structure.x, hintY, 'E', {
       fontFamily: 'Press Start 2P', fontSize: '8px', color: '#fff3cf',
       backgroundColor: '#26392dcc', padding: { x: 4, y: 3 }

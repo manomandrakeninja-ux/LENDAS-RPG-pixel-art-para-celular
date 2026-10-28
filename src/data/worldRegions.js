@@ -193,7 +193,7 @@ export const CAVES = Object.freeze([
   },
   {
     id: 'coracao-vulcao', name: 'Coração do Vulcão', region: 'brasa', entrance: { x: 5180, y: 4640 }, floors: 3, theme: 'fire',
-    monsters: ['imp', 'salamander', 'demon'], boss: 'dragon'
+    monsters: ['imp', 'salamander', 'demon', 'fireElemental', 'obsidianKnight'], boss: 'dragon'
   },
   {
     id: 'abismo-brasa', name: 'Abismo de Brasa', region: 'brasa', entrance: { x: 5900, y: 4700 }, floors: 4, theme: 'fire',

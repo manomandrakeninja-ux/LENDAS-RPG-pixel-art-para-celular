@@ -32,7 +32,7 @@ export class ExperiencePickups {
     if (xp <= 0) return null;
     const image = this.scene.add.image(x, y - 5, PICKUP_TEXTURE)
       .setDepth(y + 12)
-      .setScale(1.25);
+      .setScale(1.5);
     const label = this.scene.add.text(x, y - 18, `${xp} XP`, {
       fontFamily: 'Press Start 2P',
       fontSize: '8px',

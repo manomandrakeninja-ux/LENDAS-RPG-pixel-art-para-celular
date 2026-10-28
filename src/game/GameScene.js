@@ -1709,7 +1709,8 @@ export class GameScene extends Phaser.Scene {
     const ratio = Phaser.Math.Clamp(mining.elapsed / mining.duration, 0, 1);
     const width = 40;
     const x = Math.round(this.player.x - width / 2);
-    const y = Math.round(this.player.y - 42);
+    // Acima da cabeça (Fase 22c): a folha 56x64 é mais alta que o cavaleiro antigo; y - 42 caía no rosto.
+    const y = Math.round((this.player.headTopY?.() ?? this.player.y - 52) - 10);
     this.miningBar.clear();
     this.miningBar.fillStyle(0x1d1612, 0.9).fillRect(x - 2, y - 2, width + 4, 9);
     this.miningBar.fillStyle(0x4a3a2c, 1).fillRect(x, y, width, 5);

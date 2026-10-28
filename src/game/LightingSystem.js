@@ -85,10 +85,13 @@ export class LightingSystem {
   sources(player) {
     const underground = this.scene.regionWorld?.underground;
     const torch = player.torchTimer > 0;
+    // Centro no meio do corpo (Fase 22c): a folha 56x64 vai de ~6 px abaixo até ~50 px acima de player.y.
+    // Com o centro em y - 8 a cabeça caía nos anéis de penumbra e a skin escurecia em faixas; agora o núcleo
+    // claro cobre o herói inteiro e só o chão em volta escurece.
     const list = [{
       x: player.x,
-      y: player.y - 8,
-      radius: 46 + (torch ? CONSUMABLES.torch.lightRadiusBonus : 0) + (underground ? 90 : 0),
+      y: player.y - 22,
+      radius: 50 + (torch ? CONSUMABLES.torch.lightRadiusBonus : 0) + (underground ? 90 : 0),
       falloff: 62,
       kind: torch ? 'torch' : null
     }];

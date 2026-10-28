@@ -279,9 +279,19 @@ export class Camp {
       this.pen.fences.push(this.scene.add.image(x, cy - halfHeight, 'buildings', 'fence').setDepth(cy - halfHeight));
       this.pen.fences.push(this.scene.add.image(x, cy + halfHeight, 'buildings', 'fence').setDepth(cy + halfHeight + 5));
     }
-    for (let y = cy - halfHeight + 14; y < cy + halfHeight; y += 24) {
-      this.pen.fences.push(this.scene.add.image(cx - halfWidth, y, 'buildings', 'fence').setAngle(90).setDepth(y + 2));
-      this.pen.fences.push(this.scene.add.image(cx + halfWidth, y, 'buildings', 'fence').setAngle(90).setDepth(y + 2));
+    // Lados: cerca norte-sul própria ('fence-v'); a antiga girada 90° só se o atlas não tiver o quadro.
+    const sideFrame = this.scene.textures.get('buildings').has('fence-v');
+    if (sideFrame) {
+      // Pedaços de 32 px (base = pé dos mourões) cobrindo do topo até a cerca de baixo.
+      for (let base = cy - halfHeight + 30; base <= cy + halfHeight + 6; base += 28) {
+        for (const x of [cx - halfWidth, cx + halfWidth]) {
+          this.pen.fences.push(this.scene.add.image(x, base, 'buildings', 'fence-v').setOrigin(0.5, 1).setDepth(base));
+        }
+      }
+    } else {
+      for (let y = cy - halfHeight + 14; y < cy + halfHeight; y += 24) {
+        for (const x of [cx - halfWidth, cx + halfWidth]) this.pen.fences.push(this.scene.add.image(x, y, 'buildings', 'fence').setAngle(90).setDepth(y + 2));
+      }
     }
     this.createCowTexture();
     this.animals = [];
