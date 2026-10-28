@@ -433,7 +433,7 @@ function scorpion(ctx, f, o) {
     glint(ctx, cx - 2 * k, cy - 1.8 * k, 2.6 * k, ramp[ramp.length - 1], { lw: 0.9, angle: -0.25 });
   };
   const open = at ? 0.4 : 2 + Math.sin(ph) * 0.4;
-  claw([38, 42], [44, 36], [49, 33 + (at ? 3 : 0)], DARK, 0.85, open);
+  claw([38, 42], [43, 35], [46.4, 31 + (at ? 3 : 0)], DARK, 1.15, open);
   // Cefalotórax com olhos acesos.
   const head = P(ctx, 'M36.5,41.8 C39,39.6 44,39.8 46.4,42.4 C47.8,44.6 46.6,48.6 43.6,49.6 C40,50.4 36.8,48.6 36.2,46 Z');
   vol(head, AMB, [36, 39.6, 12, 11], { lx: 0.3, ly: 0.15, ao: 0.4 });
@@ -442,7 +442,7 @@ function scorpion(ctx, f, o) {
     fill(ctx, ell(ctx, x - 0.2, y - 0.2, 0.6, 0.55), '#ea323c');
   }
   stroke(ctx, [[45.6, 47.4], [47.4, 48.4]], 0.9, INK);
-  claw([42, 48], [47.6, 50.6], [52.4 + (at ? 2.6 : 0), 47.4 - (at ? 2 : 0)], AMB, 1.12, open);
+  claw([42, 48], [46, 51], [48.6 + (at ? 2.4 : 0), 46.6 - (at ? 2 : 0)], AMB, 1.5, open);
   ctx.restore();
 }
 

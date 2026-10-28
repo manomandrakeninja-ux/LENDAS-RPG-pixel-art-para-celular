@@ -216,15 +216,15 @@ function crab(ctx, f, o) {
   const sw = at ? 0 : Math.sin(ph) * 1.2;
   for (const side of [-1, 1]) {
     const sx = 32 + side * 15;
-    const wr = at ? [32 + side * 11, 33] : [32 + side * 22, 26 + sw * side];
-    const el = at ? [32 + side * 21, 38] : [32 + side * 24, 37];
+    const wr = at ? [32 + side * 12, 34] : [32 + side * 20, 31 + sw * side];
+    const el = at ? [32 + side * 21, 40] : [32 + side * 23, 40];
     const m = (p) => [p[0], p[1]];
     shade(ctx, limb(ctx, [sx, 43], m(el), 5.6, 4.8), CR_C, [Math.min(sx, el[0]) - 3, 34, 12, 12], { ao: 0.2 });
     shade(ctx, limb(ctx, m(el), m(wr), 4.8, 4.4), CR_C, [Math.min(el[0], wr[0]) - 3, Math.min(el[1], wr[1]), 10, 14], { ao: 0.2 });
     ctx.save();
     if (side < 0) { ctx.translate(64, 0); ctx.scale(-1, 1); }
     const cx = side < 0 ? 64 - wr[0] : wr[0];
-    claw(ctx, cx, wr[1] - 2, at ? -0.8 : -1.25, at ? 0.1 : 1.5 + sw * 0.1, CR_C, 1.05);
+    claw(ctx, cx, wr[1] - 2, at ? -0.8 : -1.25, at ? 0.1 : 1.5 + sw * 0.1, CR_C, 1.45);
     ctx.restore();
   }
   const shell = P(ctx, 'M14,47 C13,38 21,35 32,35 C43,35 51,38 50,47 C49,53 42,55 32,55 C22,55 15,53 14,47 Z');
@@ -454,22 +454,48 @@ function orcChief(ctx, f, o) {
   // Cabeça enorme: mandíbula, presas, olhos vermelhos, coroa de ossos.
   const hx = 33;
   const hy = 13;
+  ctx.save();
+  ctx.translate(hx, hy - 14); ctx.scale(1.3, 1.3); ctx.translate(-hx, -hy + 14);
   const head = P(ctx, `M${hx - 9},${hy + 1} C${hx - 9.4},${hy - 6.6} ${hx + 9.4},${hy - 6.6} ${hx + 9},${hy + 1} C${hx + 10},${hy + 6} ${hx + 7},${hy + 9.4} ${hx + 2},${hy + 9.6} L${hx - 3},${hy + 9.6} C${hx - 7},${hy + 9} ${hx - 9.6},${hy + 6} ${hx - 9},${hy + 1} Z`);
   shade(ctx, head, ORCSK, [hx - 10, hy - 7, 20, 17], { lx: 0.3, ly: 0.18, ao: 0.3 });
   rim(ctx, o, head, [hx - 10, hy - 7, 20, 17], '#ffc825');
   fill(ctx, ell(ctx, hx - 9, hy + 1.4, 2.4, 3.2, -0.3), '#33984b');
-  stroke(ctx, [[hx + 5, hy + 7], [hx + 1, hy + 8], [hx - 4, hy + 7.4]], 1.1, '#0c2e44');
-  for (const dx of [-3, 4.6]) fill(ctx, horn(ctx, [hx + dx, hy + 8], [hx + dx + 0.2, hy + 3.4], [hx + dx + 0.8, hy + 0.2], 4.6), '#f9e6cf');
-  fill(ctx, ell(ctx, hx + 6.6, hy + 3.4, 0.9, 0.7), '#0c2e44');
-  for (const [x, y, r] of [[hx - 2, hy - 0.6, 2.2], [hx + 5.6, hy - 0.4, 2.2]]) {
-    glow(ctx, x, y, r * 2.4, '#ea323c', { core: '#f68187', alpha: 0.7 });
-    fill(ctx, ell(ctx, x, y, r, r * 0.8), '#ea323c');
-    fill(ctx, ell(ctx, x + 0.6, y + 0.1, r * 0.45, r * 0.6), INK);
-    fill(ctx, ell(ctx, x - 0.5, y - 0.6, 0.6, 0.6), '#ffffff');
+  // Pintura de guerra vermelha nas bochechas.
+  for (const [x0, x1] of [[hx - 6.6, hx - 3.4], [hx + 5.4, hx + 8.6]]) {
+    stroke(ctx, [[x0, hy + 1.6], [x1, hy + 2.6]], 1.1, '#c42430');
   }
-  stroke(ctx, [[hx - 5.4, hy - 4.4], [hx - 0.4, hy - 1.8], [hx + 1.2, hy - 1.6]], 3, '#0c2e44');
-  stroke(ctx, [[hx + 2.8, hy - 1.8], [hx + 6, hy - 2.8], [hx + 9, hy - 4.4]], 3, '#0c2e44');
-  stroke(ctx, [[hx - 6.4, hy + 4.6], [hx - 4.4, hy + 6.6]], 0.9, '#c42430');
+  // Boca aberta num rugido: gengiva escura, língua, fileira de dentes e presas grandes de baixo.
+  const roar = at ? 1.6 : 0.4 + Math.abs(Math.sin(ph)) * 0.6;
+  const mouth = P(ctx, `M${hx - 4.6},${hy + 4.8} C${hx - 2},${hy + 4} ${hx + 3},${hy + 4} ${hx + 6.4},${hy + 4.6} C${hx + 6},${hy + 8 + roar} ${hx - 4},${hy + 8.4 + roar} ${hx - 4.6},${hy + 4.8} Z`);
+  fill(ctx, mouth, '#1c121c');
+  fill(ctx, ell(ctx, hx + 1, hy + 7.2 + roar * 0.6, 3, 1.2), '#c42430');
+  for (let i = 0; i < 5; i += 1) {
+    const x = hx - 3 + i * 2.1;
+    fill(ctx, poly(ctx, [[x - 0.8, hy + 4.4], [x + 0.8, hy + 4.4], [x, hy + 5.8]]), '#f9e6cf');
+  }
+  for (const dx of [-3.6, 5.2]) {
+    const tk = horn(ctx, [hx + dx, hy + 8.2 + roar], [hx + dx + 0.2, hy + 5.4], [hx + dx + 0.9, hy + 3], 3.2);
+    fill(ctx, tk, '#f9e6cf');
+    stroke(ctx, [[hx + dx + 1.4, hy + 7.6 + roar], [hx + dx + 1.4, hy + 4]], 0.8, '#cba36f');
+  }
+  // Nariz largo de porco com narinas.
+  fill(ctx, ell(ctx, hx + 1.6, hy + 2.6, 2.6, 1.6), '#1e6f50');
+  for (const dx of [0.4, 2.8]) fill(ctx, ell(ctx, hx + dx, hy + 3, 0.7, 0.6), '#0c2e44');
+  // Rugas de fúria entre os olhos.
+  for (const dx of [0.6, 2.2]) stroke(ctx, [[hx + dx, hy - 3.4], [hx + dx + 0.2, hy - 1]], 0.7, '#134c4c');
+  // Olhos vermelhos acesos, maiores, com pupila fina.
+  for (const [x, y, r] of [[hx - 2.4, hy - 0.4, 2.5], [hx + 5.6, hy - 0.2, 2.5]]) {
+    fill(ctx, ell(ctx, x, y, r + 0.9, r * 0.8 + 0.7), '#0c2e44');
+    glow(ctx, x, y, r * 1.5, '#ea323c', { core: '#ffeb57', alpha: 0.5 });
+    fill(ctx, ell(ctx, x, y, r, r * 0.78), '#ea323c');
+    fill(ctx, ell(ctx, x - 0.3, y - 0.2, r * 0.55, r * 0.45), '#ffc825');
+    fill(ctx, ell(ctx, x + 0.4, y, r * 0.22, r * 0.55), INK);
+  }
+  // Sobrancelha pesada em V e cicatriz atravessando o olho de lá.
+  stroke(ctx, [[hx - 6, hy - 4.2], [hx - 1, hy - 2.4], [hx + 1.4, hy - 1.4]], 2.2, '#0c2e44');
+  stroke(ctx, [[hx + 2.8, hy - 1.4], [hx + 6, hy - 2.8], [hx + 9, hy - 4.4]], 2.2, '#0c2e44');
+  stroke(ctx, [[hx - 4.6, hy - 5.6], [hx - 1.4, hy + 3]], 1, '#f68187');
+  for (const t of [0.3, 0.65]) stroke(ctx, [[hx - 4.6 + 3.2 * t - 1, hy - 5.6 + 8.6 * t], [hx - 4.6 + 3.2 * t + 1, hy - 5.6 + 8.6 * t - 0.2]], 0.6, '#891e2b');
   // Coroa de ossos com ponta arredondada.
   const crown = P(ctx, `M${hx - 9.6},${hy - 4} L${hx + 9.6},${hy - 4.6} L${hx + 9.4},${hy - 7.6} L${hx - 9.6},${hy - 7.2} Z`);
   shade(ctx, crown, SK, [hx - 10, hy - 8, 20, 4], { ao: 0 });
@@ -478,6 +504,7 @@ function orcChief(ctx, f, o) {
     stroke(ctx, [[hx + dx - 0.9, hy - 7.4], [hx + dx - 0.4, hy - 6.4 - h * 0.6]], 0.8, '#ffffff');
   }
   fill(ctx, ell(ctx, hx, hy - 5.8, 1.5, 1.5), '#ea323c');
+  ctx.restore();
   ctx.restore();
   ctx.restore();
 }
@@ -966,10 +993,10 @@ export const MONSTERS_2C = {
   demon: { size: 56, elite: 64, shadow: [32, 59.5, 14, 2.6], paint: demon },
   crab: { size: 44, elite: 52, shadow: [32, 59, 22, 2.6], paint: crab },
   pirate: { size: 48, elite: 56, shadow: [32, 58.5, 12, 2.4], paint: pirate },
-  orcChief: { size: 88, elite: 88, shadow: [32, 59, 22, 3], paint: orcChief },
+  orcChief: { size: 104, elite: 104, shadow: [32, 59, 22, 3], paint: orcChief },
   hydra: { size: 96, elite: 96, shadow: [32, 59.5, 28, 3.4], paint: hydra },
   frostGiant: { size: 96, elite: 96, shadow: [32, 59, 22, 3], paint: frostGiant },
-  pharaoh: { size: 80, elite: 80, shadow: [32, 59, 14, 2.6], paint: pharaoh },
+  pharaoh: { size: 96, elite: 96, shadow: [32, 59, 14, 2.6], paint: pharaoh },
   dragon: { size: 112, elite: 112, shadow: [30, 59.5, 24, 3], paint: dragon },
-  ghostCaptain: { size: 80, elite: 80, shadow: [32, 60, 14, 2.2], paint: ghostCaptain }
+  ghostCaptain: { size: 96, elite: 96, shadow: [32, 60, 14, 2.2], paint: ghostCaptain }
 };
