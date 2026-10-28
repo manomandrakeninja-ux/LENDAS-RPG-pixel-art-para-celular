@@ -44,7 +44,8 @@
     "test:runtime:achievements": "node scripts/achievements-runtime-check.mjs",
     "test:runtime:rebirth": "node scripts/rebirth-runtime-check.mjs",
     "test:runtime:highlevel": "node scripts/high-level-check.mjs",
-    "test:runtime:hero": "node scripts/hero-runtime-check.mjs"
+    "test:runtime:hero": "node scripts/hero-runtime-check.mjs",
+    "test:runtime:wolfboss": "node scripts/wolfboss-runtime-check.mjs"
   },
   "dependencies": {
     "@fontsource/press-start-2p": "^5.2.6",

@@ -630,7 +630,22 @@ export class GameScene extends Phaser.Scene {
     this.backpackPanel.toggle();
   }
 
-  update(_time, delta) {
+  update(time, delta) {
+    // Uma exceção dentro do update() parava o loop do Phaser e congelava o jogo inteiro.
+    // O erro continua no console (uma vez por mensagem), mas o jogo segue rodando.
+    try {
+      this.updateFrame(time, delta);
+    } catch (error) {
+      this.reportedUpdateErrors ??= new Set();
+      const key = String(error?.stack ?? error);
+      if (!this.reportedUpdateErrors.has(key)) {
+        this.reportedUpdateErrors.add(key);
+        console.error('[LENDAS] erro no update do jogo:', error);
+      }
+    }
+  }
+
+  updateFrame(_time, delta) {
     if (this.gameOver) {
       this.player.body.setVelocity(0, 0);
       for (const enemy of this.enemies) enemy.body?.setVelocity(0, 0);

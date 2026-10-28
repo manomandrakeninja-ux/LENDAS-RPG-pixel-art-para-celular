@@ -902,8 +902,9 @@ export class CampaignSystem {
     for (const enemy of this.questEnemies) {
       if (!enemy.isQuestBoss || enemy.dead) continue;
       const ratio = enemy.health / enemy.maxHealth;
-      if (ratio <= 0.5 && !enemy.enraged) {
-        enemy.enraged = true;
+      // `enraged` é um getter do Enemy (fúria da espécie): atribuir a ele lança TypeError e travava o jogo.
+      if (ratio <= 0.5 && !enemy.questEnraged) {
+        enemy.questEnraged = true;
         enemy.baseSpeed = Math.round(enemy.baseSpeed * 1.3);
         enemy.damage = Math.round(enemy.damage * 1.25);
         enemy.sprite.setTint(0xff8a5a);
