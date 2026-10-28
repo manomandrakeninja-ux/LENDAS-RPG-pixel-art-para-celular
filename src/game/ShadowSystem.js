@@ -12,14 +12,17 @@ const LONG_ALPHA = 0.78;
 // Sombra de contato: elipse de 2 tons (núcleo #1a1932 a ~56 %, borda #2a2f4e a ~34 %).
 const CONTACT_CORE = [26, 25, 50, 0.56];
 const CONTACT_EDGE = [42, 47, 78, 0.34];
+// Herói: 3 tons e mais largo que a sombra já desenhada no sprite, para não sumir sob ela.
+const CONTACT_STRONG_CORE = [14, 7, 27, 0.72];
+const CONTACT_STRONG_MID = [26, 25, 50, 0.58];
 // Texturas que já trazem a sombra de contato desenhada no sprite.
 const BAKED_CONTACT = new Set(['buildings']);
 
 /** Gera (uma vez) a textura da elipse de contato com w x h pixels. */
-export function contactTexture(scene, width, height) {
+export function contactTexture(scene, width, height, strong = false) {
   const w = Math.max(4, Math.round(width));
   const h = Math.max(3, Math.round(height));
-  const key = `contact-shadow-${w}x${h}`;
+  const key = `contact-shadow-${w}x${h}${strong ? '-s' : ''}`;
   if (scene.textures.exists(key)) return key;
   const texture = scene.textures.createCanvas(key, w, h);
   const context = texture.getContext();
@@ -30,7 +33,7 @@ export function contactTexture(scene, width, height) {
       const ny = (y + 0.5 - h / 2) / (h / 2);
       const d = nx * nx + ny * ny;
       if (d > 1) continue;
-      const [r, g, b, a] = d > 0.5 ? CONTACT_EDGE : CONTACT_CORE;
+      const [r, g, b, a] = strong ? (d > 0.62 ? CONTACT_EDGE : d > 0.25 ? CONTACT_STRONG_MID : CONTACT_STRONG_CORE) : d > 0.5 ? CONTACT_EDGE : CONTACT_CORE;
       image.data.set([r, g, b, Math.round(a * 255)], (y * w + x) * 4);
     }
   }
@@ -122,9 +125,9 @@ export class ShadowSystem {
   }
 
   /** Sombra de contato presa a um personagem (contêiner): segue o dono sem custo por quadro. */
-  attachContact(container, { width = 22, y = 5 } = {}) {
+  attachContact(container, { width = 30, y = 6, strong = true } = {}) {
     if (!container?.addAt) return null;
-    const contact = this.scene.add.image(0, y, contactTexture(this.scene, width, Math.max(4, width * 0.3)));
+    const contact = this.scene.add.image(0, y, contactTexture(this.scene, width, Math.max(4, Math.round(width * 0.32)), strong));
     container.addAt(contact, 0);
     return contact;
   }

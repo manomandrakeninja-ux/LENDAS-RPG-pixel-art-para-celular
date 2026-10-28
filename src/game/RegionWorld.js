@@ -39,6 +39,8 @@ const PROPS = {
 const NODE_DENSITY = 0.011;
 // Objetos que brilham no escuro (iluminam a noite e as cavernas).
 const GLOWING_PROPS = new Set(['cave-crystal', 'lava-vent', 'fire-crystal', 'ice-crystal', 'swamp-shroom']);
+// Cor do halo de cada objeto que brilha (LightingSystem.HALO).
+const PROP_LIGHT_KIND = { 'cave-crystal': 'crystal', 'lava-vent': 'lava', 'fire-crystal': 'forge', 'ice-crystal': 'ice', 'swamp-shroom': 'shroom' };
 
 function pick(table, roll) {
   const total = table.reduce((sum, entry) => sum + entry[1], 0);
@@ -782,14 +784,14 @@ export class RegionWorld {
     const lights = [];
     const visible = (x, y) => x > view.x - 120 && x < view.right + 120 && y > view.y - 120 && y < view.bottom + 120;
     for (const feature of this.features) {
-      if (feature.type !== 'cave' && feature.type !== 'dock' && visible(feature.x, feature.y)) lights.push({ x: feature.x, y: feature.y, radius: 70 });
+      if (feature.type !== 'cave' && feature.type !== 'dock' && visible(feature.x, feature.y)) lights.push({ x: feature.x, y: feature.y, radius: 70, kind: feature.type === 'chest' ? 'lamp' : null });
     }
     for (const chunk of this.chunks.values()) {
       if (!chunk.active) continue;
       for (const prop of chunk.plan.props) {
         if (!GLOWING_PROPS.has(prop.frame) && !prop.frame.startsWith('stalagmite')) continue;
         if (!visible(prop.x, prop.y)) continue;
-        lights.push({ x: prop.x, y: prop.y - 10, radius: prop.frame.startsWith('stalagmite') ? 34 : 58 });
+        lights.push({ x: prop.x, y: prop.y - 10, radius: prop.frame.startsWith('stalagmite') ? 34 : 58, kind: PROP_LIGHT_KIND[prop.frame] ?? null });
       }
     }
     return lights.slice(0, 18);

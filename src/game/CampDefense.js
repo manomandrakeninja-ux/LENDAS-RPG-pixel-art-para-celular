@@ -395,8 +395,8 @@ export class CampDefense {
   lightSources() {
     const wallUp = this.wallLevel > 0 && this.wallStanding;
     return [
-      ...(wallUp ? this.gateLights ?? [] : []).map((glow) => ({ object: glow, x: glow.x, y: glow.y, radius: 80 })),
-      ...(this.towerLights ?? []).map((glow) => ({ object: glow, x: glow.x, y: glow.y, radius: 110 }))
+      ...(wallUp ? this.gateLights ?? [] : []).map((glow) => ({ object: glow, x: glow.x, y: glow.y, radius: 80, kind: 'torch' })),
+      ...(this.towerLights ?? []).map((glow) => ({ object: glow, x: glow.x, y: glow.y, radius: 110, kind: 'torch' }))
     ];
   }
 

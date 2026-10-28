@@ -207,8 +207,8 @@ try {
     await new Promise((resolve) => setTimeout(resolve, 60));
     scene.lighting.update(1000, state, scene.player);
     const camera = scene.cameras.main;
-    const scaleX = 240 / camera.width;
-    const scaleY = 160 / camera.height;
+    const scaleX = scene.lighting.width / camera.width;
+    const scaleY = scene.lighting.height / camera.height;
     const sources = [
       { kind: 'player', x: scene.player.x, y: scene.player.y },
       ...scene.camp.getLightSources().map((light) => ({ kind: 'camp', ...light }))

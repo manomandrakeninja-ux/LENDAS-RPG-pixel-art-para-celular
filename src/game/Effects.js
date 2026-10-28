@@ -1,6 +1,45 @@
 import Phaser from 'phaser';
+import { ARC_FRAMES, ARC_SIZE, ARC_TONES, hexRgb, swingArcTone } from '../art/light.js';
 
 const randomBetween = (min, max) => Math.random() * (max - min) + min;
+
+function ensureSwingArc(scene, variant) {
+  const key = `swing-arc-${variant}`;
+  if (scene.textures.exists(key)) return key;
+  const texture = scene.textures.createCanvas(key, ARC_SIZE * ARC_FRAMES, ARC_SIZE);
+  const context = texture.getContext();
+  const image = context.createImageData(ARC_SIZE * ARC_FRAMES, ARC_SIZE);
+  const tones = ARC_TONES[variant].map(hexRgb);
+  for (let frame = 0; frame < ARC_FRAMES; frame += 1) {
+    for (let y = 0; y < ARC_SIZE; y += 1) {
+      for (let x = 0; x < ARC_SIZE; x += 1) {
+        const tone = swingArcTone(x, y, frame);
+        if (tone < 0) continue;
+        image.data.set([...tones[tone], 255], (y * ARC_SIZE * ARC_FRAMES + frame * ARC_SIZE + x) * 4);
+      }
+    }
+    texture.add(frame, 0, frame * ARC_SIZE, 0, ARC_SIZE, ARC_SIZE);
+  }
+  context.putImageData(image, 0, 0);
+  texture.refresh();
+  scene.anims.create({ key, frames: [0, 1, 2, 3].map((frame) => ({ key, frame })), frameRate: 22, repeat: 0 });
+  return key;
+}
+
+/** Partículas de 3 tons claros: o tint do emissor vira uma rampa de 3 degraus. */
+function ensureParticle(scene, key, width, height, cells) {
+  if (scene.textures.exists(key)) return key;
+  const texture = scene.textures.createCanvas(key, width, height);
+  const context = texture.getContext();
+  const tones = ['#ffffff', '#c7cfdd', '#92a1b9'].map(hexRgb);
+  const image = context.createImageData(width, height);
+  cells.forEach((row, y) => [...row].forEach((cell, x) => {
+    if (cell !== '.') image.data.set([...tones[Number(cell)], 255], (y * width + x) * 4);
+  }));
+  context.putImageData(image, 0, 0);
+  texture.refresh();
+  return key;
+}
 
 export class PixelEffects {
   constructor(scene) {
@@ -9,8 +48,24 @@ export class PixelEffects {
     this.fireflyTimer = 0;
     this.damageTexts = [];
 
-    this.sparkEmitter = scene.add.particles(0, 0, 'vfx', {
-      frame: 'spark-0',
+    const spark = ensureParticle(scene, 'fx-spark3', 7, 7, [
+      '...2...',
+      '...1...',
+      '..101..',
+      '2100012',
+      '..101..',
+      '...1...',
+      '...2...'
+    ]);
+    const dust = ensureParticle(scene, 'fx-dust3', 8, 6, [
+      '..11....',
+      '.1001...',
+      '1000122.',
+      '11012221',
+      '.122222.',
+      '........'
+    ]);
+    this.sparkEmitter = scene.add.particles(0, 0, spark, {
       lifespan: { min: 150, max: 300 },
       speed: { min: 45, max: 130 },
       angle: { min: 0, max: 360 },
@@ -22,8 +77,7 @@ export class PixelEffects {
       frequency: -1
     });
 
-    this.dustEmitter = scene.add.particles(0, 0, 'vfx', {
-      frame: 'dust-0',
+    this.dustEmitter = scene.add.particles(0, 0, dust, {
       lifespan: { min: 260, max: 460 },
       speed: { min: 12, max: 48 },
       angle: { min: 190, max: 350 },
@@ -88,18 +142,21 @@ export class PixelEffects {
     this.scene.time.delayedCall(170, () => slash.destroy());
   }
 
-  /** Rastro do golpe saindo do jogador na direção do ataque (maior e dourado no golpe final). */
+  /** Rastro do golpe: meia-lua de 180° em volta da mão, acompanhando a espada (dourada no golpe final). */
   spawnSwingTrail(x, y, angle, finisher = false) {
-    const trail = this.scene.add.sprite(x + Math.cos(angle) * 14, y - 8 + Math.sin(angle) * 10, 'vfx', 'slash-0')
+    const key = ensureSwingArc(this.scene, finisher ? 'finisher' : 'normal');
+    // Mesmo pivô da espada em Player.poseGear (a espada gira de angle-1,5 a angle+1,5 rad).
+    const trail = this.scene.add.sprite(x + Math.cos(angle) * 8, y - 11 + Math.sin(angle) * 5, key, 0)
       .setOrigin(0.5)
       .setDepth(4205)
       .setRotation(angle)
-      .setScale(finisher ? 1.7 : 1.2)
-      .setBlendMode(Phaser.BlendModes.ADD);
-    if (finisher) trail.setTint(0xffd76b);
+      .setScale(finisher ? 1.3 : 1);
     this.scene.hudCamera?.ignore(trail);
-    trail.play('slash-swing');
-    this.scene.tweens.add({ targets: trail, alpha: 0, duration: 200, delay: 80, onComplete: () => trail.destroy() });
+    trail.play(key);
+    this.scene.tweens.add({ targets: trail, alpha: 0, duration: 120, delay: 120, onComplete: () => trail.destroy() });
+    // Poeira de 3 tons levantada pelo pé de apoio.
+    this.dustEmitter.setParticleTint(0xcba36f);
+    this.dustEmitter.emitParticleAt(x - Math.cos(angle) * 4, y + 4, finisher ? 4 : 2);
   }
 
   /** Impacto: anel de choque, faíscas e lascas. */

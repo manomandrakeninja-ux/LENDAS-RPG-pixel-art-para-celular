@@ -377,11 +377,11 @@ export class Camp {
       .filter((key) => this.buildings[key]?.glow && this.isBuilt(key) && this.durability[key] > 0)
       .map((key) => {
         const glow = this.buildings[key].glow;
-        return { object: glow, x: glow.x, y: glow.y, radius: key === 'forge' ? 125 : 100 };
+        return { object: glow, x: glow.x, y: glow.y, radius: key === 'forge' ? 125 : 100, kind: key === 'forge' ? 'forge' : 'lamp' };
       });
     return [
-      { object: this.fire, x: this.fire.x, y: this.fire.y, radius: 170 },
-      ...this.lampVisuals.map((lamp) => ({ object: lamp, x: lamp.x, y: lamp.y, radius: 105 })),
+      { object: this.fire, x: this.fire.x, y: this.fire.y, radius: 170, kind: 'fire' },
+      ...this.lampVisuals.map((lamp) => ({ object: lamp, x: lamp.x, y: lamp.y, radius: 105, kind: 'lamp' })),
       ...buildings,
       ...(this.defense?.lightSources?.() ?? [])
     ];
@@ -390,7 +390,8 @@ export class Camp {
   setLightLevel(level) {
     this.lightLevel = level;
     const glowAlpha = level >= 0.4 ? 0.42 : level >= 0.3 ? 0.34 : level >= 0.15 ? 0.2 : 0.07;
-    this.lightGlows.forEach((glow, index) => glow.setAlpha(index === 0 ? glowAlpha + 0.04 : glowAlpha));
+    // O halo de verdade vem do LightingSystem (Fase 20E); estes brilhos ficam só como reforço leve.
+    this.lightGlows.forEach((glow, index) => glow.setAlpha((index === 0 ? glowAlpha + 0.04 : glowAlpha) * 0.3));
     this.defense?.setLightLevel?.(glowAlpha);
   }
 

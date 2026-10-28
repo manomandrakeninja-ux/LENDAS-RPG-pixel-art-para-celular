@@ -85,7 +85,7 @@ await runInChrome({ name: 'visual', port: 9357, width: 1280, height: 800 }, asyn
   // e não só "escuro" e "claro" como no quadriculado antigo.
   const darkness = await inScene((scene) => {
     scene.lighting.draw(0.6, scene.player);
-    const data = scene.lighting.context.getImageData(0, 0, 240, 160).data;
+    const data = scene.lighting.context.getImageData(0, 0, scene.lighting.width, scene.lighting.height).data;
     const levels = new Set();
     for (let index = 3; index < data.length; index += 4) levels.add(data[index]);
     return { levels: levels.size };

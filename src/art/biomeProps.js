@@ -112,6 +112,10 @@ function finish(p, { outline = 0.62, levels = 26 } = {}) {
 // luz de borda das copas saía acinzentada.
 const LEAF_DEEP = ['#0c2e44', '#134c4c', '#1e6f50', '#33984b', '#5ac54f', '#99e65f'];
 const LEAF_MOSS = ['#1c121c', '#134c4c', '#1e6f50', '#33984b', '#5ac54f', '#99e65f'];
+// Agulhas de pinheiro: o tom mais escuro é azul-petróleo (#0c2e44), não o vinho-escuro #1c121c,
+// que deixava pontas avermelhadas no lado da sombra.
+const PINE_MOSS = ['#0c2e44', '#134c4c', '#1e6f50', '#33984b', '#5ac54f', '#99e65f'];
+const PINE_VALLEY = ['#0c2e44', '#134c4c', '#1e6f50', '#33984b', '#5ac54f'];
 const LEAF_JUNGLE = ['#103a18', '#1c5a22', '#2c7a2c', '#44a03a', '#6cc450', '#a6e070'];
 const PINE_SNOW = ['#0e2420', '#18382e', '#24503c', '#33684a'];
 const BARK = ['#1e120c', '#33201a', '#4a3020', '#644430', '#7e5a3e'];
@@ -152,7 +156,7 @@ function mossyPine(variant) {
         const across = (xx - x) / Math.max(1, half);
         const needles = fbm(xx / 1.6, yy / 1.2, 19 + index, 2);
         const v = 0.55 - across * 0.4 + (needles - 0.5) * 0.5 - (t > 0.85 ? 0.25 : 0) + (1 - t) * 0.1;
-        p.set(xx, yy, shade(LEAF_MOSS, v));
+        p.set(xx, yy, shade(PINE_MOSS, v));
       }
     }
   });
@@ -756,7 +760,7 @@ export function valleyPine(shift = 0) {
       for (let xx = Math.floor(cx - half); xx <= Math.ceil(cx + half); xx += 1) {
         const across = (xx - cx) / Math.max(1, half);
         const needles = fbm(xx / 1.5, yy / 1.2, 403 + index, 2);
-        p.set(xx, yy, shade(LEAF_VALLEY, 0.6 - across * 0.42 + (needles - 0.5) * 0.45 - (t > 0.85 ? 0.22 : 0) + (1 - t) * 0.08));
+        p.set(xx, yy, shade(PINE_VALLEY, 0.6 - across * 0.42 + (needles - 0.5) * 0.45 - (t > 0.85 ? 0.22 : 0) + (1 - t) * 0.08));
       }
     }
   });
