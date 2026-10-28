@@ -4,7 +4,7 @@ import { BAKED_MONSTERS } from '../src/art/monsterSprites.js';
 import { drawMonsterFrame, monsterAttackFrame, monsterFrameCount } from '../src/art/monsters.js';
 
 // Fase 20G: monstros pintados em alta resolução e reduzidos (scripts/bake-monsters.mjs).
-const BOSSES = new Set(['titan', 'abyssLord', 'orcChief', 'hydra', 'frostGiant', 'pharaoh', 'dragon', 'ghostCaptain', 'wolfBoss']);
+const BOSSES = new Set(['titan', 'abyssLord', 'orcChief', 'hydra', 'frostGiant', 'pharaoh', 'dragon', 'ghostCaptain', 'wolfBoss', 'banditBoss', 'emberKnightBoss', 'waterSpirit', 'griffin']);
 const opaque = (canvas) => {
   const set = new Set();
   for (let i = 0; i < canvas.data.length; i += 4) if (canvas.data[i + 3] >= 200) set.add(i);
@@ -44,4 +44,15 @@ test('monstros pintados: tamanhos extras (cenas da história) e elite saem do pr
   assert.equal(drawMonsterFrame('titan', 64, 0).width, 64);
   const elite = BAKED_MONSTERS.wolf.elite;
   assert.ok(opaque(drawMonsterFrame('wolf', elite, 0, { elite: true })).size > opaque(drawMonsterFrame('wolf', BAKED_MONSTERS.wolf.size, 0)).size);
+});
+
+test('lote 5: todo inimigo e chefe de missão da campanha usa sprite pintado (nada de arte antiga)', async () => {
+  const { SITES } = await import('../src/data/campaign.js');
+  for (const [id, site] of Object.entries(SITES)) {
+    for (const spec of [site.enemies, site.boss].filter(Boolean)) {
+      const kind = spec.visual ?? spec.kind;
+      assert.ok(BAKED_MONSTERS[kind], `${id}: ${kind} sem sprite pintado`);
+      if (site.boss) assert.ok((spec.scale ?? 1) * BAKED_MONSTERS[kind].elite <= 112 * 1.6, `${id}: chefe grande demais`);
+    }
+  }
 });

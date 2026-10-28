@@ -28,8 +28,9 @@ import { MONSTERS_3A as LOTE3A } from './monster-paint/lote3a.mjs';
 import { MONSTERS_3B as LOTE3B } from './monster-paint/lote3b.mjs';
 import { MONSTERS_3C as LOTE3C } from './monster-paint/lote3c.mjs';
 import { MONSTERS_4 as LOTE4 } from './monster-paint/lote4.mjs';
+import { MONSTERS_5 as LOTE5 } from './monster-paint/lote5.mjs';
 
-const PAINTERS = { ...LOTE1, ...LOTE1B, ...LOTE1C, ...LOTE2A, ...LOTE2B, ...LOTE2C, ...LOTE3A, ...LOTE3B, ...LOTE3C, ...LOTE4 };
+const PAINTERS = { ...LOTE1, ...LOTE1B, ...LOTE1C, ...LOTE2A, ...LOTE2B, ...LOTE2C, ...LOTE3A, ...LOTE3B, ...LOTE3C, ...LOTE4, ...LOTE5 };
 const SS = 4; // superamostragem
 const OUT = path.resolve('src/art/monsterSprites.js');
 const INK = '#120d12';

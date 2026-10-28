@@ -227,7 +227,7 @@ export const SITES = {
   urso: { name: 'Toca do Urso Branco', ...inRegion('norte', 280, -120), kind: 'boss', art: 'den', boss: { kind: 'boar', visual: 'bear', name: 'Urso Branco', tag: 'ursoBranco', health: 7, damage: 1.5, scale: 1.6 } },
   vilarejo: { name: 'Vilarejo Silencioso', ...inRegion('norte', -60, 60), kind: 'investigate', art: 'cabin', lore: 'vilarejo' },
   'santuario-agua': { name: 'Santuário das Águas', ...inRegion('norte', 0, -200), kind: 'investigate', art: 'fountain' },
-  'guardiao-adormecido': { name: 'Templo Aquático', ...inRegion('norte', 0, -260), kind: 'boss', art: 'ruins', boss: { kind: 'ghost', visual: 'waterSpirit', name: 'Guardião Adormecido', tag: 'guardiaoAgua', health: 8, damage: 1.4, scale: 1.7 } },
+  'guardiao-adormecido': { name: 'Templo Aquático', ...inRegion('norte', 0, -260), kind: 'boss', art: 'ruins', boss: { kind: 'ghost', visual: 'waterSpirit', name: 'Guardião Adormecido', tag: 'guardiaoAgua', health: 8, damage: 1.4, scale: 1 } },
   'selo-agua': { name: 'Altar do Selo da Água', ...inRegion('norte', 0, -200), kind: 'investigate', art: 'altar', seal: 'agua' },
   // Capítulo 7 — Deserto dos Ossos
   caravana: { name: 'Caravana Perdida', ...inRegion('deserto', -200, 60), kind: 'rescue', art: 'cart', residents: 2 },
@@ -235,11 +235,11 @@ export const SITES = {
   'ninho-escorpioes': { name: 'Ninho de Escorpiões', ...inRegion('deserto', 200, 60), kind: 'enemies', art: 'bones', enemies: { kind: 'spider', visual: 'scorpion', name: 'Escorpião Gigante', tag: 'escorpiao', count: 8 } },
   'mina-abandonada': { name: 'Mina Abandonada', ...inRegion('deserto', 160, -160), kind: 'source', art: 'mine', gives: { gold: 1 }, uses: 4 },
   'mercado-miragens': { name: 'Mercado das Miragens', ...inRegion('deserto', -120, -120), kind: 'marker', art: 'merchantTent', flag: 'mirageMarket' },
-  esconderijo: { name: 'Esconderijo do Contrabandista', ...inRegion('deserto', -230, -40), kind: 'boss', art: 'crates', boss: { kind: 'skeleton', visual: 'bandit', name: 'Contrabandista', tag: 'contrabandista', health: 4, damage: 1.2, scale: 1.2 } },
+  esconderijo: { name: 'Esconderijo do Contrabandista', ...inRegion('deserto', -230, -40), kind: 'boss', art: 'crates', boss: { kind: 'skeleton', visual: 'banditBoss', name: 'Contrabandista', tag: 'contrabandista', health: 4, damage: 1.2, scale: 1 } },
   'pilar-vento-1': { name: 'Pilar do Vento (brisa)', ...inRegion('deserto', 0, -40), kind: 'pillar', art: 'pillar', group: 'pilares-vento', order: 1 },
   'pilar-vento-2': { name: 'Pilar do Vento (rajada)', ...inRegion('deserto', 70, -100), kind: 'pillar', art: 'pillar', group: 'pilares-vento', order: 2 },
   'pilar-vento-3': { name: 'Pilar do Vento (tempestade)', ...inRegion('deserto', -70, -100), kind: 'pillar', art: 'pillar', group: 'pilares-vento', order: 3 },
-  grifo: { name: 'Ninho do Grifo', ...inRegion('deserto', 0, -200), kind: 'boss', art: 'nest', boss: { kind: 'wolf', visual: 'griffin', name: 'Grifo Guardião', tag: 'grifo', health: 10, damage: 1.6, scale: 1.7 } },
+  grifo: { name: 'Ninho do Grifo', ...inRegion('deserto', 0, -200), kind: 'boss', art: 'nest', boss: { kind: 'wolf', visual: 'griffin', name: 'Grifo Guardião', tag: 'grifo', health: 10, damage: 1.6, scale: 1 } },
   'selo-vento': { name: 'Altar do Selo do Vento', ...inRegion('deserto', 0, -140), kind: 'investigate', art: 'altar', seal: 'vento' },
   // Capítulo 8 — A Guerra das Cinzas
   'coluna-fumaca': { name: 'Coluna de Fumaça', ...at(-300, -700), kind: 'marker', art: 'smoke' },
@@ -258,7 +258,7 @@ export const SITES = {
   'mineiro-3': { name: 'Mineiro Preso', ...inRegion('montanha', 80, -40), kind: 'rescue', art: 'tent', group: 'mineiros', residents: 1 },
   'veio-magma': { name: 'Veio de Magma', ...inRegion('montanha', 40, 60), kind: 'source', art: 'magma', gives: { magmaCore: 1 }, uses: 5 },
   'fortaleza-negra': { name: 'Fortaleza Negra', ...inRegion('montanha', 140, -160), kind: 'enemies', art: 'fortress', enemies: { kind: 'skeleton', visual: 'knight', name: 'Guarda da Fortaleza', tag: 'guardaFortaleza', count: 4, elite: true } },
-  'cavaleiro-brasas': { name: 'Salão do Comandante', ...inRegion('montanha', 200, -200), kind: 'boss', art: 'fortress', boss: { kind: 'skeleton', visual: 'emberKnight', name: 'Cavaleiro das Brasas', tag: 'cavaleiroBrasas', health: 9, damage: 1.6, scale: 1.6 } },
+  'cavaleiro-brasas': { name: 'Salão do Comandante', ...inRegion('montanha', 200, -200), kind: 'boss', art: 'fortress', boss: { kind: 'skeleton', visual: 'emberKnightBoss', name: 'Cavaleiro das Brasas', tag: 'cavaleiroBrasas', health: 9, damage: 1.6, scale: 1 } },
   'selo-fogo': { name: 'Altar do Selo do Fogo', ...inRegion('montanha', 220, -120), kind: 'investigate', art: 'altar', seal: 'fogo' },
   'mural-golem': { name: 'Inscrições do Golem', ...inRegion('montanha', 100, 140), kind: 'investigate', art: 'mural', lore: 'golem' },
   // Capítulo 10 — O Destino de Eldoria
