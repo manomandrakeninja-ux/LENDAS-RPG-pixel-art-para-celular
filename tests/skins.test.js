@@ -41,7 +41,8 @@ test('skins: 5 novas, folhas 4 x 4 de 56 x 64, quadros cheios e diferentes, pes 
       }
     }
     assert.ok(seen.size >= 12, `${skin.id}: quadros repetidos demais`);
-    assert.ok(colors.size <= 24, `${skin.id}: ${colors.size} cores`);
+    // A frente é o sprite aprovado pixel a pixel (paleta própria de até 28 cores; as capas coloridas somam a sua rampa).
+    assert.ok(colors.size <= 40, `${skin.id}: ${colors.size} cores`);
   }
 });
 

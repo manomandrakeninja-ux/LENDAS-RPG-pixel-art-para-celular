@@ -2,9 +2,9 @@
 // do autor (em .tmp/, fora do repositório). Uso: node scripts/skins/extract-skins.mjs [--debug]
 //
 // Método: recorta o personagem, tira o fundo (branco ou o painel escuro), reduz por moda de cor
-// em cada bloco até a altura alvo, quantiza para uma paleta de 24 cores tirada da própria imagem,
-// põe contorno escuro de 1 px e limpa pixels soltos. Andar = pernas deslocadas + balanço de 1 px.
-// Saída: public/assets/characters/player-<id>-sheet.png (4 direções x 4 quadros de 48 x 64).
+// em cada bloco até a altura alvo e limpa pixels soltos. Saem as figuras de frente (as aprovadas pelo
+// autor) e a de lado da Guerreira; compose-skins.mjs monta as folhas (costas em back-maps.mjs).
+// Saída: public/assets/characters/player-<id>-sheet.png (4 direções x 4 quadros de 56 x 64).
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -20,7 +20,6 @@ const FW = SKIN_FRAME.width;
 const FH = SKIN_FRAME.height;
 const FEET = SKIN_FRAME.feet - 1; // última linha das botas (o contorno fica na linha de baixo)
 const TARGET = 58; // altura do personagem em pixels
-const INK = [24, 12, 16];
 
 // ---------- imagem RGBA simples ----------
 const blank = (w, h) => ({ w, h, d: new Uint8ClampedArray(w * h * 4) });
@@ -214,18 +213,6 @@ function gridSample(im, pal) {
 }
 
 // ---------- acabamento ----------
-/** Contorno de 1 px por fora onde a borda ainda não é escura. */
-function outline(im, ink = INK) {
-  const out = clone(im);
-  for (let y = 0; y < im.h; y += 1) for (let x = 0; x < im.w; x += 1) {
-    if (alpha(im, x, y) > 127) continue;
-    const n = [[1, 0], [-1, 0], [0, 1], [0, -1]].filter(([dx, dy]) => alpha(im, x + dx, y + dy) > 127);
-    if (!n.length) continue;
-    if (n.every(([dx, dy]) => lum(px(im, x + dx, y + dy)) < 52)) continue;
-    put(out, x, y, ink);
-  }
-  return out;
-}
 /** Remove pixels opacos soltos, tapa buracos de 1 px e troca pixels isolados pela cor vizinha mais comum. */
 function cleanup(im) {
   const out = clone(im);
@@ -261,79 +248,6 @@ function blit(dst, src, ox, oy, { onlyEmpty = false } = {}) {
     if (onlyEmpty && alpha(dst, ox + x, oy + y) > 127) continue;
     put(dst, ox + x, oy + y, c);
   }
-}
-
-/** Retoque à mão: cada letra é uma cor do mapa; '.' mantém, ' ' apaga. */
-function paint(im, x0, y0, rows, map) {
-  rows.forEach((row, dy) => [...row].forEach((ch, dx) => {
-    if (ch === '.') return;
-    if (ch === ' ') { put(im, x0 + dx, y0 + dy, [0, 0, 0, 0]); return; }
-    put(im, x0 + dx, y0 + dy, map[ch]);
-  }));
-}
-
-// ---------- animação ----------
-/**
- * Põe o personagem (já reduzido) no quadro 48 x 64 com os pés na linha FEET e centrado pelos pés.
- * Quadros: 0 e 2 = passos (uma perna sobe 2 px, corpo sobe 1 px), 1 = parado, 3 = apoio (corpo desce 1 px).
- */
-function walkFrames(sprite, { hip, legL, legR, mid, footY = bbox(sprite).y1, centerX = null }) {
-  const cx = centerX ?? Math.round((legL + legR) / 2);
-  const ox = Math.max(1, Math.min(FW - 1 - sprite.w, Math.round(FW / 2 - cx - 0.5))), oy = FEET - footY;
-  const frames = [];
-  for (let f = 0; f < 4; f += 1) {
-    const frame = blank(FW, FH);
-    const bob = f === 0 || f === 2 ? -1 : f === 3 ? 1 : 0;
-    const lift = (side) => (f === 0 && side === 'L') || (f === 2 && side === 'R') ? 2 : 0;
-    const back = (side) => (f === 0 && side === 'R') || (f === 2 && side === 'L') ? 1 : 0;
-    // Corpo (acima do quadril e tudo fora da faixa das pernas).
-    for (let y = 0; y < sprite.h; y += 1) for (let x = 0; x < sprite.w; x += 1) {
-      const c = px(sprite, x, y);
-      if (c[3] < 128) continue;
-      const isLeg = y >= hip && x >= legL && x <= legR;
-      if (isLeg) continue;
-      put(frame, ox + x, oy + y + (y < hip ? bob : f === 3 ? 0 : 0), c);
-    }
-    // Pernas: cada metade se move separada.
-    for (let y = hip; y < sprite.h; y += 1) for (let x = legL; x <= legR; x += 1) {
-      const c = px(sprite, x, y);
-      if (c[3] < 128) continue;
-      const side = x < mid ? 'L' : 'R';
-      const t = (y - hip) / Math.max(1, sprite.h - hip);
-      const dy = -Math.round(lift(side) * t) + (f === 3 && t < 0.3 ? 1 : 0);
-      const dx = side === 'L' ? -back(side) : back(side);
-      put(frame, ox + x + (t > 0.5 ? dx : 0), oy + y + dy, c);
-    }
-    frames.push(cleanup(frame));
-  }
-  return frames;
-}
-/** Junta 4 direções (baixo, esquerda, direita, cima) x 4 quadros numa folha. */
-function sheetOf(rows) {
-  const sheet = blank(FW * 4, FH * 4);
-  rows.forEach((frames, r) => frames.forEach((frame, f) => blit(sheet, frame, f * FW, r * FH)));
-  return sheet;
-}
-/** Quantiza a folha inteira para no máximo `k` cores (paleta tirada dela mesma). */
-function finalPalette(sheet, k = 24) {
-  const pal = paletteOf([sheet], k);
-  return quantize(sheet, pal);
-}
-/** Faixa das pernas: colunas opacas na linha dos pés (com folga) e o meio entre as duas botas. */
-function legBand(sprite, hipFrac = 0.66) {
-  const hip = Math.round(sprite.h * hipFrac);
-  const rows = [sprite.h - 1, sprite.h - 2, sprite.h - 3, sprite.h - 4];
-  const cols = [];
-  for (let x = 0; x < sprite.w; x += 1) if (rows.some((y) => alpha(sprite, x, y) > 127)) cols.push(x);
-  const legL = Math.max(0, cols[0] - 1), legR = Math.min(sprite.w - 1, cols.at(-1) + 1);
-  // Meio: maior vão (ou a coluna mais vazia) entre as botas.
-  let mid = Math.round((legL + legR) / 2), best = Infinity;
-  for (let x = legL + 3; x <= legR - 3; x += 1) {
-    let s = 0;
-    for (let y = sprite.h - 8; y < sprite.h; y += 1) s += alpha(sprite, x, y) > 127 ? 1 : 0;
-    if (s < best) { best = s; mid = x; }
-  }
-  return { hip, legL, legR, mid };
 }
 
 // ---------- referências ----------
@@ -416,9 +330,7 @@ export function buildAll() {
   }
   const side = reduce(figs.walk, basePal);
   dbg('w-side', side);
-  const backTop = reduce(figs.back, basePal, Math.round(TARGET * 0.78));
-  dbg('w-back-top', backTop);
-  result.warrior = { down, side, backTop };
+  result.warrior = { down, side };
 
   // --- Espadachim: grade da imagem de frente (esquerda da primeira referência) ---
   const sw = load(path.join(REF, 'referencia-skin-espadachim.png'));
@@ -436,7 +348,7 @@ export function buildAll() {
 if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) {
   const parts = buildAll();
   const { compose } = await import('./compose-skins.mjs');
-  const sheets = compose(parts, { blank, put, px, alpha, clone, flipX, blit, paint, outline, cleanup, walkFrames, legBand, sheetOf, finalPalette, trim, crop, lum, dist, hex, parse, dbg, FW, FH, FEET });
+  const sheets = compose(parts, { blank, put, px, clone, flipX, blit, parse, dbg, FW, FH, FEET });
   for (const [id, sheet] of Object.entries(sheets)) {
     save(path.join(OUT, `player-${id}-sheet.png`), sheet);
     if (DEBUG) dbg(`sheet-${id}`, sheet, 3);
