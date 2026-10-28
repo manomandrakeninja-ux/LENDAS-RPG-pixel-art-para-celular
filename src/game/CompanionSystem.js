@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { PixelCanvas, darken, lighten } from '../art/pixel.js';
 import { drawHorseFrame, HORSE_W, HORSE_H, HORSE_FRAMES } from '../art/mountHorse.js';
 import { Companions, PETS, petAbility } from '../data/companions.js';
+import { quantizePixels } from '../art/palette.js';
 
 // Parte da cena dos mascotes e da montaria: desenho em pixel, seguir o herói e os efeitos.
 
@@ -11,7 +12,7 @@ function makeTexture(scene, key, width, height, draw) {
   draw(canvas);
   canvas.outline();
   const texture = scene.textures.createCanvas(key, width, height);
-  texture.getContext().putImageData(new ImageData(canvas.data, width, height), 0, 0);
+  texture.getContext().putImageData(new ImageData(quantizePixels(canvas).data, width, height), 0, 0);
   texture.setFilter(Phaser.Textures.FilterMode.NEAREST);
   texture.refresh();
   return key;
@@ -62,7 +63,7 @@ export function mountTexture(scene, frame = 0) {
   if (scene.textures.exists(key)) return key;
   const canvas = drawHorseFrame(frame);
   const texture = scene.textures.createCanvas(key, HORSE_W, HORSE_H);
-  texture.getContext().putImageData(new ImageData(canvas.data, HORSE_W, HORSE_H), 0, 0);
+  texture.getContext().putImageData(new ImageData(quantizePixels(canvas).data, HORSE_W, HORSE_H), 0, 0);
   texture.setFilter(Phaser.Textures.FilterMode.NEAREST);
   texture.refresh();
   return key;

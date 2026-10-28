@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { BUILDING_DEFS, buildingStat } from '../data/buildings.js';
 import { PixelCanvas, ramp } from '../art/pixel.js';
 import { buildingVisual } from '../data/buildingVisuals.js';
+import { quantizePixels } from '../art/palette.js';
 
 const WALL = BUILDING_DEFS.wall;
 const TOWER = BUILDING_DEFS.tower;
@@ -20,7 +21,7 @@ function drawTexture(scene, key, width, height, draw) {
   const pixels = new PixelCanvas(width, height);
   draw(pixels);
   pixels.outline();
-  texture.getContext().putImageData(new ImageData(pixels.data, width, height), 0, 0);
+  texture.getContext().putImageData(new ImageData(quantizePixels(pixels).data, width, height), 0, 0);
   texture.setFilter(Phaser.Textures.FilterMode.NEAREST);
   texture.refresh();
 }

@@ -1,6 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import zlib from 'node:zlib';
+import * as iq from 'image-q';
+import { PALETTE } from '../src/art/palette.js';
 
 // Grava um PixelCanvas como PNG (usado pelo gerador de assets e pelas prévias).
 
@@ -25,7 +27,31 @@ function chunk(type, data) {
   return Buffer.concat([length, name, data, checksum]);
 }
 
-export function writePng(file, canvas) {
+const iqPalette = new iq.utils.Palette();
+for (const hex of PALETTE) {
+  const value = Number.parseInt(hex.slice(1), 16);
+  iqPalette.add(iq.utils.Point.createByRGBA(value >> 16, (value >> 8) & 255, value & 255, 255));
+}
+
+/** Quantiza um buffer RGBA para a paleta-mestre com image-q (CIEDE2000, sem dithering). O alfa fica igual. */
+export function quantizeToPalette(canvas) {
+  const source = canvas.data;
+  const opaque = new Uint8Array(source.length);
+  opaque.set(source);
+  for (let at = 3; at < opaque.length; at += 4) opaque[at] = 255;
+  const points = iq.utils.PointContainer.fromUint8Array(opaque, canvas.width, canvas.height);
+  const mapped = iq.applyPaletteSync(points, iqPalette, { colorDistanceFormula: 'ciede2000', imageQuantization: 'nearest' }).toUint8Array();
+  for (let at = 0; at < source.length; at += 4) {
+    if (source[at + 3] === 0) continue;
+    source[at] = mapped[at];
+    source[at + 1] = mapped[at + 1];
+    source[at + 2] = mapped[at + 2];
+  }
+  return canvas;
+}
+
+export function writePng(file, canvas, { quantize = true } = {}) {
+  if (quantize) quantizeToPalette(canvas);
   const pixels = Buffer.from(canvas.data.buffer, canvas.data.byteOffset, canvas.data.byteLength);
   const scanlines = Buffer.alloc((canvas.width * 4 + 1) * canvas.height);
   for (let y = 0; y < canvas.height; y += 1) {

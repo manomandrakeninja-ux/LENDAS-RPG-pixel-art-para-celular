@@ -11,6 +11,7 @@ import { rollGearDrop, GEAR_ITEMS, RARITIES } from '../data/gear.js';
 import { WORLD } from './config.js';
 import { drawNpc } from '../art/person.js';
 import { SPEAKERS } from '../data/story.js';
+import { quantizePixels } from '../art/palette.js';
 
 // Mundo grande: chão em tilemap (o Phaser só desenha o que a câmera vê), água e lava
 // animadas numa camada de baixo, e objetos/recursos montados por blocos perto do jogador.
@@ -187,7 +188,7 @@ export class RegionWorld {
     if (!scene.textures.exists('npc-barqueiro-0')) {
       const pixels = drawNpc(SPEAKERS.barqueiro.palette, 0);
       const texture = scene.textures.createCanvas('npc-barqueiro-0', pixels.width, pixels.height);
-      texture.getContext().putImageData(new ImageData(pixels.data, pixels.width, pixels.height), 0, 0);
+      texture.getContext().putImageData(new ImageData(quantizePixels(pixels).data, pixels.width, pixels.height), 0, 0);
       texture.setFilter(Phaser.Textures.FilterMode.NEAREST);
       texture.refresh();
     }

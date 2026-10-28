@@ -363,5 +363,5 @@ export function drawSiteArt(name) {
   const art = ARTS[name] ?? ARTS.sign;
   const canvas = new PixelCanvas(art.size, art.size);
   art.draw(canvas);
-  return canvas.outline();
+  return canvas.outline().quantize();
 }

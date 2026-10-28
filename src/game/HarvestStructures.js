@@ -6,6 +6,7 @@ import {
 } from '../data/harvestStructures.js';
 import { WORLD } from './config.js';
 import { PixelCanvas, dither, ramp } from '../art/pixel.js';
+import { quantizePixels } from '../art/palette.js';
 
 const TEXTURE_SIZE = 32;
 const TEXTURE_KEY_PREFIX = 'harvest-structure-';
@@ -205,7 +206,7 @@ export class HarvestStructures {
       const pixels = new PixelCanvas(TEXTURE_SIZE, TEXTURE_SIZE);
       (STRUCTURE_DRAWERS[type] ?? drawTree)(pixels);
       pixels.outline();
-      texture.getContext().putImageData(new ImageData(pixels.data, TEXTURE_SIZE, TEXTURE_SIZE), 0, 0);
+      texture.getContext().putImageData(new ImageData(quantizePixels(pixels).data, TEXTURE_SIZE, TEXTURE_SIZE), 0, 0);
       texture.setFilter(Phaser.Textures.FilterMode.NEAREST);
       texture.refresh();
     }

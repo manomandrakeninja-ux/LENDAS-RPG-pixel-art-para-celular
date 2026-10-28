@@ -950,7 +950,7 @@ const STAGE_ART = {
     c.rect(22, 30, 12, 36, '#c9bd94');
     for (let y = 32; y < 66; y += 4) c.rect(22, y, 12, 1, '#a69a74');
     c.rect(22, 30, 3, 36, '#e3d8b0');
-    c.forEllipse(28, 30, 6.5, 6, (x, y) => { if (y <= 30) c.pixel(x, y, '#9a3e35'); });
+    c.forEllipse(28, 30, 6.5, 6, (x, y) => { if (y <= 30) c.pixel(x, y, '#8e251d'); });
     // Celeiro grande.
     planks(c, 36, 34, 40, 32, '#a83f33', true);
     c.rect(36, 34, 40, 2, '#efe6d2');
@@ -988,7 +988,7 @@ const STAGE_ART = {
     // Mercado completo: prédio com várias bancas, toldos coloridos, barris, bandeiras e lanternas.
     c.shadow(40, 72, 36, 4.5, 125);
     planks(c, 12, 26, 56, 26, '#b08451');
-    roof(c, [[6, 29], [40, 6], [74, 29], [67, 31], [40, 14], [13, 31]], '#9a3e35', 6, 31);
+    roof(c, [[6, 29], [40, 6], [74, 29], [67, 31], [40, 14], [13, 31]], '#8e251d', 6, 31);
     c.line(6, 29, 40, 6, '#d06a5a');
     windowLight(c, 20, 32);
     windowLight(c, 52, 32);
@@ -1138,7 +1138,7 @@ const buildingEntries = [
   {
     name: 'store', width: 64, height: 64,
     draw: (canvas) => {
-      drawHouseBody(canvas, { wall: '#b08451', roofColor: '#9a3e35' });
+      drawHouseBody(canvas, { wall: '#b08451', roofColor: '#8e251d' });
       // Toldo listrado.
       for (let x = 12; x < 52; x += 1) {
         const stripe = Math.floor((x - 12) / 4) % 2 === 0;

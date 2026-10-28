@@ -737,7 +737,7 @@ function lilyPads(variant) {
 
 // ---------- Árvores do Vale (substituem as antigas no atlas 'nature', mesmo tamanho) ----------
 
-const LEAF_VALLEY = ['#10261a', '#1a3a24', '#28552e', '#3a7238', '#58924a', '#80b25e'];
+const LEAF_VALLEY = ['#0e071b', '#1c121c', '#134c4c', '#1e6f50', '#33984b', '#5ac54f'];
 
 /** Pinheiro do Vale (40 x 56); shift = balanço da ponta (-1, 0, 1) para a animação. */
 export function valleyPine(shift = 0) {

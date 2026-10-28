@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { PixelCanvas } from '../art/pixel.js';
+import { quantizePixels } from '../art/palette.js';
 
 const COIN_TEXTURE = 'coin-pickup';
 
@@ -20,7 +21,7 @@ export class CoinPickups {
     coin.rect(5, 4, 2, 4, '#ffe07a');
     coin.pixel(3, 3, '#ffffff');
     coin.outline({ strength: 0.6 });
-    texture.getContext().putImageData(new ImageData(coin.data, 12, 12), 0, 0);
+    texture.getContext().putImageData(new ImageData(quantizePixels(coin).data, 12, 12), 0, 0);
     texture.setFilter(Phaser.Textures.FilterMode.NEAREST);
     texture.refresh();
   }

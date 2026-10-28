@@ -19,6 +19,7 @@ import { RESOURCE_TYPES } from './config.js';
 import { LEATHER_DROP, RARE_SHOP } from '../data/campaign.js';
 import { QuestUI } from './QuestUI.js';
 import { AURELIAN_ECHOES, AURELIAN_FINAL_WORDS, AURELIAN_LINES, BONDS, ENDINGS, GOLEM_CHOICE, NPC_STORY_LINES, SECRET_ENDING, SPEAKERS } from '../data/story.js';
+import { quantizePixels } from '../art/palette.js';
 
 const INTERACT_RANGE = 46;
 const SPAWN_RANGE = 380;
@@ -72,7 +73,7 @@ export class CampaignSystem {
     const put = (key, pixels) => {
       if (textures.exists(key)) return;
       const texture = textures.createCanvas(key, pixels.width, pixels.height);
-      texture.getContext().putImageData(new ImageData(pixels.data, pixels.width, pixels.height), 0, 0);
+      texture.getContext().putImageData(new ImageData(quantizePixels(pixels).data, pixels.width, pixels.height), 0, 0);
       texture.setFilter(Phaser.Textures.FilterMode.NEAREST);
       texture.refresh();
     };

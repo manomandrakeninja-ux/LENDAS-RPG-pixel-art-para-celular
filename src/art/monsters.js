@@ -494,6 +494,6 @@ export function drawMonsterFrame(kind, size, frame, { elite = false } = {}) {
   const draw = DRAWERS[kind];
   if (!draw) return canvas;
   draw(grid(canvas, size, LOGICAL[kind]), frame, elite);
-  return canvas.outline({ strength: 0.9, ink: INK });
+  return canvas.outline({ strength: 0.9, ink: INK }).quantize();
 }
 

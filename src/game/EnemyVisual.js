@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { ENEMY_TYPES } from '../data/enemies.js';
 import { PixelCanvas, darken, lighten, ramp } from '../art/pixel.js';
 import { MONSTER_SIZES, drawMonsterFrame, hasMonsterArt } from '../art/monsters.js';
+import { quantizePixels } from '../art/palette.js';
 
 // Inimigos desenhados em pixel art no navegador, com as cores de enemies.json.
 // Os desenhos usam uma grade de 32 unidades; o elite (40 px) é desenhado na
@@ -434,7 +435,7 @@ function ensureCanvasTexture(scene, kind, elite) {
     context.clearRect(0, 0, size * 2, size);
     for (let frame = 0; frame < 2; frame += 1) {
       const pixels = drawEnemyFrame(kind, size, frame, elite);
-      context.putImageData(new ImageData(pixels.data, size, size), frame * size, 0);
+      context.putImageData(new ImageData(quantizePixels(pixels).data, size, size), frame * size, 0);
     }
     texture.setFilter(Phaser.Textures.FilterMode.NEAREST);
     texture.refresh();

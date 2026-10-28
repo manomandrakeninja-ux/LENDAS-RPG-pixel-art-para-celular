@@ -6,6 +6,7 @@ import { INVENTORY_CONFIG, RESOURCE_TYPES, WORLD } from './config.js';
 import { drawIcon } from '../art/icons.js';
 import { MAP_SCALE, MapRenderer } from './MapRenderer.js';
 import { HOTKEY_ITEMS } from '../data/consumables.js';
+import { quantizePixels } from '../art/palette.js';
 
 const TEXT_STYLE = {
   fontFamily: 'Press Start 2P',
@@ -81,7 +82,7 @@ export class GameUI {
     if (this.scene.textures.exists(key)) return;
     const pixels = drawIcon(name);
     const texture = this.scene.textures.createCanvas(key, pixels.width, pixels.height);
-    texture.getContext().putImageData(new ImageData(pixels.data, pixels.width, pixels.height), 0, 0);
+    texture.getContext().putImageData(new ImageData(quantizePixels(pixels).data, pixels.width, pixels.height), 0, 0);
     texture.setFilter(Phaser.Textures.FilterMode.NEAREST);
     texture.refresh();
   }

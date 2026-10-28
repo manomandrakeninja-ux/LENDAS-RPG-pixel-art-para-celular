@@ -1,4 +1,5 @@
 import { GEAR_ICON_SIZE, drawGearIcon } from '../art/gearIcons.js';
+import { quantizePixels } from '../art/palette.js';
 
 // Ícone de cada peça de equipamento como imagem (data URL) para os menus em HTML.
 const cache = new Map();
@@ -13,7 +14,7 @@ export function gearIconUrl(id, rarity = 'common') {
     const canvas = document.createElement('canvas');
     canvas.width = size;
     canvas.height = pixels?.height ?? size;
-    canvas.getContext('2d').putImageData(new ImageData(pixels.data, canvas.width, canvas.height), 0, 0);
+    canvas.getContext('2d').putImageData(new ImageData(quantizePixels(pixels).data, canvas.width, canvas.height), 0, 0);
     url = canvas.toDataURL();
   } catch {
     url = '';

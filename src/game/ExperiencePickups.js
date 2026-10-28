@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { PixelCanvas } from '../art/pixel.js';
+import { quantizePixels } from '../art/palette.js';
 
 const PICKUP_TEXTURE = 'xp-pickup-orb';
 
@@ -21,7 +22,7 @@ export class ExperiencePickups {
     crystal.polygon([[6, 7], [10, 6], [6, 11]], '#5e3a96');
     crystal.pixel(5, 2, '#ffffff');
     crystal.outline({ strength: 0.6 });
-    texture.getContext().putImageData(new ImageData(crystal.data, 12, 12), 0, 0);
+    texture.getContext().putImageData(new ImageData(quantizePixels(crystal).data, 12, 12), 0, 0);
     texture.setFilter(Phaser.Textures.FilterMode.NEAREST);
     texture.refresh();
   }

@@ -77,6 +77,7 @@ const GOLEM_MISSION = MISSIONS.find((mission) => mission.objectives.some((object
   ['boss', 'bossPhase'].includes(objective.type) && objective.target === BOSS_CONFIG.campaignTag));
 const GOLEM_UNLOCK_MISSION = GOLEM_MISSION ? MISSIONS.find((mission) => mission.number === GOLEM_MISSION.number - 1) : null;
 import { CRAFT_RECIPES_BY_ID, CRAFT_STATIONS, recipeItems } from '../data/craftRecipes.js';
+import { quantizePixels } from '../art/palette.js';
 
 export const PICKAXE_MESSAGE = 'Você precisa de uma picareta para minerar isso.';
 // Mineração: segure o botão por 4 s (picareta de ferro: 2 s).
@@ -1802,7 +1803,7 @@ export class GameScene extends Phaser.Scene {
         gate.pixel(x, y, '#ff9a7a');
       }
       gate.outline();
-      texture.getContext().putImageData(new ImageData(gate.data, 40, 30), 0, 0);
+      texture.getContext().putImageData(new ImageData(quantizePixels(gate).data, 40, 30), 0, 0);
       texture.setFilter(Phaser.Textures.FilterMode.NEAREST);
       texture.refresh();
     }

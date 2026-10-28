@@ -1,5 +1,6 @@
 // Biblioteca de pixel art usada pelo gerador de imagens (Node) e pelos inimigos
-// desenhados no navegador. Sem dependências: trabalha num buffer RGBA.
+// desenhados no navegador. Trabalha num buffer RGBA; as cores terminam na paleta-mestre (palette.js).
+import { paletteRamp, quantizePixels } from './palette.js';
 
 export function hexToRgb(hex) {
   return [
@@ -25,9 +26,9 @@ export function mix(a, b, t) {
 export const darken = (hex, amount = 0.25) => mix(hex, '#1c1426', amount);
 export const lighten = (hex, amount = 0.25) => mix(hex, '#fff6d8', amount);
 
-/** Rampa de 4 tons (sombra, base, luz, brilho) a partir de uma cor base. */
+/** Rampa de 4 tons da paleta-mestre (sombra roxa, base, luz âmbar, brilho) a partir de uma cor base. */
 export function ramp(hex) {
-  return [darken(hex, 0.38), hex, lighten(hex, 0.24), lighten(hex, 0.5)];
+  return paletteRamp(hex);
 }
 
 const BAYER = [
@@ -56,6 +57,12 @@ export class PixelCanvas {
     this.width = width;
     this.height = height;
     this.data = new Uint8ClampedArray(width * height * 4);
+  }
+
+  /** Leva todos os pixels para a paleta-mestre (último passo de cada sprite). */
+  quantize() {
+    quantizePixels(this);
+    return this;
   }
 
   inside(x, y) {

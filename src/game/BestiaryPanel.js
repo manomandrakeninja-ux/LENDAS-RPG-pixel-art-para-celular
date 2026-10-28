@@ -3,6 +3,7 @@ import { RARITY_LABELS, dropRarity, scaleEnemy } from '../data/enemyScaling.js';
 import { RESOURCE_TYPES } from './config.js';
 import { drawEnemyFrame, enemyCanvasSize } from './EnemyVisual.js';
 import { BESTIARY_ORDER, habitatsOf } from './Bestiary.js';
+import { quantizePixels } from '../art/palette.js';
 
 // Painel do Bestiário (tecla K ou botão no Diário).
 
@@ -16,7 +17,7 @@ export function monsterPortrait(kind) {
   const canvas = document.createElement('canvas');
   canvas.width = size;
   canvas.height = size;
-  canvas.getContext('2d').putImageData(new ImageData(pixels.data, size, size), 0, 0);
+  canvas.getContext('2d').putImageData(new ImageData(quantizePixels(pixels).data, size, size), 0, 0);
   const url = canvas.toDataURL();
   portraitCache.set(kind, url);
   return url;

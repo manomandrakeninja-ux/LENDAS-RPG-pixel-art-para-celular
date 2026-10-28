@@ -5,6 +5,7 @@ import { heroTexture, normalizeGender } from './HeroStyle.js';
 import { SKINS, heroFrameSize } from '../art/skins.js';
 import { PERK_EFFECTS } from '../data/progression.js';
 import { SWORD_TIERS, drawPickaxe, drawSword, swordTierFor } from '../art/gear.js';
+import { quantizePixels } from '../art/palette.js';
 
 const SWING_MS = 170;
 const PICK_SWING_MS = 480;
@@ -82,7 +83,7 @@ export class Player extends Phaser.GameObjects.Container {
     const put = (key, pixels) => {
       if (textures.exists(key)) return;
       const texture = textures.createCanvas(key, pixels.width, pixels.height);
-      texture.getContext().putImageData(new ImageData(pixels.data, pixels.width, pixels.height), 0, 0);
+      texture.getContext().putImageData(new ImageData(quantizePixels(pixels).data, pixels.width, pixels.height), 0, 0);
       texture.setFilter(Phaser.Textures.FilterMode.NEAREST);
       texture.refresh();
     };

@@ -253,7 +253,7 @@ export function drawIcon(name) {
   const size = ICON_SIZES[name] ?? 16;
   const canvas = new PixelCanvas(size, size);
   DRAW[name]?.(canvas);
-  return canvas.outline();
+  return canvas.outline().quantize();
 }
 
 export const CODE_ICON_NAMES = Object.keys(DRAW);

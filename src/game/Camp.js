@@ -21,6 +21,7 @@ import { INVENTORY_CONFIG, RESOURCE_TYPES, WORLD } from './config.js';
 import { EquipmentSystem } from './EquipmentSystem.js';
 import { CampDefense } from './CampDefense.js';
 import { freeUnitsFor, slotsUsed, storeBundle, canStoreBundle } from './storageSlots.js';
+import { quantizePixels } from '../art/palette.js';
 
 export const BUILDINGS = BUILDING_DEFS;
 
@@ -345,7 +346,7 @@ export class Camp {
     cow.line(4, 15, 2, 21, '#b9b1a0');
     cow.pixel(2, 22, '#3b3632');
     cow.outline();
-    texture.getContext().putImageData(new ImageData(cow.data, 32, 32), 0, 0);
+    texture.getContext().putImageData(new ImageData(quantizePixels(cow).data, 32, 32), 0, 0);
     texture.setFilter(Phaser.Textures.FilterMode.NEAREST);
     texture.refresh();
   }

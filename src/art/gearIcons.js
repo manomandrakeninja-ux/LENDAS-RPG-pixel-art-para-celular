@@ -417,5 +417,5 @@ export function drawGearIcon(id, rarity = 'common') {
     sparkle(canvas, 27, 26, '#f0d0ff');
     canvas.pixel(28, 3, '#ffffff');
   }
-  return canvas;
+  return canvas.quantize();
 }
