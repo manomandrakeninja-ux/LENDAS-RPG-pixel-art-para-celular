@@ -619,7 +619,7 @@
 
 /* Celular: rastreador logo abaixo da barra rápida, estreito, longe do joystick. */
 .touch-controls:not([hidden]) ~ .quest-tracker {
-  top: var(--quickbar-bottom, 252px);
+  top: calc(var(--quickbar-bottom, 252px) + var(--hunt-hud-h, 0px));
 }
 
 body.is-phone .quest-tracker {
@@ -791,7 +791,7 @@ body.is-phone .quest-tracker h3 {
 }
 
 .touch-controls:not([hidden]) ~ .hunt-hud {
-  top: 128px;
+  top: var(--quickbar-bottom, 128px);
   left: 12px;
 }
 

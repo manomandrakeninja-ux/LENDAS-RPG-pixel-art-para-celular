@@ -70,6 +70,16 @@ export class HuntUI {
       this.counter.hidden = true;
       this.counter.classList.remove('is-complete');
     }
+    this.syncLayout();
+  }
+
+  /** Publica a altura do bloco da seta para o rastreador da missão ficar logo abaixo dele (sem sobrepor). */
+  syncLayout() {
+    const height = Math.ceil(this.hud.getBoundingClientRect().height || 0);
+    if (height !== this.lastHudHeight) {
+      this.lastHudHeight = height;
+      document.documentElement.style.setProperty('--hunt-hud-h', `${height + 6}px`);
+    }
   }
 
   /** Alvo da seta: missão ativa da campanha; senão a região da caçada (ou a Fogueira ao concluir). */
@@ -130,6 +140,7 @@ export class HuntUI {
   destroy() {
     this.toggle.removeEventListener('click', this.handleToggle);
     this.hud.remove();
+    document.documentElement.style.removeProperty('--hunt-hud-h');
     this.arrow.remove();
   }
 }

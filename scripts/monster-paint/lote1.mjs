@@ -76,7 +76,7 @@ const WOLF = ['#1a1932', '#2a2f4e', '#424c6e', '#657392', '#92a1b9', '#c7cfdd'];
 const WOLF_FAR = ['#0e071b', '#1a1932', '#2a2f4e', '#424c6e', '#657392'];
 const WOLF_CREAM = ['#657392', '#92a1b9', '#c7cfdd', '#d5e8ef'];
 
-function wolf(ctx, f, o) {
+export function wolf(ctx, f, o) {
   const at = o.attack;
   const ph = phaseOf(f);
   const bob = at ? -1.5 : Math.cos(ph * 2) * 0.8;

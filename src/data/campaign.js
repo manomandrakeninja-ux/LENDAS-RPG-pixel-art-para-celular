@@ -179,7 +179,7 @@ export const SITES = {
   carroca: { name: 'Carroça Abandonada', ...at(620, 300), kind: 'loot', art: 'cart', gives: { fabric: 3 } },
   sobrevivente: { name: 'Sobrevivente Ferido', ...at(-620, 520), kind: 'rescue', art: 'tent', recruits: 'curandeira' },
   cristal: { name: 'Cristal Vermelho', ...at(380, 560), kind: 'investigate', art: 'redCrystal', lore: 'fragmento' },
-  covil: { name: 'Covil do Lobo Cinzento', ...at(720, 520), kind: 'boss', art: 'den', boss: { kind: 'wolf', name: 'Lobo Cinzento', tag: 'loboCinzento', health: 7, damage: 1.4, scale: 1.6, tint: 0xb9c0c8 } },
+  covil: { name: 'Covil do Lobo Cinzento', ...at(720, 520), kind: 'boss', art: 'den', boss: { kind: 'wolf', visual: 'wolfBoss', name: 'Lobo Cinzento', tag: 'loboCinzento', health: 7, damage: 1.4, scale: 1 } },
   // Capítulo 2
   'ovelha-1': { name: 'Ovelha Perdida', ...at(-700, -80), kind: 'rescue', art: 'sheep', group: 'ovelhas' },
   'ovelha-2': { name: 'Ovelha Perdida', ...at(-560, 640), kind: 'rescue', art: 'sheep', group: 'ovelhas' },
