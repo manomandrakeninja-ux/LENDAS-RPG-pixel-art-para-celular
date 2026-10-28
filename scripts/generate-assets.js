@@ -27,7 +27,7 @@ function makeSheet(file, frameWidth, frameHeight, columns, rows, drawFrame, { ou
   writePng(path.join(root, file), sheet);
 }
 
-function makeAtlas(file, entries, { enhance = null } = {}) {
+function makeAtlas(file, entries, { enhance = null, occlusion = false } = {}) {
   const atlasWidth = 256;
   let x = 2;
   let y = 2;
@@ -50,6 +50,7 @@ function makeAtlas(file, entries, { enhance = null } = {}) {
     const sprite = new PixelCanvas(entry.width, entry.height);
     entry.draw(sprite);
     if (enhance && entry.enhance !== false) enhance(sprite);
+    if (occlusion && entry.outline !== false) sprite.baseOcclusion();
     if (entry.outline !== false) sprite.outline();
     atlas.blit(sprite, entry.x, entry.y);
     frames[entry.name] = {
@@ -573,7 +574,7 @@ const natureEntries = [
     }
   }
 ];
-makeAtlas('nature/nature-atlas.json', natureEntries);
+makeAtlas('nature/nature-atlas.json', natureEntries, { occlusion: true });
 
 // ---------- Prédios (64 x 64) ----------
 
@@ -1137,16 +1138,12 @@ for (const [name, art] of Object.entries(STAGE_ART)) {
  */
 function enhanceBuilding(canvas) {
   const { width, height } = canvas;
-  let bottom = 0;
-  for (let y = 0; y < height; y += 1) for (let x = 0; x < width; x += 1) if (canvas.alphaAt(x, y) > 200) bottom = y;
   for (let y = 0; y < height; y += 1) {
     for (let x = 0; x < width; x += 1) {
       if (canvas.alphaAt(x, y) < 200) continue;
       const color = canvas.colorAt(x, y);
-      let tone = 0.06 * (1 - y / height) - 0.06 * (x / width) + (hash(x, y, 909) - 0.5) * 0.05;
-      // Sombra de contato perto do chão.
-      const fromBottom = bottom - y;
-      if (fromBottom < 5) tone -= (5 - fromBottom) * 0.035;
+      // 3/4: o topo (telhado) pega mais luz que a face da frente.
+      let tone = 0.1 * (1 - y / height) - 0.03 - 0.06 * (x / width) + (hash(x, y, 909) - 0.5) * 0.05;
       // Borda de cima e da esquerda pegam luz.
       if (canvas.alphaAt(x, y - 1) < 200 || canvas.alphaAt(x - 1, y) < 200) tone += 0.1;
       // Borda de baixo e da direita ficam na sombra.
@@ -1154,6 +1151,8 @@ function enhanceBuilding(canvas) {
       canvas.pixel(x, y, tone >= 0 ? lighten(color, tone) : darken(color, -tone));
     }
   }
+  // Oclusão de contato na base das paredes (3 px, tom da sombra da rampa).
+  canvas.baseOcclusion();
 }
 makeAtlas('buildings/camp-atlas.json', buildingEntries, { enhance: enhanceBuilding });
 

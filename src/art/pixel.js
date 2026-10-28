@@ -2,6 +2,10 @@
 // desenhados no navegador. Trabalha num buffer RGBA; as cores terminam na paleta-mestre (palette.js).
 import { paletteRamp, quantizePixels } from './palette.js';
 
+// Tons da sombra de contato (paleta-mestre): núcleo roxo-escuro e borda azul-ardósia.
+const SHADOW_CORE = '#1a1932';
+const SHADOW_EDGE = '#2a2f4e';
+
 export function hexToRgb(hex) {
   return [
     Number.parseInt(hex.slice(1, 3), 16),
@@ -56,6 +60,12 @@ function colorDistance(a, b) {
   const [ar, ag, ab] = hexToRgb(a);
   const [br, bg, bb] = hexToRgb(b);
   return Math.hypot(ar - br, ag - bg, ab - bb);
+}
+
+/** Saturação simples (máx - mín do RGB, 0..1): separa cinza neutro de cor. */
+function satOf(hex) {
+  const [red, green, blue] = hexToRgb(hex);
+  return (Math.max(red, green, blue) - Math.min(red, green, blue)) / 255;
 }
 
 function lumaOf(hex) {
@@ -199,11 +209,47 @@ export class PixelCanvas {
   }
 
   /** Sombra suave no chão (semitransparente, não recebe contorno). */
+  /**
+   * Sombra de contato: elipse de 2 tons roxo-azulados (núcleo mais escuro e opaco, borda mais clara
+   * e fraca), da paleta-mestre. Fica sob os pés e a base de personagens, monstros e objetos.
+   */
   shadow(cx, cy, rx, ry, alpha = 90) {
     this.forEllipse(cx, cy, rx, ry, (x, y, nx, ny) => {
-      const edge = nx * nx + ny * ny;
-      this.pixel(x, y, '#15201a', edge > 0.6 ? Math.round(alpha * 0.6) : alpha);
+      const edge = nx * nx + ny * ny > 0.55;
+      this.pixel(x, y, edge ? SHADOW_EDGE : SHADOW_CORE, edge ? Math.round(alpha * 0.62) : alpha);
     });
+  }
+
+  /**
+   * Oclusão na base: escurece as 3 linhas mais baixas de cada coluna que toca o chão (só colunas
+   * cuja base está na faixa de baixo do objeto, para copas e beirais suspensos ficarem de fora).
+   * O tom vem da sombra da rampa (puxada para roxo), não de preto.
+   */
+  baseOcclusion({ rows = 3, band = 0.2, solid = 200, strength = [0.85, 0.5, 0.22] } = {}) {
+    let top = this.height;
+    let bottom = -1;
+    const lowest = new Array(this.width).fill(-1);
+    for (let y = 0; y < this.height; y += 1) {
+      for (let x = 0; x < this.width; x += 1) {
+        if (this.alphaAt(x, y) < solid) continue;
+        top = Math.min(top, y);
+        bottom = y;
+        lowest[x] = y;
+      }
+    }
+    if (bottom < 0 || bottom - top < 10) return this;
+    const limit = bottom - Math.max(rows, (bottom - top) * band);
+    for (let x = 0; x < this.width; x += 1) {
+      const base = lowest[x];
+      if (base < limit) continue;
+      for (let step = 0; step < rows; step += 1) {
+        const y = base - step;
+        if (this.alphaAt(x, y) < solid) break;
+        const color = this.colorAt(x, y);
+        this.pixel(x, y, mix(color, ramp(color)[0], strength[step] ?? 0.2));
+      }
+    }
+    return this;
   }
 
   blit(source, x, y, { flipX = false } = {}) {
@@ -305,6 +351,9 @@ export class PixelCanvas {
         let hex = top && left ? tones[3] : tones[2];
         // Muito escuro: a luz da rampa ainda some no chão; sobe mais um degrau.
         if (strong && luma < 0.25) hex = ramp(tones[3])[top && left ? 3 : 2];
+        // Rampas de verdes/azuis escuros terminam em cinza neutro: a luz de borda não pode
+        // acinzentar uma cor saturada (copas do carvalho antigo e do salgueiro).
+        if (satOf(hex) < 0.06 && satOf(color) > 0.12) hex = satOf(tones[2]) >= 0.06 ? tones[2] : color;
         marks.push([x, y, hex]);
       }
     }

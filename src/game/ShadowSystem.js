@@ -4,12 +4,47 @@ import { sunShadow } from '../data/sunlight.js';
 // ao meio-dia encolhem, à tarde viram para leste; à noite quase somem.
 // Também dá um leve tom de cor à manhã (dourado) e ao fim da tarde (laranja).
 
-const SHADOW_COLOR = 0x0b0a18;
+// Roxo-azulado da paleta-mestre (#1a1932): a sombra longa não fica cinza neutro.
+const SHADOW_COLOR = 0x1a1932;
+// A sombra longa fica mais curta e mais clara; quem "assenta" o objeto é a sombra de contato.
+const LONG_LENGTH = 0.8;
+const LONG_ALPHA = 0.78;
+// Sombra de contato: elipse de 2 tons (núcleo #1a1932 a ~56 %, borda #2a2f4e a ~34 %).
+const CONTACT_CORE = [26, 25, 50, 0.56];
+const CONTACT_EDGE = [42, 47, 78, 0.34];
+// Texturas que já trazem a sombra de contato desenhada no sprite.
+const BAKED_CONTACT = new Set(['buildings']);
+
+/** Gera (uma vez) a textura da elipse de contato com w x h pixels. */
+export function contactTexture(scene, width, height) {
+  const w = Math.max(4, Math.round(width));
+  const h = Math.max(3, Math.round(height));
+  const key = `contact-shadow-${w}x${h}`;
+  if (scene.textures.exists(key)) return key;
+  const texture = scene.textures.createCanvas(key, w, h);
+  const context = texture.getContext();
+  const image = context.createImageData(w, h);
+  for (let y = 0; y < h; y += 1) {
+    for (let x = 0; x < w; x += 1) {
+      const nx = (x + 0.5 - w / 2) / (w / 2);
+      const ny = (y + 0.5 - h / 2) / (h / 2);
+      const d = nx * nx + ny * ny;
+      if (d > 1) continue;
+      const [r, g, b, a] = d > 0.5 ? CONTACT_EDGE : CONTACT_CORE;
+      image.data.set([r, g, b, Math.round(a * 255)], (y * w + x) * 4);
+    }
+  }
+  context.putImageData(image, 0, 0);
+  texture.refresh();
+  return key;
+}
 
 export class ShadowSystem {
   constructor(scene) {
     this.scene = scene;
     this.entries = new Map();
+    this.contacts = new Map();
+    this.footprints = new Map();
     this.timer = 0;
     this.current = sunShadow(8);
     this.grade = scene.add.rectangle(0, 0, scene.scale.width, scene.scale.height, 0xffc890, 0)
@@ -27,20 +62,86 @@ export class ShadowSystem {
       this.scene.hudCamera?.ignore(shadow);
       this.apply(shadow);
       this.entries.set(image, shadow);
+      if (!BAKED_CONTACT.has(image.texture.key)) this.addContact(image);
     }
+  }
+
+  /** Base do objeto no quadro: linha mais baixa opaca e largura da faixa de baixo (em cache). */
+  footprint(image) {
+    const frame = image.frame;
+    const key = `${image.texture.key}|${frame.name}`;
+    if (this.footprints.has(key)) return this.footprints.get(key);
+    let result = null;
+    try {
+      const w = frame.cutWidth;
+      const h = frame.cutHeight;
+      this.probe ??= document.createElement('canvas');
+      this.probe.width = w;
+      this.probe.height = h;
+      const context = this.probe.getContext('2d', { willReadFrequently: true });
+      context.clearRect(0, 0, w, h);
+      context.drawImage(frame.source.image, frame.cutX, frame.cutY, w, h, 0, 0, w, h);
+      const data = context.getImageData(0, 0, w, h).data;
+      let top = h;
+      let bottom = -1;
+      for (let y = 0; y < h; y += 1) {
+        for (let x = 0; x < w; x += 1) if (data[(y * w + x) * 4 + 3] >= 200) { top = Math.min(top, y); bottom = y; break; }
+      }
+      if (bottom >= 0) {
+        const band = bottom - Math.max(3, (bottom - top) * 0.15);
+        let left = w;
+        let right = -1;
+        for (let y = Math.ceil(band); y <= bottom; y += 1) {
+          for (let x = 0; x < w; x += 1) if (data[(y * w + x) * 4 + 3] >= 200) { left = Math.min(left, x); right = Math.max(right, x); }
+        }
+        result = { cx: (left + right + 1) / 2, width: right - left + 1, bottom: bottom + 1, w, h };
+      }
+    } catch {
+      result = null;
+    }
+    this.footprints.set(key, result);
+    return result;
+  }
+
+  addContact(image) {
+    const foot = this.footprint(image);
+    if (!foot) return;
+    const width = Math.min(foot.w, foot.width * 1.25 + 4) * Math.abs(image.scaleX);
+    const height = Math.min(12, Math.max(4, width * 0.26));
+    const contact = this.scene.add.image(0, 0, contactTexture(this.scene, width, height)).setDepth(-997.5);
+    this.scene.hudCamera?.ignore(contact);
+    this.contacts.set(image, contact);
+    this.placeContact(image, contact, foot);
+  }
+
+  placeContact(image, contact, foot = this.footprint(image)) {
+    if (!foot) return;
+    const dx = (foot.cx - image.originX * foot.w) * image.scaleX * (image.flipX ? -1 : 1);
+    const dy = (foot.bottom - image.originY * foot.h) * image.scaleY;
+    contact.setPosition(image.x + dx, image.y + dy - contact.height * 0.3).setVisible(image.visible);
+  }
+
+  /** Sombra de contato presa a um personagem (contêiner): segue o dono sem custo por quadro. */
+  attachContact(container, { width = 22, y = 5 } = {}) {
+    if (!container?.addAt) return null;
+    const contact = this.scene.add.image(0, y, contactTexture(this.scene, width, Math.max(4, width * 0.3)));
+    container.addAt(contact, 0);
+    return contact;
   }
 
   unregister(images = []) {
     for (const image of images) {
       this.entries.get(image)?.destroy();
       this.entries.delete(image);
+      this.contacts.get(image)?.destroy();
+      this.contacts.delete(image);
     }
   }
 
   apply(shadow) {
     const { angle, length, alpha } = this.current;
     const hidden = this.scene.regionWorld?.underground;
-    shadow.setScale(1, -length).setRotation(angle).setAlpha(hidden ? 0 : alpha);
+    shadow.setScale(1, -length * LONG_LENGTH).setRotation(angle).setAlpha(hidden ? 0 : alpha * LONG_ALPHA);
   }
 
   update(delta, timeState) {
@@ -56,11 +157,15 @@ export class ShadowSystem {
       if (!image.active) {
         shadow.destroy();
         this.entries.delete(image);
+        this.contacts.get(image)?.destroy();
+        this.contacts.delete(image);
         continue;
       }
       if (shadow.frame.name !== image.frame.name) shadow.setFrame(image.frame.name);
       shadow.setPosition(image.x, image.y).setVisible(image.visible);
       this.apply(shadow);
+      const contact = this.contacts.get(image);
+      if (contact) this.placeContact(image, contact);
     }
     // Luz da manhã dourada e da tarde alaranjada (a noite fica com o LightingSystem).
     let tint = 0xffc890;

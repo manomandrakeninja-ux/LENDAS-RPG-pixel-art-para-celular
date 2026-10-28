@@ -195,6 +195,7 @@ export class GameScene extends Phaser.Scene {
     this.cameras.main.setBounds(0, 0, WORLD.width, WORLD.height);
     this.shadows = new ShadowSystem(this);
     this.shadows.register(this.world.treeSprites);
+    this.playerContact = this.shadows.attachContact(this.player);
     this.cameras.main.startFollow(this.player, true, 0.08, 0.08);
     this.cameras.main.setZoom(this.worldZoom()).setRoundPixels(true);
 

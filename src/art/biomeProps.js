@@ -6,7 +6,8 @@ import { hash } from './pixel.js';
 // Luz do alto à esquerda, como no resto do jogo.
 
 const LIGHT = [-0.62, -0.78];
-const INK = '#120d12';
+// Tinta do contorno puxada para roxo (sombra fria), como a sombra de contato.
+const INK = '#0e071b';
 
 /** Cor numa rampa (lista de hex do escuro ao claro) para v em 0..1. */
 function shade(palette, v) {
@@ -102,13 +103,15 @@ function glow(p, cx, cy, radius, hex, intensity) {
 }
 
 function finish(p, { outline = 0.62, levels = 26 } = {}) {
-  return p.toPixelCanvas(levels).outline({ strength: outline, ink: INK });
+  return p.toPixelCanvas(levels).baseOcclusion().outline({ strength: outline, ink: INK });
 }
 
 // ---------- Paletas ----------
 
-const LEAF_DEEP = ['#0c1a10', '#163020', '#22462a', '#326034', '#4a7e40', '#6a9e50'];
-const LEAF_MOSS = ['#18240f', '#26381a', '#385226', '#4e6e30', '#6e8e3e', '#94b058'];
+// Verdes direto da paleta-mestre: os tons antigos caíam no cinza-quente/oliva (#2d2e25, #494834) e a
+// luz de borda das copas saía acinzentada.
+const LEAF_DEEP = ['#0c2e44', '#134c4c', '#1e6f50', '#33984b', '#5ac54f', '#99e65f'];
+const LEAF_MOSS = ['#1c121c', '#134c4c', '#1e6f50', '#33984b', '#5ac54f', '#99e65f'];
 const LEAF_JUNGLE = ['#103a18', '#1c5a22', '#2c7a2c', '#44a03a', '#6cc450', '#a6e070'];
 const PINE_SNOW = ['#0e2420', '#18382e', '#24503c', '#33684a'];
 const BARK = ['#1e120c', '#33201a', '#4a3020', '#644430', '#7e5a3e'];
