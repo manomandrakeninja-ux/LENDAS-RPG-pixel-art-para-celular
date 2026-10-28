@@ -4,7 +4,7 @@ import { BAKED_MONSTERS } from '../src/art/monsterSprites.js';
 import { drawMonsterFrame, monsterAttackFrame, monsterFrameCount } from '../src/art/monsters.js';
 
 // Fase 20G: monstros pintados em alta resolução e reduzidos (scripts/bake-monsters.mjs).
-const BOSSES = new Set(['titan', 'abyssLord']);
+const BOSSES = new Set(['titan', 'abyssLord', 'orcChief', 'hydra', 'frostGiant', 'pharaoh', 'dragon', 'ghostCaptain']);
 const opaque = (canvas) => {
   const set = new Set();
   for (let i = 0; i < canvas.data.length; i += 4) if (canvas.data[i + 3] >= 200) set.add(i);

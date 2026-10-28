@@ -14,15 +14,26 @@ function djinn(ctx, f, o) {
   const bob = at ? -1 : Math.sin(ph) * 1.4;
   ctx.save();
   ctx.translate(0, bob);
-  // Cauda de fumaça em espiral no lugar das pernas.
-  const w = Math.sin(ph) * 2;
-  const tail = P(ctx, `M24,38 C23,44 26,48 ${28 + w},51 C${31 + w},54 ${30 + w},58 ${25 + w},58.5
-    C${21 + w},59 ${18 + w},56 ${20 + w},53.5 C${21 + w},52 ${23 + w},52.6 ${23 + w},54
-    C${25 + w},53 ${24 + w},51 ${21 + w},49 C17,46 16,42 18,38 Z`);
-  const tail2 = P(ctx, `M18,38 C17,44 22,47 ${26 + w},50 C${30 + w},53 ${30 + w},56.5 ${26 + w},57.5 C${32 + w},57 ${34 + w},52 ${31 + w},48.5 C28,45 30,41 40,38 Z`);
-  shade(ctx, tail2, SMOKE, [16, 37, 22, 22], { ao: 0.25 });
-  shade(ctx, tail, SMOKE, [16, 37, 16, 22], { ao: 0.2 });
-  stroke(ctx, [[22, 41], [25, 46], [29 + w, 50]], 0.8, hexA('#94fdff', 0.9));
+  // Cauda de fumaça: redemoinho que afina e termina numa ponta enrolada no ar (não toca o chão).
+  const w = Math.sin(ph) * 1.6;
+  const tail = P(ctx, `M18,37 C16.5,42 20,45.5 24.5,48 C28,50 ${29.6 + w},52 ${27.6 + w},54 C${26 + w},55.4 ${23.2 + w},55 ${22.6 + w},53.4
+    C${24 + w},54 ${25.6 + w},53.4 ${25.4 + w},52.2 C${30.5 + w},51 ${34.5 + w},48.4 37.5,45.4 C40,43 41.4,40 41,37 Z`);
+  shade(ctx, tail, SMOKE, [16, 36, 26, 20], { lx: 0.3, ly: 0.15, ao: 0.15 });
+  inside(ctx, tail, () => {
+    // Faixas do redemoinho (sombra embaixo, brilho em cima), inclinadas como um tornado.
+    for (let i = 0; i < 4; i += 1) {
+      const y = 39.5 + i * 3.4 + ((f % 2) ? 0.8 : 0);
+      const x0 = 17 + i * 1.6;
+      const x1 = 41 - i * 3.2 + w * (i / 3);
+      stroke(ctx, [[x0, y], [(x0 + x1) / 2, y + 2.2], [x1, y - 0.6]], 1.2, '#0069aa');
+      stroke(ctx, [[x0 + 1, y - 1.2], [(x0 + x1) / 2, y + 0.9], [x1 - 1, y - 1.8]], 0.8, '#94fdff');
+    }
+  });
+  // Fiapos soltos de fumaça ao lado do redemoinho.
+  for (const [x, y, r] of [[15.5 + w, 44, 1.8], [42.5 - w, 42.5, 1.6], [20 + w, 50.5, 1.3]]) {
+    fill(ctx, ell(ctx, x, y, r, r * 0.8), '#00cdf9');
+    fill(ctx, ell(ctx, x - r * 0.3, y - r * 0.3, r * 0.5, r * 0.4), '#94fdff');
+  }
   // Faixa vermelha na cintura com fivela dourada.
   const sash = P(ctx, 'M19,36.5 C25,38 33,38 40,36 L40.5,40.5 C33,42 25,42 18.5,40.5 Z');
   shade(ctx, sash, C.wine.slice(0, 5), [18, 36, 23, 6], { ao: 0.3 });
@@ -466,8 +477,18 @@ function abyssLord(ctx, f, o) {
   }
   // Saiote de placas com barra dourada.
   const skirt = P(ctx, 'M23,38 C28,40 36,40 41,38 L43,46 C40,47.4 37,46.4 35.5,47.8 C33.6,46.6 30.4,46.6 28.5,47.8 C27,46.4 24,47.4 21,46 Z');
-  shade(ctx, skirt, IRON, [21, 38, 22, 10], { ao: 0.3 });
-  stroke(ctx, [[23, 38.8], [32, 40.4], [41, 38.8]], 1, '#edab50');
+  // Saiote de couro vinho-escuro com barra rasgada em pontas (no lugar das placas cinza).
+  shade(ctx, skirt, ['#0e071b', '#1c121c', '#3b1443', '#571c27', '#891e2b'], [21, 38, 22, 10], { ao: 0.3 });
+  inside(ctx, skirt, () => {
+    for (const x of [25, 29, 35, 39]) stroke(ctx, [[x, 40.5], [x + 0.4, 44], [x - 0.2, 47]], 0.8, '#1c121c');
+    for (const x of [26.4, 37.2]) stroke(ctx, [[x, 41], [x + 0.3, 44]], 0.6, '#891e2b');
+  });
+  // Cinto de couro preto com fivela de caveira dourada e tachas.
+  shade(ctx, P(ctx, 'M22.2,39.6 C28,41.6 36,41.6 41.8,39.6 L42.2,42.8 C36,44.6 28,44.6 21.8,42.8 Z'), ['#0e071b', '#1c121c', '#391f21', '#5d2c28'], [22, 39.5, 20, 5], { ao: 0 });
+  for (const x of [25, 28.4, 35.6, 39]) fill(ctx, ell(ctx, x, 42.2 - Math.abs(x - 32) * 0.08, 0.75, 0.75), '#ffc825');
+  shade(ctx, ell(ctx, 32, 42.4, 2.4, 2.1), C.gold, [29.6, 40.3, 4.8, 4.2], { ao: 0 });
+  fill(ctx, ell(ctx, 31.2, 42.2, 0.6, 0.6), '#1c121c');
+  fill(ctx, ell(ctx, 32.8, 42.2, 0.6, 0.6), '#1c121c');
   shade(ctx, P(ctx, `M28.5,40 C30.5,40.6 33.5,40.6 35.5,40 L${35 + Math.sin(ph) * 0.8},50 C33,51 31,51 ${29 + Math.sin(ph) * 0.8},50 Z`), C.wine.slice(0, 5), [28, 40, 8, 11], { ao: 0.3 });
   stroke(ctx, [[29, 49.6], [32, 50.4], [35, 49.6]], 0.8, '#edab50');
   // Tronco musculoso com veias de lava e runa no peito.

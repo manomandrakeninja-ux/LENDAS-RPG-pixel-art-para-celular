@@ -181,3 +181,76 @@ export const C = {
   wood: ['#1c121c', '#391f21', '#5d2c28', '#8a4836'],
   slime: ['#134c4c', '#1e6f50', '#33984b', '#5ac54f', '#99e65f', '#d3fc7e']
 };
+
+// ---------------------------------------------------------------- Texturas (lote 2)
+// Todas pintam DENTRO de `path` (recorte). Larguras em unidades da grade 64: para sobreviver à
+// redução, um traço precisa de ~1 px final, ou seja, largura >= o.px (64 / tamanho final).
+
+/**
+ * Luz de borda quente: faixa de `width` na borda do alto/esquerda (ou do lado `side`) do volume,
+ * como o contraluz âmbar das skins. `box` = [x, y, w, h] do volume.
+ */
+export function rimWarm(ctx, path, [x, y, w, h], color = '#edab50', width = 1.6, { side = 'tl', alpha = 1 } = {}) {
+  ctx.save();
+  ctx.clip(path);
+  const clip = new ctx.Path2D();
+  if (side === 'tl') { clip.moveTo(x - 2, y - 2); clip.lineTo(x + w * 1.05, y - 2); clip.lineTo(x - 2, y + h * 1.05); }
+  else if (side === 't') { clip.rect(x - 2, y - 2, w + 4, h * 0.45); }
+  else if (side === 'tr') { clip.moveTo(x - w * 0.05, y - 2); clip.lineTo(x + w + 2, y - 2); clip.lineTo(x + w + 2, y + h * 1.05); }
+  clip.closePath();
+  ctx.clip(clip);
+  ctx.lineWidth = width * 2;
+  // Meio-transparente: mistura com o tom de baixo e vira um degrau quente da rampa, não um traço amarelo.
+  ctx.strokeStyle = hexA(color, alpha * 0.5);
+  ctx.lineJoin = 'round';
+  ctx.stroke(path);
+  ctx.restore();
+}
+
+/**
+ * Escamas: fileiras de meias-luas (arcos) dentro de `path`, deslocadas a cada fileira.
+ * `r` = raio da escama; `dark` é a sombra embaixo de cada escama e `light` o brilho no topo.
+ */
+export function scales(ctx, path, [x, y, w, h], r, dark, light, { lw = 0.7, lightW = null, tilt = 0 } = {}) {
+  inside(ctx, path, () => {
+    let row = 0;
+    for (let yy = y - r; yy < y + h + r; yy += r * 1.25, row += 1) {
+      for (let xx = x - r + (row % 2) * r; xx < x + w + r; xx += r * 2) {
+        const cx = xx + tilt * (yy - y);
+        stroke(ctx, [[cx - r * 0.95, yy], [cx, yy + r * 0.95], [cx + r * 0.95, yy]], lw, dark);
+        if (light) stroke(ctx, [[cx - r * 0.5, yy - r * 0.35], [cx + r * 0.3, yy - r * 0.45]], lightW ?? lw * 0.8, light);
+      }
+    }
+  });
+}
+
+/** Textura de pelo dentro de `path`: mechas curtas em fileiras, alternando dois tons. */
+export function furTex(ctx, path, [x, y, w, h], colors, { len = 2.4, lw = 0.8, step = 2.6, dx = -0.6, dy = 1, seed = 3 } = {}) {
+  inside(ctx, path, () => {
+    let i = 0;
+    for (let yy = y; yy < y + h + len; yy += step) {
+      for (let xx = x + ((i * 1.7) % step); xx < x + w + len; xx += step * 1.15) {
+        const r = rand(seed + i * 3.7);
+        i += 1;
+        const c = colors[i % colors.length];
+        stroke(ctx, [[xx, yy], [xx + dx * len * 0.5 + (r - 0.5) * 0.6, yy + dy * len * 0.55], [xx + dx * len, yy + dy * len]], lw, c);
+      }
+    }
+  });
+}
+
+/** Brilho especular de metal/olho/unha: um traço curto claro com um ponto mais claro na ponta. */
+export function glint(ctx, x, y, len, color = '#ffffff', { lw = 0.8, angle = -0.6 } = {}) {
+  const ex = x + Math.cos(angle) * len;
+  const ey = y + Math.sin(angle) * len;
+  stroke(ctx, [[x, y], [ex, ey]], lw, color);
+}
+
+/** Olho expressivo: esclera/brilho, pupila e pálpebra (sobrancelha franzida em `brow`). */
+export function eye(ctx, x, y, r, { iris = '#ea323c', glowC = null, brow = '#0e071b', browTilt = 0.5, lid = true, pupil = '#0e071b' } = {}) {
+  if (glowC) glow(ctx, x, y, r * 2.2, glowC, { core: iris, alpha: 0.85 });
+  fill(ctx, ell(ctx, x, y, r, r * 0.85), iris);
+  fill(ctx, ell(ctx, x + r * 0.25, y + r * 0.1, r * 0.45, r * 0.6), pupil);
+  fill(ctx, ell(ctx, x - r * 0.35, y - r * 0.35, r * 0.3, r * 0.3), '#ffffff');
+  if (lid && brow) stroke(ctx, [[x - r * 1.3, y - r * (0.6 + browTilt)], [x + r * 1.2, y - r * (0.9 - browTilt)]], r * 0.75, brow);
+}

@@ -11,7 +11,7 @@
 //  5. sombra de contato (PixelCanvas.shadow) por baixo;
 //  6. grava src/art/monsterSprites.js (cores RGBA + RLE em base64), lido por src/art/bakedMonsters.js.
 //
-// Uso: node scripts/bake-monsters.mjs [--only slime,wolf] [--preview arquivo.png] [--scale 3]
+// Uso: node scripts/bake-monsters.mjs [--only slime,wolf] [--preview arquivo.png] [--scale 3] [--no-write]
 import fs from 'node:fs';
 import path from 'node:path';
 import { createCanvas, Path2D } from '@napi-rs/canvas';
@@ -21,8 +21,11 @@ import { writePng } from './png.js';
 import { MONSTERS as LOTE1 } from './monster-paint/lote1.mjs';
 import { MONSTERS_B as LOTE1B } from './monster-paint/lote1b.mjs';
 import { MONSTERS_C as LOTE1C } from './monster-paint/lote1c.mjs';
+import { MONSTERS_2A as LOTE2A } from './monster-paint/lote2a.mjs';
+import { MONSTERS_2B as LOTE2B } from './monster-paint/lote2b.mjs';
+import { MONSTERS_2C as LOTE2C } from './monster-paint/lote2c.mjs';
 
-const PAINTERS = { ...LOTE1, ...LOTE1B, ...LOTE1C };
+const PAINTERS = { ...LOTE1, ...LOTE1B, ...LOTE1C, ...LOTE2A, ...LOTE2B, ...LOTE2C };
 const SS = 4; // superamostragem
 const OUT = path.resolve('src/art/monsterSprites.js');
 const INK = '#120d12';
@@ -32,6 +35,8 @@ const opt = (name) => { const i = args.indexOf(`--${name}`); return i >= 0 ? arg
 const only = opt('only')?.split(',');
 const previewFile = opt('preview');
 const previewScale = Number(opt('scale') ?? 3);
+// --no-write: só gera a prévia, sem gravar src/art/monsterSprites.js (útil para pintar em paralelo).
+const noWrite = args.includes('--no-write');
 
 /** Pinta um quadro em alta resolução e devolve os pixels RGBA. */
 function paintHiRes(spec, size, frame, normalSize) {
@@ -204,7 +209,7 @@ for (const [kind, spec] of Object.entries(PAINTERS)) {
 
 const header = '// GERADO por scripts/bake-monsters.mjs (Fase 20G). Não editar à mão: repinte em scripts/monster-paint/.\n';
 const body = `export const BAKED_MONSTERS = ${JSON.stringify(result, null, 0).replace(/\},"/g, '},\n"')};\n`;
-fs.writeFileSync(OUT, header + body);
+if (!noWrite) fs.writeFileSync(OUT, header + body);
 
 if (previewFile) {
   const scale = previewScale; const gap = 8;
