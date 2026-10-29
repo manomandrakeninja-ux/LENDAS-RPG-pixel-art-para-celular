@@ -2,7 +2,7 @@ import { WORLD } from './config.js';
 import { FULL_WORLD, REGION_CENTERS as WORLD_REGION_LABELS, REGION_INFO, T, TILE } from '../data/worldRegions.js';
 import { DUNGEON_CONFIG } from '../data/buildings.js';
 import { REGIONS } from '../data/campaign.js';
-import { hash } from '../art/pixel.js';
+import { paintParchment, paintClouds, drawTreeSymbol } from './mapParchment.js';
 
 // Desenha o terreno do mundo (uma vez) e a névoa de exploração, numa escala de
 // 1 pixel do mapa = MAP_SCALE pixels do mundo. Minimapa e mapa grande recortam daqui.
@@ -10,27 +10,6 @@ export const MAP_SCALE = 6;
 // Inclui a faixa das cavernas (abaixo do mar) para o minimapa funcionar lá dentro.
 const MAP_WIDTH = Math.ceil(FULL_WORLD.width / MAP_SCALE);
 const MAP_HEIGHT = Math.ceil(FULL_WORLD.height / MAP_SCALE);
-// Cor de cada terreno no mapa: [base, variação clara, variação escura].
-const TERRAIN_COLORS = {
-  [T.FOREST]: [[34, 64, 40], [44, 80, 48], [24, 50, 32]],
-  [T.SWAMP]: [[62, 72, 46], [74, 86, 54], [50, 58, 38]],
-  [T.SNOW]: [[214, 226, 238], [236, 244, 250], [190, 206, 222]],
-  [T.SAND]: [[214, 178, 104], [228, 196, 124], [196, 158, 88]],
-  [T.DUNE]: [[200, 160, 90], [214, 176, 104], [184, 144, 78]],
-  [T.BEACH]: [[232, 214, 166], [244, 230, 190], [218, 198, 150]],
-  [T.JUNGLE]: [[72, 150, 60], [90, 170, 72], [58, 128, 50]],
-  [T.ASH]: [[58, 44, 44], [72, 56, 54], [44, 34, 34]],
-  [T.SEA]: [[38, 92, 140], [46, 104, 154], [32, 82, 128]],
-  [T.LAVA]: [[240, 96, 30], [255, 150, 60], [200, 60, 20]],
-  [T.MURK]: [[42, 58, 40], [50, 68, 46], [36, 50, 34]],
-  [T.ICE]: [[160, 204, 232], [184, 220, 242], [140, 186, 218]],
-  [T.CAVE]: [[96, 84, 78], [110, 98, 90], [84, 72, 68]],
-  [T.WALL]: [[30, 26, 32], [36, 32, 38], [24, 20, 26]],
-  [T.VOID]: [[0, 0, 0], [0, 0, 0], [0, 0, 0]]
-};
-
-const hex = (value) => `#${value.toString(16).padStart(6, '0')}`;
-
 
 export class MapRenderer {
   constructor(scene) {
@@ -63,84 +42,28 @@ export class MapRenderer {
   }
 
   drawTerrain() {
+    // Fase 20H: o mapa é um pergaminho (src/game/mapParchment.js): aguadas por terreno, relevo,
+    // tinta nas costas, símbolos pintados. Feito uma vez; minimapa e mapa grande recortam daqui.
     const context = this.terrain.getContext('2d');
-    const image = context.createImageData(MAP_WIDTH, MAP_HEIGHT);
-    const data = image.data;
-    // Grama com manchas suaves (ruído em blocos de 6 px do mapa).
-    for (let y = 0; y < MAP_HEIGHT; y += 1) {
-      for (let x = 0; x < MAP_WIDTH; x += 1) {
-        const patch = hash(Math.floor(x / 6), Math.floor(y / 6), 17);
-        const speck = hash(x, y, 4);
-        let [r, g, b] = patch > 0.7 ? [86, 138, 79] : patch < 0.25 ? [63, 109, 66] : [74, 123, 72];
-        if (speck > 0.94) [r, g, b] = [108, 157, 89];
-        else if (speck < 0.04) [r, g, b] = [51, 92, 59];
-        // Fora do Vale: cor do terreno das regiões novas, mares e cavernas.
-        const kind = this.terrainKind(x * MAP_SCALE, y * MAP_SCALE);
-        if (kind !== null && kind !== T.VALLEY) {
-          const palette = TERRAIN_COLORS[kind] ?? TERRAIN_COLORS[T.VOID];
-          [r, g, b] = patch > 0.72 ? palette[1] : patch < 0.24 ? palette[2] : palette[0];
-          if (kind === T.SEA && speck > 0.97) [r, g, b] = [120, 170, 210];
-        }
-        const index = (y * MAP_WIDTH + x) * 4;
-        data[index] = r;
-        data[index + 1] = g;
-        data[index + 2] = b;
-        data[index + 3] = 255;
-      }
-    }
-    context.putImageData(image, 0, 0);
-
-    // Regiões da campanha (neve, deserto, cinzas...).
-    for (const region of Object.values(REGIONS)) {
-      if (!region.radius) continue;
-      for (let step = 5; step >= 1; step -= 1) {
-        const ratio = step / 5;
-        context.fillStyle = hex(region.tint);
-        context.globalAlpha = region.alpha * 0.32 + 0.06;
-        context.beginPath();
-        context.ellipse(region.x / MAP_SCALE, region.y / MAP_SCALE, (region.radius / MAP_SCALE) * ratio, (region.radius * 0.8 / MAP_SCALE) * ratio, 0, 0, Math.PI * 2);
-        context.fill();
-      }
-    }
-    context.globalAlpha = 1;
+    paintParchment(context, MAP_WIDTH, MAP_HEIGHT, (x, y) => {
+      const kind = this.terrainKind(x * MAP_SCALE + MAP_SCALE / 2, y * MAP_SCALE + MAP_SCALE / 2);
+      return kind === null ? T.VALLEY : kind;
+    });
 
     // Caminho de terra até o acampamento e a clareira da fogueira.
     const camp = WORLD.camp;
-    context.fillStyle = '#9a7652';
-    context.fillRect((camp.x - 48) / MAP_SCALE, (camp.y - 36) / MAP_SCALE, 96 / MAP_SCALE, 516 / MAP_SCALE);
-    context.fillStyle = '#7f5f42';
-    context.fillRect((camp.x - 48) / MAP_SCALE, (camp.y - 36) / MAP_SCALE, 2, 516 / MAP_SCALE);
-    context.fillRect((camp.x + 48) / MAP_SCALE - 2, (camp.y - 36) / MAP_SCALE, 2, 516 / MAP_SCALE);
+    // Trilha tracejada a tinta, como nos mapas antigos.
+    context.fillStyle = '#7a5434';
+    for (let step = 0; step < 516 / MAP_SCALE; step += 4) {
+      context.fillRect(Math.round(camp.x / MAP_SCALE) - 1, Math.round((camp.y - 36) / MAP_SCALE + step), 2, 2);
+    }
 
-    // Arbustos, rochas, recursos e árvores (sombra + copa com luz).
-    const world = this.scene.world;
-    for (const bush of world?.bushes ?? []) {
-      context.fillStyle = '#3d7745';
-      context.fillRect(Math.round(bush.x / MAP_SCALE) - 1, Math.round(bush.y / MAP_SCALE) - 1, 3, 2);
-    }
-    for (const resource of world?.resources ?? []) {
-      context.fillStyle = resource.type === 'stone' ? '#8d9496' : resource.type === 'wood' ? '#7a5236' : '#7fb35e';
-      context.fillRect(Math.round(resource.x / MAP_SCALE) - 1, Math.round(resource.y / MAP_SCALE) - 1, 2, 2);
-    }
-    for (const structure of this.scene.harvestStructures?.state?.structures ?? []) {
-      if (structure.type !== 'tree' && structure.type !== 'rock') continue;
-      context.fillStyle = structure.type === 'rock' ? '#a7aeab' : '#2f5f38';
-      context.fillRect(Math.round(structure.x / MAP_SCALE) - 1, Math.round(structure.y / MAP_SCALE) - 1, 3, 3);
-    }
-    const trees = [...(world?.trees ?? [])].sort((a, b) => a.y - b.y);
-    for (const tree of trees) {
-      const x = Math.round(tree.x / MAP_SCALE);
-      const y = Math.round(tree.y / MAP_SCALE);
-      const crown = tree.kind === 'autumn-tree' ? ['#8e3f2c', '#c56a3f', '#e8a060'] : tree.kind === 'pine' ? ['#1f4130', '#2b5a3a', '#4f8a50'] : ['#25502f', '#3d7745', '#6fa858'];
-      context.fillStyle = 'rgba(16, 32, 20, 0.45)';
-      context.fillRect(x - 2, y, 6, 2);
-      context.fillStyle = crown[0];
-      context.fillRect(x - 3, y - 5, 6, 5);
-      context.fillStyle = crown[1];
-      context.fillRect(x - 2, y - 6, 4, 5);
-      context.fillStyle = crown[2];
-      context.fillRect(x - 2, y - 6, 2, 2);
-    }
+    // Árvores do Vale: um símbolo a cada poucas árvores (o resto do bosque já está na aguada).
+    const trees = [...(this.scene.world?.trees ?? [])].sort((a, b) => a.y - b.y);
+    trees.forEach((tree, index) => {
+      if (index % 3) return;
+      drawTreeSymbol(context, Math.round(tree.x / MAP_SCALE), Math.round(tree.y / MAP_SCALE), tree.kind === 'pine' ? 'pine' : tree.kind === 'autumn-tree' ? 'autumn' : 'oak');
+    });
 
     // Entrada da mina e da masmorra (sempre no terreno; o marcador aparece conforme a regra de cada uma).
     const mine = this.scene.harvestStructures?.state?.byType?.('mineMarker')?.[0];
@@ -184,7 +107,7 @@ export class MapRenderer {
     }
   }
 
-  /** Névoa: escura onde ainda não foi explorado, com bordas suaves. */
+  /** Névoa: nuvens claras onde ainda não foi explorado, com bordas suaves. */
   updateFog() {
     const cells = this.scene.world?.getRevealedCells?.() ?? [];
     if (cells.length === this.lastRevealed) return false;
@@ -192,8 +115,9 @@ export class MapRenderer {
     const context = this.fog.getContext('2d');
     context.globalCompositeOperation = 'source-over';
     context.clearRect(0, 0, MAP_WIDTH, MAP_HEIGHT);
-    context.fillStyle = 'rgba(9, 13, 11, 0.94)';
-    context.fillRect(0, 0, MAP_WIDTH, MAP_HEIGHT);
+    // Névoa como nuvens de pergaminho (camada pintada uma vez), não um véu preto.
+    if (!this.clouds) this.clouds = paintClouds(MAP_WIDTH, MAP_HEIGHT);
+    context.drawImage(this.clouds, 0, 0);
     context.globalCompositeOperation = 'destination-out';
     const cell = (WORLD.tileSize * 2) / MAP_SCALE;
     for (const { column, row } of cells) {
@@ -314,10 +238,20 @@ export class MapRenderer {
     const angle = facing ? Math.atan2(facing.y, facing.x) : -Math.PI / 2;
     context.save();
     context.translate(x, y);
+    // Marcador do herói: medalhão de ouro velho com a seta vermelha apontando para onde ele anda.
+    const ring = size * 1.45;
+    context.fillStyle = 'rgba(26, 16, 10, 0.4)';
+    context.beginPath(); context.arc(1, 2, ring + 2, 0, Math.PI * 2); context.fill();
+    context.fillStyle = '#1a120d';
+    context.beginPath(); context.arc(0, 0, ring + 2, 0, Math.PI * 2); context.fill();
+    context.fillStyle = '#cba36f';
+    context.beginPath(); context.arc(0, 0, ring + 1, 0, Math.PI * 2); context.fill();
+    context.fillStyle = '#f4e6c6';
+    context.beginPath(); context.arc(0, 0, ring - 1, 0, Math.PI * 2); context.fill();
     context.rotate(angle);
-    context.fillStyle = '#ffe06a';
+    context.fillStyle = '#c42430';
     context.strokeStyle = '#1a120d';
-    context.lineWidth = 2;
+    context.lineWidth = 1.5;
     context.beginPath();
     context.moveTo(size + 2, 0);
     context.lineTo(-size, -size * 0.8);
@@ -326,6 +260,9 @@ export class MapRenderer {
     context.closePath();
     context.fill();
     context.stroke();
+    // Miolo dourado (o herói é o ponto mais claro do mapa).
+    context.fillStyle = '#ffe08a';
+    context.fillRect(-1.5, -1.5, 3, 3);
     context.restore();
   }
 

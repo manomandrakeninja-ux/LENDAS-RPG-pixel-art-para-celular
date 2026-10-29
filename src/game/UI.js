@@ -63,17 +63,18 @@ export class GameUI {
     // Celular: painel enxuto (só vida, XP, vigor e moedas), minimapa menor e sem dicas de teclado.
     const phone = Boolean(this.scene.touch?.enabled) && (height < 560 || width < 560);
     if (phone) {
-      return { compact: true, phone, hudWidth: 196, hudHeight: 62, hudX: 107, mapSize: 112, barWidth: 168 };
+      return { compact: true, phone, hudWidth: 206, hudHeight: 70, hudTop: 4, hudX: 109, mapSize: 116, barWidth: 152 };
     }
     return {
       compact,
       phone: false,
-      barWidth: 212,
-      hudWidth: compact ? 262 : 300,
-      hudHeight: 150,
+      barWidth: compact ? 200 : 232,
+      hudWidth: compact ? 270 : 304,
+      hudHeight: 156,
+      hudTop: 8,
       // Centro do fundo do HUD: sempre colado à esquerda, junto dos textos (x = 22).
       // Antes, em telas baixas (celular deitado), o fundo ia para o meio e cobria o personagem.
-      hudX: compact ? 140 : 159,
+      hudX: compact ? 141 : 158,
       mapSize: compact ? 156 : 168
     };
   }
@@ -95,6 +96,24 @@ export class GameUI {
     this.iconTexture('hud-backpack', 'backpack');
     this.iconTexture('hud-journal', 'journal');
     for (const seal of ['sealEarth', 'sealWater', 'sealWind', 'sealLight', 'sealFire']) this.iconTexture(`resource-code-${seal}`, seal);
+  }
+
+  /** Enchimentos das barras do HUD: 1 px de largura, esticados na horizontal (degradê + brilho no topo). */
+  ensureBarTextures() {
+    const fills = {
+      'hud-fill-health': ['#ffb4a8', '#f5555d', '#e0333c', '#c42430', '#a41d2a', '#891e2b', '#6e1824', '#571c27'],
+      'hud-fill-trail': ['#ffe6b0', '#f6ca9f', '#edab50', '#e69c69', '#d0885a', '#bf6f4a', '#a8603e', '#8a4836'],
+      'hud-fill-xp': ['#fdd2ed', '#ca52c9', '#93388f', '#622461'],
+      'hud-fill-stamina': ['#ffeb57', '#ffc825', '#edab50', '#8a4836']
+    };
+    for (const [key, colors] of Object.entries(fills)) {
+      if (this.scene.textures.exists(key)) continue;
+      const texture = this.scene.textures.createCanvas(key, 1, colors.length);
+      const context = texture.getContext();
+      colors.forEach((color, y) => { context.fillStyle = color; context.fillRect(0, y, 1, 1); });
+      texture.setFilter(Phaser.Textures.FilterMode.NEAREST);
+      texture.refresh();
+    }
   }
 
   ensureCoinIconTexture() {
@@ -121,48 +140,58 @@ export class GameUI {
     this.fixed.push(this.rain);
     this.hudBg = this.scene.add.nineslice(
       this.metrics.hudX,
-      12 + this.metrics.hudHeight / 2,
-      'panel',
-      'panel',
+      this.metrics.hudTop + this.metrics.hudHeight / 2,
+      'ui-panel',
+      undefined,
       this.metrics.hudWidth,
       this.metrics.hudHeight,
-      6,
-      6,
-      6,
-      6
+      16,
+      16,
+      16,
+      16
     ).setScrollFactor(0).setDepth(OVERLAY_DEPTH + 4999);
     this.fixed.push(this.hudBg);
+    this.ensureBarTextures();
+    const at = OVERLAY_DEPTH + 5000;
+    const image = (key, depth = at) => this.scene.add.image(0, 0, key).setOrigin(0).setScrollFactor(0).setDepth(depth);
+    const icon = (key) => this.scene.add.image(0, 0, key).setScrollFactor(0).setDepth(at + 2);
+    this.healthIcon = icon('ui-icon-heart');
     this.healthLabel = this.text(22, 18, '', { fontSize: '8px' });
-    this.healthBar = this.scene.add.rectangle(22, 40, 216, 13, 0x42513c)
-      .setOrigin(0).setScrollFactor(0).setDepth(OVERLAY_DEPTH + 5000);
-    this.healthTrail = this.scene.add.rectangle(24, 42, 212, 9, 0xf0b36f)
-      .setOrigin(0).setScrollFactor(0).setDepth(OVERLAY_DEPTH + 5000.5);
-    this.healthFill = this.scene.add.rectangle(24, 42, 212, 9, 0xd96858)
-      .setOrigin(0).setScrollFactor(0).setDepth(OVERLAY_DEPTH + 5001);
-    this.healthShine = this.scene.add.rectangle(24, 42, 212, 2, 0xffe0b4)
-      .setOrigin(0).setScrollFactor(0).setDepth(OVERLAY_DEPTH + 5002).setAlpha(0.35);
-    this.staminaBar = this.scene.add.rectangle(22, 66, 216, 8, 0x42513c)
-      .setOrigin(0).setScrollFactor(0).setDepth(OVERLAY_DEPTH + 5000);
-    this.staminaFill = this.scene.add.rectangle(24, 68, 216, 4, 0xe6c66b)
-      .setOrigin(0).setScrollFactor(0).setDepth(OVERLAY_DEPTH + 5001);
-    this.xpLabel = this.text(22, 78, '', { fontSize: '8px', color: '#d8c6ff' });
-    this.xpBar = this.scene.add.rectangle(22, 55, 216, 5, 0x3b2b50)
-      .setOrigin(0).setScrollFactor(0).setDepth(OVERLAY_DEPTH + 5000);
-    this.xpFill = this.scene.add.rectangle(24, 56, 212, 3, 0xa77bdc)
-      .setOrigin(0).setScrollFactor(0).setDepth(OVERLAY_DEPTH + 5001);
+    this.defenseIcon = icon('ui-icon-shield');
+    this.defenseLabel = this.text(0, 0, '', { fontSize: '8px', color: '#c7d6e6' });
+    // Barras: calha afundada com fio de bronze; enchimento em degradê com brilho em cima.
+    this.healthBar = this.scene.add.nineslice(0, 0, 'ui-slot', undefined, 100, 14, 4, 4, 4, 4)
+      .setOrigin(0).setScrollFactor(0).setDepth(at);
+    this.healthTrail = image('hud-fill-trail', at + 0.5);
+    this.healthFill = image('hud-fill-health', at + 1);
+    this.healthShine = this.scene.add.rectangle(0, 0, 4, 1, 0xfff0d0)
+      .setOrigin(0).setScrollFactor(0).setDepth(at + 2).setAlpha(0.55);
+    this.staminaBar = this.scene.add.nineslice(0, 0, 'ui-slot', undefined, 100, 8, 3, 3, 3, 3)
+      .setOrigin(0).setScrollFactor(0).setDepth(at);
+    this.staminaFill = image('hud-fill-stamina', at + 1);
+    this.staminaIcon = icon('ui-icon-stamina');
+    this.xpLabel = this.text(22, 78, '', { fontSize: '8px', color: '#e0cdf6' });
+    this.xpBar = this.scene.add.nineslice(0, 0, 'ui-slot', undefined, 100, 8, 3, 3, 3, 3)
+      .setOrigin(0).setScrollFactor(0).setDepth(at);
+    this.xpFill = image('hud-fill-xp', at + 1);
+    this.xpIcon = icon('ui-icon-star');
     this.fixed.push(
+      this.healthIcon,
+      this.defenseIcon,
       this.healthBar,
       this.healthTrail,
       this.healthFill,
       this.healthShine,
       this.staminaBar,
       this.staminaFill,
+      this.staminaIcon,
       this.xpBar,
-      this.xpFill
+      this.xpFill,
+      this.xpIcon
     );
     this.makeQuickBar();
     this.dayLabel = this.text(22, 98, '', { fontSize: '8px' });
-    this.coinIcon = this.scene.add.image(28, 124, 'coin-hud-icon')
+    this.coinIcon = this.scene.add.image(28, 124, 'ui-icon-coin')
       .setDisplaySize(16, 16)
       .setScrollFactor(0)
       .setDepth(OVERLAY_DEPTH + 5001);
@@ -182,7 +211,7 @@ export class GameUI {
     this.fixed.push(this.coinIcon);
     this.layoutQuickBar();
     this.hint = this.text(22, this.scene.scale.height - 34, '', {
-      fontSize: '8px', backgroundColor: '#1d2b24dd', padding: { x: 8, y: 5 }
+      fontSize: '8px', backgroundColor: '#14161ee0', color: '#efe2c2', padding: { x: 8, y: 5 }
     }).setScrollFactor(0);
     this.hint.setDepth(OVERLAY_DEPTH + 5000);
     this.layoutHint();
@@ -192,20 +221,20 @@ export class GameUI {
     this.mapBg = this.scene.add.nineslice(
       this.mapX,
       this.mapY,
-      'panel',
-      'panel',
+      'ui-panel',
+      undefined,
       this.metrics.mapSize,
       this.metrics.mapSize,
-      6,
-      6,
-      6,
-      6
+      16,
+      16,
+      16,
+      16
     ).setScrollFactor(0).setDepth(OVERLAY_DEPTH + 4999);
     this.mapLabel = this.text(this.mapX, 10, 'MAPA • M', {
-      fontSize: '8px', fontStyle: 'bold', color: '#ecd99f'
+      fontSize: '8px', color: '#f6ca9f', stroke: '#0b0a10', strokeThickness: 3
     }).setOrigin(0.5);
     this.mapRenderer = new MapRenderer(this.scene);
-    this.minimapSize = this.metrics.mapSize - 20;
+    this.minimapSize = this.metrics.mapSize - 24;
     if (this.scene.textures.exists('minimap-view')) this.scene.textures.remove('minimap-view');
     this.minimapTexture = this.scene.textures.createCanvas('minimap-view', 176, 176);
     this.minimapImage = this.scene.add.image(this.mapX, this.mapY, 'minimap-view')
@@ -217,7 +246,7 @@ export class GameUI {
     this.fixed.push(this.mapBg, this.mapLabel, this.minimapImage);
 
     this.message = this.text(width / 2, 120, '', {
-      fontSize: '8px', fontStyle: 'bold', align: 'center', backgroundColor: '#26392ddd',
+      fontSize: '8px', fontStyle: 'bold', align: 'center', backgroundColor: '#14161ee8',
       padding: { x: 12, y: 7 }, wordWrap: { width: Math.min(520, width - 32) }
     }).setOrigin(0.5).setAlpha(0);
     this.message.setDepth(OVERLAY_DEPTH + 5100);
@@ -235,7 +264,7 @@ export class GameUI {
    */
   makeQuickBar() {
     const make = (id, texture, frame, size, iconScale, key, label) => {
-      const frameBg = this.scene.add.nineslice(0, 0, 'panel', 'panel', size, size, 6, 6, 6, 6)
+      const frameBg = this.scene.add.nineslice(0, 0, 'ui-slot', undefined, size, size, 6, 6, 6, 6)
         .setOrigin(0).setScrollFactor(0).setDepth(OVERLAY_DEPTH + 5000);
       const icon = this.scene.add.image(0, 0, texture, frame)
         .setScale(iconScale).setScrollFactor(0).setDepth(OVERLAY_DEPTH + 5001);
@@ -249,21 +278,21 @@ export class GameUI {
       return { id, frameBg, icon, count, keyLabel, caption, size, x: 0, y: 0 };
     };
     this.quickButtons = [
-      make('backpack', 'hud-backpack', undefined, 60, 2, 'B', 'MOCHILA'),
-      make('eat', 'resource-icons', RESOURCE_TYPES.food.icon, 48, 2, '2', 'COMER'),
-      make('potion', 'resource-code-potion', undefined, 48, 2, '1', 'POÇÃO'),
-      make('journal', 'hud-journal', undefined, 56, 2, 'L', 'DIÁRIO')
+      make('backpack', 'ui-icon-bag', undefined, 60, 2, 'B', 'MOCHILA'),
+      make('eat', 'ui-icon-food', undefined, 48, 2, '2', 'COMER'),
+      make('potion', 'ui-icon-potion', undefined, 48, 2, '1', 'POÇÃO'),
+      make('journal', 'ui-icon-journal', undefined, 56, 2, 'L', 'DIÁRIO')
     ];
   }
 
   layoutQuickBar() {
-    const top = 12 + this.metrics.hudHeight + (this.metrics.phone ? 4 : 10);
+    const top = this.metrics.hudTop + this.metrics.hudHeight + (this.metrics.phone ? 4 : 8);
     const compact = this.metrics.compact;
     // Em telas pequenas os botões encolhem para não encostar no minimapa.
     const sizes = compact
       ? { backpack: 52, eat: 40, potion: 40, journal: 40 }
       : { backpack: 60, eat: 48, potion: 48, journal: 56 };
-    const iconScales = compact ? { backpack: 2, eat: 2, potion: 2, journal: 1.5 } : { backpack: 2, eat: 2, potion: 2, journal: 2 };
+    const iconScales = compact ? { backpack: 2, eat: 2, potion: 2, journal: 2 } : { backpack: 2, eat: 2, potion: 2, journal: 2 };
     const gap = compact ? 8 : 14;
     let x = 14;
     for (const button of this.quickButtons) {
@@ -286,31 +315,44 @@ export class GameUI {
   /** Posiciona os textos e barras do painel de status (computador ou celular). */
   layoutHud() {
     const phone = this.metrics.phone;
-    const left = phone ? 20 : 22;
+    const top = this.metrics.hudTop;
+    const panelLeft = this.metrics.hudX - this.metrics.hudWidth / 2;
+    const left = panelLeft + (phone ? 16 : 18);
     const bar = this.metrics.barWidth;
+    // Ícone à esquerda de cada barra; a barra começa depois dele.
+    const barLeft = left + (phone ? 18 : 22);
     const rows = phone
-      ? { label: 18, health: 32, xp: 48, stamina: 56 }
-      : { label: 18, health: 40, xp: 55, stamina: 66 };
-    this.healthLabel.setPosition(left, rows.label);
-    this.healthBar.setPosition(left, rows.health).setSize(bar + 4, 13);
-    for (const item of [this.healthTrail, this.healthFill, this.healthShine]) item.setPosition(left + 2, rows.health + 2);
-    this.xpBar.setPosition(left, rows.xp).setSize(bar + 4, 5);
-    this.xpFill.setPosition(left + 2, rows.xp + 1);
-    this.staminaBar.setPosition(left, rows.stamina).setSize(bar + 4, 8);
-    this.staminaFill.setPosition(left + 2, rows.stamina + 2);
+      ? { label: top + 13, health: top + 26, xp: top + 43, stamina: top + 52 }
+      : { label: top + 17, health: top + 32, xp: top + 52, stamina: top + 64 };
+    this.healthIcon.setPosition(left + 8, rows.health + 7).setScale(phone ? 1 : 1.25);
+    this.healthLabel.setPosition(phone ? left : barLeft, rows.label);
+    this.healthBar.setPosition(barLeft, rows.health).setSize(bar + 4, 14);
+    for (const item of [this.healthTrail, this.healthFill, this.healthShine]) item.setPosition(barLeft + 2, rows.health + 3);
+    this.healthShine.setY(rows.health + 3);
+    this.xpIcon.setPosition(left + 8, rows.xp + 4).setScale(phone ? 0.75 : 1);
+    this.xpBar.setPosition(barLeft, rows.xp).setSize(bar + 4, 8);
+    this.xpFill.setPosition(barLeft + 2, rows.xp + 2);
+    this.staminaIcon.setPosition(left + 8, rows.stamina + 4).setScale(phone ? 0.75 : 1);
+    this.staminaBar.setPosition(barLeft, rows.stamina).setSize(bar + 4, 8);
+    this.staminaFill.setPosition(barLeft + 2, rows.stamina + 2);
+    this.defenseIcon.setVisible(!phone).setPosition(barLeft + bar - 38, rows.label + 4);
+    this.defenseLabel.setVisible(!phone).setPosition(barLeft + bar - 28, rows.label);
     // No celular as moedas ficam na linha da vida; dia, status, XP em texto e minérios somem.
     if (phone) {
-      this.coinIcon.setPosition(150, 22);
-      this.coinLabel.setPosition(160, 18);
+      this.coinIcon.setPosition(barLeft + bar - 48, rows.label + 4);
+      this.coinLabel.setPosition(barLeft + bar - 38, rows.label);
     } else {
-      this.coinIcon.setPosition(28, 124);
-      this.coinLabel.setPosition(42, 120);
+      this.xpLabel.setPosition(left, top + 80);
+      this.dayLabel.setPosition(left, top + 98);
+      this.coinIcon.setPosition(left + 8, top + 121);
+      this.coinLabel.setPosition(left + 20, top + 117);
+      this.statusLabel.setPosition(left, top + 136);
     }
     for (const item of [this.xpLabel, this.dayLabel, this.statusLabel, this.mapLabel]) item?.setVisible(!phone);
-    for (const counter of this.oreCounters ?? []) {
-      counter.icon.setVisible(!phone);
-      counter.label.setVisible(!phone);
-    }
+    (this.oreCounters ?? []).forEach((counter, index) => {
+      counter.icon.setVisible(!phone).setPosition(left + 138 + index * 58, top + 121);
+      counter.label.setVisible(!phone).setPosition(left + 150 + index * 58, top + 117);
+    });
   }
 
   /** O ponto (x, y) da tela está sobre o minimapa? */
@@ -334,7 +376,7 @@ export class GameUI {
 
   /** Ajusta o recorte do minimapa ao tamanho atual da moldura. */
   drawMapBase() {
-    this.minimapSize = this.metrics.mapSize - 20;
+    this.minimapSize = this.metrics.mapSize - 24;
     this.minimapImage.setPosition(this.mapX, this.mapY);
     this.minimapImage.setCrop(0, 0, this.minimapSize, this.minimapSize);
     this.minimapImage.setDisplayOrigin(this.minimapSize / 2, this.minimapSize / 2);
@@ -345,7 +387,7 @@ export class GameUI {
     const { width } = this.scene.scale;
     this.metrics = this.getMetrics();
     this.hudBg.setSize(this.metrics.hudWidth, this.metrics.hudHeight)
-      .setPosition(this.metrics.hudX, 12 + this.metrics.hudHeight / 2);
+      .setPosition(this.metrics.hudX, this.metrics.hudTop + this.metrics.hudHeight / 2);
     this.layoutHud();
     this.layoutQuickBar();
     this.mapX = width - this.metrics.mapSize / 2 - 12;
@@ -370,18 +412,25 @@ export class GameUI {
     const barWidth = this.metrics.barWidth;
     this.healthLabel.setText(phone
       ? `VIDA ${Math.ceil(player.health)}/${player.maxHealth}`
-      : `VIDA  ${Math.ceil(player.health)} / ${player.maxHealth}    DEF ${player.defense}`);
-    const healthWidth = Math.max(0, Math.round((barWidth * (player.health / player.maxHealth)) / 4) * 4);
-    const staminaWidth = Math.max(0, Math.round((barWidth * (player.stamina / 100)) / 4) * 4);
-    this.healthFill.setDisplaySize(healthWidth, 9);
-    this.healthTrail.setDisplaySize(healthWidth, 9);
-    this.healthShine.setDisplaySize(healthWidth, 2);
+      : `VIDA  ${Math.ceil(player.health)} / ${player.maxHealth}`);
+    this.defenseLabel.setText(`${player.defense}`);
+    const healthWidth = Math.max(0, Math.round((barWidth * (player.health / player.maxHealth)) / 2) * 2);
+    const staminaWidth = Math.max(0, Math.round((barWidth * (player.stamina / 100)) / 2) * 2);
+    this.healthFill.setDisplaySize(healthWidth, 8);
+    // Rastro claro: desce devagar até a vida atual (mostra o dano levado).
+    this.trailWidth = Math.max(healthWidth, (this.trailWidth ?? healthWidth) - 1.5);
+    this.healthTrail.setDisplaySize(this.trailWidth, 8);
+    // Brilho que corre pela barra de vida a cada poucos segundos.
+    const sweep = (this.scene.time.now % 3200) / 3200;
+    this.healthShine.setVisible(healthWidth > 8 && sweep < 0.5)
+      .setDisplaySize(Math.min(14, healthWidth), 1)
+      .setX(this.healthFill.x + sweep * 2 * Math.max(0, healthWidth - 14));
     this.staminaFill.setDisplaySize(staminaWidth, 4);
     const star = progression.rebirths > 0 ? `\u2605${progression.rebirths} ` : '';
     this.xpLabel.setText(progression.xpToNext === 0
       ? `${star}NÍVEL ${progression.level} • XP MÁXIMO`
       : `${star}NÍVEL ${progression.level} • XP ${progression.xp}/${progression.xpToNext}`);
-    this.xpFill.setDisplaySize(Math.max(0, Math.round(barWidth * progression.xpRatio)), 3);
+    this.xpFill.setDisplaySize(Math.max(0, Math.round(barWidth * progression.xpRatio)), 4);
     this.coinLabel.setText(phone ? String(economy.coins) : `${economy.coins} MOEDAS`);
     for (const counter of this.oreCounters) {
       counter.label.setText(String((inventory.items[counter.type] ?? 0) + (camp?.storage?.[counter.type] ?? 0)));

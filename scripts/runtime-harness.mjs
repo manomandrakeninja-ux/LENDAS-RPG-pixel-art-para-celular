@@ -20,7 +20,7 @@ export function check(condition, message) {
   if (!condition) throw new Error(message);
 }
 
-export async function runInChrome({ name, port, width = 960, height = 640, mobile = false }, body) {
+export async function runInChrome({ name, port, width = 960, height = 640, mobile = false, query = '' }, body) {
   const chrome = chromeCandidates.find((candidate) => candidate && fs.existsSync(candidate));
   if (!chrome) throw new Error('Chrome não encontrado para o teste de navegador.');
   const userDataDir = path.join(root, '.tmp', `${name}-chrome-profile`);
@@ -30,7 +30,7 @@ export async function runInChrome({ name, port, width = 960, height = 640, mobil
   const browser = spawn(chrome, [
     '--headless=new', '--disable-gpu', '--no-sandbox', '--hide-scrollbars',
     `--remote-debugging-port=${port}`, `--user-data-dir=${userDataDir}`,
-    `--window-size=${width},${height}`, GAME_URL
+    `--window-size=${width},${height}`, GAME_URL + query
   ], { stdio: 'ignore' });
 
   let socket;

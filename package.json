@@ -49,6 +49,7 @@
     "test:runtime:zoom": "node scripts/zoom-runtime-check.mjs"
   },
   "dependencies": {
+    "@fontsource/pixelify-sans": "^5.3.0",
     "@fontsource/press-start-2p": "^5.2.6",
     "phaser": "^3.90.0"
   },

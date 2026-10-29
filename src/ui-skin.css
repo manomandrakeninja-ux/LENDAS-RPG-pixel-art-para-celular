@@ -1,0 +1,656 @@
+/* =====================================================================
+   Fase 20H: pele única da interface, no padrão da referência da guerreira:
+   painéis escuros com moldura de metal envelhecido (9-slice pintado, losangos
+   nos cantos), botões de madeira com cantoneiras e estado pressionado, couro
+   vinho nos botões principais, encaixes afundados e fonte pixel legível.
+   Arte em src/ui-skin/ (scripts/bake-ui.mjs). Carregado por último.
+   ===================================================================== */
+/* Pixelify Sans ampliada (a fonte é pequena para o tamanho em px): legível ao lado da Press Start 2P. */
+@font-face {
+  font-family: 'LendasBody';
+  src: url('../node_modules/@fontsource/pixelify-sans/files/pixelify-sans-latin-400-normal.woff2') format('woff2');
+  font-weight: 400;
+  font-display: swap;
+  size-adjust: 165%;
+}
+
+@font-face {
+  font-family: 'LendasBody';
+  src: url('../node_modules/@fontsource/pixelify-sans/files/pixelify-sans-latin-600-normal.woff2') format('woff2');
+  font-weight: 600 900;
+  font-display: swap;
+  size-adjust: 165%;
+}
+
+:root {
+  /* Os cartões que eram de pergaminho claro passam a ser placas escuras (texto claro). */
+  --parchment: #1c1f29;
+  --parchment-2: #171921;
+  --parchment-edge: #6b5236;
+  --ink: #efe2c2;
+  --ink-soft: #b9a57f;
+  --gold: #e9c27a;
+  --skin-bg: #14161e;
+  --skin-line: #6b5236;
+  --skin-gold: #cba36f;
+  --skin-gold-hi: #f6ca9f;
+  --skin-text: #efe2c2;
+  --skin-text-soft: #b9a57f;
+  --body-font: 'LendasBody', 'Press Start 2P', monospace;
+}
+
+/* ---------- Painéis: moldura 9-slice ---------- */
+.building-menu__window,
+.backpack-panel,
+.item-info__card,
+.bestiary__panel,
+.equipment__panel,
+.quest-journal__window,
+.quest-dialog__box,
+.quest-reward__card,
+.level-up-panel__card,
+.game-over__card,
+.hero-choice__card,
+.region-card,
+.quest-tracker {
+  border: 12px solid transparent !important;
+  border-image: url('./ui-skin/panel.png') 16 fill / 16px / 4px round !important;
+  border-radius: 0 !important;
+  background: none !important;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5) !important;
+  color: var(--skin-text);
+}
+
+/* Texto corrido em Pixelify Sans (legível); títulos, abas e botões seguem em Press Start 2P. */
+.building-menu__content,
+.backpack-panel,
+.item-info__card,
+.bestiary__panel,
+.equipment__panel,
+.quest-journal__window,
+.quest-dialog__box,
+.quest-reward__card,
+.region-card,
+.quest-tracker,
+.level-up-panel__card {
+  --pixel-font: var(--body-font);
+}
+
+.building-menu__content button,
+.backpack-panel button,
+.item-info__card button,
+.bestiary__panel button,
+.equipment__panel button,
+.quest-journal__window button,
+.quest-dialog__box button,
+.quest-reward__card button,
+.region-card button,
+.level-up-panel__card button,
+.building-menu__title,
+.backpack-panel__title,
+.item-info__name,
+.quest-journal__window h1,
+.quest-journal__window h2,
+.quest-reward__card h2,
+.level-up-panel__title,
+.bestiary__head h2,
+.equipment__panel h2 {
+  font-family: 'Press Start 2P', monospace !important;
+}
+
+/* Títulos dourados com losango (◆ como na referência). */
+.building-menu__title,
+.backpack-panel__title,
+.item-info__name,
+.bestiary__head h2,
+.quest-tracker h3,
+.region-card h3 {
+  color: var(--skin-gold-hi) !important;
+  text-shadow: 2px 2px 0 #0b0a10 !important;
+}
+
+.region-card h3::before,
+.quest-tracker h3::before,
+.building-menu .building-menu__card h2::before,
+.quest-detail h3::before,
+.quest-lore h4::before,
+.quest-section > h4::before {
+  content: '';
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  margin-right: 6px;
+  vertical-align: -1px;
+  background: url('./ui-skin/diamond.png') center / 9px 9px no-repeat;
+  image-rendering: pixelated;
+}
+
+.building-menu .building-menu__card h2,
+.quest-detail h3,
+.quest-lore h4,
+.quest-dialog__text h3,
+.quest-reward__card h2,
+.equipment__detail,
+.bestiary__detail {
+  color: var(--skin-gold-hi) !important;
+}
+
+.equipment__detail,
+.bestiary__detail {
+  color: var(--skin-text) !important;
+}
+
+/* Cabeçalhos e rodapés: fio dourado em vez da madeira lisa. */
+.building-menu .building-menu__header,
+.quest-journal__header,
+.backpack-panel__header {
+  border-bottom: 2px solid transparent !important;
+  border-image: linear-gradient(90deg, transparent, var(--skin-line) 12%, var(--skin-gold) 50%, var(--skin-line) 88%, transparent) 1 !important;
+  background: none !important;
+  box-shadow: none !important;
+}
+
+.building-menu .building-menu__footer {
+  border-top: 2px solid transparent !important;
+  border-image: linear-gradient(90deg, transparent, var(--skin-line) 12%, var(--skin-line) 88%, transparent) 1 !important;
+  background: rgba(0, 0, 0, 0.18) !important;
+  color: var(--skin-text-soft) !important;
+}
+
+.building-menu .building-menu__tabs,
+.quest-journal__tabs {
+  background: none !important;
+  border-bottom: 1px solid #2a2c38 !important;
+  box-shadow: none !important;
+}
+
+/* Cartões e placas internas. */
+.building-menu .building-menu__card,
+.building-menu .building-menu__stat,
+.quest-detail,
+.quest-item,
+.quest-section,
+.quest-objectives li,
+.quest-chip,
+.bestiary__card,
+.achievements__body li,
+.settings-panel__row,
+.equipment__slot,
+.item-info__source,
+.skin-card {
+  border-color: #3a3442 !important;
+  background: linear-gradient(180deg, #20232e, #191b24) !important;
+  box-shadow: inset 0 1px 0 rgba(246, 202, 159, 0.08), 0 2px 0 #0b0a10 !important;
+  color: var(--skin-text);
+}
+
+.building-menu .building-menu__card {
+  border: 1px solid #4a3c30 !important;
+  border-radius: 4px !important;
+}
+
+.quest-item[aria-selected="true"],
+.bestiary__card.is-selected,
+.skin-card.is-active,
+.achievements__body li.is-done {
+  border-color: var(--skin-gold) !important;
+  box-shadow: inset 0 0 0 1px rgba(246, 202, 159, 0.35), 0 0 10px rgba(203, 163, 111, 0.25) !important;
+}
+
+/* ---------- Botões: madeira com cantoneiras; pressionado afunda ---------- */
+.building-menu .building-menu__content button:not(.item-icon-button):not(.cost-chip):not(.item-chip),
+.backpack-panel__footer button,
+.item-info__source button,
+.item-info__footer button,
+.settings-panel__choices button,
+.settings-panel__actions button,
+.settings-panel__volume button,
+.equipment__actions button,
+.quest-actions button,
+.quest-reward__card button,
+.quest-chapter__text button,
+.level-up-panel__choices button,
+.achievements__body button,
+.game-over__card button,
+.world-map__zoom button,
+.store-all-action,
+.touch-small {
+  min-height: 44px;
+  padding: 4px 8px !important;
+  border: 10px solid transparent !important;
+  border-image: url('./ui-skin/btn.png') 10 fill / 10px round !important;
+  border-radius: 0 !important;
+  background: none !important;
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.45) !important;
+  color: #fff1ce !important;
+  text-shadow: 1px 1px 0 #0b0a10, -1px 0 0 #2c1a14 !important;
+  outline: none;
+  transition: transform 0.06s ease;
+}
+
+/* Principais: couro vinho com fio dourado. */
+.backpack-panel__footer button,
+.quest-actions button,
+.quest-reward__card button,
+.level-up-panel__choices button,
+.game-over__card button,
+.settings-panel__choices button.is-active,
+.achievements__body button.is-active,
+.world-action {
+  border-image-source: url('./ui-skin/btn-primary.png') !important;
+  color: #ffe9b8 !important;
+}
+
+/* Fechar, zoom e abas: placa de ardósia. */
+.panel-close,
+.nav-toggle,
+.building-menu .building-menu__close,
+.bestiary__close,
+.equipment__close,
+.world-map__close,
+.region-card__close,
+.building-menu .building-menu__tabs button,
+.quest-journal__tabs button,
+.quest-chapters button {
+  min-height: 44px;
+  min-width: 44px;
+  padding: 4px 8px !important;
+  border: 10px solid transparent !important;
+  border-image: url('./ui-skin/btn-slate.png') 10 fill / 10px round !important;
+  border-radius: 0 !important;
+  background: none !important;
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.45) !important;
+  color: var(--skin-text) !important;
+  text-shadow: 1px 1px 0 #0b0a10 !important;
+  outline: none;
+}
+
+.building-menu .building-menu__tabs button[aria-selected="true"],
+.quest-journal__tabs button[aria-selected="true"],
+.quest-chapters button[aria-selected="true"] {
+  border-image-source: url('./ui-skin/btn-primary.png') !important;
+  color: var(--skin-gold-hi) !important;
+}
+
+/* Foco e passar o mouse: brilho do fio dourado (sem filtro pesado). */
+.building-menu .building-menu__content button:not(.item-icon-button):not(.cost-chip):not(.item-chip):is(:hover, :focus-visible),
+.backpack-panel__footer button:is(:hover, :focus-visible),
+.item-info__footer button:is(:hover, :focus-visible),
+.settings-panel__choices button:is(:hover, :focus-visible),
+.quest-actions button:is(:hover, :focus-visible),
+.world-map__zoom button:is(:hover, :focus-visible),
+.panel-close:is(:hover, :focus-visible),
+.building-menu .building-menu__close:is(:hover, :focus-visible),
+.world-map__close:is(:hover, :focus-visible),
+.building-menu .building-menu__tabs button:is(:hover, :focus-visible),
+.quest-journal__tabs button:is(:hover, :focus-visible),
+.store-all-action:is(:hover, :focus-visible),
+.world-action:is(:hover, :focus-visible),
+.touch-small:is(:hover, :focus-visible) {
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.45), 0 0 0 2px rgba(246, 202, 159, 0.35) !important;
+  outline: none !important;
+}
+
+/* Pressionado: arte funda e desce 2 px. */
+.building-menu .building-menu__content button:not(.item-icon-button):not(.cost-chip):not(.item-chip):active:not(:disabled),
+.item-info__source button:active:not(:disabled),
+.item-info__footer button:active:not(:disabled),
+.settings-panel__actions button:active,
+.settings-panel__volume button:active,
+.equipment__actions button:active:not(:disabled),
+.quest-chapter__text button:active,
+.achievements__body button:active,
+.world-map__zoom button:active,
+.store-all-action:active:not(:disabled),
+.touch-small:active {
+  border-image-source: url('./ui-skin/btn-down.png') !important;
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.45) !important;
+}
+
+.backpack-panel__footer button:active:not(:disabled),
+.quest-actions button:active:not(:disabled),
+.quest-reward__card button:active,
+.level-up-panel__choices button:active,
+.game-over__card button:active,
+.world-action:active {
+  border-image-source: url('./ui-skin/btn-primary-down.png') !important;
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.45) !important;
+}
+
+.panel-close:active,
+.nav-toggle:active,
+.building-menu .building-menu__close:active,
+.bestiary__close:active,
+.equipment__close:active,
+.world-map__close:active,
+.region-card__close:active,
+.building-menu .building-menu__tabs button:active,
+.quest-journal__tabs button:active,
+.quest-chapters button:active {
+  border-image-source: url('./ui-skin/btn-slate-down.png') !important;
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.45) !important;
+}
+
+:is(.building-menu__content, .backpack-panel__footer, .item-info__card, .equipment__actions, .quest-actions) button:disabled,
+.store-all-action:disabled {
+  opacity: 0.5;
+  color: #b9a57f !important;
+  cursor: default;
+}
+
+/* ---------- Encaixes de item (mochila, equipamento, ícones) ---------- */
+.bag-slot,
+.equipment__item,
+.building-menu .building-menu__content button.item-icon-button {
+  border: 6px solid transparent !important;
+  border-image: url('./ui-skin/slot.png') 6 fill / 6px round !important;
+  border-radius: 0 !important;
+  background: none !important;
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.35) !important;
+  color: var(--skin-text) !important;
+}
+
+.bag-slot--empty {
+  opacity: 0.55;
+}
+
+.bag-slot--usable {
+  box-shadow: 0 0 0 1px rgba(246, 202, 159, 0.4), 0 2px 0 rgba(0, 0, 0, 0.35) !important;
+}
+
+/* Molduras de raridade (G-armas) dentro do encaixe: o brilho fica na cor da raridade. */
+.bag-slot .gear-icon,
+.equipment__item .gear-icon {
+  border-radius: 2px;
+}
+
+/* ---------- HUD em HTML: engrenagem, cartão da missão, ação e toque ---------- */
+.settings-button {
+  border: 6px solid transparent !important;
+  border-image: url('./ui-skin/slot.png') 6 fill / 6px round !important;
+  border-radius: 0 !important;
+  background: none !important;
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.45) !important;
+}
+
+.settings-button:active {
+  border-image-source: url('./ui-skin/btn-slate-down.png') !important;
+}
+
+.quest-tracker {
+  padding: 2px 4px !important;
+}
+
+.quest-tracker h3 {
+  font-family: 'Press Start 2P', monospace !important;
+  font-size: 8px !important;
+  line-height: 1.5 !important;
+}
+
+.quest-tracker__kicker,
+.quest-tracker__hint,
+.quest-tracker li {
+  color: var(--skin-text-soft) !important;
+  font-size: 8px !important;
+}
+
+.world-action {
+  display: grid;
+  grid-template-columns: auto auto;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 52px;
+  padding: 4px 10px !important;
+  border: 10px solid transparent !important;
+  border-image: url('./ui-skin/btn-primary.png') 10 fill / 10px round !important;
+  border-radius: 0 !important;
+  background: none !important;
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.5) !important;
+  font-size: 9px !important;
+  text-shadow: 1px 1px 0 #0b0a10 !important;
+}
+
+.world-action::before {
+  content: '';
+  width: 24px;
+  height: 24px;
+  background: url('./ui-skin/icon-sword.png') center / 24px 24px no-repeat;
+  image-rendering: pixelated;
+}
+
+.store-all-action::before {
+  content: '';
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  margin-right: 4px;
+  vertical-align: -4px;
+  background: url('./ui-skin/icon-bag.png') center / 16px 16px no-repeat;
+  image-rendering: pixelated;
+}
+
+.touch-small {
+  min-width: 56px;
+  font-size: 7px !important;
+}
+
+.touch-round {
+  border: 0 !important;
+  border-radius: 50% !important;
+  background: url('./ui-skin/round-dodge.png') center / 100% 100% no-repeat !important;
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.45) !important;
+  color: #fff1ce !important;
+  font-size: 7px !important;
+  text-shadow: 1px 1px 0 #0b0a10, 0 0 4px #0b0a10 !important;
+  image-rendering: pixelated;
+}
+
+.touch-round--special {
+  background-image: url('./ui-skin/round-special.png') !important;
+}
+
+.touch-round:active,
+.touch-round.is-pressed {
+  background-image: url('./ui-skin/round-dodge-down.png') !important;
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.45) !important;
+}
+
+.touch-round--special:active,
+.touch-round--special.is-pressed {
+  background-image: url('./ui-skin/round-special-down.png') !important;
+}
+
+.touch-stick-base {
+  border: 0 !important;
+  background: url('./ui-skin/stick-base.png') center / 100% 100% no-repeat !important;
+  box-shadow: none !important;
+  image-rendering: pixelated;
+}
+
+.touch-stick-knob {
+  border: 0 !important;
+  background: url('./ui-skin/stick-knob.png') center / 100% 100% no-repeat !important;
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.45) !important;
+  image-rendering: pixelated;
+}
+
+/* ---------- Faixa do chefe, banner e subir de nível ---------- */
+.boss-health {
+  border: 10px solid transparent !important;
+  border-image: url('./ui-skin/panel.png') 16 fill / 12px / 2px round !important;
+  border-radius: 0 !important;
+  background: none !important;
+}
+
+.epic-banner {
+  border: 12px solid transparent !important;
+  border-image: url('./ui-skin/panel.png') 16 fill / 16px / 4px round !important;
+  border-radius: 0 !important;
+  background: none !important;
+}
+
+/* ---------- Mapa do mundo: pergaminho emoldurado ---------- */
+.world-map {
+  background: radial-gradient(circle at 50% 40%, rgba(22, 20, 28, 0.94), rgba(8, 8, 12, 0.98)) !important;
+}
+
+.world-map__header {
+  border-bottom: 2px solid transparent !important;
+  border-image: linear-gradient(90deg, transparent, var(--skin-line) 12%, var(--skin-gold) 50%, var(--skin-line) 88%, transparent) 1 !important;
+}
+
+.world-map__title {
+  color: var(--skin-gold-hi) !important;
+}
+
+.world-map__canvas {
+  border: 12px solid transparent !important;
+  border-image: url('./ui-skin/panel.png') 16 / 16px / 4px round !important;
+  border-radius: 0 !important;
+  background: #0e0f15 !important;
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.55) !important;
+}
+
+.world-map__legend {
+  border: 12px solid transparent !important;
+  border-image: url('./ui-skin/panel.png') 16 / 16px / 4px round !important;
+  border-radius: 0 !important;
+  background: linear-gradient(#efe0bb, #e2cfa0) !important;
+  background-clip: padding-box !important;
+  color: #3b2717 !important;
+  --pixel-font: var(--body-font);
+  font-size: 9px !important;
+}
+
+.world-map__legend-tip {
+  color: #6b5038 !important;
+}
+
+.world-map__legend-mark {
+  width: 20px !important;
+  height: 20px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  transform: none !important;
+  background: center / 20px 20px no-repeat !important;
+  image-rendering: pixelated;
+}
+
+.world-map__legend-mark--camp { background-image: url('./ui-skin/icon-tent.png') !important; }
+.world-map__legend-mark--chest { background-image: url('./ui-skin/icon-chest.png') !important; }
+.world-map__legend-mark--mine { background-image: url('./ui-skin/icon-pick.png') !important; }
+.world-map__legend-mark--dungeon { background-image: url('./ui-skin/icon-skull.png') !important; }
+.world-map__legend-mark--player { background-image: url('./ui-skin/icon-compass.png') !important; }
+
+.world-map__legend-mark--resource {
+  width: 12px !important;
+  height: 12px !important;
+  margin: 4px;
+  border: 2px solid #2a1a10 !important;
+  border-radius: 50% !important;
+  background: #5a8a46 !important;
+}
+
+.world-map__legend-mark--enemy {
+  width: 11px !important;
+  height: 11px !important;
+  margin: 4px;
+  border: 2px solid #2a1a10 !important;
+  background: #a8343c !important;
+  transform: rotate(45deg) !important;
+}
+
+.world-map__legend-mark--quest {
+  width: 11px !important;
+  height: 11px !important;
+  margin: 4px;
+  border: 2px solid #2a1a10 !important;
+  background: #ffd76b !important;
+  transform: rotate(45deg) !important;
+}
+
+.world-map__legend-mark--npc {
+  width: 8px !important;
+  height: 8px !important;
+  margin: 6px;
+  border: 1px solid #2a1a10 !important;
+  background: #ffe08a !important;
+}
+
+.region-card {
+  color: var(--skin-text) !important;
+}
+
+.region-card strong {
+  color: var(--skin-gold) !important;
+}
+
+/* Etiquetas de custo e de item: pílulas escuras com texto colorido (não são botões grandes). */
+.building-menu .building-menu__content button.cost-chip,
+.building-menu .building-menu__content button.item-chip {
+  border: 1px solid #3a3442 !important;
+  border-radius: 3px !important;
+  background: #101219 !important;
+  box-shadow: inset 0 1px 0 rgba(246, 202, 159, 0.06) !important;
+  color: #e9c27a !important;
+}
+
+.building-menu .building-menu__content button.cost-chip.cost-ok { color: #99e65f !important; }
+.building-menu .building-menu__content button.cost-chip.cost-missing { color: #f68187 !important; border-color: #5a2430 !important; }
+
+.building-menu .building-menu__content button.cost-chip:is(:hover, :focus-visible),
+.building-menu .building-menu__content button.item-chip:is(:hover, :focus-visible) {
+  border-color: var(--skin-gold) !important;
+}
+
+/* Capítulos do diário: quebram em linhas, cada número com 44 px (toque). */
+.quest-chapters {
+  grid-template-columns: repeat(auto-fill, minmax(44px, 1fr)) !important;
+}
+
+.quest-chapters button {
+  min-width: 0 !important;
+  padding: 2px !important;
+  border-width: 8px !important;
+  border-image-width: 8px !important;
+}
+
+/* Conquistas: texto do corpo com altura de linha própria (sem sobrepor título e detalhe). */
+.achievements__body {
+  font-family: var(--body-font);
+  line-height: 1.3;
+}
+
+.achievements__body h3 {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 9px !important;
+  line-height: 1.6;
+}
+
+.achievements__body li {
+  font-size: 9px !important;
+  line-height: 1.3;
+}
+
+.achievements__body small {
+  font-size: 8px;
+  line-height: 1.3;
+}
+
+/* Celular: moldura mais fina no cartão da missão (não encosta no joystick). */
+body.is-phone .quest-tracker {
+  border-width: 8px !important;
+  border-image-width: 12px !important;
+  border-image-outset: 2px !important;
+  padding: 0 2px !important;
+}
+
+.world-map__close,
+.world-map__zoom button {
+  min-height: 48px !important;
+}

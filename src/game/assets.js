@@ -79,7 +79,26 @@ export const ASSET_CONFIG = {
   }
 };
 
+// Fase 20H: pele da interface (scripts/bake-ui.mjs → src/ui-skin/). O Vite empacota pelo new URL.
+export const UI_SKIN_IMAGES = {
+  'ui-panel': new URL('../ui-skin/panel.png', import.meta.url).href,
+  'ui-slot': new URL('../ui-skin/slot.png', import.meta.url).href,
+  'ui-icon-heart': new URL('../ui-skin/icon-heart.png', import.meta.url).href,
+  'ui-icon-sword': new URL('../ui-skin/icon-sword.png', import.meta.url).href,
+  'ui-icon-shield': new URL('../ui-skin/icon-shield.png', import.meta.url).href,
+  'ui-icon-coin': new URL('../ui-skin/icon-coin.png', import.meta.url).href,
+  'ui-icon-ore': new URL('../ui-skin/icon-ore.png', import.meta.url).href,
+  'ui-icon-star': new URL('../ui-skin/icon-star.png', import.meta.url).href,
+  'ui-icon-stamina': new URL('../ui-skin/icon-stamina.png', import.meta.url).href,
+  'ui-icon-bag': new URL('../ui-skin/icon-bag.png', import.meta.url).href,
+  'ui-icon-journal': new URL('../ui-skin/icon-journal.png', import.meta.url).href,
+  'ui-icon-food': new URL('../ui-skin/icon-food.png', import.meta.url).href,
+  'ui-icon-potion': new URL('../ui-skin/icon-potion.png', import.meta.url).href,
+  'ui-icon-compass': new URL('../ui-skin/icon-compass.png', import.meta.url).href
+};
+
 export function preloadGameAssets(scene) {
+  for (const [key, url] of Object.entries(UI_SKIN_IMAGES)) scene.load.image(key, url);
   for (const asset of Object.values(ASSET_CONFIG)) {
     if (asset.kind === 'spritesheet') {
       scene.load.spritesheet(asset.key, asset.file, {

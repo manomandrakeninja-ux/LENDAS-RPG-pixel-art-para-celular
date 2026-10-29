@@ -2,6 +2,7 @@ import { WORLD } from './config.js';
 import { MAP_SCALE } from './MapRenderer.js';
 import { DUNGEON_CONFIG } from '../data/buildings.js';
 import { regionCardAt } from './RegionCard.js';
+import { paintBurntEdge } from './mapParchment.js';
 
 export const WORLD_MAP_MARKER_TYPES = Object.freeze({
   camp: 'camp',
@@ -54,15 +55,52 @@ export function collectWorldMapMarkers({ structures = [], enemies = [], boss = n
   };
 }
 
-function drawMarker(context, marker, toX, toY) {
+// Fase 20H: ícones pintados dos locais (scripts/bake-ui.mjs), desenhados em 2x sobre o pergaminho.
+const MAP_ICON_URLS = {
+  camp: new URL('../ui-skin/icon-tent.png', import.meta.url).href,
+  mine: new URL('../ui-skin/icon-pick.png', import.meta.url).href,
+  dungeon: new URL('../ui-skin/icon-skull.png', import.meta.url).href,
+  chest: new URL('../ui-skin/icon-chest.png', import.meta.url).href,
+  cave: new URL('../ui-skin/icon-cave.png', import.meta.url).href,
+  tower: new URL('../ui-skin/icon-tower.png', import.meta.url).href,
+  dock: new URL('../ui-skin/icon-anchor.png', import.meta.url).href,
+  flag: new URL('../ui-skin/icon-flag.png', import.meta.url).href
+};
+
+function loadMapIcons() {
+  if (typeof Image === 'undefined') return {};
+  return Object.fromEntries(Object.entries(MAP_ICON_URLS).map(([key, url]) => {
+    const image = new Image();
+    image.src = url;
+    return [key, image];
+  }));
+}
+
+/** Ícone pintado com sombra de tinta embaixo; devolve false se a imagem ainda não carregou. */
+function drawIcon(context, image, x, y, scale = 2) {
+  if (!image?.complete || !image.naturalWidth) return false;
+  const w = image.naturalWidth * scale;
+  const h = image.naturalHeight * scale;
+  context.fillStyle = 'rgba(40, 24, 12, 0.35)';
+  context.beginPath();
+  context.ellipse(Math.round(x), Math.round(y + h / 2 - 2), w * 0.4, 4, 0, 0, Math.PI * 2);
+  context.fill();
+  context.drawImage(image, Math.round(x - w / 2), Math.round(y - h / 2), w, h);
+  return true;
+}
+
+function drawMarker(context, marker, toX, toY, icons = {}) {
   const x = toX(marker.x);
   const y = toY(marker.y);
+  const iconKey = { camp: 'camp', mine: 'mine', dungeon: 'dungeon', chest: 'chest' }[marker.type];
   context.save();
+  if (iconKey && drawIcon(context, icons[iconKey], x, y - 8, 2)) {
+    context.restore();
+    return;
+  }
   context.translate(Math.round(x), Math.round(y));
   context.lineWidth = 2;
-  context.strokeStyle = '#101713';
-  context.fillStyle = '#ffffff';
-
+  context.strokeStyle = '#2a1a10';
   if (marker.type === WORLD_MAP_MARKER_TYPES.player) {
     context.beginPath();
     context.arc(0, 0, 7, 0, Math.PI * 2);
@@ -79,39 +117,26 @@ function drawMarker(context, marker, toX, toY) {
     context.fill();
     context.stroke();
   } else if (marker.type === WORLD_MAP_MARKER_TYPES.enemy) {
+    // Inimigo forte: losango vermelho a tinta, com brilho.
     context.rotate(Math.PI / 4);
-    context.fillStyle = '#e15950';
-    context.fillRect(-7, -7, 14, 14);
-    context.strokeRect(-7, -7, 14, 14);
-  } else if (marker.type === WORLD_MAP_MARKER_TYPES.mine) {
-    context.fillStyle = '#1b1b1f';
-    context.fillRect(-9, -9, 18, 18);
-    context.strokeStyle = '#c1cbd0';
-    context.strokeRect(-9, -9, 18, 18);
-    context.fillStyle = '#c1cbd0';
-    context.fillRect(-5, -1, 10, 2);
-    context.fillRect(-1, -5, 2, 10);
-  } else if (marker.type === WORLD_MAP_MARKER_TYPES.dungeon) {
-    context.beginPath();
-    context.moveTo(0, -12);
-    context.lineTo(11, 9);
-    context.lineTo(-11, 9);
-    context.closePath();
-    context.fillStyle = '#e2463f';
-    context.fill();
-    context.stroke();
-    context.fillStyle = '#120c0e';
-    context.fillRect(-3, 1, 6, 8);
-  } else if (marker.type === WORLD_MAP_MARKER_TYPES.chest) {
-    context.fillStyle = '#d69b45';
-    context.fillRect(-8, -6, 16, 12);
-    context.strokeRect(-8, -6, 16, 12);
-    context.fillStyle = '#f5d887';
-    context.fillRect(-2, -2, 4, 4);
-  } else {
-    context.fillStyle = marker.structureType === 'mineMarker' ? '#6fc2bd' : '#6fbd62';
+    context.fillStyle = '#a8343c';
     context.fillRect(-6, -6, 12, 12);
     context.strokeRect(-6, -6, 12, 12);
+    context.fillStyle = '#f68187';
+    context.fillRect(-4, -4, 4, 4);
+  } else if (marker.type === WORLD_MAP_MARKER_TYPES.mine || marker.type === WORLD_MAP_MARKER_TYPES.dungeon || marker.type === WORLD_MAP_MARKER_TYPES.chest) {
+    context.fillStyle = marker.type === WORLD_MAP_MARKER_TYPES.dungeon ? '#a8343c' : '#8a5a2a';
+    context.fillRect(-7, -7, 14, 14);
+    context.strokeRect(-7, -7, 14, 14);
+  } else {
+    // Estrutura descoberta: selo verde a tinta.
+    context.beginPath();
+    context.arc(0, 0, 5, 0, Math.PI * 2);
+    context.fillStyle = marker.structureType === 'mineMarker' ? '#5e9a96' : '#5a8a46';
+    context.fill();
+    context.stroke();
+    context.fillStyle = '#d3fc7e';
+    context.fillRect(-2, -2, 2, 2);
   }
   context.restore();
 }
@@ -125,6 +150,9 @@ export class WorldMapOverlay {
     this.canvas = document.getElementById('world-map-canvas');
     this.closeButton = document.getElementById('world-map-close');
     this.context = this.canvas.getContext('2d');
+    this.icons = loadMapIcons();
+    // Recarrega o mapa quando os ícones pintados chegarem (só na primeira abertura).
+    for (const image of Object.values(this.icons)) image.addEventListener?.('load', () => this.render(), { once: true });
     this.isOpen = false;
     this.zoomIndex = 0;
     this.lastMarkerCounts = { camp: 0, structures: 0, chests: 0, strongEnemies: 0, player: 0 };
@@ -293,7 +321,7 @@ export class WorldMapOverlay {
 
     context.save();
     context.clearRect(0, 0, width, height);
-    context.fillStyle = '#0b0f0d';
+    context.fillStyle = '#e2cfa0';
     context.fillRect(0, 0, width, height);
     context.imageSmoothingEnabled = false;
     if (renderer) {
@@ -309,11 +337,18 @@ export class WorldMapOverlay {
       crop(renderer.fog);
     }
 
-    // Grade com coordenadas (A–L, 1–9) para orientar o jogador.
-    context.strokeStyle = 'rgba(244, 230, 198, 0.08)';
+    // Locais do mundo grande já explorados: cavernas, torres e portos com ícones pintados.
+    for (const feature of this.scene.regionWorld?.features ?? []) {
+      if (renderer && !renderer.isExplored(feature.x, feature.y)) continue;
+      const key = feature.type === 'dock' ? 'dock' : feature.type === 'cave' ? (feature.cave?.tower ? 'tower' : 'cave') : null;
+      if (key) drawIcon(context, this.icons[key], toX(feature.x), toY(feature.y) - 10, 2);
+    }
+
+    // Grade com coordenadas (A–L, 1–9) a tinta sépia, para orientar o jogador.
+    context.strokeStyle = 'rgba(74, 52, 36, 0.16)';
     context.lineWidth = 1;
     context.font = '8px "Press Start 2P", monospace';
-    context.fillStyle = 'rgba(244, 230, 198, 0.55)';
+    context.fillStyle = 'rgba(74, 52, 36, 0.8)';
     const cellX = WORLD.width / 12;
     const cellY = WORLD.height / 9;
     for (let column = 0; column <= 12; column += 1) {
@@ -322,7 +357,7 @@ export class WorldMapOverlay {
       context.moveTo(x, 0);
       context.lineTo(x, height);
       context.stroke();
-      if (column < 12) context.fillText(String.fromCharCode(65 + column), toX((column + 0.5) * cellX) - 4, 12);
+      if (column < 12) context.fillText(String.fromCharCode(65 + column), toX((column + 0.5) * cellX) - 4, 26);
     }
     for (let row = 0; row <= 9; row += 1) {
       const y = Math.round(toY(row * cellY)) + 0.5;
@@ -330,17 +365,19 @@ export class WorldMapOverlay {
       context.moveTo(0, y);
       context.lineTo(width, y);
       context.stroke();
-      if (row < 9) context.fillText(String(row + 1), 4, toY((row + 0.5) * cellY) + 4);
+      if (row < 9) context.fillText(String(row + 1), 20, toY((row + 0.5) * cellY) + 4);
     }
 
     // Nomes das regiões já exploradas.
     context.textAlign = 'center';
     for (const region of renderer?.regionLabels() ?? []) {
-      context.font = '10px "Press Start 2P", monospace';
-      context.lineWidth = 4;
-      context.strokeStyle = 'rgba(20, 14, 10, 0.85)';
+      // Nome a tinta com halo de papel (como o letreiro de um mapa antigo).
+      context.font = '11px "Press Start 2P", monospace';
+      context.lineWidth = 5;
+      context.lineJoin = 'round';
+      context.strokeStyle = 'rgba(240, 226, 190, 0.92)';
       context.strokeText(region.name.toUpperCase(), toX(region.x), toY(region.y));
-      context.fillStyle = '#f4e6c6';
+      context.fillStyle = '#3b2717';
       context.fillText(region.name.toUpperCase(), toX(region.x), toY(region.y));
     }
     context.textAlign = 'left';
@@ -352,12 +389,12 @@ export class WorldMapOverlay {
       player: this.surfacePlayer(),
       dungeonRevealed: Boolean(this.scene.camp?.dungeonRevealed || this.scene.camp?.defense?.dragonRadar)
     });
-    drawMarker(context, markers.camp, toX, toY);
-    if (markers.mine) drawMarker(context, markers.mine, toX, toY);
-    if (markers.dungeon) drawMarker(context, markers.dungeon, toX, toY);
-    markers.structures.forEach((marker) => drawMarker(context, marker, toX, toY));
-    markers.chests.forEach((marker) => drawMarker(context, marker, toX, toY));
-    markers.strongEnemies.forEach((marker) => drawMarker(context, marker, toX, toY));
+    drawMarker(context, markers.camp, toX, toY, this.icons);
+    if (markers.mine) drawMarker(context, markers.mine, toX, toY, this.icons);
+    if (markers.dungeon) drawMarker(context, markers.dungeon, toX, toY, this.icons);
+    markers.structures.forEach((marker) => drawMarker(context, marker, toX, toY, this.icons));
+    markers.chests.forEach((marker) => drawMarker(context, marker, toX, toY, this.icons));
+    markers.strongEnemies.forEach((marker) => drawMarker(context, marker, toX, toY, this.icons));
     const invasion = this.scene.invasion;
     let invasionMarkers = 0;
     if (invasion?.active) {
@@ -402,8 +439,11 @@ export class WorldMapOverlay {
     else if (markers.player) drawMarker(context, markers.player, toX, toY);
 
     this.drawTarget(context, toX, toY);
-    this.drawCompass(context, width - 46, 46);
-    this.drawScaleBar(context, 18, height - 22, scale);
+    // Borda queimada por cima de tudo (pintada uma vez no tamanho do canvas).
+    if (!this.burnt || this.burnt.width !== width || this.burnt.height !== height) this.burnt = paintBurntEdge(width, height);
+    context.drawImage(this.burnt, 0, 0);
+    this.drawCompass(context, width - 70, 74);
+    this.drawScaleBar(context, 40, height - 40, scale);
     context.restore();
 
     this.lastMarkerCounts = {
@@ -416,46 +456,72 @@ export class WorldMapOverlay {
     };
   }
 
+  /** Rosa dos ventos de 8 pontas a tinta e ouro velho. */
   drawCompass(context, x, y) {
     context.save();
     context.translate(x, y);
-    context.fillStyle = 'rgba(36, 25, 15, 0.85)';
-    context.strokeStyle = '#c9a76b';
-    context.lineWidth = 2;
-    context.beginPath();
-    context.arc(0, 0, 28, 0, Math.PI * 2);
-    context.fill();
-    context.stroke();
-    for (const [angle, color] of [[0, '#e2463f'], [Math.PI, '#f4e6c6'], [Math.PI / 2, '#c9a76b'], [-Math.PI / 2, '#c9a76b']]) {
+    context.fillStyle = 'rgba(40, 24, 12, 0.25)';
+    context.beginPath(); context.arc(2, 3, 34, 0, Math.PI * 2); context.fill();
+    context.strokeStyle = '#4a3424';
+    context.lineWidth = 1.5;
+    context.fillStyle = 'rgba(244, 230, 198, 0.75)';
+    context.beginPath(); context.arc(0, 0, 32, 0, Math.PI * 2); context.fill(); context.stroke();
+    context.beginPath(); context.arc(0, 0, 27, 0, Math.PI * 2); context.stroke();
+    for (let tick = 0; tick < 32; tick += 1) {
+      const angle = (tick / 32) * Math.PI * 2;
+      const inner = tick % 4 === 0 ? 22 : 25;
+      context.beginPath();
+      context.moveTo(Math.cos(angle) * inner, Math.sin(angle) * inner);
+      context.lineTo(Math.cos(angle) * 27, Math.sin(angle) * 27);
+      context.stroke();
+    }
+    // Pontas: as 4 diagonais curtas atrás, as 4 cardeais longas na frente (metade clara, metade sombra).
+    const point = (angle, length, width, light, dark) => {
       context.save();
       context.rotate(angle);
-      context.fillStyle = color;
-      context.beginPath();
-      context.moveTo(0, -22);
-      context.lineTo(5, 0);
-      context.lineTo(-5, 0);
-      context.closePath();
-      context.fill();
+      context.fillStyle = light;
+      context.beginPath(); context.moveTo(0, -length); context.lineTo(width, 0); context.lineTo(0, 0); context.closePath(); context.fill();
+      context.fillStyle = dark;
+      context.beginPath(); context.moveTo(0, -length); context.lineTo(-width, 0); context.lineTo(0, 0); context.closePath(); context.fill();
+      context.strokeStyle = '#2a1a10';
+      context.lineWidth = 1;
+      context.beginPath(); context.moveTo(0, -length); context.lineTo(width, 0); context.lineTo(0, 0); context.lineTo(-width, 0); context.closePath(); context.stroke();
       context.restore();
-    }
-    context.fillStyle = '#ffe08a';
-    context.font = '8px "Press Start 2P", monospace';
+    };
+    for (let k = 0; k < 4; k += 1) point(Math.PI / 4 + k * Math.PI / 2, 18, 4, '#cba36f', '#8a5a2a');
+    for (let k = 0; k < 4; k += 1) point(k * Math.PI / 2, 29, 6, k === 0 ? '#e0453f' : '#f4e6c6', k === 0 ? '#891e2b' : '#ad7954');
+    context.fillStyle = '#cba36f';
+    context.strokeStyle = '#2a1a10';
+    context.beginPath(); context.arc(0, 0, 3.5, 0, Math.PI * 2); context.fill(); context.stroke();
+    context.font = '10px "Press Start 2P", monospace';
     context.textAlign = 'center';
-    context.fillText('N', 0, -30);
+    context.lineWidth = 4;
+    context.strokeStyle = 'rgba(240, 226, 190, 0.95)';
+    context.strokeText('N', 0, -36);
+    context.fillStyle = '#891e2b';
+    context.fillText('N', 0, -36);
     context.restore();
   }
 
+  /** Escala gráfica a tinta (barra quadriculada). */
   drawScaleBar(context, x, y, scale) {
     const steps = 50;
     const length = steps * 10 * scale;
-    context.fillStyle = 'rgba(36, 25, 15, 0.85)';
-    context.fillRect(x - 6, y - 16, length + 120, 24);
+    context.save();
+    context.fillStyle = 'rgba(240, 226, 190, 0.85)';
+    context.fillRect(x - 8, y - 18, length + 120, 28);
+    context.strokeStyle = '#4a3424';
+    context.lineWidth = 1;
+    context.strokeRect(x - 7.5, y - 17.5, length + 119, 27);
+    context.fillStyle = '#2a1a10';
+    context.fillRect(x, y - 3, length, 6);
     context.fillStyle = '#f4e6c6';
-    context.fillRect(x, y - 2, length, 4);
-    context.fillRect(x, y - 6, 2, 12);
-    context.fillRect(x + length - 2, y - 6, 2, 12);
+    for (let k = 1; k < 4; k += 2) context.fillRect(x + (length / 4) * k, y - 2, length / 4, 4);
+    context.fillStyle = '#3b2717';
     context.font = '8px "Press Start 2P", monospace';
+    context.textAlign = 'left';
     context.fillText(`${steps} passos`, x + length + 10, y + 4);
+    context.restore();
   }
 
   destroy() {
