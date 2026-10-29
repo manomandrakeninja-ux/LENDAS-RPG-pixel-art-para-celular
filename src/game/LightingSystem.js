@@ -2,6 +2,9 @@ import Phaser from 'phaser';
 import { CONSUMABLES } from '../data/consumables.js';
 import { GLOW_LEVELS, HALO_RGB, KIND, lightBand } from '../art/light.js';
 import { OVERLAY_DEPTH } from './depths.js';
+import { T } from '../data/worldRegions.js';
+
+const LAVA_KIND = T.LAVA;
 
 // Luz local (Fase 20E). Duas camadas em tela, na resolução de 1 célula = 4 px de tela:
 // - `mask`: a escuridão da noite (roxo-azulada, da paleta), aberta por cada fonte em
@@ -159,6 +162,60 @@ export class LightingSystem {
     }
   }
 
+  /**
+   * Lava emite luz própria: as células da tela sobre lava não escurecem com a noite (ficam a ~85 %)
+   * e ganham um brilho laranja aditivo que pulsa devagar. Amostragem a cada 2 células (8 px de tela), com a borda em degradê.
+   */
+  lightLava(light, glow, camera, glowScale, t) {
+    const world = this.scene.regionWorld;
+    if (!world?.terrainAtPoint) return;
+    const width = this.width;
+    const height = this.height;
+    const toWorld = CELL / camera.zoom;
+    const view = camera.worldView;
+    const ramp = HALO_RGB.lava;
+    const pulse = 1 + 0.08 * Math.sin(t * 2.1);
+    const warmth = (0.1 + 0.22 * glowScale) * pulse;
+    // Máscara grossa (1 amostra a cada 2 células) e média 3x3: a borda da lava vira um degradê
+    // em degraus, sem os quadrados dos ladrilhos.
+    const gw = Math.ceil(width / 2); const gh = Math.ceil(height / 2);
+    const mask = new Uint8Array(gw * gh);
+    let any = false;
+    for (let gy = 0; gy < gh; gy += 1) {
+      for (let gx = 0; gx < gw; gx += 1) {
+        const wx = view.x + (gx * 2 + 1) * toWorld; const wy = view.y + (gy * 2 + 1) * toWorld;
+        // Só o miolo da lava (a 20 px de qualquer outro terreno): a franja de cinza que invade a borda
+        // do ladrilho fica escura e a luz não vaza em quadrados para o chão.
+        if (![[0, 0], [20, 0], [-20, 0], [0, 20], [0, -20]].every(([ox, oy]) => world.terrainAtPoint(wx + ox, wy + oy) === LAVA_KIND)) continue;
+        mask[gy * gw + gx] = 1; any = true;
+      }
+    }
+    if (!any) return;
+    for (let gy = 0; gy < gh; gy += 1) {
+      for (let gx = 0; gx < gw; gx += 1) {
+        let sum = 0;
+        for (let j = -1; j <= 1; j += 1) for (let i = -1; i <= 1; i += 1) {
+          const xx = gx + i; const yy = gy + j;
+          if (xx >= 0 && yy >= 0 && xx < gw && yy < gh) sum += mask[yy * gw + xx];
+        }
+        if (!sum) continue;
+        const k = Math.ceil(Math.min(1, sum / 6) * 4) / 4;
+        for (let dy = 0; dy < 2; dy += 1) {
+          for (let dx = 0; dx < 2; dx += 1) {
+            const x = gx * 2 + dx; const y = gy * 2 + dy;
+            if (x >= width || y >= height) continue;
+            const index = y * width + x;
+            if (light[index] < 0.85 * k) light[index] = 0.85 * k;
+            const color = ramp[1];
+            glow[index * 3] += color[0] * warmth * k;
+            glow[index * 3 + 1] += color[1] * warmth * k;
+            glow[index * 3 + 2] += color[2] * warmth * k;
+          }
+        }
+      }
+    }
+  }
+
   draw(lightLevel, player) {
     this.place();
     const width = this.width;
@@ -218,6 +275,7 @@ export class LightingSystem {
     }
 
     this.lightCampArea(light, glow, camera, glowScale, t);
+    this.lightLava(light, glow, camera, glowScale, t);
 
     // Os buffers de pixels são reaproveitados (nada de alocar duas imagens a cada redesenho).
     this.maskData ??= this.context.createImageData(width, height);

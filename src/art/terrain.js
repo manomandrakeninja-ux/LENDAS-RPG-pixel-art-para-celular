@@ -79,8 +79,10 @@ function toneField(kind, variant) {
   const rocky = kind === T.ASH || kind === T.CAVE || kind === T.SWAMP;
   // Grama: tufos de 8-16 px. Chão macio e rocha: só grão fino (2-6 px); as manchas grandes vêm dos
   // cantos Wang (ruído do mundo), então nada de 'figura' que se repita a cada ladrilho.
-  const [c1, c2, c3] = bladed ? [4, 6, 12] : rocky ? [4, 8, 16] : kind === T.SNOW ? [4, 8, 16] : [6, 12, 24];
-  const [o1, o2] = bladed ? [5, 8] : rocky ? [6, 12] : [8, 16];
+  // Cinza e caverna: manchas largas (2-4 células por ladrilho), como a grama calma; o lodo segue fino.
+  const stony = kind === T.ASH || kind === T.CAVE;
+  const [c1, c2, c3] = bladed ? [4, 6, 12] : stony ? [2, 3, 6] : rocky ? [4, 8, 16] : kind === T.SNOW ? [4, 8, 16] : [6, 12, 24];
+  const [o1, o2] = bladed ? [5, 8] : stony ? [3, 4] : rocky ? [6, 12] : [8, 16];
   const contrast = bladed ? 1.6 : rocky ? 1.1 : 0.62;
   const macro = bladed ? 0.38 : rocky ? 0.42 : 0.55;
   const field = new Float32Array(S * S);
@@ -321,8 +323,11 @@ function ripples(canvas, kind, field, seed, variant) {
   for (let x = 0; x < S; x += 1) {
     const bend = Math.sin((x / S) * Math.PI * 2 + seed) * 2.4 + Math.sin((x / S) * Math.PI * 4 + seed * 1.7) * 1.2;
     for (let y = 0; y < S; y += 1) {
-      const phase = (((y + bend) % spacing) + spacing) % spacing;
-      const keep = periodic(x, y, 4, seed + 11) + (wangAt(wang, x, y) - 0.5) * 0.3 > (kind === T.DUNE ? 0.6 : 0.66);
+      const phase = (((y + bend + seed * 3) % spacing) + spacing) % spacing;
+      // Longe da borda do ladrilho: cada ladrilho tem suas próprias ondas, sem emenda com o vizinho.
+      const border = Math.min(x, y, S - 1 - x, S - 1 - y);
+      const fade = border < 6 ? (6 - border) * 0.08 : 0;
+      const keep = periodic(x, y, 4, seed + 11) + (wangAt(wang, x, y) - 0.5) * 0.3 - fade > (kind === T.DUNE ? 0.6 : 0.66);
       if (!keep) continue;
       const t = field[y * S + x];
       if (phase < 1) canvas.pixel(x, y, t > 0.4 ? r[3] : r[2]);
@@ -331,21 +336,21 @@ function ripples(canvas, kind, field, seed, variant) {
   }
 }
 
-/** Chão de pedra/cinza: tom em degraus, grão e marcas. */
+/** Chão de pedra/cinza: 3 tons em manchas largas, lombadas com luz e grão raro (sem chiado). */
 function rockGround(canvas, kind, field, seed) {
   const r = RAMP[kind];
   const steps = kind === T.CAVE
-    ? [[0.3, r[2]], [0.7, r[3]], [0.9, r[4]], [2, r[5]]]
-    : [[0.22, r[1]], [0.55, r[2]], [0.82, r[3]], [2, r[4]]];
+    ? [[0.36, r[2]], [0.78, r[3]], [2, r[4]]]
+    : [[0.3, r[1]], [0.74, r[2]], [2, r[3]]];
   for (let y = 0; y < S; y += 1) {
     for (let x = 0; x < S; x += 1) {
       const t = field[y * S + x];
       canvas.pixel(x, y, steps.find(([limit]) => t < limit)[1]);
       // Luz do alto à esquerda nas "lombadas" do chão.
-      if (kind === T.CAVE && x > 0 && y > 0 && field[y * S + x] - field[(y - 1) * S + x - 1] > 0.075) canvas.pixel(x, y, kind === T.CAVE ? r[5] : r[4]);
+      if (kind === T.CAVE && x > 0 && y > 0 && field[y * S + x] - field[(y - 1) * S + x - 1] > 0.05 && field[y * S + x] > 0.6) canvas.pixel(x, y, r[5]);
       const g = hash(x, y, seed);
-      if (g > 0.99) canvas.pixel(x, y, kind === T.CAVE ? r[1] : r[0]);
-      else if (g < 0.005) canvas.pixel(x, y, kind === T.CAVE ? r[5] : r[5]);
+      if (g > 0.997) canvas.pixel(x, y, kind === T.CAVE ? r[1] : r[0]);
+      else if (g < 0.002) canvas.pixel(x, y, r[5]);
     }
   }
 }
@@ -386,10 +391,10 @@ function base(canvas, kind, variant) {
   }
   if (kind === T.SNOW || kind === T.SAND || kind === T.DUNE || kind === T.BEACH) {
     softGround(canvas, kind, calmOf(kind, variant), s);
-    if (kind === T.SAND || kind === T.DUNE) ripples(canvas, kind, calmOf(kind, variant), kind * 3 + 1, variant);
+    if (kind === T.SAND || kind === T.DUNE) ripples(canvas, kind, calmOf(kind, variant), kind * 3 + 1 + core * 17 + (variant & 15) * 5, variant);
     if (kind === T.SNOW) {
       // Montinhos de neve (luz em cima, lado de baixo azulado) e brilhos.
-      scatterInner(s + 3, 1 + (core % 2), (x, y) => {
+      scatterInner(s + 3, core === 1 ? 1 : 0, (x, y) => {
         for (let dx = -4; dx <= 4; dx += 1) {
           const h = Math.round(Math.sqrt(Math.max(0, 1 - (dx / 4.5) ** 2)) * 2);
           for (let dy = -h; dy <= 0; dy += 1) canvas.pixel(x + dx, y + dy, dy === -h ? '#ffffff' : '#d5e8ef');
@@ -738,7 +743,7 @@ export function drawDecorTile(kind, n) {
       else if (n === 1) pebble(canvas, cx, cy, 2, SNOW_STONE, '#9cc8e6');
       else if (n === 2) tuftAt(canvas, cx, cy, ['#391f21', '#5d2c28', '#8a4836', '#ad7954', '#cba36f', '#f6ca9f'], s, { count: 6, min: 2, max: 5 });
       else if (n === 3) { pebble(canvas, cx, cy, 0, SNOW_STONE, '#9cc8e6'); pebble(canvas, cx + 5, cy + 2, 1, SNOW_STONE, '#9cc8e6'); }
-      else if (n === 4) for (let i = 0; i < 4; i += 1) { canvas.pixel(cx - 8 + i * 5, cy + (i % 2) * 2, '#92a1b9'); canvas.pixel(cx - 7 + i * 5, cy + (i % 2) * 2 + 1, '#9cc8e6'); }
+      else if (n === 4) for (let x = -9; x <= 6; x += 1) { const y = cy + Math.round(Math.sin(x * 0.45) * 1.4 + (x > 0 ? x * 0.25 : 0)); canvas.pixel(cx + x, y, '#ffffff'); if (hash(x, 9, s) > 0.3) canvas.pixel(cx + x, y + 1, '#9cc8e6'); }
       else for (let i = 0; i < 5; i += 1) canvas.pixel(cx + Math.round((hash(i, 7, s) - 0.5) * 16), cy + Math.round((hash(i, 8, s) - 0.5) * 10), '#ffffff');
       break;
     case T.SAND:
@@ -790,6 +795,38 @@ const BIG = S * UNDER_SUBTILES;
 const bigWrap = (v) => ((v % BIG) + BIG) % BIG;
 const underCache = new Map();
 
+/**
+ * Lava em 4 tons + crosta: placas de crosta escura (células de Voronoi periódicas) separadas por veios
+ * acesos (núcleo amarelo → laranja → vermelho) que pulsam de quadro em quadro.
+ */
+const LAVA_CELL = 36;
+function lavaTone(x, y, frame, seed, v) {
+  const cells = BIG / LAVA_CELL;
+  const gx = Math.floor(x / LAVA_CELL); const gy = Math.floor(y / LAVA_CELL);
+  let f1 = Infinity; let f2 = Infinity; let id = 0;
+  for (let j = -1; j <= 1; j += 1) {
+    for (let i = -1; i <= 1; i += 1) {
+      const cx = gx + i; const cy = gy + j;
+      const wx = ((cx % cells) + cells) % cells; const wy = ((cy % cells) + cells) % cells;
+      const px = (cx + 0.15 + hash(wx, wy, seed + 31) * 0.7) * LAVA_CELL;
+      const py = (cy + 0.15 + hash(wx, wy, seed + 32) * 0.7) * LAVA_CELL;
+      const d = Math.hypot((x + 0.5 - px) * 0.9, y + 0.5 - py);
+      if (d < f1) { f2 = f1; f1 = d; id = hash(wx, wy, seed + 33); } else if (d < f2) f2 = d;
+    }
+  }
+  // Distância até o veio, com a borda das placas irregular.
+  const e = f2 - f1 + (v - 0.5) * 6;
+  const pulse = [0, 0.5, 1, 0.5][frame % 4];
+  // Uma placa em cada cinco derreteu: vira poça de lava aberta (laranja com manchas claras).
+  if (id < 0.2) return v > 0.62 ? 4 : v < 0.3 ? 2 : 3;
+  if (e < 1.2 + pulse * 0.5) return 5;
+  if (e < 2.8 + pulse * 0.3) return 4;
+  if (e < 4.2) return 3;
+  if (e < 5.4) return 2;
+  // Crosta: dois tons em manchas largas (sem anéis concêntricos).
+  return v > 0.6 ? 1 : 0;
+}
+
 /** Bloco inteiro (144 px, periódico) de um quadro; os ladrilhos são recortes dele. */
 function underBlock(kind, frame) {
   const key = `${kind}-${frame}`;
@@ -806,7 +843,7 @@ function underBlock(kind, frame) {
       const v = noise(sx, (y * 3) % BIG, 8, seed) * 0.5 + noise(sx, (y * 2) % BIG, 16, seed + 1) * 0.3 + noise(x, y, 6, seed + 2) * 0.2;
       let tone;
       if (kind === T.SEA) tone = v < 0.2 ? 1 : v < 0.7 ? 2 : 3;
-      else if (kind === T.LAVA) tone = v < 0.3 ? 2 : v < 0.66 ? 3 : 4;
+      else if (kind === T.LAVA) tone = lavaTone(sx, y, frame, seed, v);
       else if (kind === T.MURK) tone = v < 0.24 ? 1 : v < 0.78 ? 2 : 4;
       else tone = v < 0.16 ? 1 : v < 0.68 ? 2 : 3;
       canvas.pixel(x, y, tones[tone]);
@@ -829,17 +866,7 @@ function underBlock(kind, frame) {
     });
     spots(20, seed + 12).forEach(([x, y], index) => { if (phase(index) === 0) put(x, y, '#ffffff'); });
   } else if (kind === T.LAVA) {
-    // Placas de crosta boiando (escuras, borda acesa) e bolhas.
-    spots(16, seed + 10).forEach(([x, y], index) => {
-      const rx = 3 + (index % 4);
-      for (let dy = -rx; dy <= rx; dy += 1) {
-        for (let dx = -rx - 2; dx <= rx + 2; dx += 1) {
-          const r = Math.hypot(dx / (rx + 1.5), dy / (rx * 0.7)) + (hash(dx + x, dy + y, seed) - 0.5) * 0.25;
-          if (r < 0.7) put(x + dx + drift, y + dy, r < 0.45 ? tones[0] : tones[1]);
-          else if (r < 0.85) put(x + dx + drift, y + dy, tones[4]);
-        }
-      }
-    });
+    // Crosta e veios já vêm de lavaTone; aqui só as bolhas que estouram nos veios.
     spots(14, seed + 11).forEach(([x, y], index) => {
       const p = phase(index);
       if (p === 0) { put(x, y, tones[5]); put(x + 1, y, tones[4]); }
