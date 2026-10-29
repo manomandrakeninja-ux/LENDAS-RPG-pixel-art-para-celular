@@ -654,3 +654,30 @@ body.is-phone .quest-tracker {
 .world-map__zoom button {
   min-height: 48px !important;
 }
+
+/* Rodada 2 da arte: abas sem rolagem lateral (Ferreiro e Diário). No celular as abas quebram em
+   linhas de 3 e o Diário não passa da largura da tela (a grade de capítulos cabe em 8 colunas). */
+.quest-journal__window {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (max-width: 720px) {
+  .building-menu .building-menu__tabs,
+  .quest-journal__tabs {
+    flex-wrap: wrap;
+    overflow-x: visible;
+  }
+
+  .building-menu .building-menu__tabs button,
+  .quest-journal__tabs button {
+    flex: 1 1 calc(33.333% - 6px);
+    min-width: 0;
+    padding-inline: 2px !important;
+    font-size: 7px;
+    white-space: nowrap;
+  }
+
+  .quest-chapters {
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+  }
+}
