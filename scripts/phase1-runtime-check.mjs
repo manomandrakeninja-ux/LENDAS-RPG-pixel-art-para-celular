@@ -283,7 +283,8 @@ try {
           x: light.x,
           y: light.y,
           hasVisualObject: Boolean(light.object),
-          matchesVisualObject: light.object?.x === light.x && light.object?.y === light.y
+          // A luz pode ficar na chama ou no lampião, mas precisa estar dentro do desenho.
+          matchesVisualObject: Boolean(light.object?.getBounds?.()?.contains(light.x, light.y))
         }))
       }
     };
