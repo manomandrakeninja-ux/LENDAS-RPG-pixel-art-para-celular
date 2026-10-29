@@ -409,6 +409,7 @@ const baked = (name) => {
 };
 const natureEntries = [
   baked('pine-0'), baked('pine-1'), baked('pine-2'),
+  baked('pine-b-0'), baked('pine-b-1'), baked('pine-b-2'),
   baked('autumn-tree'), baked('oak-tree'), baked('fruit-tree'),
   baked('bush'),
   {

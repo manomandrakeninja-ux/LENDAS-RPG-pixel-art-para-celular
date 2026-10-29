@@ -220,9 +220,10 @@ function pebble(canvas, x, y, size, colors, ground) {
     return;
   }
   stamp(canvas, x, y + 1, size === 1
-    ? ['.lb.', 'lbbm', 'bbmd', '.gg.']
-    : ['..lbb..', '.gllbm.', 'lbbbbmd', 'bbbbmmd', '.mmmdd.', '..ggg..'], { l: light, b: base, m: mid, d: dark, g: size === 2 ? glint : ground });
-  if (size === 2) { canvas.pixel(x - 2, y - 3, glint); canvas.pixel(x - 1, y + 2, ground); canvas.pixel(x, y + 2, ground); canvas.pixel(x + 1, y + 2, ground); }
+    ? ['.lb..', 'lbbm.', 'bbmdg', 'gggg.']
+    : ['..lbb...', '.gllbm..', 'lbbbbmd.', 'bbbbmmdg', '.mmmddgg', '.ggggg..'], { l: light, b: base, m: mid, d: dark, g: ground });
+  // Sombra de contato: base escura mais larga que a pedra, puxada para baixo e para a direita.
+  if (size === 2) canvas.pixel(x - 2, y - 3, glint);
 }
 
 const FLOWERS = [['#ffffff', '#ffc825'], ['#ffeb57', '#e07438'], ['#f68187', '#ffeb57'], ['#9cc8e6', '#ffffff'], ['#fdd2ed', '#ffc825']];

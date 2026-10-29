@@ -137,6 +137,7 @@ export function createGameAnimations(scene) {
   atlasAnimation('campfire-loop-8', 'buildings', ['campfire8-0', 'campfire8-1', 'campfire8-2', 'campfire8-3'], 9);
   atlasAnimation('forge-smoke', 'buildings', ['smoke-0', 'smoke-1', 'smoke-2', 'smoke-3'], 5);
   atlasAnimation('pine-sway', 'nature', ['pine-0', 'pine-1', 'pine-2', 'pine-1'], 2);
+  atlasAnimation('pine-sway-b', 'nature', ['pine-b-0', 'pine-b-1', 'pine-b-2', 'pine-b-1'], 2);
   atlasAnimation('slash-swing', 'vfx', ['slash-0', 'slash-1', 'slash-2'], 18, 0);
   atlasAnimation('special-ring', 'vfx', ['ring-0', 'ring-1'], 10, 0);
   atlasAnimation('spark-hit', 'vfx', ['spark-0', 'spark-1'], 14, 0);

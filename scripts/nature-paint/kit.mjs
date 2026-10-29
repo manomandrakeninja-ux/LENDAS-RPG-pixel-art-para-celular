@@ -44,7 +44,7 @@ export function clump(ctx, x, y, rr, ramp, idx, { stretch = 1, hi = true, rnd = 
 
 /** Copa volumosa: massa escura + muitos aglomerados de folhas em camadas (de cima para baixo). */
 export function crown(ctx, o) {
-  const { lobes, ramp, seed = 1, density = 1, rMin = 2, rMax = 3.4, bias = 0, spikes = 0.5, stretch = 1, rim = true } = o;
+  const { lobes, ramp, seed = 1, density = 1, rMin = 2, rMax = 3.4, bias = 0, spikes = 0.5, stretch = 1, rim = true, clusters = false, amber = '#edab50' } = o;
   const r = rng(seed);
   const n = ramp.length - 1;
   const x0 = Math.min(...lobes.map((l) => l[0] - l[2])); const x1 = Math.max(...lobes.map((l) => l[0] + l[2]));
@@ -80,8 +80,24 @@ export function crown(ctx, o) {
     if (ny > 0.25) t -= (ny - 0.25) * 0.5;
     c.t = clamp(t, 0.05, 1);
   }
-  list.sort((a, b) => a.y - b.y);
+  // Em cachos: um lobo de cada vez (o de trás primeiro), cada um com sombra própria sobre o de trás
+  // e luz de borda âmbar no alto, para a copa ler como 5-7 cachos e não como uma bolha.
+  const order = clusters ? [lobes[0], ...lobes.slice(1).sort((a, b) => a[1] - b[1])] : null;
+  list.sort(clusters ? (a, b) => (order.indexOf(a.lobe) - order.indexOf(b.lobe)) || (a.y - b.y) : (a, b) => a.y - b.y);
+  let current = null;
   for (const c of list) {
+    if (clusters && c.lobe !== current) {
+      current = c.lobe;
+      if (current !== order[0]) {
+        const [lx, ly, lrx, lry] = current;
+        ctx.save();
+        ctx.globalCompositeOperation = 'source-atop';
+        // crescente de sombra só na borda (o miolo do cacho cobre o resto logo em seguida)
+        ellipse(ctx, lx + 0.6, ly - 1.4, lrx * 1.02, lry * 1.04, ramp[1]);
+        ellipse(ctx, lx, ly, lrx * 0.93, lry * 0.93, ramp[2]);
+        ctx.restore();
+      }
+    }
     const idx = Math.max(1, Math.min(n - 1, idxOf(ramp, c.t)));
     clump(ctx, c.x, c.y, c.rr, ramp, idx, { stretch, rnd: r });
     if (c.edge && r() < spikes) {
@@ -89,6 +105,17 @@ export function crown(ctx, o) {
       const a = Math.atan2(c.y - ccy, c.x - ccx) + r.range(-0.5, 0.5);
       const len = c.rr * r.range(0.7, 1.2);
       line(ctx, c.x, c.y, c.x + Math.cos(a) * (c.rr + len), c.y + Math.sin(a) * (c.rr + len), ramp[Math.max(1, idx - 1)], 1.1);
+    }
+  }
+  if (clusters) {
+    // luz âmbar no topo de cada cacho (só onde o topo do cacho está à mostra)
+    for (const [lx, ly, lrx, lry] of lobes) {
+      for (let a = -2.6; a <= -0.7; a += 0.16) {
+        const x = lx + Math.cos(a) * lrx * 0.86; const y = ly + Math.sin(a) * lry * 0.86;
+        const covered = lobes.some((l) => l[1] > ly && ((x - l[0]) / l[2]) ** 2 + ((y - l[1]) / l[3]) ** 2 < 0.9);
+        if (covered || r() < 0.35) continue;
+        ellipse(ctx, x, y, 0.9, 0.55, r() < 0.4 ? amber : ramp[n]);
+      }
     }
   }
   // folhas de luz quente em cima/esquerda
@@ -174,27 +201,39 @@ export function pineTier(ctx, { cx, top, bottom, hw, ramp, seed, snow = false, d
   const n = ramp.length - 1;
   const hgt = bottom - top;
   const sw = (tt) => dx * (1 - tt);
+  // Andar assimétrico (nada de "bolo"): um lado mais largo, a barra inclinada e galhos que escapam.
+  const skew = r.range(0.45, 1) * (r() < 0.5 ? -1 : 1);
+  const hwOf = (fx) => hw * (1 + Math.sign(fx) * skew * 0.3);
+  const tilt = r.range(1, 2.4) * -Math.sign(skew);
+  const hem = (fx) => bottom + fx * tilt;
   // sombra do andar sobre o de baixo e massa escura
-  fillPoly(ctx, [[cx + dx, top + 3], [cx - hw - 1, bottom + 3.5], [cx + hw + 1, bottom + 3.5]], ramp[0]);
-  fillPoly(ctx, [[cx + dx, top - 1], [cx - hw * 0.85, bottom - 1], [cx + hw * 0.85, bottom - 1]], ramp[1]);
+  fillPoly(ctx, [[cx + dx, top + 3], [cx - hwOf(-1) - 1, hem(-1) + 3.5], [cx + hwOf(1) + 1, hem(1) + 3.5]], ramp[0]);
+  fillPoly(ctx, [[cx + dx, top - 1], [cx - hwOf(-1) * 0.85, hem(-1) - 1], [cx + hwOf(1) * 0.85, hem(1) - 1]], ramp[1]);
   const list = [];
   const step = 3.4;
   for (let row = 0; row * step <= hgt - 2; row += 1) {
     const yy = top + 2 + row * step; const tt = (yy - top) / hgt;
-    const w = hw * tt ** 0.85;
-    const cols = Math.max(1, Math.round((w * 2) / 3.8));
+    const cols = Math.max(1, Math.round((hw * tt ** 0.85 * 2) / 3.8));
     for (let c = 0; c <= cols; c += 1) {
       const fx = (c / cols) * 2 - 1;
+      const w = hwOf(fx) * tt ** 0.85;
       const x = cx + sw(tt) + fx * w + r.range(-0.7, 0.7);
-      list.push({ x, y: yy + r.range(-0.5, 0.6) + Math.abs(fx) * 1.2, rr: 2.2 + tt * 1.1 + r.range(0, 0.6), nx: fx * tt, tt, bottom: false });
+      list.push({ x, y: yy + r.range(-0.5, 0.6) + Math.abs(fx) * 1.2 + fx * tilt * tt * 0.6, rr: 2.2 + tt * 1.1 + r.range(0, 0.6), nx: fx * tt, tt, bottom: false });
     }
   }
-  // bainha: ramos grandes caídos na borda de baixo
-  const bw = hw + 1.5;
-  const cnt = Math.max(3, Math.round((bw * 2) / 5.4));
+  // bainha: ramos grandes caídos na borda de baixo, em comprimentos diferentes
+  const cnt = Math.max(3, Math.round(((hw + 1.5) * 2) / 5.4));
   for (let c = 0; c <= cnt; c += 1) {
     const fx = (c / cnt) * 2 - 1;
-    list.push({ x: cx + sw(1) + fx * bw + r.range(-0.5, 0.5), y: bottom - 1.2 + r.range(-0.4, 0.9) + (1 - Math.abs(fx)) * 1.5 - Math.abs(fx) * 1.4, rr: 3.1 + r.range(0, 0.7), nx: fx, tt: 1, bottom: true });
+    const bw = hwOf(fx) + 1.5 + r.range(-1.2, 1.2);
+    list.push({ x: cx + sw(1) + fx * bw + r.range(-0.5, 0.5), y: hem(fx) - 1.2 + r.range(-0.6, 1.4) + (1 - Math.abs(fx)) * 1.5 - Math.abs(fx) * 1.4, rr: 3.1 + r.range(0, 0.7), nx: fx, tt: 1, bottom: true });
+  }
+  // 1 a 3 pontas de galho escapando da silhueta (só de um lado por vez)
+  const tips = 1 + Math.floor(r() * 3);
+  for (let i = 0; i < tips; i += 1) {
+    const side = i === 0 ? Math.sign(skew) : (r() < 0.5 ? -1 : 1);
+    const tt = r.range(0.55, 0.95);
+    list.push({ x: cx + sw(tt) + side * (hwOf(side) * tt + r.range(1.5, 3.2)), y: top + tt * hgt + r.range(0, 1.5), rr: 1.9 + r.range(0, 0.6), nx: side, tt, bottom: true });
   }
   list.sort((p, q) => p.y - q.y);
   for (const c of list) {

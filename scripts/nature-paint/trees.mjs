@@ -20,15 +20,18 @@ export function paintRound(ctx, { ramp, seed, bias = 0, fruit = null }) {
   trunk(ctx, { cx: 36, top: 46, base: 82, wTop: 8, wBase: 13, seed: seed + 1, roots: 3, rootSpread: 6, shade: 0.45 });
   limb(ctx, 35, 52, 21, 38, 5, 2.5);
   limb(ctx, 38, 54, 52, 38, 5, 2.5);
-  crown(ctx, { lobes: CROWN, ramp, seed: seed + 2, rMin: 2.5, rMax: 4.1, bias });
+  crown(ctx, { lobes: CROWN, ramp, seed: seed + 2, rMin: 2.5, rMax: 4.1, bias, clusters: true });
   if (fruit) {
+    // Frutas em 2 tons e só no lado iluminado (alto-esquerda), como pendem da luz.
     const r = rng(seed + 9);
-    for (let i = 0; i < 14; i += 1) {
+    let placed = 0;
+    for (let i = 0; i < 60 && placed < 9; i += 1) {
       const x = 14 + r() * 44; const y = 14 + r() * 40;
-      if (((x - 36) / 27) ** 2 + ((y - 34) / 24) ** 2 > 0.85) continue;
-      ellipse(ctx, x + 0.3, y + 0.5, 1.9, 1.8, '#571c27');
-      ellipse(ctx, x, y, 1.7, 1.6, fruit);
-      ellipse(ctx, x - 0.6, y - 0.6, 0.7, 0.55, '#f9e6cf');
+      if (((x - 36) / 27) ** 2 + ((y - 34) / 24) ** 2 > 0.8) continue;
+      if ((x - 36) * 0.6 + (y - 34) * 0.8 > 2) continue;
+      placed += 1;
+      ellipse(ctx, x, y, 1.6, 1.5, '#891e2b');
+      ellipse(ctx, x - 0.35, y - 0.4, 1.1, 1, fruit);
     }
   }
 }
@@ -37,6 +40,10 @@ export const TREE_PIECES = {
   'pine-0': { w: 64, h: 88, paint: (ctx) => paintPine(ctx, 0) },
   'pine-1': { w: 64, h: 88, paint: (ctx) => paintPine(ctx, -1) },
   'pine-2': { w: 64, h: 88, paint: (ctx) => paintPine(ctx, 1) },
+  // Segunda variante de pinheiro (outras assimetrias e pontas de galho), também com 3 quadros de balanço.
+  'pine-b-0': { w: 64, h: 88, paint: (ctx) => paintPine(ctx, 0, { seed: 160 }) },
+  'pine-b-1': { w: 64, h: 88, paint: (ctx) => paintPine(ctx, -1, { seed: 160 }) },
+  'pine-b-2': { w: 64, h: 88, paint: (ctx) => paintPine(ctx, 1, { seed: 160 }) },
   'oak-tree': { w: 72, h: 88, paint: (ctx) => paintRound(ctx, { ramp: RAMPS.oak, seed: 200, bias: 0.04 }) },
   'autumn-tree': { w: 72, h: 88, paint: (ctx) => paintRound(ctx, { ramp: RAMPS.autumn, seed: 300, bias: 0.02 }) },
   'fruit-tree': { w: 72, h: 88, paint: (ctx) => paintRound(ctx, { ramp: RAMPS.leaf, seed: 400, bias: 0.06, fruit: '#ea323c' }) }

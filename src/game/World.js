@@ -47,10 +47,12 @@ export class World {
       const x = rand(40, width - 40);
       const y = rand(40, height - 40);
       if (Phaser.Math.Distance.Between(x, y, camp.x, camp.y) < 470) continue;
-      const tree = this.scene.add.sprite(x, y, 'nature', 'pine-0')
+      // Duas variantes de pinheiro (assimetrias diferentes), alternadas.
+      const variantB = i % 2 === 1;
+      const tree = this.scene.add.sprite(x, y, 'nature', variantB ? 'pine-b-0' : 'pine-0')
         .setOrigin(0.5, 0.88)
         .setDepth(y + 10)
-        .play('pine-sway');
+        .play(variantB ? 'pine-sway-b' : 'pine-sway');
       // Tronco sólido.
       this.scene.obstacles?.add(x, y - 2, 10, 7);
       if (i % 7 === 0) {
@@ -60,7 +62,7 @@ export class World {
       } else if (i % 11 === 0) {
         tree.setTexture('nature', 'fruit-tree').stop();
       } else if (i % 5 === 0) {
-        tree.setTexture('nature', 'pine-1').stop();
+        tree.setTexture('nature', variantB ? 'pine-b-1' : 'pine-1').stop();
       }
       this.trees.push({ x, y, kind: tree.frame.name.startsWith('pine') ? 'pine' : tree.frame.name });
       this.treeSprites.push(tree);

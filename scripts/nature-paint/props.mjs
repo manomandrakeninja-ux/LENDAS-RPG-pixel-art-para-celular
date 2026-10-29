@@ -35,7 +35,7 @@ function ancientOak(ctx, variant) {
   const lobes = variant
     ? [[48, 48, 40, 31], [24, 58, 20, 16], [72, 56, 21, 16], [32, 30, 22, 18], [64, 28, 22, 18], [48, 18, 22, 14]]
     : [[48, 46, 41, 30], [23, 56, 21, 17], [73, 58, 20, 15], [36, 27, 22, 17], [62, 30, 22, 17], [49, 17, 21, 14]];
-  crown(ctx, { lobes, ramp: RAMPS.oak, seed: seed + 2, rMin: 2.6, rMax: 4.5, bias: 0.05, spikes: 0.4 });
+  crown(ctx, { lobes, ramp: RAMPS.oak, seed: seed + 2, rMin: 2.6, rMax: 4.5, bias: 0.05, spikes: 0.4, clusters: true });
 }
 
 function treeSpecs(base, tiers, cx) { return { base, tiers, cx }; }
@@ -146,20 +146,21 @@ function palm(ctx, { cx, base, topY, bend, seed, W }) {
 // ---------------------------------------------------------------- arbustos e plantas
 
 function bush(ctx, { lobes, ramp, seed, rMin = 1.7, rMax = 2.8, bias = 0, spikes = 0.4, berries = null, flowers = null, snow = false }) {
-  crown(ctx, { lobes, ramp, seed, rMin, rMax, bias, spikes, density: 1 });
+  crown(ctx, { lobes, ramp, seed, rMin, rMax, bias, spikes, density: 1, clusters: Boolean(berries) });
   const r = rng(seed + 50);
   const [bx0, bx1] = [Math.min(...lobes.map((l) => l[0] - l[2])), Math.max(...lobes.map((l) => l[0] + l[2]))];
   const [by0, by1] = [Math.min(...lobes.map((l) => l[1] - l[3])), Math.max(...lobes.map((l) => l[1] + l[3]))];
   const inside = (x, y) => lobes.some(([cx, cy, rx, ry]) => ((x - cx) / (rx * 0.8)) ** 2 + ((y - cy) / (ry * 0.8)) ** 2 <= 1);
   if (berries) {
     let placed = 0;
-    for (let i = 0; i < 60 && placed < 9; i += 1) {
+    // Bagas em 2 tons, poucas e só no lado da luz (alto-esquerda): nada de "adesivo" espalhado.
+    const mx = (bx0 + bx1) / 2; const my = (by0 + by1) / 2;
+    for (let i = 0; i < 80 && placed < 6; i += 1) {
       const x = r.range(bx0, bx1); const y = r.range(by0, by1);
-      if (!inside(x, y)) continue;
+      if (!inside(x, y) || (x - mx) * 0.6 + (y - my) * 0.8 > 0.5) continue;
       placed += 1;
-      ellipse(ctx, x + 0.25, y + 0.35, 1.5, 1.45, '#571c27');
-      ellipse(ctx, x, y, 1.35, 1.3, berries[0]);
-      ellipse(ctx, x - 0.4, y - 0.45, 0.55, 0.45, berries[1]);
+      ellipse(ctx, x, y, 1.25, 1.2, '#891e2b');
+      ellipse(ctx, x - 0.3, y - 0.35, 0.85, 0.8, berries[0]);
     }
   }
   if (flowers) {
