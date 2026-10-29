@@ -2,8 +2,8 @@
 //
 // Quadro 112 x 96, chão (cascos) na linha 90, centro em x = 56. Quatro direções reais: direita, esquerda
 // (pintada de novo, com a luz sempre do alto à esquerda e o lado direito do cavalo à mostra), frente e costas.
-// Cada quadro tem duas camadas: 'back' (o cavalo inteiro, atrás do herói) e 'front' (sela, estribo e botas do
-// cavaleiro; de frente também pescoço e cabeça), que fica por cima do herói e esconde as pernas dele.
+// Cada quadro tem camadas: 'back' (o cavalo inteiro, atrás do herói), 'front' (sela e estribos, sem as botas do
+// cavaleiro) por cima do herói e, de frente, 'head' (pescoço e cabeça) por cima das pernas do cavaleiro.
 // Quadros por direção (16): 0-7 galope, 8-13 parado, 14 arrancada, 15 parada.
 //
 // Galope transverso em 4 tempos + suspensão: posterior de fora, posterior de perto, anterior de fora,
@@ -473,19 +473,13 @@ function paintSide(ctx, frame, layer, mirror) {
   const flap = P([[50.5, 47.4], [61.8, 47], [62.6, 55.6], [60.6, 57], [52, 57.2], [50, 55]], true);
   vol(ctx, flap, C.leather, C.leatherDark, C.leatherLight, { d: [0.9, 1.1], h: [0.7, 0.7] });
   stroke(ctx, [[51.5, 48.8], [51.4, 55.2], [53, 56.2], [60.4, 55.8], [61.2, 49]].map(T), 0.7, C.stitch);
-  // Bota do cavaleiro: joelho na aba, canela até o estribo.
-  const knee = [60.5, 51.5];
-  const ankle = [57.8, 61.2];
-  const bootPath = poly(ctx, [T([58, 49.5]), T([63.5, 50.5]), T([60.6, 61.6]), T([60.8, 64]), T([54.2, 64]), T([55.4, 60.4])], true);
-  vol(ctx, bootPath, C.boot, C.bootDark, C.bootLight, { d: [0.9, 1], h: [0.8, 0.6] });
-  stroke(ctx, [T([58.4, 52.6]), T([62.2, 53.1])], 1, C.bootShine);
-  stroke(ctx, [T([55.2, 63.6]), T([60.6, 63.6])], 1, C.bootDark);
+  // As pernas do cavaleiro não vêm daqui: o jogo monta a pose sentada com as pernas da própria skin
+  // (src/art/riderLegs.js), por cima desta camada.
   // Loro e estribo.
   stroke(ctx, [T([56.5, 48]), T([57, 59])], 1.1, C.leatherDark);
   const stir = poly(ctx, [T([54.4, 62.4]), T([61, 62.4]), T([60.4, 65]), T([55, 65])], false);
   fill(ctx, stir, C.metalDark);
   stroke(ctx, [T([54.6, 64.6]), T([60.5, 64.6])], 1, C.metal);
-  void knee; void ankle;
   return out;
 }
 
@@ -531,7 +525,8 @@ function paintFront(ctx, frame, layer) {
   const tailSway = pose.tailWave;
   const head = () => {
     // Pescoço visto de frente.
-    const hy = Y(nod);
+    // Cabeça 4 px mais baixa que o assento: o rosto do cavaleiro fica à mostra de frente.
+    const hy = Y(nod) + 4;
     const neckPath = poly(ctx, [[47.5, Y(46)], [64.5, Y(46)], [66, Y(58)], [62, hy + 58], [50, hy + 58], [46, Y(58)]], true);
     vol(ctx, neckPath, C.coat, C.coatShadow, C.coatLight, { d: [1.6, 1], h: [1.1, 0.8] });
     // Crina caindo do lado direito do cavalo (esquerda da tela) + mechas soltas do outro lado.
@@ -592,7 +587,7 @@ function paintFront(ctx, frame, layer) {
     stroke(ctx, [[60.6, hy + 58], [64.4, Y(50)], [62, Y(44)]], 1, C.leatherDark);
   };
   const saddleSides = () => {
-    // Manta e abas dos dois lados, botas do cavaleiro e estribos.
+    // Manta, abas e estribos dos dois lados (as pernas são da skin, src/art/riderLegs.js).
     for (const s of [-1, 1]) {
       const x = 56 + s * 13.5;
       const blanket = poly(ctx, [[56 + s * 9, Y(43)], [x + s * 3.2, Y(45)], [x + s * 3.6, Y(56)], [56 + s * 10, Y(57.5)]], true);
@@ -600,11 +595,8 @@ function paintFront(ctx, frame, layer) {
       stroke(ctx, [[56 + s * 10.4, Y(56.8)], [x + s * 3.4, Y(55.6)]], 1, C.goldDark);
       const flap = poly(ctx, [[56 + s * 9.6, Y(44)], [x + s * 1.8, Y(45)], [x + s * 2, Y(54.5)], [56 + s * 10.4, Y(55.4)]], true);
       vol(ctx, flap, C.leather, C.leatherDark, C.leatherLight, { d: [0.7, 0.9], h: [0.6, 0.6] });
-      // bota
-      const boot = poly(ctx, [[x - 3, Y(45)], [x + 2.6, Y(45)], [x + 2.4, Y(58.5)], [x + s * 1.2 + 0.4, Y(62)], [x - 2.6, Y(62)], [x - 2.4, Y(58)]], true);
-      vol(ctx, boot, C.boot, C.bootDark, C.bootLight, { d: [0.9, 0.8], h: [0.7, 0.5] });
-      px(ctx, x - 2, Y(48), C.bootShine, 1, 3);
-      stroke(ctx, [[x - 2.8, Y(61.6)], [x + 2.6, Y(61.6)]], 1, C.bootDark);
+      // loro
+      stroke(ctx, [[x, Y(54)], [x, Y(60.4)]], 1, C.leatherDark);
       // estribo
       stroke(ctx, [[x - 3.2, Y(60.4)], [x - 3.2, Y(63.6)], [x + 3.2, Y(63.6)], [x + 3.2, Y(60.4)]], 1, C.metal);
       px(ctx, x - 2, Y(63.4), C.metalLight, 3, 1);
@@ -647,8 +639,10 @@ function paintFront(ctx, frame, layer) {
     out.hooves.push(frontLeg(ctx, [50, Y(66)], pose.legs.foreFar, { far: false, depth: 3, fore: true, view: 'down' }));
     out.hooves.push(frontLeg(ctx, [62, Y(66)], pose.legs.foreNear, { far: false, depth: 3, fore: true, view: 'down' }));
   }
-  saddleSides();
-  head();
+  // Camadas: back = tudo; front = sela e estribos (sob as pernas do cavaleiro); head = pescoço e cabeça,
+  // por cima das pernas.
+  if (layer !== 'head') saddleSides();
+  if (layer !== 'front') head();
   return out;
 }
 
@@ -689,7 +683,7 @@ function paintBack(ctx, frame, layer) {
     const barrel = poly(ctx, [[42, Y(42)], [56, Y(37)], [70, Y(42)], [71, Y(56)], [56, Y(60)], [41, Y(56)]], true);
     vol(ctx, barrel, C.coat, C.coatShadow, C.coatLight, { d: [1.6, 1.4], h: [1, 1] });
   }
-  // Manta e abas, botas, estribos (laterais), arção traseiro.
+  // Manta e abas, estribos (laterais), arção traseiro.
   for (const s of [-1, 1]) {
     const x = 56 + s * 14;
     const blanket = poly(ctx, [[56 + s * 9, Y(40)], [x + s * 3, Y(41)], [x + s * 3.4, Y(53)], [56 + s * 10, Y(54)]], true);
@@ -697,9 +691,6 @@ function paintBack(ctx, frame, layer) {
     stroke(ctx, [[56 + s * 10.4, Y(53.4)], [x + s * 3.2, Y(52.6)]], 1, C.goldDark);
     const flap = poly(ctx, [[56 + s * 9.6, Y(41)], [x + s * 1.8, Y(42)], [x + s * 2, Y(51.5)], [56 + s * 10.4, Y(52.5)]], true);
     vol(ctx, flap, C.leather, C.leatherDark, C.leatherLight, { d: [0.7, 0.9], h: [0.6, 0.6] });
-    const boot = poly(ctx, [[x - 2.8, Y(42)], [x + 2.6, Y(42)], [x + 2.4, Y(56)], [x - s * 1 + 0.2, Y(59.5)], [x - 2.6, Y(59.5)], [x - 2.4, Y(56)]], true);
-    vol(ctx, boot, C.boot, C.bootDark, C.bootLight, { d: [0.9, 0.8], h: [0.7, 0.5] });
-    px(ctx, x - 2, Y(45), C.bootShine, 1, 3);
     stroke(ctx, [[x - 3.2, Y(58)], [x - 3.2, Y(61)], [x + 3.2, Y(61)], [x + 3.2, Y(58)]], 1, C.metal);
   }
   const cantle = poly(ctx, [[46.5, Y(44)], [48, Y(40.5)], [56, Y(39.2)], [64, Y(40.5)], [65.5, Y(44)], [62, Y(47)], [50, Y(47)]], true);
@@ -737,6 +728,8 @@ function paintBack(ctx, frame, layer) {
 
 /** Pinta um quadro: dir = right|left|down|up, layer = back|front. Devolve { seat, hooves }. */
 export function paintHorse(ctx, dir, frame, layer) {
+  // Só a vista de frente tem a camada 'head' (a cabeça vem na direção da câmera).
+  if (layer === 'head' && dir !== 'down') return { seat: null, hooves: [] };
   if (dir === 'right' || dir === 'left') return paintSide(ctx, frame, layer, dir === 'left');
   // De frente/de costas o desenho é mais largo (peito e garupa de cavalo, não de pônei).
   const SX = 1.3; const SY = 1.07;

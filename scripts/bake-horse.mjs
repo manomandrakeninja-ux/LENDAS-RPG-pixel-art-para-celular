@@ -14,7 +14,7 @@ import { W, H, G, FRAMES, GALLOP, paintHorse, paintDust } from './horse-paint/ho
 
 const SS = 4;
 const DIRS = ['down', 'left', 'right', 'up'];
-const LAYERS = ['back', 'front'];
+const LAYERS = ['back', 'front', 'head'];
 const OUT = path.resolve('src/art/horseSprites.js');
 
 const args = process.argv.slice(2);
@@ -98,13 +98,18 @@ const SHADOW = { right: [55, G + 0.5, 25, 3.4], left: [57, G + 0.5, 25, 3.4], do
 function bakeFrame(dir, frame) {
   const back = paintHiRes((ctx) => paintHorse(ctx, dir, frame, 'back'));
   const front = paintHiRes((ctx) => paintHorse(ctx, dir, frame, 'front'));
+  const headLayer = paintHiRes((ctx) => paintHorse(ctx, dir, frame, 'head'));
   const dust = paintHiRes((ctx) => paintDust(ctx, back.result.hooves, dir));
   const horse = clean(downscale(back.data));
-  horse.outline();
+  // Luz de borda forte (azulada na pelagem escura): o cavalo preto se lê à noite e no verde-escuro.
+  horse.outline({ rim: 'strong' });
   horse.quantize();
   const rider = clean(downscale(front.data));
   rider.outline();
   rider.quantize();
+  const head = clean(downscale(headLayer.data));
+  head.outline({ rim: 'strong' });
+  head.quantize();
   const puff = downscale(dust.data);
   const outBack = new PixelCanvas(W, H);
   outBack.shadow(...SHADOW[dir], 120);
@@ -113,6 +118,7 @@ function bakeFrame(dir, frame) {
   return {
     back: outBack,
     front: rider,
+    head,
     seat: back.result.seat.map((v) => Math.round(v * 10) / 10),
     hits: back.result.hooves.filter((h) => h.landed > 0.75).map((h) => (h.hoof ?? h.foot).map((v) => Math.round(v)))
   };
@@ -161,10 +167,10 @@ for (const dir of DIRS) {
     hits[dir].push(r.hits);
   }
 }
-for (const dir of DIRS) for (const layer of ['back', 'front']) for (const r of baked[dir]) all.push(r[layer]);
+for (const dir of DIRS) for (const layer of LAYERS) for (const r of baked[dir]) all.push(r[layer]);
 const enc = encode(all);
 const header = '// GERADO por scripts/bake-horse.mjs (Fase 23). Não editar à mão: repinte em scripts/horse-paint/horse.mjs.\n'
-  + '// Quadros 112x96 (cascos na linha 90). Ordem: direção (baixo, esquerda, direita, cima) x camada (back, front)\n'
+  + '// Quadros 112x96 (cascos na linha 90). Ordem: direção (baixo, esquerda, direita, cima) x camada (back, front, head)\n'
   + '// x 16 quadros (0-7 galope, 8-13 parado, 14 arrancada, 15 parada). seats = assento [x, y] por quadro;\n'
   + '// hits = cascos que acabaram de tocar o chão (poeira).\n';
 const body = {
@@ -200,9 +206,9 @@ function board(rows, cols, cell, file, bg = true) {
 if (previewDir) {
   fs.mkdirSync(path.resolve(previewDir), { recursive: true });
   for (const dir of DIRS) {
-    const frames = baked[dir].map((r) => [r.back, r.front]);
+    const frames = baked[dir].map((r) => [r.back, r.front, r.head]);
     board([frames.slice(0, 8), frames.slice(8, 16)], 8, null, path.join(previewDir, `prancha-${dir}.png`));
   }
-  board(DIRS.map((dir) => baked[dir].slice(0, GALLOP).map((r) => [r.back, r.front])), GALLOP, null, path.join(previewDir, 'galope-sequencia.png'));
+  board(DIRS.map((dir) => baked[dir].slice(0, GALLOP).map((r) => [r.back, r.front, r.head])), GALLOP, null, path.join(previewDir, 'galope-sequencia.png'));
   console.log('pranchas em', previewDir);
 }

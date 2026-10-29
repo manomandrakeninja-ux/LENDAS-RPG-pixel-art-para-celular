@@ -6,6 +6,7 @@ import {
 } from '../art/mountHorse.js';
 import { Companions, PETS, petAbility } from '../data/companions.js';
 import { quantizePixels } from '../art/palette.js';
+import { riderLegs } from '../art/riderLegs.js';
 import { ensureNpcAnims, hasNpcSheet, npcOriginY, npcSheetKey } from './npcArt.js';
 
 // Parte da cena dos mascotes e da montaria: desenho em pixel, seguir o herói e os efeitos.
@@ -62,6 +63,38 @@ export function petTexture(scene, id) {
   });
 }
 
+/**
+ * Pernas sentadas da própria skin (src/art/riderLegs.js) para o quadro atual do herói, numa textura
+ * em cache por skin, quadro e direção. Devolve { key, ox, oy } ou null.
+ */
+function riderLegsTexture(scene, sprite, dir) {
+  const frame = sprite.frame;
+  const key = `rider-legs-${sprite.texture.key}-${frame.name}-${dir}-${sprite.flipX ? 1 : 0}`;
+  riderLegsTexture.meta ??= new Map();
+  if (riderLegsTexture.meta.has(key)) return riderLegsTexture.meta.get(key);
+  let result = null;
+  try {
+    const w = frame.cutWidth; const h = frame.cutHeight;
+    const canvas = document.createElement('canvas');
+    canvas.width = w; canvas.height = h;
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    if (sprite.flipX) { ctx.translate(w, 0); ctx.scale(-1, 1); }
+    ctx.drawImage(frame.source.image, frame.cutX, frame.cutY, w, h, 0, 0, w, h);
+    const legs = riderLegs(ctx.getImageData(0, 0, w, h), dir);
+    if (legs) {
+      const texture = scene.textures.createCanvas(key, legs.width, legs.height);
+      texture.getContext().putImageData(new ImageData(legs.data, legs.width, legs.height), 0, 0);
+      texture.setFilter(Phaser.Textures.FilterMode.NEAREST);
+      texture.refresh();
+      result = { key, ox: legs.ox, oy: legs.oy };
+    }
+  } catch {
+    result = null;
+  }
+  riderLegsTexture.meta.set(key, result);
+  return result;
+}
+
 /** Folha da montaria (Fase 23): uma textura com os quadros `<dir>-<camada>-<n>`. */
 export function mountTexture(scene) {
   const key = 'mount-horse';
@@ -79,7 +112,8 @@ export function mountTexture(scene) {
   return key;
 }
 
-// Herói montado: linha do quadril na folha 56x64 (o corte esconde as pernas; a sela cobre a emenda)
+// Herói montado: linha do quadril na folha 56x64 (o corte tira as pernas em pé; no lugar entram as
+// pernas sentadas da própria skin, riderLegsTexture)
 // e onde ficam os cascos do cavalo em relação ao ponto do herói.
 const RIDER_HIP = 44;
 const MOUNT_GROUND = 9;
@@ -165,6 +199,9 @@ export class CompanionSystem {
       const dir = scene.player.direction ?? 'down';
       this.mountSprite = scene.add.image(scene.player.x, scene.player.y, key, horseFrameName(dir, 'back', 8)).setOrigin(0, 0);
       this.mountFront = scene.add.image(scene.player.x, scene.player.y, key, horseFrameName(dir, 'front', 8)).setOrigin(0, 0);
+      // De frente a cabeça do cavalo fica por cima das pernas do cavaleiro.
+      this.mountHead = HORSE_LAYERS.includes('head') ? scene.add.image(scene.player.x, scene.player.y, key, horseFrameName(dir, 'head', 8)).setOrigin(0, 0) : null;
+      this.riderLegs = scene.add.image(scene.player.x, scene.player.y, '__DEFAULT').setOrigin(0, 0).setVisible(false);
       this.mountMode = 'idle';
       this.mountT = 0;
       this.mountFrame = -1;
@@ -172,8 +209,12 @@ export class CompanionSystem {
     } else if (!this.state.mounted && this.mountSprite) {
       this.mountSprite.destroy();
       this.mountFront?.destroy();
+      this.mountHead?.destroy();
+      this.riderLegs?.destroy();
       this.mountSprite = null;
       this.mountFront = null;
+      this.mountHead = null;
+      this.riderLegs = null;
       this.releaseRider(scene.player);
     }
   }
@@ -208,6 +249,7 @@ export class CompanionSystem {
     const top = Math.round(player.y + MOUNT_GROUND - HORSE_GROUND);
     this.mountSprite.setFrame(horseFrameName(dir, 'back', frame)).setPosition(left, top).setDepth(player.y + 29.5);
     this.mountFront.setFrame(horseFrameName(dir, 'front', frame)).setPosition(left, top).setDepth(player.y + 30.5);
+    this.mountHead?.setFrame(horseFrameName(dir, 'head', frame)).setPosition(left, top).setDepth(player.y + 31);
     const sprite = player.sprite;
     if (!sprite) return;
     // Montado não anda: o quadro de andar vira o parado da mesma direção.
@@ -224,6 +266,18 @@ export class CompanionSystem {
     const dx = Math.round(seat[0] - rest[0]);
     for (const part of [sprite, player.animator?.back, player.animator?.hand]) {
       if (part) { part.y += dy; part.x += dx; }
+    }
+    // Pernas sentadas da skin: por cima da sela (de costas, por baixo da garupa).
+    const legs = this.riderLegs && riderLegsTexture(this.scene, sprite, dir);
+    if (this.riderLegs) {
+      this.riderLegs.setVisible(Boolean(legs));
+      if (legs) {
+        this.riderLegs.setTexture(legs.key)
+          .setScale(sprite.scaleX, sprite.scaleY)
+          .setPosition(Math.round(player.x + sprite.x + (legs.ox - sprite.displayOriginX) * sprite.scaleX),
+            Math.round(player.y + sprite.y + (legs.oy - sprite.displayOriginY) * sprite.scaleY))
+          .setDepth(player.y + (dir === 'up' ? 30.2 : 30.8));
+      }
     }
     if (frame !== this.mountFrame) {
       this.mountFrame = frame;
