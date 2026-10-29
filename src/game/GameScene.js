@@ -1801,14 +1801,22 @@ export class GameScene extends Phaser.Scene {
   }
 
   /** No celular, o nome dos prédios só aparece perto do jogador (menos poluição na tela). */
+  /**
+   * Nomes dos prédios ("CASA • NV 1"): no modo Automático (padrão) e em "Só de perto" aparecem só perto
+   * do herói, no celular e no PC, com transição suave (120 -> 180 px); assim não cobrem a arte do
+   * acampamento nem uns aos outros. "Sempre" mostra todos.
+   */
   updateBuildingLabels() {
     const mode = this.settingsPanel?.labels ?? 'auto';
-    const nearOnly = mode === 'near' || (mode === 'auto' && Boolean(this.ui?.metrics?.phone));
-    for (const building of Object.values(this.camp.buildings)) {
-      const label = building.label;
-      if (!label) continue;
-      const near = Phaser.Math.Distance.Between(this.player.x, this.player.y, label.x, label.y + 30) < 110;
-      label.setAlpha(!nearOnly || near ? 1 : 0);
+    const labels = [...Object.values(this.camp.buildings).map((building) => building.label), this.camp.defense?.wallBuilding?.label]
+      .filter((label, index, list) => label?.active && list.indexOf(label) === index);
+    for (const label of labels) {
+      let alpha = 1;
+      if (mode !== 'always') {
+        const distance = Phaser.Math.Distance.Between(this.player.x, this.player.y, label.x, label.y + 30);
+        alpha = distance <= 120 ? 1 : distance >= 180 ? 0 : 1 - (distance - 120) / 60;
+      }
+      if (Math.abs(label.alpha - alpha) > 0.02) label.setAlpha(alpha);
     }
   }
 

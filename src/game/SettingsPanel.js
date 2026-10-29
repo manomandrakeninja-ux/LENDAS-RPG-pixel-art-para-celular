@@ -380,7 +380,7 @@ export class SettingsPanel {
         </div>
       </div>
       ${this.choiceRow('shake', 'Tremor da tela', 'Balanço da câmera nos golpes e explosões.')}
-      ${this.choiceRow('labels', 'Nomes dos prédios', 'Automático: no celular só aparecem perto do personagem.')}
+      ${this.choiceRow('labels', 'Nomes dos prédios', 'Automático: só aparecem perto do personagem.')}
       ${this.choiceRow('stickSize', 'Tamanho do joystick', 'Controles de toque.')}
       ${this.choiceRow('stickSide', 'Lado do joystick', 'Os botões de ação ficam do outro lado.')}
       ${touch ? '' : this.keysSection()}

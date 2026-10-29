@@ -130,10 +130,33 @@ export class VillagerManager {
     this.villagers.delete(id);
   }
 
+  /**
+   * Balão de fala em fila: um morador fala por vez (os outros esperam), para os balões não se
+   * empilharem sobre as casas e o portão quando vários chegam juntos.
+   */
   say(villager, text, ms = 4500) {
     if (!villager) return;
+    this.bubbleQueue ??= [];
+    const talking = [...this.villagers.values()].some((other) => other !== villager && other.bubbleMs > 0);
+    if (talking) {
+      const queued = this.bubbleQueue.find((entry) => entry.villager === villager);
+      if (queued) Object.assign(queued, { text, ms });
+      else if (this.bubbleQueue.length < 6) this.bubbleQueue.push({ villager, text, ms });
+      return;
+    }
     villager.bubble.setText(text).setVisible(true);
     villager.bubbleMs = ms;
+  }
+
+  /** Próximo balão da fila quando ninguém está falando. */
+  nextBubble() {
+    if (!this.bubbleQueue?.length) return;
+    if ([...this.villagers.values()].some((villager) => villager.bubbleMs > 0)) return;
+    const next = this.bubbleQueue.shift();
+    if (next && this.villagers.get(next.villager.def?.id) === next.villager) {
+      next.villager.bubble.setText(next.text).setVisible(true);
+      next.villager.bubbleMs = Math.min(next.ms, 3200);
+    }
   }
 
   /** Inimigo mais próximo que está ameaçando o acampamento. */
@@ -182,6 +205,7 @@ export class VillagerManager {
     }
     const now = this.scene.time.now;
     const player = this.scene.player;
+    this.nextBubble();
     for (const villager of this.villagers.values()) {
       const { container } = villager;
       const body = container.body;

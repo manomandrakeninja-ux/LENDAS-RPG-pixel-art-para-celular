@@ -424,14 +424,22 @@ export class QuestUI {
 
   // ---------- Avisos e recompensa ----------
 
+  /** Aviso em fila: no máximo 2 na tela; os outros esperam a vez (nada de 4 "Novo morador" empilhados). */
   toast(text, tone = '') {
+    this.toastQueue ??= [];
+    const visible = [...this.toasts.children].filter((el) => !el.classList.contains('is-leaving'));
+    if (visible.some((el) => el.textContent === text) || this.toastQueue.some((t) => t.text === text)) return;
+    if (visible.length >= 2) { this.toastQueue.push({ text, tone }); return; }
     const item = document.createElement('div');
     item.className = `quest-toast ${tone ? `quest-toast--${tone}` : ''}`;
     item.textContent = text;
     this.toasts.appendChild(item);
-    while (this.toasts.children.length > 4) this.toasts.firstChild.remove();
     window.setTimeout(() => item.classList.add('is-leaving'), 2600);
-    window.setTimeout(() => item.remove(), 3200);
+    window.setTimeout(() => {
+      item.remove();
+      const next = this.toastQueue.shift();
+      if (next) this.toast(next.text, next.tone);
+    }, 3200);
   }
 
   showReward(mission, rewards, lore) {
