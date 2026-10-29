@@ -38,6 +38,22 @@ function seal(canvas, gem) {
   for (const [x, y] of [[8, 1], [15, 8], [8, 15], [1, 8]]) canvas.pixel(x, y, gem[2]);
 }
 
+function oreRock(c, vein) {
+  // Pedra facetada (luz do alto à esquerda) com pepitas do metal em 2 tons e 1 brilho.
+  c.polygon([[1, 11], [3, 5], [7, 2], [12, 3], [15, 8], [14, 13], [8, 15], [3, 14]], '#4a4552');
+  c.polygon([[3, 5], [7, 2], [12, 3], [10, 7], [5, 8]], '#8a8494');
+  c.polygon([[1, 11], [3, 5], [5, 8], [4, 12]], '#6b6575');
+  c.polygon([[10, 7], [12, 3], [15, 8], [12, 10]], '#5b5664');
+  c.line(5, 8, 10, 7, '#a9a3b2');
+  for (const [x, y, w] of [[5, 5, 2], [9, 9, 3], [4, 11, 2], [11, 5, 1], [7, 12, 2]]) {
+    c.rect(x, y, w, 2, vein[1]);
+    c.rect(x, y, w, 1, vein[2]);
+    c.pixel(x + w, y + 1, vein[0]);
+  }
+  c.pixel(10, 9, vein[3]);
+  c.pixel(5, 5, vein[3]);
+}
+
 const DRAW = {
   seeds: (c) => {
     for (const [x, y, color] of [[4, 9, '#c9a24f'], [8, 6, '#d9b45c'], [11, 10, '#b8913f'], [7, 11, '#d9b45c']]) {
@@ -46,25 +62,19 @@ const DRAW = {
     c.line(8, 4, 9, 2, '#5f9e45');
     c.pixel(10, 2, '#8cc55c');
   },
-  iron: (c) => {
-    // Lingote de ferro com faces.
-    c.polygon([[2, 11], [5, 6], [14, 6], [12, 11]], '#9aa6ad');
-    c.polygon([[5, 6], [14, 6], [13, 8], [6, 8]], '#d4dde1');
-    c.polygon([[2, 11], [12, 11], [12, 13], [2, 13]], '#5f6b72');
-    c.pixel(7, 7, '#ffffff');
-  },
+  iron: (c) => oreRock(c, ['#3d4a55', '#9fb4c2', '#dfeaf0', '#ffffff']),
   coal: (c) => {
-    c.shadedEllipse(8, 9, 6, 5, ['#0d0f12', '#1f2328', '#3a4048', '#6a727c']);
-    c.pixel(6, 6, '#9aa3ad');
-    c.pixel(10, 10, '#2e3339');
+    // Três pedras de carvão facetadas, com brilho frio de antracito.
+    for (const [x, y, r] of [[5, 10, 4], [11, 11, 3.6], [8, 5, 3.4]]) {
+      c.shadedEllipse(x, y, r, r * 0.9, ['#08090b', '#1a1d22', '#2f343c', '#565e6a']);
+      c.pixel(Math.round(x - r * 0.4), Math.round(y - r * 0.5), '#9aa8bb');
+    }
+    c.line(3, 11, 6, 9, '#3d4450');
   },
   gold: (c) => {
-    c.polygon([[2, 11], [5, 6], [14, 6], [12, 11]], '#e0a92e');
-    c.polygon([[5, 6], [14, 6], [13, 8], [6, 8]], '#ffe07a');
-    c.polygon([[2, 11], [12, 11], [12, 13], [2, 13]], '#9a6a12');
-    c.pixel(7, 7, '#fff6c8');
-    c.pixel(13, 3, '#fff6c8');
-    c.pixel(12, 2, '#fff6c8');
+    oreRock(c, ['#7a4a0c', '#e8a91c', '#ffe07a', '#fff6c8']);
+    c.pixel(14, 2, '#fff6c8');
+    c.pixel(13, 1, '#ffe07a');
   },
   potion: (c) => bottle(c, '#c7334f'),
   staminaPotion: (c) => bottle(c, '#3f9a5b'),
@@ -164,9 +174,13 @@ const DRAW = {
     c.polygon([[12, 9], [15, 11], [13, 14], [11, 13]], '#2f7fb0');
   },
   magmaCore: (c) => {
-    c.shadedEllipse(8, 8, 6, 6, ['#2e2624', '#4a3d38', '#6a5850', '#8c776b']);
-    c.shadedEllipse(8, 8, 3.5, 3.5, ['#8e2a14', '#e0602a', '#ffb04a', '#fff0b0']);
-    for (const [x0, y0, x1, y1] of [[3, 5, 5, 7], [11, 10, 13, 12], [9, 3, 10, 5]]) c.line(x0, y0, x1, y1, '#ffb04a');
+    // Núcleo em erupção: casca de pedra rachada, centro branco-amarelo e raios de fogo saindo.
+    for (const [x0, y0, x1, y1] of [[8, 0, 8, 3], [8, 13, 8, 15], [0, 8, 3, 8], [13, 8, 15, 8], [2, 2, 4, 4], [14, 2, 12, 4], [2, 14, 4, 12], [14, 14, 12, 12]]) c.line(x0, y0, x1, y1, '#ff5000');
+    for (const [x, y] of [[8, 0], [0, 8], [15, 8], [8, 15], [2, 2], [14, 2]]) c.pixel(x, y, '#ffeb57');
+    c.shadedEllipse(8, 8, 5.4, 5.4, ['#1c121c', '#391f21', '#5d2c28', '#8a4836']);
+    c.shadedEllipse(8, 8, 3.4, 3.4, ['#c64524', '#ff5000', '#ffa214', '#ffeb57']);
+    c.rect(7, 7, 2, 2, '#ffffff');
+    for (const [x0, y0, x1, y1] of [[4, 6, 6, 7], [10, 10, 12, 11], [9, 4, 10, 5], [5, 11, 6, 10]]) c.line(x0, y0, x1, y1, '#ffa214');
   },
   book: (c) => {
     c.rect(3, 2, 10, 12, '#6b3a2a');

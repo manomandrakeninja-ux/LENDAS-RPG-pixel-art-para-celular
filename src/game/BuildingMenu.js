@@ -801,7 +801,7 @@ export class BuildingMenu {
       const tooLow = level < item.level;
       return `
         <article class="building-menu__card">
-          <span class="gear-shop__icon">${gearIconHtml(item.id, 'common', 40)}</span>
+          <span class="gear-shop__icon">${gearIconHtml(item.id, 'common', 64)}</span>
           <h2>${escapeHtml(item.name)}</h2>
           <p>${escapeHtml(SLOT_NAMES[item.slot])} • Nível ${item.level}${stats ? ` • ${escapeHtml(stats)}` : ''}</p>
           ${item.description ? `<p>${escapeHtml(item.description)}</p>` : ''}
@@ -840,7 +840,7 @@ export class BuildingMenu {
       const canPay = cost && this.camp.canPay(cost);
       return `
         <article class="building-menu__card" data-enhance-uid="${item.uid}">
-          <span class="gear-shop__icon">${gearIconHtml(item.id, item.rarity, 40)}</span>
+          <span class="gear-shop__icon">${gearIconHtml(item.id, item.rarity, 64)}</span>
           <h2 style="color:${rarity.color}">${escapeHtml(definition.name)}${item.upgrade ? ` +${item.upgrade}` : ''}${gear.isEquipped(item.uid) ? ' • EQUIPADO' : ''}</h2>
           <p>${escapeHtml(SLOT_NAMES[definition.slot])} • Nível ${definition.level}${stats ? ` • ${escapeHtml(stats)}` : ''}</p>
           ${item.sockets.length ? `<div class="building-menu__actions">${sockets}${insert}</div>` : '<p>Sem encaixes para joias.</p>'}

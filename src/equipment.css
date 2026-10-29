@@ -357,8 +357,14 @@
 /* Loja do Ferreiro e Bênção da Fogueira. */
 .gear-shop__icon {
   float: left;
-  margin: 0 8px 4px 0;
+  margin: 0 10px 4px 0;
   line-height: 0;
+}
+
+/* Ícone da loja a 2x inteiro (32 -> 64 px): dá para reconhecer a peça sem ler o nome. */
+.gear-shop__icon .gear-icon {
+  width: 64px;
+  height: 64px;
 }
 
 @media (pointer: coarse) {

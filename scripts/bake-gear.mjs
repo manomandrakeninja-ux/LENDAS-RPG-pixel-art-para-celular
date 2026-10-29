@@ -46,12 +46,15 @@ function nearestSolid(c, x, y) {
 }
 
 export const HAND_SIZE = 40;
+const LONG_SHAPES = new Set(['spear', 'trident', 'staff']);
 
 function weaponShape(item) { return item.look; }
 
 function bakeWeapon(style, shape, mode, grip) {
   let tipRaw = null;
-  const raw = (ctx) => { tipRaw = paintWeapon(ctx, shape, style, { mode: 'hand', grip: mode === 'icon' ? [0, 0] : grip, widen: mode === 'icon' ? 1.3 : 1 }).tip; };
+  // Ícone: armas longas (lança, tridente, cajado) ganham haste mais grossa (>= 3 px na diagonal).
+  const widen = mode === 'icon' ? (LONG_SHAPES.has(shape) ? 1.8 : 1.3) : 1;
+  const raw = (ctx) => { tipRaw = paintWeapon(ctx, shape, style, { mode: 'hand', grip: mode === 'icon' ? [0, 0] : grip, widen }).tip; };
   const size = mode === 'icon' ? 32 : HAND_SIZE;
   let paint = raw; let tip;
   if (mode === 'icon') {

@@ -200,14 +200,14 @@ function legs(ctx, set) {
   const kilt = s.legs === 'kilt';
   for (const sx of [-1, 1]) {
     const x0 = sx < 0 ? 8.4 : 16.6; const x1 = sx < 0 ? 15.4 : 23.6;
-    const p = path(ctx, [[x0, 9], [x1, 9], [sx < 0 ? x1 - 0.4 : x1 - 0.6, 29], [sx < 0 ? x0 + 1 : x0 + 0.6, 29]]);
+    const p = path(ctx, sx < 0 ? [[8, 9], [16.4, 9], [15.6, 14.4], [12, 29], [4.8, 29]] : [[15.6, 9], [24, 9], [27.2, 29], [20, 29], [16.4, 14.4]]);
     vol(ctx, p, plate ? s.main : chain ? s.main : set === 'corsario' ? R.white : cloth, [x0, 9, 7, 20], { lx: sx < 0 ? 0.25 : 0.1, ly: 0.2, spread: 1.3 });
     clip(ctx, p, () => {
       if (chain) for (let y = 9; y < 30; y += 1.5) for (let x = x0 + ((Math.round(y / 1.5) % 2) ? 0.75 : 0); x < x1; x += 1.5) { ctx.save(); ctx.strokeStyle = s.main[1]; ctx.lineWidth = 0.4; ctx.beginPath(); ctx.arc(x, y, 0.6, 0, Math.PI * 2); ctx.stroke(); ctx.restore(); }
       if (!plate && !chain) line(ctx, [[x0 + (sx < 0 ? 5 : 1.4), 12], [x0 + (sx < 0 ? 5.4 : 1), 27]], 0.6, (set === 'corsario' ? R.white : cloth)[0]);
     });
-    // Joelheira.
-    const kx = (x0 + x1) / 2;
+    // Joelheira (acompanha a perna aberta).
+    const kx = sx < 0 ? 10.4 : 21.6;
     if (plate || chain) {
       vol(ctx, ellipse(ctx, kx, 19.4, 3.2, 2.6), s.main, [kx - 3, 17, 6, 5], { ao: 0.2 });
       fill(ctx, ellipse(ctx, kx, 19.4, 1.4, 1.1), mid(s.trim));
@@ -237,7 +237,7 @@ function legs(ctx, set) {
 function boots(ctx, set) {
   const s = SETS[set];
   const kind = s.boots;
-  for (const [x, far] of [[5.4, false], [17, true]]) {
+  for (const [x, far] of [[3.4, true], [14.6, false]]) {
     const ramp = kind === 'plate' ? s.main : kind === 'sandal' ? R.leather : set === 'bosque' ? R.green : set === 'brejo' ? R.bog : set === 'corsario' ? ['#0e071b', '#1c121c', '#391f21', '#5d2c28', '#8a4836'] : R.leather;
     if (kind === 'sandal') {
       vol(ctx, path(ctx, [[x + 1, 8], [x + 7, 8], [x + 7.4, 23], [x + 10.4, 25.6], [x + 10.4, 28.6], [x, 28.6], [x + 0.4, 23]]), R.leather.slice(2), [x, 8, 10, 21]);
@@ -246,21 +246,22 @@ function boots(ctx, set) {
       glyph(ctx, set, x + 4, 12.2, 1.6);
       continue;
     }
-    const p = path(ctx, [[x, 6], [x + 8, 6], [x + 8.2, 20.6], [x + 11.4, 23.6], [x + 11.6, 28.8], [x - 0.2, 28.8], [x - 0.2, 20]]);
-    vol(ctx, p, ramp, [x, 6, 11.6, 23], { lx: far ? 0.45 : 0.25, ly: 0.2, spread: 1.2 });
+    const p = path(ctx, [[x, 11], [x + 7.6, 11], [x + 7.8, 20], [x + 12.4, 22.4], [x + 13, 25], [x + 12.8, 28.8], [x - 0.2, 28.8], [x - 0.2, 20]]);
+    vol(ctx, p, ramp, [x, 11, 13, 18], { lx: far ? 0.45 : 0.25, ly: 0.2, spread: 1.2 });
     clip(ctx, p, () => {
-      if (kind === 'plate') { for (const y of [21, 23.6]) line(ctx, [[x, y], [x + 11, y + 0.6]], 0.7, s.main[1]); line(ctx, [[x + 1.2, 7], [x + 1.2, 19]], 0.7, top(s.main)); }
-      else { line(ctx, [[x + 1, 8], [x + 1, 20]], 0.6, ramp[ramp.length - 2]); for (let y = 10; y < 19; y += 2.6) line(ctx, [[x + 2.6, y], [x + 5.4, y + 1]], 0.6, '#f6ca9f'); }
+      if (kind === 'plate') { for (const y of [21, 23.6]) line(ctx, [[x, y], [x + 12, y + 0.6]], 0.7, s.main[1]); line(ctx, [[x + 1.2, 13], [x + 1.2, 19]], 0.7, top(s.main)); }
+      else { line(ctx, [[x + 1, 13], [x + 1, 20]], 0.6, ramp[ramp.length - 2]); for (let y = 14; y < 20; y += 2.4) line(ctx, [[x + 2.6, y], [x + 5.4, y + 1]], 0.6, '#f6ca9f'); }
     });
     // Cano dobrado (couro) ou punho do conjunto e sola.
-    fill(ctx, path(ctx, [[x - 0.8, 5], [x + 8.8, 5], [x + 8.6, 8.8], [x - 0.6, 8.8]]), lin(ctx, 0, 5, 0, 9, kind === 'plate' ? s.trim : ramp));
-    fill(ctx, path(ctx, [[x - 0.2, 27.2], [x + 11.6, 27.2], [x + 11.6, 29.4], [x - 0.2, 29.4]]), '#1c121c');
+    fill(ctx, path(ctx, [[x - 1, 9.6], [x + 8.8, 9.6], [x + 8.6, 13.4], [x - 0.8, 13.4]]), lin(ctx, 0, 9.6, 0, 13.4, kind === 'plate' ? s.trim : ramp));
+    fill(ctx, path(ctx, [[x - 0.4, 26.4], [x + 13.2, 26.4], [x + 13.2, 29.6], [x - 0.4, 29.6]]), '#1c121c');
+    line(ctx, [[x + 0.4, 26.8], [x + 12.8, 26.8]], 0.6, '#5d2c28');
     if (set === 'corsario') fill(ctx, path(ctx, [[x + 2, 20.6], [x + 6, 20.6], [x + 6, 23.4], [x + 2, 23.4]]), '#ffc825');
     if (set === 'bosque') { fill(ctx, ellipse(ctx, x + 2.2, 7, 2, 1.1, -0.4), '#99e65f'); }
     if (set === 'vulcanico') line(ctx, [[x + 3, 12], [x + 4.6, 15.4], [x + 3.4, 18]], 0.8, '#ff5000');
     if (set === 'celestial') fill(ctx, path(ctx, [[x + 8, 9], [x + 12.6, 5], [x + 11.6, 9], [x + 12.4, 10.6], [x + 8.4, 13]]), lin(ctx, x + 8, 5, x + 12, 13, R.white));
     if (set === 'demoniaco' || set === 'adamante') fill(ctx, path(ctx, [[x + 10.6, 24], [x + 13.4, 25.8], [x + 11, 27]]), set === 'adamante' ? '#ca52c9' : '#f6ca9f');
-    medallion(ctx, set, x + 4, 14.4, 2.4);
+    medallion(ctx, set, x + 4, 17, 2.2);
   }
 }
 
