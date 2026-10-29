@@ -102,6 +102,46 @@ export class LightingSystem {
     return list;
   }
 
+  /**
+   * Acampamento aceso por inteiro: tudo dentro da muralha (ou do raio da fogueira, sem muralha) sai da
+   * escuridão e ganha um tom quente leve; a noite só começa depois da borda, com uma transição suave.
+   */
+  lightCampArea(light, glow, camera, glowScale, t) {
+    const area = this.camp.getLightArea?.();
+    if (!area) return;
+    const width = this.width;
+    const height = this.height;
+    const scale = camera.zoom / CELL;
+    const cx = (area.x - camera.worldView.x) * scale;
+    const cy = (area.y - camera.worldView.y) * scale;
+    const radius = area.radius * scale;
+    const fade = Math.max(70, area.radius * 0.3) * scale;
+    const reach = radius + fade;
+    const x0 = Math.max(0, Math.floor(cx - reach));
+    const x1 = Math.min(width - 1, Math.ceil(cx + reach));
+    const y0 = Math.max(0, Math.floor(cy - reach));
+    const y1 = Math.min(height - 1, Math.ceil(cy + reach));
+    const ramp = HALO_RGB.lamp;
+    const flicker = 1 + 0.03 * (Math.sin(t * 7.3) * 0.6 + Math.sin(t * 19.1) * 0.4);
+    for (let y = y0; y <= y1; y += 1) {
+      for (let x = x0; x <= x1; x += 1) {
+        const distance = Math.hypot(x + 0.5 - cx, y + 0.5 - cy);
+        if (distance >= reach) continue;
+        // 1 dentro do raio; depois cai em degraus suaves até a escuridão.
+        const edge = distance <= radius ? 0 : (distance - radius) / fade;
+        const band = edge <= 0 ? 1 : Math.ceil((1 - edge * edge * (3 - 2 * edge)) * 12) / 12;
+        const index = y * width + x;
+        if (band > light[index]) light[index] = band;
+        // Tom quente: âmbar suave, mais forte perto do centro.
+        const warmth = band * (0.5 + 0.5 * Math.max(0, 1 - distance / radius)) * glowScale * 0.16 * flicker;
+        const color = ramp[2];
+        glow[index * 3] += color[0] * warmth;
+        glow[index * 3 + 1] += color[1] * warmth;
+        glow[index * 3 + 2] += color[2] * warmth;
+      }
+    }
+  }
+
   draw(lightLevel, player) {
     this.place();
     const width = this.width;
@@ -159,6 +199,8 @@ export class LightingSystem {
         }
       }
     }
+
+    this.lightCampArea(light, glow, camera, glowScale, t);
 
     const mask = this.context.createImageData(width, height);
     const halo = this.glowContext.createImageData(width, height);

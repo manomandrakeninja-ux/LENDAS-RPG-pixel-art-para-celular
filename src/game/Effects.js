@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { ARC_FRAMES, ARC_SIZE, ARC_TONES, hexRgb, swingArcTone } from '../art/light.js';
 import { OVERLAY_DEPTH } from './depths.js';
+import { worldTextFactor } from './worldText.js';
 
 const randomBetween = (min, max) => Math.random() * (max - min) + min;
 
@@ -228,8 +229,9 @@ export class PixelEffects {
       })
         .setOrigin(0.5)
         .setDepth(OVERLAY_DEPTH + 4300)
-        .setResolution(1)
+        .setResolution(Math.min(6, Math.ceil(3 * Math.min(3, window.devicePixelRatio || 1))))
         .setVisible(false);
+      text.skipWorldScale = true;
       this.scene.hudCamera?.ignore(text);
       label = { text, active: false };
       this.damageTexts.push(label);
@@ -237,7 +239,7 @@ export class PixelEffects {
     label.active = true;
     const crit = tint === '#ffe28a';
     // Câmera afastada: o texto cresce para continuar legível (zoom 2 ou mais = tamanho normal).
-    const boost = Math.max(1, 1.5 / (this.scene.cameras.main.zoom || 1));
+    const boost = worldTextFactor(this.scene) * 0.75;
     label.text
       .setText(crit ? `${amount}!` : String(amount))
       .setPosition(x + randomBetween(-4, 4), y - 18)

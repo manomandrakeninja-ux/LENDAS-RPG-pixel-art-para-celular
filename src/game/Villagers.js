@@ -91,6 +91,7 @@ export class VillagerManager {
       fontFamily: 'Press Start 2P', fontSize: '8px', color: '#3b2717', align: 'center',
       backgroundColor: '#f4e6c6', padding: { x: 6, y: 5 }, wordWrap: { width: 260 }
     }).setOrigin(0.5, 1).setScale(0.5).setVisible(false);
+    bubble.keepOnScreen = true;
     container.add([sprite, hpBack, hpFill, bubble]);
     scene.physics.add.existing(container);
     container.body.setSize(10, 8);

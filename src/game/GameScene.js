@@ -72,6 +72,7 @@ import { VillagerManager } from './Villagers.js';
 import { SettingsPanel } from './SettingsPanel.js';
 import { loadSettings } from './Settings.js';
 import { fitScreenRect, viewReach, zoomFor } from './cameraZoom.js';
+import { WorldTexts } from './worldText.js';
 import { rollMonsterChest } from '../data/monsterChests.js';
 import { MISSIONS } from '../data/campaign.js';
 
@@ -237,6 +238,8 @@ export class GameScene extends Phaser.Scene {
     const uiObjects = new Set(this.ui.fixed);
     this.cameras.main.ignore([...uiObjects]);
     this.hudCamera.ignore(this.children.list.filter((child) => !uiObjects.has(child)));
+    // Textos do mundo com tamanho constante na tela (inverso do zoom).
+    this.worldTexts = new WorldTexts(this);
     // Campanha "As Cinzas do Primeiro Mundo": 100 missões, moradores, regiões e diárias.
     this.campaign = new CampaignSystem(this, saved?.campaign);
     this.campaign.state.refreshDaily(this.timeState.dayCount);
@@ -797,6 +800,7 @@ export class GameScene extends Phaser.Scene {
     // Nas cavernas é sempre escuro: só a luz do herói (e da tocha) ilumina.
     const lightState = this.regionWorld?.underground ? { ...state, lightLevel: Math.max(state.lightLevel, 0.72) } : state;
     this.lighting.update(delta, lightState, this.player);
+    this.worldTexts?.update();
 
     if (state.rolledOver) {
       this.handleDayAdvance(state.dayCount);

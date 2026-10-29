@@ -430,6 +430,13 @@ export class Camp {
     ];
   }
 
+  /** Área do acampamento que fica toda iluminada à noite: dentro da muralha, ou o raio de proteção da fogueira. */
+  getLightArea() {
+    const wallUp = this.defense?.wallStanding;
+    const radius = wallUp ? this.defense.radius : Math.max(this.protectRadius, 0);
+    return radius > 0 ? { x: this.x, y: this.y, radius } : null;
+  }
+
   setLightLevel(level) {
     this.lightLevel = level;
     const glowAlpha = level >= 0.4 ? 0.42 : level >= 0.3 ? 0.34 : level >= 0.15 ? 0.2 : 0.07;
