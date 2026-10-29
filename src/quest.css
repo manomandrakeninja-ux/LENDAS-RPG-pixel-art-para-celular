@@ -680,7 +680,8 @@ body.is-phone .quest-tracker h3 {
   gap: 14px;
   padding: 24px;
   overflow-y: auto;
-  color: var(--parchment);
+  /* Texto claro sobre a madeira (antes var(--parchment), que a pele da interface tornou escuro). */
+  color: #f3e6c8;
 }
 
 .quest-chapter__kicker {
@@ -699,7 +700,9 @@ body.is-phone .quest-tracker h3 {
 
 .quest-chapter__text p:not(.quest-chapter__kicker) {
   margin: 0;
+  color: #f3e6c8;
   font: 9px/1.9 var(--pixel-font);
+  text-shadow: 1px 1px 0 #120c08;
 }
 
 .quest-chapter__text button {

@@ -26,6 +26,17 @@ const CAPE_RAMPS = {
   black: ['#5a5868', '#46444f', '#36343e', '#2a2831', '#222029', '#1b1a21', '#16151b', '#121117', '#09080c']
 };
 
+/**
+ * Guerreira no jogo (rodada 2 da auditoria): no chão verde o corset e a pele ficavam lamacentos.
+ * Sobem um degrau de valor (só do pescoço para baixo: o rosto aprovado não muda).
+ */
+const WARRIOR_LIFT = {
+  '#f0dac6': '#fbf0e2', '#cba290': '#e8cdb6', '#94726d': '#b99a8c', // corset e saiote
+  '#e0845c': '#f0a476', '#d2704e': '#e2885e', '#a95542': '#c46a4c', '#844036': '#a0533e' // pele
+};
+/** Cor para onde a luz de borda puxa (âmbar claro, como a luz da paleta). */
+const RIM_TO = [255, 246, 216];
+
 const hexOf = (c) => '#' + c.slice(0, 3).map((v) => v.toString(16).padStart(2, '0')).join('');
 
 export function compose(parts, k) {
@@ -93,6 +104,62 @@ export function compose(parts, k) {
     return sheet;
   }
 
+
+  /**
+   * Acabamento das figuras extraídas: degrau de valor (lift, de neckY até maxY), limpeza de pixels soltos
+   * (isolado no vazio sai; cercado por uma cor só vira ela) e 1 px de luz de borda clara no alto e na
+   * esquerda da silhueta (luz do alto à esquerda). A cabeça (acima de neckY) fica intacta.
+   */
+  function polish(im, { neckY, maxY = im.h, lift = null, gain = 0, rim = 0.32 }) {
+    const out = clone(im);
+    const solid = (x, y) => x >= 0 && y >= 0 && x < im.w && y < im.h && px(im, x, y)[3] > 127;
+    const L = (c) => 0.299 * c[0] + 0.587 * c[1] + 0.114 * c[2];
+    const same = (a, b) => a[0] === b[0] && a[1] === b[1] && a[2] === b[2];
+    each(im, (x, y, c) => {
+      if (c[3] < 128 || y < neckY) return;
+      const n = [[1, 0], [-1, 0], [0, 1], [0, -1]].map(([dx, dy]) => (solid(x + dx, y + dy) ? px(im, x + dx, y + dy) : null));
+      if (n.every((v) => !v)) { put(out, x, y, [0, 0, 0, 0]); return; }
+      let c2 = c;
+      // Pixel solto: os 4 vizinhos são de outra cor. Vira a cor mais comum deles (se ela repete e tem
+      // valor parecido), o que tira o "chuvisco" da redução sem apagar detalhe de contorno.
+      if (n.every((v) => v && !same(v, c))) {
+        const count = new Map();
+        for (const v of n) count.set(hexOf(v), (count.get(hexOf(v)) ?? 0) + 1);
+        const [top, times] = [...count].sort((a, b) => b[1] - a[1])[0];
+        if (times >= 2 && Math.abs(L(parse(top)) - L(c)) < 45) c2 = parse(top);
+      }
+      if (lift && y <= maxY && lift[hexOf(c2)]) c2 = parse(lift[hexOf(c2)]);
+      else if (gain && y <= maxY && L(c2) >= 28) c2 = c2.slice(0, 3).map((v, i) => Math.round(v + (RIM_TO[i] - v) * gain)).concat(255);
+      put(out, x, y, c2);
+    });
+    if (rim > 0) {
+      const base = clone(out);
+      each(base, (x, y, c) => {
+        if (c[3] < 128 || y < neckY || L(c) < 28) return;
+        const edgeOf = (dx, dy) => !solid(x + dx, y + dy) || (L(px(im, x + dx, y + dy)) < 28 && !solid(x + 2 * dx, y + 2 * dy));
+        if (edgeOf(-1, 0) || edgeOf(0, -1)) put(out, x, y, c.slice(0, 3).map((v, i) => Math.round(v + (RIM_TO[i] - v) * rim)).concat(255));
+      });
+    }
+    // As cores novas (ganho e luz de borda) voltam para as cores que a folha já tem (as do sprite e as do
+    // degrau): a mais próxima que não fique mais escura. Assim a folha segue com no máximo 64 cores.
+    const known = new Map();
+    each(im, (x, y, c) => { if (c[3] > 127) known.set(hexOf(c), c); });
+    if (lift) for (const h of Object.values(lift)) known.set(h, parse(h));
+    const pool = [...known.values()];
+    const memo = new Map();
+    each(out, (x, y, c) => {
+      if (c[3] < 128 || known.has(hexOf(c))) return;
+      const key = hexOf(c);
+      if (!memo.has(key)) {
+        const l = L(c);
+        const dist = (d) => (d[0] - c[0]) ** 2 + (d[1] - c[1]) ** 2 + (d[2] - c[2]) ** 2;
+        const brighter = pool.filter((d) => L(d) >= l - 4);
+        memo.set(key, (brighter.length ? brighter : pool).reduce((a, b) => (dist(b) < dist(a) ? b : a)));
+      }
+      put(out, x, y, memo.get(key));
+    });
+    return out;
+  }
 
   const rigs = {};
   const rgb = (h) => parse(h);
@@ -182,9 +249,14 @@ export function compose(parts, k) {
       for (let y = y0; y <= y1; y += 1) for (let x = x0; x <= x1; x += 1) put(armless, x, y, [0, 0, 0, 0]);
       return armless;
     };
-    const down = dirSet(front, mk(front, C.down), C.legs.down, C.down);
-    const right = dirSet(side, sideArmless, C.legs.right, C.right);
-    const up = dirSet(back, mk(back, C.up), C.legs.up, C.up);
+    // Mesmo acabamento da Guerreira (limpeza + luz de borda), sem mudar o valor das cores.
+    const pf = polish(front, { neckY: C.down.neckY, rim: 0.22 });
+    const ps = polish(side, { neckY: C.right.neckY, rim: 0.22 });
+    const psa = polish(sideArmless, { neckY: C.right.neckY, rim: 0.22 });
+    const pb = polish(back, { neckY: 0, rim: 0.22 });
+    const down = dirSet(pf, mk(pf, C.down), C.legs.down, C.down);
+    const right = dirSet(ps, psa, C.legs.right, C.right);
+    const up = dirSet(pb, mk(pb, C.up), C.legs.up, C.up);
     rigOf('player-swordsman', finish('swordsman', down, right, up));
     dbg('c-sw-front', front); dbg('c-sw-back', back);
   }
@@ -211,9 +283,9 @@ export function compose(parts, k) {
     const styleFor = (cfg) => cfg;
     for (const [id, color] of Object.entries(capes)) {
       const ramp = color && CAPE_RAMPS[color];
-      const f = recolor(wFront, ramp, { top: 16, bottom: 50 });
-      const s = recolor(wSide, ramp, { top: 17, bottom: 50 });
-      const b = recolor(wBack, ramp, { top: 0, bottom: wBack.h });
+      const f = polish(recolor(wFront, ramp, { top: 16, bottom: 50 }), { neckY: C.down.neckY + 1, maxY: C.legs.down.hip + 7, lift: WARRIOR_LIFT, gain: 0.17 });
+      const s = polish(recolor(wSide, ramp, { top: 17, bottom: 50 }), { neckY: C.right.neckY + 1, maxY: C.legs.right.hip + 6, lift: WARRIOR_LIFT, gain: 0.17 });
+      const b = polish(recolor(wBack, ramp, { top: 0, bottom: wBack.h }), { neckY: C.up.neckY, maxY: C.legs.up.hip + 4, lift: WARRIOR_LIFT, gain: 0.17 });
       const withHang = (armless, legs, cfg) => {
         const base = clone(armless);
         if (cfg.drawHang) {

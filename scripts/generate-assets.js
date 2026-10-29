@@ -1143,7 +1143,9 @@ console.log('Pixel art gerada em public/assets/.');
 const storyAtlas = {
   ...readAtlas(path.join(root, 'buildings/camp-atlas.png'), path.join(root, 'buildings/camp-atlas.json')),
   ...readAtlas(path.join(root, 'nature/nature-atlas.png'), path.join(root, 'nature/nature-atlas.json')),
-  ...readNpcPortraits()
+  ...readNpcPortraits(),
+  // Heroína das cenas: a skin Guerreira (folha 12 x 4 de 56 x 64, a mesma do jogo).
+  'hero-sheet': readPng(path.join(root, 'characters/player-warrior-sheet.png'))
 };
 
 /** Quadro parado de frente de cada pessoa pintada (scripts/bake-npcs.mjs), como `npc-<id>`. */

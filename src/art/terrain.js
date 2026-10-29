@@ -120,58 +120,89 @@ function stamp(canvas, x, y, rows, colors, flip = false) {
   });
 }
 
-// ---------- Lâminas de grama ----------
+// ---------- Grama calma: manchas largas + tufos agrupados ----------
 
 /**
- * Lâminas sobre o canvas. `tone(x, y)` dá o tom local (0..1). As raízes ficam numa grade de 2 px com
- * desvio; perto das bordas a posição é igual em todas as variantes (e a lâmina que passa da borda dá a
- * volta e aparece no vizinho), no miolo muda com `core`.
+ * Campo de tom "calmo" (0..1): só manchas de 24-48 px (ruído de 2 células + classe dos cantos Wang),
+ * sem grão fino. Quantizado em 2-3 valores dá áreas lisas, como o chão da referência.
  */
-function blades(canvas, ramp, tone, seed, core, { density = 0.78, min = 2, max = 4, sparkle = 0.18, step = 2, wrapEdges = true, mask = null } = {}) {
-  const list = [];
-  for (let gy = 0; gy < S; gy += step) {
-    for (let gx = 0; gx < S; gx += step) {
-      const edge = Math.min(gx, gy, LAST - gx, LAST - gy);
-      const s = edge >= max + 4 ? seed + 101 * (core + 1) : seed;
-      if (hash(gx, gy, s) > density) continue;
-      const x = gx + Math.floor(hash(gx, gy, s + 1) * step);
-      const y = gy + Math.floor(hash(gx, gy, s + 2) * step);
-      if (mask && !mask(x, y)) continue;
-      const height = min + Math.floor(hash(gx, gy, s + 3) * (max - min + 1));
-      const roll = hash(gx, gy, s + 4);
-      const lean = roll < 0.28 ? -1 : roll > 0.72 ? 1 : 0;
-      list.push({ x, y, height, lean, glint: hash(gx, gy, s + 5) });
+function calmField(kind, variant) {
+  const wang = variant & 15;
+  const core = Math.floor(variant / 16);
+  const seed = kind * 31 + 7;
+  const field = new Float32Array(S * S);
+  for (let y = 0; y < S; y += 1) {
+    for (let x = 0; x < S; x += 1) {
+      // As manchas vêm dos cantos Wang (ruído do mundo, 48 px ou mais); o ruído do miolo só entorta a
+      // divisa (amplitude pequena: ladrilho de cantos iguais fica liso, sem ilha repetida a cada 48 px).
+      const own = periodic(x, y, 2, seed + 11 + core * 5) * 0.6 + periodic(x, y, 4, seed + 12 + core * 5) * 0.4;
+      const w = smooth(clamp((Math.min(x, y, LAST - x, LAST - y) - 1) / 10, 0, 1));
+      field[y * S + x] = clamp(0.5 + (wangAt(wang, x, y) - 0.5) * 0.8 + (own - 0.5) * 0.6 * w, 0, 1);
     }
   }
-  list.sort((a, b) => a.y - b.y);
-  const put = (x, y, hex) => {
-    if (!wrapEdges && (x < 0 || y < 0 || x > LAST || y > LAST)) return;
-    canvas.pixel(wrap(x), wrap(y), hex);
-  };
-  for (const blade of list) {
-    for (let k = 0; k < blade.height; k += 1) {
-      const lvl = k / Math.max(1, blade.height - 1);
-      const px = blade.x + (k === blade.height - 1 && blade.height > 2 ? blade.lean : 0);
-      const py = blade.y - k;
-      const t = tone(wrap(px), wrap(py));
-      let index = Math.round(0.7 + t * 2.4 + lvl * 1.5);
-      if (k === 0) index -= 1;
-      index = clamp(index, 1, 4);
-      if (k === blade.height - 1 && t > 0.58 && blade.glint < sparkle) index = 5;
-      put(px, py, ramp[index]);
+  return field;
+}
+
+/** Tom do chão de grama (índice da rampa) em 2 valores: manchas largas, como na referência. */
+const GRASS_LEVELS = { [T.VALLEY]: [2, 3], [T.JUNGLE]: [2, 3], [T.FOREST]: [1, 2], [T.SWAMP]: [1, 2] };
+const grassLevel = (kind, t) => GRASS_LEVELS[kind][t < 0.5 ? 0 : 1];
+
+function calmGrassFloor(canvas, kind, field) {
+  const ramp = RAMP[kind];
+  for (let y = 0; y < S; y += 1) for (let x = 0; x < S; x += 1) canvas.pixel(x, y, ramp[grassLevel(kind, field[y * S + x])]);
+}
+
+/**
+ * Tufo agrupado (touceira de 3-7 px de largura, 3-6 de altura): um monte de lâminas coladas com
+ * pontas alternadas, sombra embaixo, corpo um tom acima do chão e ponta clara do lado da luz (alto à
+ * esquerda). `level` = tom do chão onde nasce; `size` 0..2.
+ */
+function clump(cx, cy, ramp, level, seed, size, put) {
+  const half = 1 + Math.floor(hash(seed, 1, 7) * 2) + (size > 1 ? 1 : 0);
+  const tall = 2 + size + Math.floor(hash(seed, 2, 7) * 2);
+  const dark = ramp[Math.max(0, level - 1)];
+  const mid = ramp[level];
+  const body = ramp[Math.min(4, level + 1)];
+  const tip = ramp[Math.min(5, level + 2)];
+  for (let i = -half; i <= half + 1; i += 1) put(cx + i, cy + 1, dark);
+  for (let off = -half; off <= half; off += 1) {
+    const round = 1 - (Math.abs(off) / (half + 1)) ** 2;
+    // Colunas alternadas mais baixas: lê como lâminas separadas, não como bolha.
+    const h = Math.max(1, Math.round(tall * round) - ((off + half) % 2 ? 1 : 0) + (hash(seed, off, 9) > 0.8 ? 1 : 0));
+    for (let k = 0; k < h; k += 1) {
+      const lvl = k / Math.max(1, h - 1);
+      // Base escura, corpo um tom acima do chão; do lado da sombra (direita) a base sobe um pouco.
+      let color = k === 0 || (off > 0 && lvl < 0.4) ? dark : body;
+      if (k === h - 1 && h > 2 && off < 0 && level >= 2) color = tip;
+      put(cx + off, cy - k, color);
     }
-    // Sombra da lâmina no chão (à direita, embaixo): dá volume ao tufo.
-    const t = tone(wrap(blade.x + 1), wrap(blade.y + 1));
-    if (t < 0.55) put(blade.x + 1, blade.y + 1, ramp[t < 0.35 ? 0 : 1]);
   }
 }
 
-/** Chão debaixo das lâminas: tom quantizado, escuro (é o que aparece entre os tufos). */
-function grassFloor(canvas, ramp, field) {
-  for (let y = 0; y < S; y += 1) {
-    for (let x = 0; x < S; x += 1) {
-      const t = field[y * S + x];
-      canvas.pixel(x, y, ramp[t < 0.3 ? 0 : t < 0.62 ? 1 : 2]);
+/**
+ * Tufos numa grade de 8 px com desvio, mais densos nas "touceiras" (ruído largo) e na divisa entre as
+ * manchas de tom (esconde a linha da divisa), e raros no resto: áreas lisas entre os grupos.
+ * Perto das bordas a posição e a cor são iguais em todas as variantes e o tufo dá a volta no vizinho.
+ */
+function calmTufts(canvas, kind, field, core, { density = 0.6, size = 1 } = {}) {
+  const ramp = RAMP[kind];
+  const seed = kind * 13 + 5;
+  const cell = 8;
+  const put = (x, y, hex) => canvas.pixel(wrap(x), wrap(y), hex);
+  for (let gy = 0; gy < S; gy += cell) {
+    for (let gx = 0; gx < S; gx += cell) {
+      const x = gx + 1 + Math.floor(hash(gx, gy, seed + 1) * (cell - 2));
+      const y = gy + 1 + Math.floor(hash(gx, gy, seed + 2) * (cell - 2));
+      const interior = x > 6 && x < S - 7 && y > 7 && y < S - 3;
+      const s = interior ? seed + 101 * (core + 1) : seed;
+      let chance = periodic(x, y, 3, seed + 40 + (interior ? core * 3 : 0)) > 0.55 ? 0.7 : 0.06;
+      if (interior) {
+        const t = field[y * S + x];
+        if (Math.abs(t - 0.5) < 0.08) chance = Math.max(chance, 0.7);
+      }
+      if (hash(gx, gy, s) > density * chance) continue;
+      const level = interior ? grassLevel(kind, field[y * S + x]) : GRASS_LEVELS[kind][0];
+      clump(x, y, ramp, level, hash(gx, gy, s + 3) * 1e6 | 0, size + (hash(gx, gy, s + 4) > 0.7 ? 1 : 0), put);
     }
   }
 }
@@ -247,6 +278,13 @@ function tuftAt(canvas, cx, cy, ramp, seed, { count = 7, min = 3, max = 6, sprea
 
 // ---------- Texturas base ----------
 
+const calmCache = new Map();
+function calmOf(kind, variant) {
+  const key = `${kind}-${variant}`;
+  if (!calmCache.has(key)) calmCache.set(key, calmField(kind, variant));
+  return calmCache.get(key);
+}
+
 const fieldCache = new Map();
 function fieldOf(kind, variant) {
   const key = `${kind}-${variant}`;
@@ -258,18 +296,18 @@ function fieldOf(kind, variant) {
 function softGround(canvas, kind, field, seed) {
   const r = RAMP[kind];
   const steps = {
-    [T.SNOW]: [[0.15, r[2]], [0.62, r[3]], [2, r[4]]],
-    [T.SAND]: [[0.16, r[1]], [0.8, r[2]], [2, r[3]]],
-    [T.DUNE]: [[0.22, r[1]], [0.74, r[2]], [2, r[3]]],
-    [T.BEACH]: [[0.15, r[1]], [0.82, r[2]], [2, r[3]]]
+    [T.SNOW]: [[0.5, r[3]], [2, r[4]]],
+    [T.SAND]: [[0.5, r[2]], [2, r[3]]],
+    [T.DUNE]: [[0.5, r[2]], [2, r[3]]],
+    [T.BEACH]: [[0.5, r[2]], [2, r[3]]]
   }[kind];
   for (let y = 0; y < S; y += 1) {
     for (let x = 0; x < S; x += 1) {
       const t = field[y * S + x];
       canvas.pixel(x, y, steps.find(([limit]) => t < limit)[1]);
       const g = hash(x, y, seed);
-      if (g > 0.985) canvas.pixel(x, y, kind === T.SNOW ? '#ffffff' : t > 0.5 ? r[4] : r[0]);
-      else if (g < 0.012 && kind !== T.SNOW) canvas.pixel(x, y, r[1]);
+      if (g > 0.997) canvas.pixel(x, y, kind === T.SNOW ? '#ffffff' : t > 0.5 ? r[4] : r[0]);
+      else if (g < 0.002 && kind !== T.SNOW) canvas.pixel(x, y, r[1]);
     }
   }
 }
@@ -277,13 +315,13 @@ function softGround(canvas, kind, field, seed) {
 /** Ondulações de vento: crista clara com sombra embaixo, em arcos que somem e voltam. */
 function ripples(canvas, kind, field, seed, variant) {
   const r = RAMP[kind];
-  const spacing = kind === T.DUNE ? 8 : kind === T.SNOW ? 16 : 12;
+  const spacing = kind === T.DUNE ? 11 : kind === T.SNOW ? 16 : 15;
   const wang = variant & 15;
   for (let x = 0; x < S; x += 1) {
     const bend = Math.sin((x / S) * Math.PI * 2 + seed) * 2.4 + Math.sin((x / S) * Math.PI * 4 + seed * 1.7) * 1.2;
     for (let y = 0; y < S; y += 1) {
       const phase = (((y + bend) % spacing) + spacing) % spacing;
-      const keep = periodic(x, y, 4, seed + 11) + (wangAt(wang, x, y) - 0.5) * 0.3 > (kind === T.DUNE ? 0.5 : 0.58);
+      const keep = periodic(x, y, 4, seed + 11) + (wangAt(wang, x, y) - 0.5) * 0.3 > (kind === T.DUNE ? 0.6 : 0.66);
       if (!keep) continue;
       const t = field[y * S + x];
       if (phase < 1) canvas.pixel(x, y, t > 0.4 ? r[3] : r[2]);
@@ -318,14 +356,15 @@ function base(canvas, kind, variant) {
   const core = Math.floor(variant / 16);
   const s = kind * 70 + core * 31 + (variant & 15) * 3;
   if (BLADED.has(kind)) {
-    grassFloor(canvas, ramp, field);
+    const calm = calmOf(kind, variant);
+    calmGrassFloor(canvas, kind, calm);
     const options = {
-      [T.VALLEY]: { density: 0.82, min: 2, max: 4, sparkle: 0.22 },
-      [T.FOREST]: { density: 0.72, min: 2, max: 4, sparkle: 0.1 },
-      [T.JUNGLE]: { density: 0.88, min: 3, max: 5, sparkle: 0.16 },
-      [T.SWAMP]: { density: 0.5, min: 2, max: 4, sparkle: 0.06 }
+      [T.VALLEY]: { density: 0.68, size: 1 },
+      [T.FOREST]: { density: 0.55, size: 1 },
+      [T.JUNGLE]: { density: 0.64, size: 2 },
+      [T.SWAMP]: { density: 0.7, size: 0 }
     }[kind];
-    blades(canvas, ramp, tone, kind * 13 + 5, core, options);
+    calmTufts(canvas, kind, calm, core, options);
     if (kind === T.FOREST) {
       // Folhas caídas e gravetos no miolo.
       scatterInner(s + 1, 2 + core, (x, y, i) => {
@@ -345,8 +384,8 @@ function base(canvas, kind, variant) {
     return;
   }
   if (kind === T.SNOW || kind === T.SAND || kind === T.DUNE || kind === T.BEACH) {
-    softGround(canvas, kind, field, s);
-    if (kind === T.SAND || kind === T.DUNE) ripples(canvas, kind, field, kind * 3 + 1, variant);
+    softGround(canvas, kind, calmOf(kind, variant), s);
+    if (kind === T.SAND || kind === T.DUNE) ripples(canvas, kind, calmOf(kind, variant), kind * 3 + 1, variant);
     if (kind === T.SNOW) {
       // Montinhos de neve (luz em cima, lado de baixo azulado) e brilhos.
       scatterInner(s + 3, 1 + (core % 2), (x, y) => {
@@ -444,13 +483,14 @@ function drawPath(canvas, side, v, end) {
       }
       // Terra batida: manchas em 3 tons, grão fino e duas marcas de roda/pé gastas.
       const X = side === 0 ? x : x + S;
-      const n = periodic(x, y, 6, seed) * 0.55 + periodic(x, y, 12, seed + 1) * 0.3 + periodic(x, y, 24, seed + 2) * 0.15;
-      let color = DIRT[n < 0.3 ? 2 : n < 0.7 ? 3 : 4];
+      // Manchas largas (12-24 px) em 2 tons + poucas luzes: terra batida calma, sem chiado.
+      const n = periodic(x, y, 2, seed) * 0.6 + periodic(x, y, 4, seed + 1) * 0.4;
+      let color = DIRT[n < 0.36 ? 2 : n < 0.72 ? 3 : 4];
       const rut = Math.min(Math.abs(X - 33), Math.abs(X - 63));
-      if (rut < 2 && periodic(x, y, 8, seed + 3) > 0.42) color = rut < 1 ? DIRT[2] : (n < 0.5 ? DIRT[2] : DIRT[3]);
+      if (rut < 1.5 && periodic(x, y, 4, seed + 3) > 0.45) color = n < 0.36 ? DIRT[1] : DIRT[2];
       const g = hash(x, y, seed + 4);
-      if (g > 0.975) color = DIRT[5];
-      else if (g < 0.02) color = DIRT[1];
+      if (g > 0.998) color = DIRT[5];
+      else if (g < 0.002) color = DIRT[1];
       // Sombra que a grama faz na terra, logo abaixo do barranco.
       if (d < 1.3) color = DIRT[1];
       else if (d < 2.6) color = DIRT[2];
@@ -458,7 +498,7 @@ function drawPath(canvas, side, v, end) {
     }
   }
   // Pedrinhas e marcas no miolo da terra (posições diferentes em cada variante).
-  for (let i = 0; i < 5; i += 1) {
+  for (let i = 0; i < 3; i += 1) {
     const x = 6 + Math.floor(hash(i, v, 410 + side) * 36);
     const y = 6 + Math.floor(hash(i, v, 411 + side) * 36);
     if (dist[y * S + x] < 5) continue;
@@ -471,7 +511,7 @@ function drawPath(canvas, side, v, end) {
   for (let y = 2; y < S - 1; y += 1) {
     for (let x = 1; x < S - 1; x += 1) {
       const d = dist[y * S + x];
-      if (d > -0.5 || d < -3 || hash(x, y, 420 + v) > 0.42) continue;
+      if (d > -0.5 || d < -3 || hash(x, y, 420 + v) > 0.22) continue;
       const height = 2 + Math.floor(hash(x, y, 421) * 3);
       for (let k = 0; k < height; k += 1) {
         const lvl = k / (height - 1);
@@ -581,7 +621,7 @@ function applyFringe(canvas, kind, mask) {
   for (let y = 1; y < S; y += 1) {
     for (let x = 0; x < S; x += 1) {
       const d = dist[y * S + x];
-      if (d < 0.3 || d > 3 || hash(x, y, seed + 6) > 0.45) continue;
+      if (d < 0.3 || d > 3 || hash(x, y, seed + 6) > 0.24) continue;
       const dx = at(x + 2, y) - at(x - 2, y);
       const lean = dx > 0.8 ? -1 : dx < -0.8 ? 1 : 0;
       const height = 2 + Math.floor(hash(x, y, seed + 7) * 3);
