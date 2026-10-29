@@ -131,25 +131,44 @@ function drawSymbols(context, W, H, kindAt) {
   }
 }
 
-/** Camada de nuvens do pergaminho (névoa do que não foi explorado). */
+/**
+ * Camada de nuvens do pergaminho (névoa do que não foi explorado), desenhada como nuvem de tinta:
+ * miolo em 2 tons de papel com contorno sépia de 1 px e véu bem leve em volta. Menos opaca que a
+ * versão de algodão, para o relevo inexplorado aparecer por baixo.
+ */
 export function paintClouds(width, height) {
   const canvas = document.createElement('canvas');
   canvas.width = width;
   canvas.height = height;
   const context = canvas.getContext('2d');
   const image = context.createImageData(width, height);
+  const bandAt = (x, y) => {
+    const n = smoothNoise(x / 60, y / 44, 61) * 0.6 + smoothNoise(x / 22, y / 18, 62) * 0.28 + smoothNoise(x / 7, y / 7, 63) * 0.12;
+    return n > 0.68 ? 0 : n > 0.61 ? 1 : n > 0.48 ? 2 : 3;
+  };
+  const bands = new Uint8Array(width * height);
+  for (let y = 0; y < height; y += 1) for (let x = 0; x < width; x += 1) bands[y * width + x] = bandAt(x, y);
+  const tones = [[246, 238, 216], [228, 216, 190], [214, 200, 172], [200, 186, 160]];
+  const alphas = [176, 140, 64, 26];
   for (let y = 0; y < height; y += 1) {
     for (let x = 0; x < width; x += 1) {
-      const n = smoothNoise(x / 60, y / 44, 61) * 0.6 + smoothNoise(x / 22, y / 18, 62) * 0.28 + smoothNoise(x / 7, y / 7, 63) * 0.12;
-      // Bandas de tom como nuvem pintada: miolo claro, base mais escura.
-      const band = n > 0.62 ? 0 : n > 0.5 ? 1 : n > 0.4 ? 2 : 3;
-      const tone = [[244, 236, 214], [226, 214, 188], [204, 190, 164], [186, 170, 146]][band];
       const index = (y * width + x) * 4;
+      const band = bands[y * width + x];
+      let tone = tones[band];
+      let alpha = alphas[band];
+      // Contorno de tinta: borda do miolo (bandas 0-1) contra o véu, mais escura embaixo e à direita.
+      if (band <= 1) {
+        const below = y + 1 < height ? bands[(y + 1) * width + x] : band;
+        const right = x + 1 < width ? bands[y * width + x + 1] : band;
+        const above = y > 0 ? bands[(y - 1) * width + x] : band;
+        if (below >= 2 || right >= 2) { tone = [112, 84, 56]; alpha = 210; }
+        else if (above >= 2) { tone = [150, 118, 82]; alpha = 150; }
+        else if (band === 0 && y > 0 && bands[(y - 1) * width + x] === 1) { tone = [255, 250, 236]; alpha = 190; }
+      }
       image.data[index] = tone[0];
       image.data[index + 1] = tone[1];
       image.data[index + 2] = tone[2];
-      // Nuvem densa no miolo, véu fino nas bordas: o relevo do que não foi explorado aparece de leve.
-      image.data[index + 3] = [222, 186, 140, 96][band];
+      image.data[index + 3] = alpha;
     }
   }
   context.putImageData(image, 0, 0);
