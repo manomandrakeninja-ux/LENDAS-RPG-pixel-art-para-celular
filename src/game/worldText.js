@@ -41,7 +41,9 @@ export class WorldTexts {
   /** É texto do mundo se a câmera do HUD o ignora. */
   isWorld(text) {
     const hud = this.scene.hudCamera;
-    return Boolean(hud) && (text.cameraFilter & hud.id) !== 0;
+    if (!hud) return false;
+    // Texto dentro de um container (balão de morador): vale o filtro do próprio texto ou o do container.
+    return ((text.cameraFilter | (text.parentContainer?.cameraFilter ?? 0)) & hud.id) !== 0;
   }
 
   update() {
@@ -67,7 +69,7 @@ export class WorldTexts {
     if (!text.visible) return;
     const width = this.scene.scale.width;
     const height = this.scene.scale.height;
-    const wrap = Math.floor(Math.min(MAX_BUBBLE_WIDTH, (width - MARGIN * 2) / screen));
+    const wrap = Math.floor(Math.min(MAX_BUBBLE_WIDTH, (width - MARGIN * 2) / screen - 12));
     if (text.style.wordWrapWidth !== wrap) text.setWordWrapWidth(wrap, true);
     const parent = text.parentContainer;
     const originX = parent ? parent.x : 0;
