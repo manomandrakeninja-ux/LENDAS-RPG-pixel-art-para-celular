@@ -1,17 +1,17 @@
 import Phaser from 'phaser';
-import { ARC_FRAMES, ARC_SIZE, ARC_TONES, hexRgb, swingArcTone } from '../art/light.js';
+import { ARC_FRAMES, ARC_SIZE, ARC_TONES, WAVE_FRAMES, WAVE_SIZE, WAVE_TONES, arcTonesFor, hexRgb, swingArcTone, waveTone } from '../art/light.js';
 import { OVERLAY_DEPTH } from './depths.js';
 import { worldTextFactor } from './worldText.js';
 
 const randomBetween = (min, max) => Math.random() * (max - min) + min;
 
-function ensureSwingArc(scene, variant) {
+function ensureSwingArc(scene, variant, ramp = ARC_TONES[variant]) {
   const key = `swing-arc-${variant}`;
   if (scene.textures.exists(key)) return key;
   const texture = scene.textures.createCanvas(key, ARC_SIZE * ARC_FRAMES, ARC_SIZE);
   const context = texture.getContext();
   const image = context.createImageData(ARC_SIZE * ARC_FRAMES, ARC_SIZE);
-  const tones = ARC_TONES[variant].map(hexRgb);
+  const tones = ramp.map(hexRgb);
   for (let frame = 0; frame < ARC_FRAMES; frame += 1) {
     for (let y = 0; y < ARC_SIZE; y += 1) {
       for (let x = 0; x < ARC_SIZE; x += 1) {
@@ -25,6 +25,30 @@ function ensureSwingArc(scene, variant) {
   context.putImageData(image, 0, 0);
   texture.refresh();
   scene.anims.create({ key, frames: [0, 1, 2, 3].map((frame) => ({ key, frame })), frameRate: 22, repeat: 0 });
+  return key;
+}
+
+/** Onda de choque do especial: 6 quadros de anel crescente em 3 tons e miolo pontilhado. */
+function ensureWave(scene) {
+  const key = 'special-wave';
+  if (scene.textures.exists(key)) return key;
+  const S = WAVE_SIZE;
+  const texture = scene.textures.createCanvas(key, S * WAVE_FRAMES, S);
+  const context = texture.getContext();
+  const image = context.createImageData(S * WAVE_FRAMES, S);
+  const tones = WAVE_TONES.map(hexRgb);
+  for (let frame = 0; frame < WAVE_FRAMES; frame += 1) {
+    for (let y = 0; y < S; y += 1) {
+      for (let x = 0; x < S; x += 1) {
+        const tone = waveTone(x, y, frame);
+        if (tone >= 0) image.data.set([...tones[tone], 255], (y * S * WAVE_FRAMES + frame * S + x) * 4);
+      }
+    }
+    texture.add(frame, 0, frame * S, 0, S, S);
+  }
+  context.putImageData(image, 0, 0);
+  texture.refresh();
+  scene.anims.create({ key, frames: Array.from({ length: WAVE_FRAMES }, (_, frame) => ({ key, frame })), frameRate: 20, repeat: 0 });
   return key;
 }
 
@@ -163,9 +187,14 @@ export class PixelEffects {
     this.scene.time.delayedCall(170, () => slash.destroy());
   }
 
-  /** Rastro do golpe: meia-lua de 180° em volta da mão, acompanhando a espada (dourada no golpe final). */
-  spawnSwingTrail(x, y, angle, finisher = false) {
-    const key = ensureSwingArc(this.scene, finisher ? 'finisher' : 'normal');
+  /**
+   * Rastro do golpe: meia-lua de 180° em volta da mão, acompanhando a espada (dourada no golpe final).
+   * `look` é a aparência da arma (cores de destaque e do cabo): o arco ganha o tom do material (gelo azul, lava laranja...).
+   */
+  spawnSwingTrail(x, y, angle, finisher = false, look = null) {
+    const ramp = finisher ? ARC_TONES.finisher : arcTonesFor(look?.accent, look?.main);
+    const variant = finisher ? 'finisher' : ramp === ARC_TONES.normal ? 'normal' : `tone-${ramp[2].slice(1)}`;
+    const key = ensureSwingArc(this.scene, variant, ramp);
     // Mesmo pivô da espada em Player.poseGear (a espada gira de angle-1,5 a angle+1,5 rad).
     const trail = this.scene.add.sprite(x + Math.cos(angle) * 8, y - 11 + Math.sin(angle) * 5, key, 0)
       .setOrigin(0.5)
@@ -209,19 +238,43 @@ export class PixelEffects {
     this.dustEmitter.emitParticleAt(x, y + 4, 5);
   }
 
+  /** Especial: onda de choque de 3 tons que corre até o alcance, clarão no centro e faíscas para fora. */
   spawnSpecial(x, y) {
-    const ring = this.scene.add.sprite(x, y, 'vfx', 'ring-0')
+    const scene = this.scene;
+    const key = ensureWave(scene);
+    const wave = scene.add.sprite(x, y + 2, key, 0)
       .setOrigin(0.5)
       .setDepth(OVERLAY_DEPTH + 4190)
-      .setScale(1)
       .setBlendMode(Phaser.BlendModes.ADD);
-    this.scene.hudCamera?.ignore(ring);
-    ring.play('special-ring');
-    this.scene.time.delayedCall(150, () => ring.setScale(2));
-    this.scene.time.delayedCall(320, () => ring.destroy());
+    scene.hudCamera?.ignore(wave);
+    wave.play(key);
+    scene.tweens.add({ targets: wave, alpha: 0, delay: 220, duration: 100, onComplete: () => wave.destroy() });
 
-    this.sparkEmitter.setParticleTint(0xffe8a0);
-    this.sparkEmitter.emitParticleAt(x, y, 18);
+    const flash = scene.add.image(x, y - 6, 'vfx', 'ring-1')
+      .setDepth(OVERLAY_DEPTH + 4191)
+      .setScale(0.6)
+      .setTint(0xffeb57)
+      .setBlendMode(Phaser.BlendModes.ADD);
+    scene.hudCamera?.ignore(flash);
+    scene.tweens.add({ targets: flash, scale: 1.6, alpha: 0, duration: 220, ease: 'Quad.easeOut', onComplete: () => flash.destroy() });
+
+    // Faíscas aditivas correndo para fora junto com a onda (300 ms).
+    if (!this.waveSparks) {
+      this.waveSparks = scene.add.particles(0, 0, 'fx-spark3', {
+        lifespan: { min: 240, max: 320 },
+        speed: { min: 230, max: 330 },
+        angle: { min: 0, max: 360 },
+        scale: { start: 1.2, end: 0.6 },
+        alpha: { start: 1, end: 0 },
+        tint: [0xffeb57, 0xffa214, 0xffffff],
+        blendMode: Phaser.BlendModes.ADD,
+        frequency: -1
+      }).setDepth(OVERLAY_DEPTH + 4192);
+      scene.hudCamera?.ignore(this.waveSparks);
+    }
+    this.waveSparks.emitParticleAt(x, y, Math.max(8, Math.round(26 * (this.particleScale ?? 1))));
+    this.dustEmitter.setParticleTint(0xcba36f);
+    this.dustEmitter.emitParticleAt(x, y + 6, 8);
   }
 
   spawnHit(x, y, tint = 0xffe0a0, count = 8) {

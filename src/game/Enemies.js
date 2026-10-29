@@ -314,8 +314,9 @@ export class Enemy extends Phaser.GameObjects.Container {
 
   hit(amount, angle = null) {
     this.health = Math.max(0, this.health - amount);
-    this.sprite.setTint(0xfff0cf);
-    this.scene.time.delayedCall(90, () => {
+    // Acerto: 1 quadro branco puro (80 ms) e depois a cor volta.
+    this.sprite.setTintFill(0xffffff);
+    this.scene.time.delayedCall(80, () => {
       if (!this.sprite || !this.active) return;
       this.statusTint = undefined;
       if (this.isElite) {

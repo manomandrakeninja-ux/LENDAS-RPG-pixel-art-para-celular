@@ -53,6 +53,44 @@ export const ARC_TONES = {
   finisher: ['#ffffff', '#ffeb57', '#ffa214', '#c64524']
 };
 
+const mixHex = (a, b, t) => '#' + hexRgb(a).map((v, i) => Math.round(v + (hexRgb(b)[i] - v) * t).toString(16).padStart(2, '0')).join('');
+
+/**
+ * Cor do arco pelo material da arma (cor de destaque da lâmina): gelo azul, lava laranja...
+ * Armas cinzentas (ferro, enferrujada) ficam com o arco branco-aço de sempre.
+ */
+export function arcTonesFor(accent, main = null) {
+  const ok = (hex) => /^#[0-9a-f]{6}$/i.test(hex ?? '');
+  const chroma = (hex) => { const c = hexRgb(hex); return Math.max(...c) - Math.min(...c); };
+  if (!ok(accent)) return ARC_TONES.normal;
+  // Lâmina quase branca (gelo, pérola): a cor do material vem do cabo/guarda.
+  if (chroma(accent) < 48 && Math.min(...hexRgb(accent)) > 190 && ok(main) && chroma(main) >= 48) accent = main;
+  if (chroma(accent) < 48) return ARC_TONES.normal;
+  const max = Math.max(...hexRgb(accent));
+  // Leva o destaque a brilho alto para o arco não sumir no chão.
+  const lift = max < 200 ? mixHex(accent, '#ffffff', (200 - max) / 255) : accent;
+  return ['#ffffff', mixHex(lift, '#ffffff', 0.5), lift, mixHex(accent, '#1a1420', 0.4)];
+}
+
+// Onda do especial: 6 quadros de anel em 3 tons (+ pontilhado de dentro), do raio 18 ao 108.
+export const WAVE_FRAMES = 6;
+export const WAVE_SIZE = 224;
+export const WAVE_TONES = ['#ffffff', '#ffeb57', '#ffa214', '#c64524'];
+export const waveRadius = (frame) => 18 + frame * 18;
+
+/** Pixel da onda: tom 0..3 ou -1 fora (o miolo do anel é pontilhado, o fio de fora é o mais claro). */
+export function waveTone(x, y, frame) {
+  const r = waveRadius(frame);
+  const d = Math.hypot(x + 0.5 - WAVE_SIZE / 2, y + 0.5 - WAVE_SIZE / 2);
+  const depth = r - d;
+  const thin = frame >= WAVE_FRAMES - 2 ? 0.6 : 1; // nos últimos quadros o anel afina
+  if (depth < 0 || depth > 15 * thin) return -1;
+  if (depth < 2) return 0;
+  if (depth < 5 * thin) return 1;
+  if (depth < 9 * thin) return 2;
+  return (x + y) % 2 === 0 ? 3 : -1;
+}
+
 /** Pixel do arco: tom (0 = fio claro ... 3 = borda) ou -1 fora. */
 export function swingArcTone(x, y, frame) {
   const R = 25;

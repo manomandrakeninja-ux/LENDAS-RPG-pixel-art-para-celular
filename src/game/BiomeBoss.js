@@ -262,8 +262,8 @@ export class BiomeBoss extends Phaser.GameObjects.Container {
     if (this.dead || this.locked) return false;
     this.health = Math.max(0, this.health - Math.max(0, Number(amount) || 0));
     this.scene.onBossDamaged?.(this);
-    this.sprite.setTint(0xffc2a8);
-    this.scene.time.delayedCall(100, () => {
+    this.sprite.setTintFill(0xffffff);
+    this.scene.time.delayedCall(80, () => {
       if (this.active) this.sprite.clearTint();
     });
     if (this.health <= 0) {

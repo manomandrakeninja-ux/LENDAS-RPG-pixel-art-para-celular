@@ -954,7 +954,7 @@ export class GameScene extends Phaser.Scene {
       : Math.atan2(facing.y, facing.x);
     this.player.showAttack(swingAngle, !target && this.camp.equipment.hasBow ? { handLook: BOW_LOOK } : {});
     if (!target) {
-      this.effects.spawnSwingTrail(this.player.x, this.player.y, swingAngle, false);
+      this.effects.spawnSwingTrail(this.player.x, this.player.y, swingAngle, false, this.player.animator?.weaponLook);
       this.comboStep = 0;
       // Arco Longo: sem inimigo corpo a corpo, dispara uma flecha no mais próximo ao alcance.
       if (this.camp.equipment.hasBow) this.fireBow();
@@ -974,11 +974,11 @@ export class GameScene extends Phaser.Scene {
     const attack = Math.round(this.player.attack * multiplier * perkMultiplier) + (this.player.jewelPoison ?? 0);
     const angle = swingAngle;
     if (this.bossIsProtected(target)) {
-      this.effects.spawnSwingTrail(this.player.x, this.player.y, angle, false);
+      this.effects.spawnSwingTrail(this.player.x, this.player.y, angle, false, this.player.animator?.weaponLook);
       return;
     }
     const damage = Math.min(target.health, attack);
-    this.effects.spawnSwingTrail(this.player.x, this.player.y, angle, finisher);
+    this.effects.spawnSwingTrail(this.player.x, this.player.y, angle, finisher, this.player.animator?.weaponLook);
     this.effects.spawnSlash(target.x, target.y - 10, angle, finisher ? 2 : 1);
     const killed = target.hit(attack, angle);
     if (thrown) {
