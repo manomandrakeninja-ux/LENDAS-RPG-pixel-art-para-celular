@@ -98,6 +98,27 @@ function vgrad(ctx, y0, y1, stops, x0 = 0, x1 = W) {
   ctx.fillStyle = g;
   ctx.fillRect(x0, y0, x1 - x0, y1 - y0);
 }
+/**
+ * Céu em degradê com pontilhado ordenado (Bayer 4x4) entre as cores de parada vizinhas (da paleta), pixel a
+ * pixel: sem as faixas duras que a redução para a paleta cria num degradê liso (capítulos 2 e 7).
+ */
+function skyGrad(ctx, y0, y1, stops) {
+  const rgbStops = stops.map(([t, c]) => [t, hexToRgb(c)]);
+  for (let y = y0; y < y1; y += 1) {
+    const t = (y + 0.5 - y0) / (y1 - y0);
+    let k = 1;
+    while (k < rgbStops.length - 1 && rgbStops[k][0] < t) k += 1;
+    const [ta, ca] = rgbStops[k - 1]; const [tb, cb] = rgbStops[k];
+    const f = Math.min(1, Math.max(0, (t - ta) / Math.max(1e-6, tb - ta)));
+    // Pontilhado direto entre as duas cores de parada vizinhas (da paleta): nenhuma cor intermediária
+    // (ciano saturado, ouro apagado) aparece como faixa no meio do céu.
+    for (let x = 0; x < W; x += 1) {
+      const use = f > (BAYER4[y % 4][x % 4] + 0.5) / 16 ? cb : ca;
+      ctx.fillStyle = `rgb(${use[0]},${use[1]},${use[2]})`;
+      ctx.fillRect(x, y, 1, 1);
+    }
+  }
+}
 /** Luz radial (camada aditiva ou de névoa). */
 function glow(ctx, x, y, r, color, a = 0.6, squash = 1) {
   ctx.save();
@@ -611,7 +632,7 @@ function scene1(sc) {
 function scene2(sc) {
   sc.light(-1, '#ffeb57', 0.5).tint('#e69c69', 0.06);
   sc.paint('solid', (c) => {
-    vgrad(c, 0, 140, [[0, '#0069aa'], [0.45, '#0098dc'], [0.75, '#9cc8e6'], [1, '#f6ca9f']]);
+    skyGrad(c, 0, 140, [[0, '#0069aa'], [0.45, '#0098dc'], [0.75, '#9cc8e6'], [1, '#f6ca9f']]);
     cloudBank(c, 40, 40, 110, { seed: 3 }); cloudBank(c, 250, 28, 120, { seed: 5 });
     ridge(c, { base: 118, amp: 30, freq: 0.008, seed: 3, color: '#657392', rim: '#c7cfdd', ridged: true });
     ridge(c, { base: 136, amp: 16, freq: 0.014, seed: 4, color: '#134c4c', rim: '#1e6f50' });
@@ -796,7 +817,7 @@ function scene6(sc) {
 function scene7(sc) {
   sc.light(-1, '#ffeb57', 0.5).tint('#e07438', 0.08);
   sc.paint('solid', (c) => {
-    vgrad(c, 0, 140, [[0, '#ed7614'], [0.5, '#ffa214'], [1, '#f6ca9f']]);
+    skyGrad(c, 0, 140, [[0, '#ed7614'], [0.5, '#ffa214'], [1, '#f6ca9f']]);
     ridge(c, { base: 128, amp: 18, freq: 0.006, seed: 21, color: '#e69c69', rim: '#f9e6cf' });
     ridge(c, { base: 150, amp: 24, freq: 0.009, seed: 22, color: '#cba36f', rim: '#f6ca9f', shade: '#ad7954' });
     groundPlane(c, 165, ['#cba36f', '#e69c69', '#ad7954'], { stroke: ['#f6ca9f', '#ad7954'], strokes: 120 });
