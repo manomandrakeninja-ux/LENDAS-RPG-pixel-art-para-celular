@@ -264,6 +264,6 @@ function skeleton(ctx, f, o) {
 
 export const MONSTERS = {
   slime: { size: 40, elite: 48, shadow: [32, 58, 19, 3.5], paint: slime },
-  wolf: { size: 52, elite: 60, shadow: [33, 58.5, 22, 3], paint: wolf },
+  wolf: { size: 60, elite: 68, shadow: [33, 58.5, 22, 3], paint: wolf },
   skeleton: { size: 52, elite: 60, extra: [40], shadow: [32, 58, 11, 2.6], paint: skeleton }
 };

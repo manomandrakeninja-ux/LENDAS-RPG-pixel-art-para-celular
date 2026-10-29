@@ -553,13 +553,14 @@ function hydra(ctx, f, o) {
   stroke(ctx, [[8, 56.4], [14, 57.6]], 0.9, '#5ac54f');
   stroke(ctx, [[48, 58], [56, 56.8]], 0.9, '#5ac54f');
   // Pescoços (o do fundo mais escuro).
-  const A = { a: [22, 46], b: [3, 38 + Math.sin(ph) * 2], c: [10 + Math.sin(ph + 1) * 2, 18 + Math.sin(ph) * 1.4] };
-  const B = { a: [31, 44], b: [26, 24], c: [31 + Math.sin(ph + 2) * 2, 9 + Math.sin(ph + 1) * 1.4] };
+  // Telégrafo do ataque: as três cabeças armam o bote juntas (a do fundo empina, a do meio avança).
+  const A = at ? { a: [22, 46], b: [2, 30], c: [6, 8] } : { a: [22, 46], b: [3, 38 + Math.sin(ph) * 2], c: [10 + Math.sin(ph + 1) * 2, 18 + Math.sin(ph) * 1.4] };
+  const B = at ? { a: [31, 44], b: [36, 22], c: [44, 12] } : { a: [31, 44], b: [26, 24], c: [31 + Math.sin(ph + 2) * 2, 9 + Math.sin(ph + 1) * 1.4] };
   const Cn = at ? { a: [42, 46], b: [58, 44], c: [56, 36] } : { a: [42, 46], b: [62, 42], c: [52 + Math.sin(ph) * 2, 21 + Math.sin(ph + 3) * 1.4] };
   tube(ctx, B.a, B.b, B.c, 8, 6, HY_B);
-  hydraHead(ctx, B.c[0] - 1, B.c[1], at ? 0 : 0.3 + Math.sin(ph) * 0.3, HY_B, true, o, 0.1);
+  hydraHead(ctx, B.c[0] - 1, B.c[1], at ? 1.5 : 0.3 + Math.sin(ph) * 0.3, HY_B, true, o, 0.1);
   tube(ctx, A.a, A.b, A.c, 9, 6.6, HY_B.slice(0, 4));
-  hydraHead(ctx, A.c[0], A.c[1], 0.25 + Math.sin(ph + 1) * 0.3, HY_B, true, o, -0.15);
+  hydraHead(ctx, A.c[0], A.c[1], at ? 1.5 : 0.25 + Math.sin(ph + 1) * 0.3, HY_B, true, o, -0.15);
   // Corpo mergulhado em escamas, com barriga clara.
   const body = P(ctx, 'M8,56 C6,44 16,36 32,36 C48,36 58,44 56,56 C46,59 18,59 8,56 Z');
   shade(ctx, body, HY, [6, 36, 52, 22], { lx: 0.3, ly: 0.15, ao: 0.5 });
@@ -993,10 +994,10 @@ export const MONSTERS_2C = {
   demon: { size: 56, elite: 64, shadow: [32, 59.5, 14, 2.6], paint: demon },
   crab: { size: 44, elite: 52, shadow: [32, 59, 22, 2.6], paint: crab },
   pirate: { size: 48, elite: 56, shadow: [32, 58.5, 12, 2.4], paint: pirate },
-  orcChief: { size: 104, elite: 104, shadow: [32, 59, 22, 3], paint: orcChief },
-  hydra: { size: 96, elite: 96, shadow: [32, 59.5, 28, 3.4], paint: hydra },
-  frostGiant: { size: 96, elite: 96, shadow: [32, 59, 22, 3], paint: frostGiant },
-  pharaoh: { size: 96, elite: 96, shadow: [32, 59, 14, 2.6], paint: pharaoh },
-  dragon: { size: 112, elite: 112, shadow: [30, 59.5, 24, 3], paint: dragon },
-  ghostCaptain: { size: 96, elite: 96, shadow: [32, 60, 14, 2.2], paint: ghostCaptain }
+  orcChief: { size: 136, elite: 136, shadow: [32, 59, 22, 3], paint: orcChief },
+  hydra: { size: 128, elite: 128, shadow: [32, 59.5, 28, 3.4], paint: hydra },
+  frostGiant: { size: 128, elite: 128, shadow: [32, 59, 22, 3], paint: frostGiant },
+  pharaoh: { size: 128, elite: 128, shadow: [32, 59, 14, 2.6], paint: pharaoh },
+  dragon: { size: 144, elite: 144, shadow: [30, 59.5, 24, 3], paint: dragon },
+  ghostCaptain: { size: 128, elite: 128, shadow: [32, 60, 14, 2.2], paint: ghostCaptain }
 };

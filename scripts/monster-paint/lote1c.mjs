@@ -565,5 +565,5 @@ export const MONSTERS_C = {
   hellWarden: { size: 56, elite: 64, shadow: [32, 58.5, 15, 3], paint: hellWarden },
   ashWraith: { size: 50, elite: 58, shadow: [32, 60, 13, 2.2], paint: ashWraith },
   soulReaper: { size: 56, elite: 64, shadow: [32, 60, 14, 2.4], paint: soulReaper },
-  abyssLord: { size: 112, elite: 112, shadow: [32, 59, 16, 2.6], paint: abyssLord }
+  abyssLord: { size: 144, elite: 144, shadow: [32, 59, 16, 2.6], paint: abyssLord }
 };

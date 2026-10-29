@@ -34,5 +34,5 @@ function wolfBoss(ctx, f, o) {
 }
 
 export const MONSTERS_4 = {
-  wolfBoss: { size: 88, elite: 88, shadow: [34, 58.5, 26, 3.4], paint: wolfBoss }
+  wolfBoss: { size: 112, elite: 112, shadow: [34, 58.5, 26, 3.4], paint: wolfBoss }
 };

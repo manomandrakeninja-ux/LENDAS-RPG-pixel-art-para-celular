@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { emissiveMask } from '../art/emissive.js';
 import { ENEMY_TYPES } from '../data/enemies.js';
 import { PixelCanvas, darken, lighten, ramp } from '../art/pixel.js';
 import { MONSTER_SIZES, drawMonsterFrame, hasMonsterArt, monsterAttackFrame, monsterFrameCount } from '../art/monsters.js';
@@ -462,6 +463,30 @@ function ensureCanvasTexture(scene, kind, elite) {
   }
 
   return { textureKey, animationKey, size, attackFrame: attack === null ? null : 'frame-attack' };
+}
+
+/** Camada dos pontos que brilham sozinhos de um chefe (src/art/emissive.js), com os mesmos quadros. */
+export function ensureEmissiveTexture(scene, textureKey) {
+  const key = `${textureKey}-emissive`;
+  if (scene.textures.exists(key)) return key;
+  const source = scene.textures.get(textureKey);
+  const image = source.getSourceImage();
+  const width = image.width;
+  const height = image.height;
+  const pixels = image.getContext('2d').getImageData(0, 0, width, height);
+  const data = pixels.data;
+  const frameWidth = source.get(source.getFrameNames()[0])?.cutWidth ?? width;
+  const keep = emissiveMask(data, width, height, { frameWidth });
+  for (let k = 0; k < keep.length; k += 1) if (!keep[k]) data[k * 4 + 3] = 0;
+  const texture = scene.textures.createCanvas(key, width, height);
+  texture.getContext().putImageData(pixels, 0, 0);
+  texture.setFilter(Phaser.Textures.FilterMode.NEAREST);
+  for (const name of source.getFrameNames()) {
+    const frame = source.get(name);
+    texture.add(name, 0, frame.cutX, frame.cutY, frame.cutWidth, frame.cutHeight);
+  }
+  texture.refresh();
+  return key;
 }
 
 export function createEnemyCanvasTexture(scene, kind, elite = false) {

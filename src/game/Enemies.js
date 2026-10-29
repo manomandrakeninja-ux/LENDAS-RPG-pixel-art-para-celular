@@ -4,7 +4,8 @@ import Phaser from 'phaser';
 import { COMBAT_CONFIG } from '../data/combat.js';
 import { ELITE_CONFIG, ENEMY_TYPES } from '../data/enemies.js';
 import { SPAWNING_CONFIG } from '../data/spawning.js';
-import { resolveEnemyVisual } from './EnemyVisual.js';
+import { ensureEmissiveTexture, resolveEnemyVisual } from './EnemyVisual.js';
+import { OVERLAY_DEPTH } from './depths.js';
 
 const randomBetween = (min, max) => min + Math.floor(Math.random() * (max - min + 1));
 
@@ -74,6 +75,28 @@ export class Enemy extends Phaser.GameObjects.Container {
     this.add(this.sprite);
     if (visual.animation && scene.anims.exists(visual.animation)) this.sprite.play(visual.animation);
     this.walkAnimation = visual.animation;
+    // Chefes: olhos, gemas e chamas brilham por cima da noite (camada aditiva que segue o quadro).
+    if (this.definition.boss && this.sprite.texture.getSourceImage()?.getContext) {
+      this.glowSprite = scene.add.sprite(x, y, ensureEmissiveTexture(scene, texture), frame)
+        .setOrigin(0.5, 0.82)
+        .setBlendMode(Phaser.BlendModes.ADD)
+        .setDepth(OVERLAY_DEPTH + 4001);
+      scene.hudCamera?.ignore(this.glowSprite);
+      this.syncGlow = () => {
+        if (!this.active || !this.sprite) return;
+        const frameName = this.sprite.frame.name;
+        if (this.glowSprite.frame.name !== frameName) this.glowSprite.setFrame(frameName);
+        this.glowSprite.setPosition(this.x + this.sprite.x, this.y + this.sprite.y)
+          .setFlipX(this.sprite.flipX).setScale(this.sprite.scaleX, this.sprite.scaleY)
+          .setVisible(this.visible && this.sprite.visible).setAlpha(this.alpha);
+      };
+      scene.events.on('postupdate', this.syncGlow);
+      this.once('destroy', () => {
+        scene.events.off('postupdate', this.syncGlow);
+        this.glowSprite?.destroy();
+        this.glowSprite = null;
+      });
+    }
     this.attackFrameName = visual.attackFrame ?? null;
     this.attackPoseMs = 0;
 

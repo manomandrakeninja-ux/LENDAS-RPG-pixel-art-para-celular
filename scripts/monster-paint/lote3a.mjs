@@ -522,8 +522,8 @@ function sandGolem(ctx, f, o) {
 
 export const MONSTERS_3A = {
   snowOwl: { size: 44, elite: 52, shadow: [31, 59, 12, 2.2], paint: snowOwl },
-  mammoth: { size: 56, elite: 64, shadow: [30, 59, 24, 3], paint: mammoth },
+  mammoth: { size: 68, elite: 76, shadow: [30, 59, 24, 3], paint: mammoth },
   cobra: { size: 48, elite: 56, shadow: [28, 59, 22, 2.4], paint: cobra },
   scarab: { size: 44, elite: 52, shadow: [32, 59, 23, 2.4], paint: (ctx, f, o) => { ctx.save(); ctx.translate(32, 58.6); ctx.scale(1.1, 1.1); ctx.translate(-33, -58.6); scarab(ctx, f, { ...o, px: o.px / 1.1 }); ctx.restore(); } },
-  sandGolem: { size: 56, elite: 64, shadow: [31, 59, 18, 3], paint: sandGolem }
+  sandGolem: { size: 68, elite: 76, shadow: [31, 59, 18, 3], paint: sandGolem }
 };

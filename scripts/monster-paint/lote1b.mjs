@@ -388,10 +388,10 @@ function golem(ctx, f, o) {
 }
 
 export const MONSTERS_B = {
-  boar: { size: 52, elite: 60, shadow: [33, 58.5, 21, 3], paint: boar },
+  boar: { size: 60, elite: 68, shadow: [33, 58.5, 21, 3], paint: boar },
   spider: { size: 52, elite: 60, shadow: [34, 58.5, 24, 3], paint: spider },
   ghost: { size: 44, elite: 52, extra: [40], shadow: [33, 60, 11, 2], paint: ghost },
-  werewolf: { size: 56, elite: 64, shadow: [34, 58.5, 15, 2.8], paint: werewolf },
+  werewolf: { size: 68, elite: 76, shadow: [34, 58.5, 15, 2.8], paint: werewolf },
   golem: { size: 56, elite: 64, shadow: [32, 58.5, 22, 3.2], paint: golem },
-  titan: { size: 96, elite: 96, extra: [64], shadow: [32, 58.5, 24, 3.2], paint: (ctx, f, o) => golem(ctx, f, { ...o, titan: true }) }
+  titan: { size: 128, elite: 128, extra: [64], shadow: [32, 58.5, 24, 3.2], paint: (ctx, f, o) => golem(ctx, f, { ...o, titan: true }) }
 };

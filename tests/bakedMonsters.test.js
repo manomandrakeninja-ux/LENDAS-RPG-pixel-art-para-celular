@@ -11,10 +11,10 @@ const opaque = (canvas) => {
   return set;
 };
 
-test('monstros pintados: tamanhos na escala das skins (comuns 40-56, chefes 80-112)', () => {
+test('monstros pintados: tamanhos na escala das skins (comuns 40-68, chefes de vitrine 112-144)', () => {
   for (const [kind, { size, elite }] of Object.entries(BAKED_MONSTERS)) {
-    if (BOSSES.has(kind)) assert.ok(size >= 80 && size <= 112, kind);
-    else assert.ok(size >= 40 && size <= 56 && elite > size, kind);
+    if (BOSSES.has(kind)) assert.ok(size >= 112 && size <= 144, kind);
+    else assert.ok(size >= 40 && size <= 68 && elite > size, kind);
   }
 });
 
@@ -54,5 +54,25 @@ test('lote 5: todo inimigo e chefe de missão da campanha usa sprite pintado (na
       assert.ok(BAKED_MONSTERS[kind], `${id}: ${kind} sem sprite pintado`);
       if (site.boss) assert.ok((spec.scale ?? 1) * BAKED_MONSTERS[kind].elite <= 112 * 1.6, `${id}: chefe grande demais`);
     }
+  }
+});
+
+test('chefes: pontos que brilham à noite e quadro de ataque bem diferente do parado', async () => {
+  const { emissiveMask } = await import('../src/art/emissive.js');
+  const { drawBakedFrame } = await import('../src/art/bakedMonsters.js');
+  for (const kind of ['orcChief', 'hydra', 'ghostCaptain', 'frostGiant', 'pharaoh', 'dragon', 'abyssLord']) {
+    const { size } = BAKED_MONSTERS[kind];
+    const idle = drawBakedFrame(kind, size, 0).data;
+    const lit = emissiveMask(idle, size, size).reduce((a, b) => a + b, 0);
+    assert.ok(lit >= 1, `${kind}: ${lit} pontos acesos`);
+    const attack = drawBakedFrame(kind, size, 4).data;
+    let opaque = 0; let diff = 0;
+    for (let i = 0; i < idle.length; i += 4) {
+      const a = idle[i + 3] > 127; const b = attack[i + 3] > 127;
+      if (!a && !b) continue;
+      opaque += 1;
+      if (a !== b || idle[i] !== attack[i] || idle[i + 1] !== attack[i + 1] || idle[i + 2] !== attack[i + 2]) diff += 1;
+    }
+    assert.ok(diff / opaque >= 0.25, `${kind}: ataque ${(100 * diff / opaque).toFixed(0)}%`);
   }
 });

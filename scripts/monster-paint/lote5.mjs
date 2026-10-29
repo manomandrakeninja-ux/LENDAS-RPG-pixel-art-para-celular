@@ -753,10 +753,10 @@ function talonLeg(ctx, hip, swing, lift, ramp, far, at) {
 
 export const MONSTERS_5 = {
   bandit: { size: 48, elite: 56, shadow: [32, 59, 12, 2.2], paint: bandit },
-  banditBoss: { size: 88, elite: 88, shadow: [32, 59, 16, 2.6], paint: banditBoss },
+  banditBoss: { size: 112, elite: 112, shadow: [32, 59, 16, 2.6], paint: banditBoss },
   knight: { size: 52, elite: 60, shadow: [32, 59, 13, 2.4], paint: knight },
   emberKnight: { size: 56, elite: 64, shadow: [32, 59, 14, 2.4], paint: emberKnight },
-  emberKnightBoss: { size: 104, elite: 104, shadow: [32, 59, 17, 2.8], paint: emberKnightBoss },
-  waterSpirit: { size: 100, elite: 100, shadow: [32, 58.6, 18, 2.4], paint: waterSpirit },
-  griffin: { size: 104, elite: 104, shadow: [31, 59, 24, 3], paint: griffin }
+  emberKnightBoss: { size: 136, elite: 136, shadow: [32, 59, 17, 2.8], paint: emberKnightBoss },
+  waterSpirit: { size: 128, elite: 128, shadow: [32, 58.6, 18, 2.4], paint: waterSpirit },
+  griffin: { size: 136, elite: 136, shadow: [31, 59, 24, 3], paint: griffin }
 };

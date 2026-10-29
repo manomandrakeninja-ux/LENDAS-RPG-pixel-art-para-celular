@@ -715,9 +715,9 @@ export const MONSTERS_2A = {
   snake: { size: 40, elite: 48, shadow: [28, 60, 18, 2.4], paint: snake },
   bat: { size: 40, elite: 48, shadow: [33, 60, 12, 1.8], paint: bat },
   goblin: { size: 44, elite: 52, shadow: [33, 59.6, 12, 2], paint: goblin },
-  orc: { size: 52, elite: 60, shadow: [32, 59.6, 17, 2.6], paint: orc },
-  bear: { size: 56, elite: 64, shadow: [30, 59.6, 24, 3], paint: bear },
-  treant: { size: 56, elite: 64, shadow: [32, 59.6, 17, 2.6], paint: treant },
+  orc: { size: 60, elite: 68, shadow: [32, 59.6, 17, 2.6], paint: orc },
+  bear: { size: 68, elite: 76, shadow: [30, 59.6, 24, 3], paint: bear },
+  treant: { size: 68, elite: 76, shadow: [32, 59.6, 17, 2.6], paint: treant },
   frog: { size: 40, elite: 48, shadow: [32, 59.6, 24, 2.6], paint: frog },
   zombie: { size: 48, elite: 56, shadow: [32, 59.6, 14, 2.2], paint: zombie }
 };
