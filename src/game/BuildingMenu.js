@@ -22,6 +22,7 @@ import { gearIconHtml } from './gearIconUrl.js';
 import { resourceIconHtml, textureUrl } from './iconUrls.js';
 import { XP_EVENT_CONFIG, daysUntilDoubleXp, isDoubleXpDay } from './XpEvents.js';
 import { formatRemaining } from './ActiveEffects.js';
+import { formatCount } from './formatCount.js';
 import { REBIRTH_CONFIG, canRebirth } from '../data/rebirth.js';
 import { MOUNT_LEVEL, PETS, PET_IDS, mountUnlocked } from '../data/companions.js';
 
@@ -78,6 +79,8 @@ export class BuildingMenu {
     this.levelbar = document.getElementById('building-menu-levelbar');
     this.building = null;
     this.tab = null;
+    this.sell = { type: null, qty: 1, checked: new Set(), confirm: null };
+    this.buyQty = {};
 
     this.handleClose = () => this.close();
     this.handleTabs = (event) => {
@@ -95,6 +98,7 @@ export class BuildingMenu {
       }
       const button = event.target.closest('button[data-action]');
       if (!button || button.disabled) return;
+      if (this.handleMarketAction(button)) return;
       if (button.dataset.action === 'open') {
         this.open(button.dataset.arg);
         return;
@@ -127,10 +131,19 @@ export class BuildingMenu {
     this.closeButton.addEventListener('click', this.handleClose);
     this.tabs.addEventListener('click', this.handleTabs);
     this.content.addEventListener('click', this.handleContent);
+    // Controle deslizante da venda: atualiza só os números (re-renderizar tiraria o dedo do controle).
+    this.handleSlider = (event) => {
+      if (!event.target.matches?.('input[data-sell-range]')) return;
+      this.sell.qty = Number(event.target.value) || 1;
+      this.sell.confirm = null;
+      this.updateSellSummary();
+    };
+    this.content.addEventListener('input', this.handleSlider);
     scene.events.once('shutdown', () => {
       this.closeButton.removeEventListener('click', this.handleClose);
       this.tabs.removeEventListener('click', this.handleTabs);
       this.content.removeEventListener('click', this.handleContent);
+      this.content.removeEventListener('input', this.handleSlider);
       this.root.hidden = true;
     });
   }
@@ -915,10 +928,12 @@ export class BuildingMenu {
       <div class="building-menu__resource">
         ${this.itemIcon(type)}
         <span>${escapeHtml(resource.label)}</span>
-        <span>Mochila: ${scene.inventory.items[type]}</span>
-        <span>Armazém: ${camp.storage[type]}</span>
+        <span>Mochila: ${formatCount(scene.inventory.items[type])}</span>
+        <span>Armazém: ${formatCount(camp.storage[type])}</span>
         <button type="button" data-action="deposit" data-arg="${type}" ${disabled(scene.inventory.items[type] <= 0)}>GUARDAR 1</button>
+        <button type="button" data-action="deposit" data-arg="${type}" data-arg2="all" ${disabled(scene.inventory.items[type] <= 0)}>GUARDAR TUDO</button>
         <button type="button" data-action="withdraw" data-arg="${type}" ${disabled(camp.storage[type] <= 0)}>RETIRAR 1</button>
+        <button type="button" data-action="withdraw" data-arg="${type}" data-arg2="all" ${disabled(camp.storage[type] <= 0)}>RETIRAR TUDO</button>
       </div>`).join('') || '<p>Mochila e armazém vazios.</p>';
     return `
       <div class="building-menu__stats">
@@ -987,30 +1002,216 @@ export class BuildingMenu {
         <div class="building-menu__stat">${this.itemChips(definition.yield)}</div>
         <div class="building-menu__stat">Preço: ${price} moedas${price < definition.price ? ` (era ${definition.price})` : ''}</div>
         <div class="building-menu__actions">
-          <button type="button" data-action="buy" data-arg="${offer.id}" data-arg2="${source}" ${disabled(offer.quantity <= 0 || this.scene.economy.coins < price)}>COMPRAR 1</button>
+          ${this.buyControls(offer, source, price)}
         </div>
       </article>`;
   }
 
+  // ---------- Compra e venda em quantidade ----------
+
+  buyControls(offer, source, price) {
+    const scene = this.scene;
+    const max = scene.market.maxBuyable(offer.id, scene.inventory, scene.economy, source);
+    const key = `${source}:${offer.id}`;
+    const qty = Math.min(Math.max(1, this.buyQty[key] ?? 1), Math.max(1, max));
+    const f = (arg2) => `data-action="buy-step" data-arg="${key}" data-arg2="${arg2}" data-focus="buy-step|${key}|${arg2}"`;
+    return `
+      <div class="qty-row">
+        <button type="button" class="qty-btn" ${f(-1)} ${disabled(max <= 0)}>-1</button>
+        <strong class="qty-value">${qty}</strong>
+        <button type="button" class="qty-btn" ${f(1)} ${disabled(max <= 0)}>+1</button>
+        <button type="button" class="qty-btn" ${f('max')} ${disabled(max <= 0)}>MÁX</button>
+      </div>
+      <button type="button" data-action="buy-n" data-arg="${offer.id}" data-arg2="${source}" data-qty="${qty}" ${disabled(max <= 0)}>COMPRAR ${qty} • ${formatCount(qty * price)} moedas</button>`;
+  }
+
+  protectedSellTypes() {
+    return this.scene.protectedSellTypes?.() ?? new Set();
+  }
+
+  sellRowType() {
+    const type = this.sell.type;
+    if (!type) return null;
+    const max = this.scene.market.sellableAmount(type, this.scene.inventory, this.protectedSellTypes());
+    return max > 0 ? { type, max } : null;
+  }
+
+  /** Cliques de compra/venda em quantidade (tratados aqui até a confirmação). */
+  handleMarketAction(button) {
+    const { action, arg, arg2 } = button.dataset;
+    const scene = this.scene;
+    const sell = this.sell;
+    const focusKey = `${action}|${arg ?? ''}|${arg2 ?? ''}`;
+    const rerender = () => {
+      this.render();
+      this.content.querySelector(`[data-focus="${focusKey}"]`)?.focus?.({ preventScroll: true });
+    };
+    if (action === 'buy-step') {
+      const [source, id] = arg.split(':');
+      const max = scene.market.maxBuyable(id, scene.inventory, scene.economy, source);
+      const current = this.buyQty[arg] ?? 1;
+      this.buyQty[arg] = arg2 === 'max' ? Math.max(1, max) : Math.min(Math.max(1, current + Number(arg2)), Math.max(1, max));
+      rerender();
+      return true;
+    }
+    if (action === 'buy-n') {
+      const result = scene.buildingMenuAction?.('buy-n', arg, arg2, Number(button.dataset.qty) || 1);
+      this.buyQty[`${arg2}:${arg}`] = 1;
+      scene.lastBuildingMessage = result?.message ?? scene.lastBuildingMessage ?? '';
+      this.render();
+      return true;
+    }
+    if (action === 'sell-pick') {
+      sell.type = sell.type === arg ? null : arg;
+      sell.qty = 1;
+      sell.confirm = null;
+      rerender();
+      return true;
+    }
+    if (action === 'sell-step') {
+      const row = this.sellRowType();
+      if (row) sell.qty = arg === 'max' ? row.max : Math.min(row.max, Math.max(1, sell.qty + Number(arg)));
+      sell.confirm = null;
+      rerender();
+      return true;
+    }
+    if (action === 'sell-toggle') {
+      if (sell.checked.has(arg)) sell.checked.delete(arg);
+      else sell.checked.add(arg);
+      sell.confirm = null;
+      rerender();
+      return true;
+    }
+    if (action === 'sell-cancel') {
+      sell.confirm = null;
+      rerender();
+      return true;
+    }
+    const sellNow = (selection) => {
+      const result = scene.buildingMenuAction?.('sell-multi', JSON.stringify(selection));
+      scene.lastBuildingMessage = result?.message ?? '';
+      sell.confirm = null;
+      if (!(scene.inventory.items[sell.type] > 0)) sell.type = null;
+      this.render();
+    };
+    const protectedTypes = this.protectedSellTypes();
+    if (action === 'sell-one') {
+      const row = this.sellRowType();
+      if (row) sellNow({ [row.type]: Math.min(sell.qty, row.max) });
+      return true;
+    }
+    if (action === 'sell-all') {
+      const row = this.sellRowType();
+      if (row) sellNow({ [row.type]: row.max });
+      return true;
+    }
+    if (action === 'sell-common' || action === 'sell-selected') {
+      const selection = action === 'sell-common'
+        ? scene.market.commonSelection(scene.inventory, protectedTypes)
+        : this.selectedSelection(protectedTypes);
+      if (Object.keys(selection).length === 0) return true;
+      if (sell.confirm !== action) {
+        sell.confirm = action;
+        rerender();
+        return true;
+      }
+      if (action === 'sell-selected') sell.checked.clear();
+      sellNow(selection);
+      return true;
+    }
+    return false;
+  }
+
+  selectedSelection(protectedTypes) {
+    const market = this.scene.market;
+    return Object.fromEntries([...this.sell.checked]
+      .map((type) => [type, market.sellableAmount(type, this.scene.inventory, protectedTypes)])
+      .filter(([, amount]) => amount > 0));
+  }
+
+  updateSellSummary() {
+    const row = this.sellRowType();
+    if (!row) return;
+    const qty = Math.min(this.sell.qty, row.max);
+    const total = this.scene.market.sellValue({ [row.type]: qty });
+    const value = this.content.querySelector('[data-sell-qty]');
+    if (value) value.textContent = formatCount(qty);
+    const confirm = this.content.querySelector('[data-action="sell-one"]');
+    if (confirm) confirm.textContent = `VENDER ${formatCount(qty)} • +${formatCount(total)} moedas`;
+  }
+
+  renderSell() {
+    const scene = this.scene;
+    const market = scene.market;
+    const sell = this.sell;
+    const protectedTypes = this.protectedSellTypes();
+    const owned = Object.entries(RESOURCE_TYPES).filter(([type]) => scene.inventory.items[type] > 0);
+    const f = (action, arg = '', arg2 = '') => `data-action="${action}" data-arg="${arg}" data-arg2="${arg2}" data-focus="${action}|${arg}|${arg2}"`;
+    const rows = owned.map(([type, resource]) => {
+      const locked = protectedTypes.has(type);
+      const price = sellPriceOf(type);
+      const checked = sell.checked.has(type) && !locked;
+      return `
+        <div class="sell-row ${sell.type === type ? 'sell-row--active' : ''}">
+          <button type="button" class="sell-check" role="checkbox" aria-checked="${checked}" aria-label="Marcar ${escapeHtml(resource.label)}" ${f('sell-toggle', type)} ${disabled(locked)}>${checked ? '✔' : ''}</button>
+          ${this.itemIcon(type)}
+          <span class="sell-row__name">${escapeHtml(resource.label)}</span>
+          <span>x${formatCount(scene.inventory.items[type])}</span>
+          <span>${price} ${price === 1 ? 'moeda' : 'moedas'}</span>
+          <button type="button" ${f('sell-pick', type)} ${disabled(locked)}>${locked ? 'DE MISSÃO' : sell.type === type ? 'FECHAR' : 'VENDER'}</button>
+        </div>`;
+    }).join('') || '<p>Nada na mochila para vender.</p>';
+
+    let panel = '';
+    const row = this.sellRowType();
+    if (row) {
+      const qty = Math.min(sell.qty, row.max);
+      const label = escapeHtml(RESOURCE_TYPES[row.type].label);
+      const step = (text, delta) => `<button type="button" class="qty-btn" ${f('sell-step', delta)}>${text}</button>`;
+      panel = `
+        <div class="sell-panel">
+          <h3>${label}: quanto vender?</h3>
+          <div class="qty-row">
+            ${step('-10', -10)}${step('-1', -1)}
+            <strong class="qty-value" data-sell-qty>${formatCount(qty)}</strong>
+            ${step('+1', 1)}${step('+10', 10)}
+            ${step('MÁX', 'max')}
+          </div>
+          <input type="range" class="sell-range" data-sell-range min="1" max="${row.max}" value="${qty}" aria-label="Quantidade a vender">
+          <div class="building-menu__actions">
+            <button type="button" class="button--primary" ${f('sell-one')}>VENDER ${formatCount(qty)} • +${formatCount(market.sellValue({ [row.type]: qty }))} moedas</button>
+            <button type="button" ${f('sell-all')}>VENDER TUDO DESTE ITEM (${formatCount(row.max)} • +${formatCount(market.sellValue({ [row.type]: row.max }))})</button>
+          </div>
+        </div>`;
+    }
+
+    const bulk = (action, selection, text) => {
+      const count = Object.values(selection).reduce((sum, value) => sum + value, 0);
+      const total = market.sellValue(selection);
+      if (count === 0) return `<button type="button" disabled>${text}</button>`;
+      if (sell.confirm === action) {
+        return `<button type="button" class="button--primary" ${f(action)}>CONFIRMAR: ${formatCount(count)} itens • +${formatCount(total)} moedas</button><button type="button" ${f('sell-cancel')}>CANCELAR</button>`;
+      }
+      return `<button type="button" ${f(action)}>${text} (+${formatCount(total)})</button>`;
+    };
+    return `
+      <div class="building-menu__card building-menu__card--wide">
+        <h2>Vender recursos</h2>
+        <p>Toque em VENDER para escolher a quantidade. Equipamentos e itens de missão não são vendidos aqui.</p>
+        <div class="building-menu__actions">
+          ${bulk('sell-common', market.commonSelection(scene.inventory, protectedTypes), 'VENDER RECURSOS COMUNS')}
+          ${bulk('sell-selected', this.selectedSelection(protectedTypes), 'VENDER MARCADOS')}
+        </div>
+        ${rows}
+        ${panel}
+      </div>`;
+  }
+
+
   renderMarket() {
     const scene = this.scene;
     const market = scene.market;
-    if (this.tab === 'sell') {
-      const rows = Object.entries(RESOURCE_TYPES).filter(([type]) => scene.inventory.items[type] > 0).map(([type, resource]) => `
-        <div class="building-menu__resource">
-          ${this.itemIcon(type)}
-          <span>${escapeHtml(resource.label)}</span>
-          <span>Quantidade: ${scene.inventory.items[type]}</span>
-          <span>Preço: ${sellPriceOf(type)} ${sellPriceOf(type) === 1 ? 'moeda' : 'moedas'}</span>
-          <button type="button" data-action="sell" data-arg="${type}">VENDER 1</button>
-        </div>`).join('') || '<p>Nada na mochila para vender.</p>';
-      return `
-        <div class="building-menu__card building-menu__card--wide">
-          <h2>Vender recursos</h2>
-          <p>Preços definidos em economy.json. Recursos raros valem mais.</p>
-          ${rows}
-        </div>`;
-    }
+    if (this.tab === 'sell') return this.renderSell();
     if (this.tab === 'traveler') {
       return `
         <div class="building-menu__stats"><div class="building-menu__stat">Mercador viajante • só hoje</div></div>

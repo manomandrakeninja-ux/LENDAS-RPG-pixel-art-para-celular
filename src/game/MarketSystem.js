@@ -12,6 +12,9 @@ import { createSeededRandom } from '../data/harvestStructures.js';
 
 const MARKET = BUILDING_DEFS.market;
 
+/** Materiais "comuns" para o botão de vender tudo de uma vez (não inclui comida, poções nem raridades). */
+export const COMMON_SELL_TYPES = Object.freeze(['wood', 'stone', 'herbs', 'seeds', 'coal', 'bone']);
+
 function hashDay(day, salt = '') {
   let hash = 2166136261;
   for (const character of `${salt}${day}`) {
@@ -132,28 +135,21 @@ export class MarketSystem {
   }
 
   canAddAfterCost(inventory, cost = {}, yieldBundle = {}) {
-    const projectedItems = { ...inventory.items };
-    let projectedTotal = inventory.total;
-    let projectedSlots = inventory.usedSlots;
+    const projected = { ...inventory.items };
     for (const [type, rawAmount] of Object.entries(cost)) {
       const amount = Math.max(0, Math.floor(Number(rawAmount) || 0));
-      if (amount <= 0 || projectedItems[type] === undefined) continue;
-      const removed = Math.min(amount, projectedItems[type]);
-      projectedItems[type] -= removed;
-      projectedTotal -= removed;
-      if (projectedItems[type] === 0) projectedSlots -= 1;
+      if (amount <= 0 || projected[type] === undefined) continue;
+      projected[type] -= Math.min(amount, projected[type]);
     }
-    if (projectedSlots >= inventory.maxSlots) return false;
-    let newTypes = 0;
+    let slots = Object.values(projected).reduce((sum, amount) => sum + inventory.slotsFor(amount), 0);
     for (const [type, rawAmount] of Object.entries(yieldBundle)) {
       const amount = Math.max(0, Math.floor(Number(rawAmount) || 0));
-      if (amount <= 0 || projectedItems[type] === undefined) continue;
-      if (projectedItems[type] === 0) newTypes += 1;
-      projectedItems[type] += amount;
-      projectedTotal += amount;
+      if (amount <= 0 || projected[type] === undefined) continue;
+      slots -= inventory.slotsFor(projected[type]);
+      projected[type] += amount;
+      slots += inventory.slotsFor(projected[type]);
     }
-    projectedSlots += newTypes;
-    return projectedTotal <= inventory.totalCapacity && projectedSlots <= inventory.maxSlots;
+    return slots <= inventory.maxSlots;
   }
 
   spend(economy, amount) {
@@ -190,6 +186,73 @@ export class MarketSystem {
     inventory.remove({ [type]: quantity });
     const coins = economy.addCoins(quantity * sellPriceOf(type));
     return { ok: true, type, amount: quantity, coins };
+  }
+
+  /** Compra várias unidades de uma vez; para ao faltar moeda, estoque ou espaço. */
+  buyMany(offerId, inventory, economy, source = 'daily', count = 1) {
+    const wanted = Math.max(1, Math.floor(Number(count) || 1));
+    let bought = 0;
+    let spent = 0;
+    let reason = null;
+    while (bought < wanted) {
+      const result = this.buy(offerId, inventory, economy, source);
+      if (!result.ok) { reason = result.reason; break; }
+      bought += 1;
+      spent += result.spent;
+    }
+    return { ok: bought > 0, bought, spent, reason };
+  }
+
+  /** Quantas unidades da oferta ainda dá para comprar agora (estoque, moedas e espaço). */
+  maxBuyable(offerId, inventory, economy, source = 'daily') {
+    const offer = this.getOffer(offerId, source);
+    const definition = findCatalogEntry(offerId);
+    if (!offer || !definition) return 0;
+    const price = this.priceOf(definition);
+    let count = Math.min(offer.quantity, price > 0 ? Math.floor((economy?.coins ?? 0) / price) : offer.quantity);
+    while (count > 0) {
+      const bundle = Object.fromEntries(Object.entries(definition.yield).map(([type, amount]) => [type, amount * count]));
+      if (this.canAddAfterCost(inventory, {}, bundle)) break;
+      count -= 1;
+    }
+    return Math.max(0, count);
+  }
+
+  // ---- Venda em quantidade ----
+  /** Quanto dá para vender de `type` (0 se protegido ou ausente). */
+  sellableAmount(type, inventory, protectedTypes = new Set()) {
+    if (!this.canSell || protectedTypes.has(type)) return 0;
+    return Math.max(0, inventory.items[type] ?? 0);
+  }
+
+  /** Recursos comuns: materiais baratos e sem uso de combate. */
+  commonSelection(inventory, protectedTypes = new Set()) {
+    const selection = {};
+    for (const type of COMMON_SELL_TYPES) {
+      const amount = this.sellableAmount(type, inventory, protectedTypes);
+      if (amount > 0) selection[type] = amount;
+    }
+    return selection;
+  }
+
+  sellValue(selection = {}) {
+    return Object.entries(selection).reduce((sum, [type, amount]) => sum + sellPriceOf(type) * amount, 0);
+  }
+
+  /** Vende vários tipos de uma vez: { tipo: quantidade }. Ignora protegidos e limita ao que existe. */
+  sellMany(selection, inventory, economy, protectedTypes = new Set()) {
+    if (!this.canSell) return { ok: false, reason: 'locked' };
+    if (!economy) return { ok: false, reason: 'coins' };
+    const sold = {};
+    for (const [type, raw] of Object.entries(selection ?? {})) {
+      const amount = Math.min(Math.max(0, Math.floor(Number(raw) || 0)), this.sellableAmount(type, inventory, protectedTypes));
+      if (amount > 0) sold[type] = amount;
+    }
+    if (Object.keys(sold).length === 0) return { ok: false, reason: 'amount' };
+    inventory.remove(sold);
+    const coins = economy.addCoins(this.sellValue(sold));
+    const amount = Object.values(sold).reduce((sum, value) => sum + value, 0);
+    return { ok: true, sold, amount, coins: typeof coins === 'number' ? coins : this.sellValue(sold) };
   }
 
   // ---- Encomendas (nível 8) ----

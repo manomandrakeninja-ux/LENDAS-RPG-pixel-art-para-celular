@@ -125,7 +125,7 @@ await runInChrome({ name: 'system2', port: 9354, width: 390, height: 844, mobile
     return { tabs: [...document.querySelectorAll('[data-tab]')].map((tab) => tab.dataset.tab) };
   });
   check(!market1.tabs.includes('sell'), 'Venda não deveria existir no Mercado nível 1.');
-  await evaluate(click('[data-action="buy"][data-arg="seeds"]'));
+  await evaluate(click('[data-action="buy-n"][data-arg="seeds"]'));
   const bought = await inScene((scene) => ({ coins: scene.economy.coins, seeds: scene.inventory.items.seeds }));
   check(bought.coins === 15 && bought.seeds === 1, `Compra: ${JSON.stringify(bought)}`);
   await inScene((scene) => {
@@ -134,7 +134,8 @@ await runInChrome({ name: 'system2', port: 9354, width: 390, height: 844, mobile
     scene.buildingMenu.tab = 'sell';
     scene.buildingMenu.refresh();
   });
-  await evaluate(click('[data-action="sell"][data-arg="wood"]'));
+  await evaluate(click('[data-action="sell-pick"][data-arg="wood"]'));
+  await evaluate(click('[data-action="sell-one"]'));
   const sold = await inScene((scene) => ({ coins: scene.economy.coins, wood: scene.inventory.items.wood }));
   check(sold.coins === 16 && sold.wood === 3, `Venda: ${JSON.stringify(sold)}`);
 

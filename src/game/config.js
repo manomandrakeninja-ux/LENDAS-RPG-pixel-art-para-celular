@@ -1,6 +1,6 @@
 export const INVENTORY_CONFIG = Object.freeze({
   maxSlots: 12,
-  unitsPerSlot: 12,
+  unitsPerSlot: 1000,
   capacityVersion: 3,
   fullMessage: 'Mochila cheia! Volte ao acampamento'
 });

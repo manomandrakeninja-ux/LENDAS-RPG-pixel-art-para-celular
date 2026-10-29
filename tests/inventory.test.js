@@ -10,7 +10,8 @@ test('the real backpack has twelve slots and legacy capacities are upgraded', ()
   const legacy = new Inventory({ maxSlots: 6 });
 
   assert.equal(inventory.maxSlots, 12);
-  assert.equal(inventory.totalCapacity, 144);
+  assert.equal(inventory.unitsPerSlot, 1000);
+  assert.equal(inventory.totalCapacity, 12000);
   assert.equal(legacy.maxSlots, 12);
   assert.equal(legacy.serialize().capacityVersion, 3);
 });
@@ -23,9 +24,9 @@ test('a twelfth resource type fills the backpack and rejects the thirteenth', ()
     assert.equal(inventory.add(type, 1), true, `deveria aceitar ${type}`);
   }
   assert.equal(inventory.usedSlots, 12);
-  assert.equal(inventory.isFull, true);
+  assert.equal(inventory.isFull, false);
   assert.equal(inventory.add(types[12], 1), false);
-  assert.equal(inventory.add(types[0], 1), false);
+  assert.equal(inventory.add(types[0], 1), true);
   assert.equal(inventory.items[types[12]], 0);
 });
 
@@ -48,11 +49,12 @@ test('malformed or legacy overflow is preserved for migration into storage', () 
 test('inventory respects slot and total carrying limits', () => {
   const inventory = new Inventory({ capacityVersion: 3, maxSlots: 1 });
 
-  assert.equal(inventory.add('wood', 12), true);
+  assert.equal(inventory.add('wood', 1000), true);
   assert.equal(inventory.add('wood'), false);
   assert.equal(inventory.add('stone'), false);
   assert.equal(inventory.usedSlots, 1);
-  assert.equal(inventory.total, 12);
+  assert.equal(inventory.total, 1000);
+  assert.equal(inventory.isFull, true);
 });
 
 test('removing a cost is atomic when resources are insufficient', () => {
@@ -75,7 +77,7 @@ test('saved inventory preserves capacity and resource counts', () => {
 
   const restored = new Inventory(original.serialize());
   assert.equal(restored.maxSlots, 8);
-  assert.equal(restored.unitsPerSlot, 12);
+  assert.equal(restored.unitsPerSlot, 1000);
   assert.equal(restored.items.herbs, 5);
   assert.equal(restored.items.moonherb, 2);
   assert.equal(restored.usedSlots, 2);
@@ -86,11 +88,12 @@ test('bundle capacity checks are atomic before collecting chest loot', () => {
   assert.equal(inventory.canAddBundle({ wood: 2, stone: 3 }), false);
 
   inventory.add('wood', 1);
-  assert.equal(inventory.canAddBundle({ wood: 2 }), false);
+  assert.equal(inventory.canAddBundle({ wood: 2 }), true);
   assert.equal(inventory.canAddBundle({ wood: 2, stone: 1 }), false);
+  assert.equal(inventory.canAddBundle({ wood: 1000 }), false);
 
   const full = new Inventory({ capacityVersion: 3, maxSlots: 1 });
-  full.add('wood', 12);
+  full.add('wood', 1000);
   assert.equal(full.canAddBundle({ stone: 1 }), false);
 });
 

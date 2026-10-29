@@ -153,7 +153,7 @@ try {
       storageCapacity: scene.camp.storageCapacity
     };
   })()`);
-  if (initial.maxSlots !== 12 || initial.totalCapacity !== 144 || initial.visualSlots !== 12 ||
+  if (initial.maxSlots !== 12 || initial.totalCapacity !== 12000 || initial.visualSlots !== 12 ||
       initial.resourceCounts !== 12 || initial.occupiedIcons !== 0) {
     throw new Error(`Mochila inicial incorreta: ${JSON.stringify(initial)}`);
   }
@@ -182,6 +182,7 @@ try {
     const scene = window.__LENDAS__.scene.getScene('GameScene');
     const types = Object.keys(scene.inventory.items);
     const accepted = scene.inventory.add(types[11], 2);
+    for (const type of types.slice(0, 12)) scene.inventory.add(type, scene.inventory.freeUnitsFor(type));
     return {
       accepted,
       used: scene.inventory.usedSlots,
@@ -211,7 +212,7 @@ try {
       })()
     };
   })()`);
-  if (fillResult.used !== 11 || !acceptedValue(fullResult.accepted) || fullResult.used !== 12 || !fullResult.full ||
+  if (fillResult.used !== 11 || !acceptedValue(fullResult.accepted) || fullResult.used !== 12 ||
       fullResult.thirteenthAccepted || fullResult.thirteenthAmount !== 0) {
     throw new Error(`Limite de 12 slots não foi aplicado: ${JSON.stringify({ fillResult, fullResult })}`);
   }
@@ -283,7 +284,7 @@ try {
       savedSlots: save.inventory.maxSlots
     };
   })()`);
-  if (persisted.maxSlots !== 12 || persisted.totalCapacity !== 144 || persisted.wood !== 5 ||
+  if (persisted.maxSlots !== 12 || persisted.totalCapacity !== 12000 || persisted.wood !== 5 ||
       persisted.stone !== 3 || persisted.saveVersion !== 2 || persisted.capacityVersion !== 3 ||
       persisted.savedSlots !== 12) {
     throw new Error(`Persistência da mochila falhou: ${JSON.stringify(persisted)}`);

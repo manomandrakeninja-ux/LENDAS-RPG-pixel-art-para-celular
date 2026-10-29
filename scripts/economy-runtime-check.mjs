@@ -156,7 +156,7 @@ try {
     scene.inventory.items.seeds = 0;
     scene.openBuilding('market');
     scene.buildingMenu.refresh();
-    document.querySelector('[data-action="buy"][data-arg="seeds"]')?.click();
+    document.querySelector('[data-action="buy-n"][data-arg="seeds"]')?.click();
   })()`);
   await delay(120);
   const bought = await evaluate(`(() => {
@@ -177,7 +177,8 @@ try {
     document.querySelector('[data-tab="sell"]')?.click();
     scene.inventory.items.wood = 2;
     scene.buildingMenu.refresh();
-    document.querySelector('[data-action="sell"][data-arg="wood"]')?.click();
+    document.querySelector('[data-action="sell-pick"][data-arg="wood"]')?.click();
+    document.querySelector('[data-action="sell-one"]')?.click();
   })()`);
   const sold = await evaluate(`(() => {
     const scene = window.__LENDAS__.scene.getScene('GameScene');

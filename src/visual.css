@@ -680,3 +680,15 @@
     font-size: 12px;
   }
 }
+
+/* Venda/compra em quantidade e armazém com GUARDAR/RETIRAR TUDO */
+.building-menu .sell-row { color: var(--ink); }
+.building-menu .sell-row--active { background: rgba(107, 74, 48, 0.14); }
+.building-menu .sell-panel { background: rgba(107, 74, 48, 0.1); border-color: var(--gold-2); }
+.building-menu .sell-panel h3 { color: #5a2f12; }
+.building-menu .qty-value { color: var(--ink); }
+.building-menu .sell-row button, .building-menu .qty-row button { min-height: 44px; }
+.building-menu .building-menu__resource { grid-template-columns: 34px minmax(80px, 1.2fr) repeat(2, minmax(56px, 0.8fr)) repeat(4, minmax(72px, 1fr)); }
+@media (max-width: 560px) {
+  .building-menu .building-menu__resource { grid-template-columns: 28px 1fr 1fr; }
+}

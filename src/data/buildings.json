@@ -536,7 +536,7 @@
           5
         ]
       },
-      "storageStackSize": 25,
+      "storageStackSize": 9999,
       "unlocks": {
         "sleep": 2,
         "wellRested": 3,

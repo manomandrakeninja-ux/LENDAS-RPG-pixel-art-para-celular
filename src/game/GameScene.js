@@ -19,6 +19,7 @@ import { CampfireTravelers, TRAVELER_GOODS } from '../data/travelers.js';
 import { INVENTORY_CONFIG, WORLD, RESOURCE_TYPES } from './config.js';
 import { AudioManager } from './Audio.js';
 import { Camp } from './Camp.js';
+import { freeUnitsFor } from './storageSlots.js';
 import { DayNightCycle } from './DayNightCycle.js';
 import { DeathBackpackManager } from './DeathBackpack.js';
 import { EnemyDirector } from './EnemyDirector.js';
@@ -1902,7 +1903,23 @@ export class GameScene extends Phaser.Scene {
     return true;
   }
 
-  buildingMenuAction(action, arg, arg2) {
+  /** Itens que o jogador não pode vender: entregas das missões ativas e das diárias. */
+  protectedSellTypes() {
+    const types = new Set();
+    try {
+      const state = this.campaign?.state;
+      for (const mission of state?.activeMissions?.() ?? []) {
+        for (const type of Object.keys(state.deliveryCost(mission))) types.add(type);
+      }
+      for (const daily of state?.daily?.list ?? []) {
+        const objective = state.dailyTemplate(daily)?.objective;
+        if (objective?.type === 'deliver') types.add(objective.target);
+      }
+    } catch { /* sem campanha: nada protegido */ }
+    return types;
+  }
+
+  buildingMenuAction(action, arg, arg2, arg3) {
     const wasFull = this.inventory.isFull;
     let result = { ok: false, message: 'Ação inválida.' };
     const camp = this.camp;
@@ -2019,9 +2036,12 @@ export class GameScene extends Phaser.Scene {
     } else if (action === 'store-all') {
       result = this.storeAllAtCamp();
     } else if (action === 'deposit') {
-      result = camp.deposit(arg, 1, this.inventory);
+      const room = freeUnitsFor(camp.storage, arg, camp.storageSlots, camp.storageStackSize);
+      const quantity = arg2 === 'all' ? Math.min(this.inventory.items[arg] ?? 0, room) : 1;
+      result = quantity > 0 ? camp.deposit(arg, quantity, this.inventory) : { ok: false, message: 'Armazém sem espaço.' };
     } else if (action === 'withdraw') {
-      result = camp.withdraw(arg, 1, this.inventory);
+      const quantity = arg2 === 'all' ? Math.min(camp.storage[arg] ?? 0, this.inventory.freeUnitsFor(arg)) : 1;
+      result = quantity > 0 ? camp.withdraw(arg, quantity, this.inventory) : { ok: false, message: INVENTORY_CONFIG.fullMessage };
     } else if (action === 'secret-deposit') {
       result = camp.depositSecret(arg, 1, this.inventory);
     } else if (action === 'secret-withdraw') {
@@ -2073,6 +2093,20 @@ export class GameScene extends Phaser.Scene {
       result = bought.ok
         ? { ok: true, message: `Compra realizada: -${bought.spent} moedas.` }
         : { ok: false, message: bought.reason === 'coins' ? 'Moedas insuficientes.' : bought.reason === 'inventory' ? INVENTORY_CONFIG.fullMessage : 'Produto esgotado.' };
+    } else if (action === 'buy-n') {
+      const bought = this.market.buyMany(arg, this.inventory, this.economy, arg2 === 'traveler' ? 'traveler' : 'daily', arg3);
+      if (bought.ok) this.campaign?.emit({ type: 'buy', amount: bought.bought });
+      result = bought.ok
+        ? { ok: true, message: `Comprou ${bought.bought}: -${bought.spent} moedas.` }
+        : { ok: false, message: bought.reason === 'coins' ? 'Moedas insuficientes.' : bought.reason === 'inventory' ? INVENTORY_CONFIG.fullMessage : 'Produto esgotado.' };
+    } else if (action === 'sell-multi') {
+      let selection = {};
+      try { selection = JSON.parse(arg); } catch { selection = {}; }
+      const sold = this.market.sellMany(selection, this.inventory, this.economy, this.protectedSellTypes());
+      if (sold.ok) this.campaign?.emit({ type: 'sell', amount: sold.amount });
+      result = sold.ok
+        ? { ok: true, message: `Venda concluída: ${sold.amount} itens, +${sold.coins} moedas.` }
+        : { ok: false, message: sold.reason === 'locked' ? 'Vendas exigem Mercado nível 2.' : 'Nada para vender.' };
     } else if (action === 'sell') {
       const sold = this.market.sell(arg, this.inventory, this.economy);
       if (sold.ok) this.campaign?.emit({ type: 'sell', amount: 1 });

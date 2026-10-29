@@ -12,15 +12,8 @@ export class Inventory {
       INVENTORY_CONFIG.maxSlots,
       Math.max(1, Math.floor(Number(requestedSlots) || INVENTORY_CONFIG.maxSlots))
     );
-    const requestedUnits = options.unitsPerSlot ?? (
-      savedCapacityVersion >= INVENTORY_CONFIG.capacityVersion
-        ? saved.unitsPerSlot
-        : INVENTORY_CONFIG.unitsPerSlot
-    );
-    this.unitsPerSlot = Math.min(
-      INVENTORY_CONFIG.unitsPerSlot,
-      Math.max(1, Math.floor(Number(requestedUnits) || INVENTORY_CONFIG.unitsPerSlot))
-    );
+    // Pilha da mochila: sempre o valor atual da config (saves antigos guardavam 12 por espaço).
+    this.unitsPerSlot = Math.max(1, Math.floor(Number(options.unitsPerSlot) || INVENTORY_CONFIG.unitsPerSlot));
     this.items = Object.fromEntries(Object.keys(RESOURCE_TYPES).map((type) => [type, 0]));
     this.migrationOverflow = {};
     for (const [type, amount] of Object.entries(saved.items ?? {})) {
@@ -31,24 +24,18 @@ export class Inventory {
     this.normalizeLoadedItems();
   }
 
+  slotsFor(amount) {
+    return Math.ceil(Math.max(0, amount) / this.unitsPerSlot);
+  }
+
   normalizeLoadedItems() {
-    const occupiedTypes = Object.entries(this.items)
-      .filter(([, amount]) => amount > 0)
-      .map(([type]) => type);
-    const keptTypes = new Set(occupiedTypes.slice(0, this.maxSlots));
-    let remainingCapacity = this.totalCapacity;
+    let freeSlots = this.maxSlots;
     for (const [type, amount] of Object.entries(this.items)) {
       if (amount <= 0) continue;
-      if (!keptTypes.has(type)) {
-        this.migrationOverflow[type] = amount;
-        this.items[type] = 0;
-        continue;
-      }
-      const kept = Math.min(amount, remainingCapacity);
+      const kept = Math.min(amount, freeSlots * this.unitsPerSlot);
       if (amount > kept) this.migrationOverflow[type] = amount - kept;
       this.items[type] = kept;
-      remainingCapacity -= kept;
-      if (remainingCapacity <= 0) remainingCapacity = 0;
+      freeSlots -= this.slotsFor(kept);
     }
   }
 
@@ -58,12 +45,13 @@ export class Inventory {
     return overflow;
   }
 
+  /** Espaços ocupados: cada tipo usa ceil(quantidade / pilha) espaços. */
   get usedSlots() {
-    return Object.values(this.items).filter((amount) => amount > 0).length;
+    return Object.values(this.items).reduce((sum, amount) => sum + this.slotsFor(amount), 0);
   }
 
   get isFull() {
-    return this.usedSlots >= this.maxSlots || this.total >= this.totalCapacity;
+    return this.usedSlots >= this.maxSlots && Object.values(this.items).every((amount) => amount % this.unitsPerSlot === 0);
   }
 
   get total() {
@@ -74,10 +62,16 @@ export class Inventory {
     return this.maxSlots * this.unitsPerSlot;
   }
 
+  /** Quantas unidades de `type` ainda cabem (conta o resto do espaço parcial). */
+  freeUnitsFor(type) {
+    if (this.items[type] === undefined) return 0;
+    const current = this.items[type];
+    const partial = current % this.unitsPerSlot === 0 ? 0 : this.unitsPerSlot - (current % this.unitsPerSlot);
+    return partial + Math.max(0, this.maxSlots - this.usedSlots) * this.unitsPerSlot;
+  }
+
   canAdd(type, amount = 1) {
-    return this.items[type] !== undefined &&
-      this.usedSlots < this.maxSlots &&
-      this.total + amount <= this.totalCapacity;
+    return this.items[type] !== undefined && amount <= this.freeUnitsFor(type);
   }
 
   add(type, amount = 1) {
@@ -87,31 +81,26 @@ export class Inventory {
   }
 
   canAddBundle(bundle = {}) {
-    if (this.usedSlots >= this.maxSlots) return false;
-    const normalized = [];
-    let addedTotal = this.total;
-    let newTypes = 0;
+    const projected = { ...this.items };
+    let slots = this.usedSlots;
     for (const [type, rawAmount] of Object.entries(bundle)) {
       const amount = Math.max(0, Math.floor(Number(rawAmount) || 0));
       if (amount === 0) continue;
-      if (this.items[type] === undefined) return false;
-      if (this.items[type] === 0) newTypes += 1;
-      addedTotal += amount;
-      normalized.push({ type, amount });
+      if (projected[type] === undefined) return false;
+      slots -= this.slotsFor(projected[type]);
+      projected[type] += amount;
+      slots += this.slotsFor(projected[type]);
     }
-    if (addedTotal > this.totalCapacity) return false;
-    return this.usedSlots + newTypes <= this.maxSlots;
+    return slots <= this.maxSlots;
   }
 
   addBundle(bundle = {}) {
     const accepted = {};
     const remaining = {};
     for (const [type, rawAmount] of Object.entries(bundle)) {
-      let amount = Math.max(0, Math.floor(Number(rawAmount) || 0));
+      const amount = Math.max(0, Math.floor(Number(rawAmount) || 0));
       if (amount === 0) continue;
-      const available = Math.max(0, this.totalCapacity - this.total);
-      const slotAvailable = this.usedSlots < this.maxSlots;
-      const acceptedAmount = slotAvailable ? Math.min(amount, available) : 0;
+      const acceptedAmount = Math.min(amount, this.freeUnitsFor(type));
       if (acceptedAmount > 0) {
         this.items[type] += acceptedAmount;
         accepted[type] = acceptedAmount;

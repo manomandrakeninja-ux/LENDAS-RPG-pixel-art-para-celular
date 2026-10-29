@@ -1,5 +1,6 @@
 import { CONSUMABLES, isConsumable } from '../data/consumables.js';
 import { RESOURCE_TYPES } from './config.js';
+import { formatCount } from './formatCount.js';
 import { resourceIconHtml, textureUrl } from './iconUrls.js';
 
 const USE_LABEL = {
@@ -95,7 +96,10 @@ export class BackpackPanel {
     const scene = this.scene;
     const inventory = scene.inventory;
     const storeAll = Boolean(scene.ui?.storeAllAvailable);
-    const occupied = Object.entries(inventory.items).filter(([, amount]) => amount > 0).slice(0, inventory.maxSlots);
+    // Cada espaço guarda até unitsPerSlot do mesmo item; quantidades maiores ocupam mais espaços.
+    const occupied = Object.entries(inventory.items).filter(([, amount]) => amount > 0).flatMap(([type, amount]) =>
+      Array.from({ length: inventory.slotsFor(amount) }, (_, index) =>
+        [type, Math.min(inventory.unitsPerSlot, amount - index * inventory.unitsPerSlot)])).slice(0, inventory.maxSlots);
     // Só redesenha quando algo muda (o HUD chama refresh a cada quadro).
     const key = JSON.stringify([occupied, storeAll, inventory.maxSlots]);
     if (key === this.lastKey) return;
@@ -110,7 +114,7 @@ export class BackpackPanel {
       return `
         <div class="bag-slot ${usable ? 'bag-slot--usable' : ''}" title="${label}">
           <button type="button" class="bag-slot__look" data-bag="info" data-type="${type}" aria-label="Informações: ${label}">
-            <span class="bag-slot__icon">${resourceIconHtml(scene, type, 32)}<span class="bag-slot__count">${amount}</span></span>
+            <span class="bag-slot__icon">${resourceIconHtml(scene, type, 32)}<span class="bag-slot__count">${formatCount(amount)}</span></span>
             <span class="bag-slot__name">${label}</span>
           </button>
           <div class="bag-slot__info">${describe(type)}</div>
@@ -118,7 +122,7 @@ export class BackpackPanel {
         </div>`;
     }).join('');
     this.grid.innerHTML = slots;
-    this.summary.textContent = `${inventory.usedSlots}/${inventory.maxSlots} espaços • ${inventory.total}/${inventory.totalCapacity} itens`;
+    this.summary.textContent = `${inventory.usedSlots}/${inventory.maxSlots} espaços • ${formatCount(inventory.total)}/${formatCount(inventory.totalCapacity)} itens`;
     const gearButton = '<div class="backpack-panel__gear"><button type="button" data-bag="equipment">EQUIPAMENTO</button><small>Tecla V</small></div>';
     this.footer.innerHTML = (storeAll
       ? `<button type="button" class="button--primary" data-bag="store-all" ${inventory.total === 0 ? 'disabled' : ''}>GUARDAR TUDO NA CASA</button>`

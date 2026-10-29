@@ -1,3 +1,4 @@
+import { scaledAmount, scaledChance } from '../data/dropScale.js';
 import { scaleEnemy } from '../data/enemyScaling.js';
 import Phaser from 'phaser';
 import { COMBAT_CONFIG } from '../data/combat.js';
@@ -348,8 +349,9 @@ export class Enemy extends Phaser.GameObjects.Container {
     const multiplier = (this.isElite ? ELITE_CONFIG.dropMultiplier : 1) *
       (this.isNight ? SPAWNING_CONFIG.nightScaling.dropMultiplier : 1);
     for (const drop of this.definition.drops) {
-      if (Math.random() > drop.chance) continue;
-      const amount = Math.max(1, Math.round(randomBetween(drop.min, drop.max) * multiplier));
+      if (Math.random() > scaledChance(drop, this.definition)) continue;
+      const base = scaledAmount(randomBetween(drop.min, drop.max), drop, this.definition);
+      const amount = Math.max(1, Math.round(base * multiplier));
       drops[drop.type] = (drops[drop.type] ?? 0) + amount;
     }
     return drops;

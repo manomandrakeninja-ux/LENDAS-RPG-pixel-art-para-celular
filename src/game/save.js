@@ -64,9 +64,7 @@ export function migrateSave(data = {}) {
         maxSlots: Number(data.inventory?.capacityVersion) >= INVENTORY_CONFIG.capacityVersion
           ? Math.min(INVENTORY_CONFIG.maxSlots, Math.max(1, Number(data.inventory?.maxSlots) || INVENTORY_CONFIG.maxSlots))
           : INVENTORY_CONFIG.maxSlots,
-        unitsPerSlot: Number(data.inventory?.unitsPerSlot) > 0
-          ? Math.min(INVENTORY_CONFIG.unitsPerSlot, Number(data.inventory.unitsPerSlot))
-          : INVENTORY_CONFIG.unitsPerSlot,
+        unitsPerSlot: INVENTORY_CONFIG.unitsPerSlot,
         items: data.inventory?.items ?? {}
       },
       progression: data.progression ?? {},
