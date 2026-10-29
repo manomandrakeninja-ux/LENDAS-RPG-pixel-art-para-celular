@@ -12,7 +12,11 @@ export const DEFAULT_SETTINGS = Object.freeze({
   labels: 'auto', // auto | always | near
   stickSize: 'medium', // small | medium | large
   stickSide: 'left', // left | right
-  zoom: 'normal' // near | normal | far | farthest (zoom da câmera)
+  zoom: 'normal', // near | normal | far | farthest (zoom da câmera)
+  graphics: 'high', // high | balanced | light (Ajustes > Gráficos)
+  graphicsChosen: false, // false: ainda vale a detecção automática da primeira execução
+  fpsCap30: false, // limite de 30 fps (poupa bateria e CPU)
+  fpsCounter: false // contador de fps na tela
 });
 
 // Tamanho do joystick de toque: diâmetro da base e raio de movimento do dedo (px).
@@ -27,7 +31,8 @@ const CHOICES = {
   labels: ['auto', 'always', 'near'],
   stickSize: ['small', 'medium', 'large'],
   stickSide: ['left', 'right'],
-  zoom: ['near', 'normal', 'far', 'farthest']
+  zoom: ['near', 'normal', 'far', 'farthest'],
+  graphics: ['high', 'balanced', 'light']
 };
 
 function storage() {
@@ -49,6 +54,10 @@ export function normalizeSettings(raw = {}) {
   if (typeof raw.sound === 'boolean') value.sound = raw.sound;
   if (typeof raw.music === 'boolean') value.music = raw.music;
   if (typeof raw.shake === 'boolean') value.shake = raw.shake;
+  if (CHOICES.graphics.includes(raw.graphics)) value.graphics = raw.graphics;
+  if (typeof raw.graphicsChosen === 'boolean') value.graphicsChosen = raw.graphicsChosen;
+  if (typeof raw.fpsCap30 === 'boolean') value.fpsCap30 = raw.fpsCap30;
+  if (typeof raw.fpsCounter === 'boolean') value.fpsCounter = raw.fpsCounter;
   const volume = Number(raw.volume);
   if (Number.isFinite(volume)) value.volume = Math.max(0, Math.min(100, Math.round(volume / 10) * 10));
   return value;

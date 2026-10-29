@@ -515,12 +515,19 @@ export class GameUI {
     }
   }
 
+  /** Modo gráfico: quantidade de gotas de chuva. */
+  setGraphics(profile) {
+    this.rainLimit = profile.rainDrops ?? this.rainDrops.length;
+  }
+
   updateRain() {
     this.rain.clear();
     if (!this.scene.isRaining || this.buildingMenuOpen) return;
     const { width, height } = this.scene.scale;
     this.rain.lineStyle(1, 0xa9d4ff, 0.45);
-    for (const drop of this.rainDrops) {
+    const count = Math.min(this.rainDrops.length, this.rainLimit ?? this.rainDrops.length);
+    for (let index = 0; index < count; index += 1) {
+      const drop = this.rainDrops[index];
       drop.y += drop.speed;
       drop.x -= drop.speed * 0.25;
       if (drop.y > height) {

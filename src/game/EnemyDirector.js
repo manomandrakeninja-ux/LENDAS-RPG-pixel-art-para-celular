@@ -75,7 +75,7 @@ export class EnemyDirector {
   update(delta, player, timeState) {
     this.spawnTimer -= delta;
     const period = timeState.isNight ? 'night' : 'day';
-    const limit = SPAWNING_CONFIG.activeLimit[period];
+    const limit = Math.max(1, Math.round(SPAWNING_CONFIG.activeLimit[period] * (this.scene.gfx?.enemyLimitScale ?? 1)));
     if (this.spawnTimer <= 0) {
       this.spawnTimer = SPAWNING_CONFIG.spawnIntervalMs[period];
       const regular = this.enemies.filter((enemy) => !enemy.isRaider && !enemy.isQuestEnemy && !enemy.isCaveEnemy && !enemy.isInvader).length;
@@ -93,7 +93,7 @@ export class EnemyDirector {
       safeZoneRadius: this.scene.camp?.protectRadius ?? SPAWNING_CONFIG.safeZoneRadius,
       raid: this.scene.raid
     };
-    for (const enemy of [...this.enemies]) enemy.update(delta, player, context);
+    this.updateEnemies(delta, player, context);
 
     // Com a câmera afastada a tela mostra mais mundo: nascer/sumir sempre fora da área visível.
     const reach = this.scene.viewReach?.() ?? 0;
@@ -105,6 +105,33 @@ export class EnemyDirector {
       const wrongPhase = enemy.definition.period === 'night' && period === 'day';
       const wrongPhaseFar = wrongPhase && playerDistance > Math.max(320, reach + 40);
       if (playerDistance > despawnDistance || wrongPhaseFar) this.remove(enemy);
+    }
+  }
+
+  /**
+   * Inimigos bem fora da tela não precisam de um update por quadro: recebem o tempo acumulado a cada N
+   * quadros (N e a distância vêm do modo gráfico). Quem está perto da tela atualiza todo quadro.
+   */
+  updateEnemies(delta, player, context) {
+    const gfx = this.scene.gfx;
+    const every = gfx?.farUpdateEvery ?? 1;
+    this.frame = (this.frame ?? 0) + 1;
+    const reach = (this.scene.viewReach?.() ?? 0) * (gfx?.farUpdateReach ?? 1.6);
+    const reachSquared = reach * reach;
+    for (const enemy of [...this.enemies]) {
+      if (every > 1 && reach > 0 && !enemy.isRaider && !enemy.isQuestEnemy && !enemy.isInvader) {
+        const dx = enemy.x - player.x;
+        const dy = enemy.y - player.y;
+        if (dx * dx + dy * dy > reachSquared) {
+          enemy.pendingDelta = (enemy.pendingDelta ?? 0) + delta;
+          if ((this.frame + (enemy.farSlot ??= Math.floor(Math.random() * every))) % every !== 0) continue;
+          enemy.update(enemy.pendingDelta, player, context);
+          enemy.pendingDelta = 0;
+          continue;
+        }
+      }
+      enemy.pendingDelta = 0;
+      enemy.update(delta, player, context);
     }
   }
 

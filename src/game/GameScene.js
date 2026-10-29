@@ -34,6 +34,7 @@ import { MarketSystem } from './MarketSystem.js';
 import { BuildingMenu } from './BuildingMenu.js';
 import { GameUI } from './UI.js';
 import { World } from './World.js';
+import { GraphicsManager } from './GraphicsManager.js';
 import { WorldMapOverlay } from './WorldMapOverlay.js';
 import { RegionWorld } from './RegionWorld.js';
 import { Bestiary } from './Bestiary.js';
@@ -108,6 +109,9 @@ export class GameScene extends Phaser.Scene {
   }
 
   create() {
+    // Modo gráfico (Ajustes > Gráficos): perfil em this.gfx, resolução interna e limite de fps.
+    this.graphics = new GraphicsManager(this);
+    this.graphics.apply();
     // scene.restart() reaproveita esta instância: o estado de fim de jogo precisa ser zerado.
     this.gameOver = false;
     this.skipSave = false;
@@ -212,6 +216,7 @@ export class GameScene extends Phaser.Scene {
     this.damageFlash = this.add.rectangle(0, 0, this.scale.width, this.scale.height, 0xff6b57, 0)
       .setOrigin(0).setScrollFactor(0).setDepth(OVERLAY_DEPTH + 5000);
     this.lighting = new LightingSystem(this, this.camp);
+    this.graphics.apply();
     this.applyCameraZoom();
 
     this.ui = new GameUI(this);
@@ -671,6 +676,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   updateFrame(_time, delta) {
+    this.graphics?.update(delta);
     if (this.gameOver) {
       this.player.body.setVelocity(0, 0);
       for (const enemy of this.enemies) enemy.body?.setVelocity(0, 0);

@@ -58,6 +58,12 @@ export class ShadowSystem {
     fitScreenRect(this.grade, scene.cameras.main, scene.scale.width, scene.scale.height);
   }
 
+  /** Modo Leve: sem a sombra comprida do sol (ficam só as sombras de contato) e atualização mais espaçada. */
+  setProfile(profile) {
+    this.simple = Boolean(profile.simpleShadows);
+    this.timer = 0;
+  }
+
   register(images = []) {
     for (const image of images) {
       if (!image?.active || this.entries.has(image)) continue;
@@ -153,7 +159,7 @@ export class ShadowSystem {
   update(delta, timeState) {
     this.timer -= delta;
     if (this.timer > 0 || !timeState) return;
-    this.timer = 500;
+    this.timer = this.simple ? 1000 : 500;
     const hour = timeState.hour + (timeState.minute ?? 0) / 60;
     this.current = sunShadow(hour);
     // Prédios do acampamento também fazem sombra (e trocam de desenho ao subir de nível).
@@ -168,7 +174,7 @@ export class ShadowSystem {
         continue;
       }
       if (shadow.frame.name !== image.frame.name) shadow.setFrame(image.frame.name);
-      shadow.setPosition(image.x, image.y).setVisible(image.visible);
+      shadow.setPosition(image.x, image.y).setVisible(image.visible && !this.simple);
       this.apply(shadow);
       const contact = this.contacts.get(image);
       if (contact) this.placeContact(image, contact);

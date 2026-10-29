@@ -220,6 +220,14 @@ export class HarvestStructures {
     }
   }
 
+  /** Modo Leve: árvores, arbustos e cogumelos não balançam. */
+  setBackgroundAnimations(on) {
+    for (const structure of this.state.structures) {
+      if (on) structure.swayTween?.resume?.();
+      else structure.swayTween?.pause?.();
+    }
+  }
+
   createNode(structure) {
     if (structure.node?.active) return structure.node;
     const definition = HARVEST_STRUCTURE_TYPES[structure.type];
@@ -268,6 +276,7 @@ export class HarvestStructures {
         ease: 'Sine.easeInOut'
       });
     }
+    if (this.scene.gfx?.backgroundAnimations === false) structure.swayTween?.pause();
     this.setNodeVisibility(structure, definition);
     return node;
   }

@@ -111,9 +111,28 @@ export class PixelEffects {
     });
   }
 
+  /** Modo gráfico: fração das partículas (folhas, vaga-lumes, faíscas e poeira). */
+  setProfile(profile) {
+    this.particleScale = profile.particleScale ?? 1;
+    const scale = this.particleScale;
+    for (const emitter of [this.sparkEmitter, this.dustEmitter]) {
+      if (!emitter) continue;
+      emitter.__emit ??= emitter.emitParticleAt.bind(emitter);
+      emitter.emitParticleAt = scale >= 1
+        ? emitter.__emit
+        : (x, y, count = 1) => {
+          const wanted = count * this.particleScale;
+          const whole = Math.floor(wanted);
+          const total = whole + (Math.random() < wanted - whole ? 1 : 0);
+          return total > 0 ? emitter.__emit(x, y, total) : undefined;
+        };
+    }
+  }
+
   updateAmbient(delta, { isNight, camera, player }) {
-    this.leafTimer -= delta;
-    this.fireflyTimer -= delta;
+    const rate = this.particleScale ?? 1;
+    this.leafTimer -= delta * rate;
+    this.fireflyTimer -= delta * rate;
 
     if (this.leafTimer <= 0) {
       this.leafTimer = randomBetween(420, 900);

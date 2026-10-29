@@ -22,6 +22,8 @@ export class LightingSystem {
     this.camp = camp;
     this.updateTimer = 0;
     this.clock = 0;
+    this.interval = 90;
+    this.simple = false;
     this.key = 'phase1-light-mask';
     this.glowKey = 'phase20-light-glow';
     this.width = 0;
@@ -39,6 +41,18 @@ export class LightingSystem {
     this.resize();
   }
 
+  /** Modo gráfico: intervalo entre redesenhos e luz simples (gradientes fixos, sem máscara por pixel). */
+  setProfile(profile) {
+    this.interval = profile.lightInterval ?? 90;
+    const simple = Boolean(profile.lightSimple);
+    if (simple === this.simple) return;
+    this.simple = simple;
+    const filter = simple ? Phaser.Textures.FilterMode.LINEAR : Phaser.Textures.FilterMode.NEAREST;
+    this.texture.setFilter(filter);
+    this.glowTexture.setFilter(filter);
+    this.updateTimer = 0;
+  }
+
   resize() {
     const width = Math.max(8, Math.ceil(this.scene.scale.width / CELL));
     const height = Math.max(8, Math.ceil(this.scene.scale.height / CELL));
@@ -51,6 +65,8 @@ export class LightingSystem {
       this.glowContext = this.glowTexture.getContext();
       this.light = new Float32Array(width * height);
       this.glow = new Float32Array(width * height * 3);
+      this.maskData = null;
+      this.haloData = null;
     }
     this.place();
   }
@@ -78,8 +94,9 @@ export class LightingSystem {
     this.clock += delta;
     this.updateTimer -= delta;
     if (this.updateTimer > 0) return;
-    this.updateTimer = 90;
-    this.draw(state.lightLevel, player);
+    this.updateTimer = this.interval;
+    if (this.simple) this.drawSimple(state.lightLevel, player);
+    else this.draw(state.lightLevel, player);
   }
 
   /** Fontes do quadro: herói, acampamento e mundo, com tipo (cor do halo) e tremulação. */
@@ -125,7 +142,7 @@ export class LightingSystem {
     const flicker = 1 + 0.03 * (Math.sin(t * 7.3) * 0.6 + Math.sin(t * 19.1) * 0.4);
     for (let y = y0; y <= y1; y += 1) {
       for (let x = x0; x <= x1; x += 1) {
-        const distance = Math.hypot(x + 0.5 - cx, y + 0.5 - cy);
+        const distance = Math.sqrt((x + 0.5 - cx) ** 2 + (y + 0.5 - cy) ** 2);
         if (distance >= reach) continue;
         // 1 dentro do raio; depois cai em degraus suaves até a escuridão.
         const edge = distance <= radius ? 0 : (distance - radius) / fade;
@@ -183,7 +200,7 @@ export class LightingSystem {
       const glowReach = (radius + falloff * 0.5) * 0.9;
       for (let y = y0; y <= y1; y += 1) {
         for (let x = x0; x <= x1; x += 1) {
-          const distance = Math.hypot(x + 0.5 - cx, (y + 0.5 - cy) * 1.15);
+          const distance = Math.sqrt((x + 0.5 - cx) ** 2 + ((y + 0.5 - cy) * 1.15) ** 2);
           if (distance >= reach) continue;
           const index = y * width + x;
           const band = lightBand(distance, radius, falloff);
@@ -202,10 +219,14 @@ export class LightingSystem {
 
     this.lightCampArea(light, glow, camera, glowScale, t);
 
-    const mask = this.context.createImageData(width, height);
-    const halo = this.glowContext.createImageData(width, height);
+    // Os buffers de pixels são reaproveitados (nada de alocar duas imagens a cada redesenho).
+    this.maskData ??= this.context.createImageData(width, height);
+    this.haloData ??= this.glowContext.createImageData(width, height);
+    const mask = this.maskData;
+    const halo = this.haloData;
     const pixels = mask.data;
     const haloPixels = halo.data;
+    haloPixels.fill(0);
     // Vinheta leve: escurece os cantos (mais à noite), em degraus como a luz.
     const vignetteMax = 18 + 30 * level;
     for (let y = 0; y < height; y += 1) {
@@ -240,6 +261,83 @@ export class LightingSystem {
     this.context.putImageData(mask, 0, 0);
     this.texture.refresh();
     this.glowContext.putImageData(halo, 0, 0);
+    this.glowTexture.refresh();
+  }
+  /**
+   * Luz simples (modo Leve): a escuridão da noite é um retângulo com gradientes radiais "furados" em volta das
+   * fontes de luz, e o halo quente é uma soma de gradientes. Sem passar por cada pixel em JavaScript.
+   */
+  drawSimple(lightLevel, player) {
+    this.place();
+    const width = this.width;
+    const height = this.height;
+    const camera = this.scene.cameras.main;
+    const level = Math.min(1, Math.max(0, lightLevel));
+    const night = NIGHT_ALPHA * level ** 1.4 / 255;
+    const warm = (1 - level) * 0.85;
+    const deep = DARK_DEEP.map((value, index) => Math.round(value + (DARK_DUSK[index] - value) * warm));
+    const glowScale = 0.1 + 0.9 * level;
+    const context = this.context;
+    const glowContext = this.glowContext;
+    context.globalCompositeOperation = 'source-over';
+    context.clearRect(0, 0, width, height);
+    glowContext.clearRect(0, 0, width, height);
+    if (night > 0.01) {
+      context.fillStyle = `rgba(${deep[0]},${deep[1]},${deep[2]},${night.toFixed(3)})`;
+      context.fillRect(0, 0, width, height);
+      context.globalCompositeOperation = 'destination-out';
+    }
+    const scale = camera.zoom / CELL;
+    const t = this.clock / 1000;
+    const hole = (cx, cy, inner, outer, strength = 1) => {
+      if (cx + outer < 0 || cy + outer < 0 || cx - outer > width || cy - outer > height) return;
+      const gradient = context.createRadialGradient(cx, cy, inner, cx, cy, outer);
+      gradient.addColorStop(0, `rgba(0,0,0,${strength})`);
+      gradient.addColorStop(1, 'rgba(0,0,0,0)');
+      context.fillStyle = gradient;
+      context.fillRect(cx - outer, cy - outer, outer * 2, outer * 2);
+    };
+    const halo = (cx, cy, radius, rgb, alpha) => {
+      if (alpha <= 0.005 || cx + radius < 0 || cy + radius < 0 || cx - radius > width || cy - radius > height) return;
+      const gradient = glowContext.createRadialGradient(cx, cy, 0, cx, cy, radius);
+      gradient.addColorStop(0, `rgba(${rgb[0]},${rgb[1]},${rgb[2]},${alpha.toFixed(3)})`);
+      gradient.addColorStop(1, `rgba(${rgb[0]},${rgb[1]},${rgb[2]},0)`);
+      glowContext.fillStyle = gradient;
+      glowContext.fillRect(cx - radius, cy - radius, radius * 2, radius * 2);
+    };
+    glowContext.globalCompositeOperation = 'lighter';
+    for (const source of this.sources(player)) {
+      const kind = source.kind ? KIND[source.kind] ?? KIND.lamp : null;
+      const flicker = kind ? 1 + kind.flicker * Math.sin(t * 9.1 + (source.seed ?? 0)) : 1;
+      const cx = (source.x - camera.worldView.x) * scale;
+      const cy = (source.y - camera.worldView.y) * scale;
+      const radius = source.radius * flicker / CELL * camera.zoom;
+      const falloff = source.falloff / CELL * camera.zoom;
+      if (night > 0.01) hole(cx, cy, radius * 0.6, radius + falloff);
+      if (kind) {
+        const ramp = HALO_RGB[source.kind] ?? HALO_RGB.lamp;
+        halo(cx, cy, (radius + falloff * 0.5) * 0.9, ramp[Math.min(2, ramp.length - 1)], Math.min(1, kind.glow * glowScale * flicker * 0.5));
+      }
+    }
+    const area = this.camp.getLightArea?.();
+    if (area) {
+      const cx = (area.x - camera.worldView.x) * scale;
+      const cy = (area.y - camera.worldView.y) * scale;
+      const radius = area.radius * scale;
+      const fade = Math.max(70, area.radius * 0.3) * scale;
+      if (night > 0.01) hole(cx, cy, radius, radius + fade);
+      halo(cx, cy, radius + fade, HALO_RGB.lamp[2], 0.1 * glowScale);
+    }
+    // Vinheta fixa nos cantos.
+    context.globalCompositeOperation = 'source-over';
+    const vignette = (18 + 30 * level) / 255;
+    const corner = context.createRadialGradient(width / 2, height / 2, Math.min(width, height) * 0.45, width / 2, height / 2, Math.hypot(width, height) / 2);
+    corner.addColorStop(0, 'rgba(14,7,27,0)');
+    corner.addColorStop(1, `rgba(14,7,27,${vignette.toFixed(3)})`);
+    context.fillStyle = corner;
+    context.fillRect(0, 0, width, height);
+    glowContext.globalCompositeOperation = 'source-over';
+    this.texture.refresh();
     this.glowTexture.refresh();
   }
 }

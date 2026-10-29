@@ -59,7 +59,7 @@ export class WorldTexts {
       if (Math.abs(text.scaleX - scale) > 0.001) text.setScale(scale);
       // Resolução proporcional ao tamanho final na tela (e ao DPR): sem borrar.
       const resolution = Math.min(6, Math.max(2, Math.ceil(screen * this.dpr)));
-      if (text.resolution !== resolution) text.setResolution(resolution);
+      if (text.style.resolution !== resolution) text.setResolution(resolution);
       if (text.keepOnScreen) this.keepOnScreen(text, screen, zoom, camera);
     }
   }

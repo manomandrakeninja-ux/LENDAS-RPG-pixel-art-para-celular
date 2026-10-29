@@ -134,6 +134,7 @@ export class World {
       repeat: -1,
       ease: 'Sine.easeInOut'
     });
+    if (this.scene.gfx?.backgroundAnimations === false) bob.pause();
     const hint = this.scene.add.text(x, y - 25, 'E', {
       fontFamily: 'Press Start 2P', fontSize: '8px', color: '#fff3cf',
       backgroundColor: '#26392dcc', padding: { x: 4, y: 3 }
@@ -143,6 +144,16 @@ export class World {
       ? Phaser.Math.Between(amountConfig.amount[0], amountConfig.amount[1])
       : 1;
     return { type, x, y, amount, definition: amountConfig, node, glow, bob, hint };
+  }
+
+  /** Modo Leve: o balanço dos recursos fica parado. */
+  setBackgroundAnimations(on) {
+    for (const resource of [...this.resources, ...this.nightResources]) {
+      const bob = resource.bob;
+      if (!bob || !resource.node?.active) continue;
+      if (on) bob.resume?.();
+      else bob.pause?.();
+    }
   }
 
   revealAround(x, y) {

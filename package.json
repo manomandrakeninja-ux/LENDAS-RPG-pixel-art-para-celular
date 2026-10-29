@@ -32,6 +32,8 @@
     "test:runtime:campaign": "node scripts/campaign-runtime-check.mjs",
     "test:runtime:evolution": "node scripts/evolution-runtime-check.mjs",
     "test:runtime:iteminfo": "node scripts/iteminfo-runtime-check.mjs",
+    "test:runtime:graphics": "node scripts/graphics-runtime-check.mjs",
+    "test:runtime:perf": "node scripts/perf-runtime-check.mjs",
     "test:runtime:settings": "node scripts/settings-runtime-check.mjs",
     "test:runtime:fixes": "node scripts/fixes-runtime-check.mjs",
     "test:runtime:story": "node scripts/story-runtime-check.mjs",

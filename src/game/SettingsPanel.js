@@ -3,6 +3,7 @@ import { detectTouchMode } from './TouchControls.js';
 import { loadSettings, saveSettings } from './Settings.js';
 import { exportSaveCode, importSaveCode } from './saveBackup.js';
 import { ACTION_LABELS, KEY_ACTIONS, DEFAULT_KEYBINDS, keyLabel, loadKeybinds, rebind, saveKeybinds } from './Keybinds.js';
+import { GRAPHICS_LABELS, GRAPHICS_NOTES } from './graphics.js';
 import { HERO_LABELS, HERO_SKINS, heroTexture } from './HeroStyle.js';
 import { heroFrameSize } from '../art/skins.js';
 import { HERO_COLS } from '../art/heroRig.js';
@@ -34,6 +35,9 @@ const OPTIONS = {
   labels: [['auto', 'Automático'], ['always', 'Sempre'], ['near', 'Só de perto']],
   stickSize: [['small', 'Pequeno'], ['medium', 'Médio'], ['large', 'Grande']],
   stickSide: [['left', 'Esquerda'], ['right', 'Direita']],
+  graphics: [['high', GRAPHICS_LABELS.high], ['balanced', GRAPHICS_LABELS.balanced], ['light', GRAPHICS_LABELS.light]],
+  fpsCap30: [[false, 'Livre (60)'], [true, 'Limitar a 30']],
+  fpsCounter: [[false, 'Escondido'], [true, 'Mostrar']],
   zoom: [['near', 'Perto'], ['normal', 'Normal'], ['far', 'Longe'], ['farthest', 'Muito longe']],
 };
 
@@ -114,7 +118,10 @@ export class SettingsPanel {
         this.scene.save();
         this.scene.ui?.showMessage('Jogo salvo.');
       } else if (action === 'volume') this.set('volume', this.settings.volume + Number(value));
-      else this.set(action, value === 'true' ? true : value === 'false' ? false : value);
+      else {
+        if (action === 'graphics') this.settings = { ...this.settings, graphicsChosen: true };
+        this.set(action, value === 'true' ? true : value === 'false' ? false : value);
+      }
     };
     this.handleChange = async (event) => {
       const input = event.target.closest?.('[data-backup-file]');
@@ -209,6 +216,7 @@ export class SettingsPanel {
     }
     if (scene.touch?.enabled) scene.touch.applyLayout(this.settings);
     scene.applyCameraZoom?.(this.settings.zoom);
+    scene.graphics?.apply();
     scene.ui?.resize?.();
   }
 
@@ -358,6 +366,9 @@ export class SettingsPanel {
       ${this.choiceRow('interface', 'Interface', `Agora: ${touch ? 'celular (controles de toque)' : 'computador (teclado e mouse)'}.${forcedByUrl ? ' O endereço da página está forçando um modo.' : ''}`)}
       ${this.choiceRow('zoom', 'Zoom da câmera', 'Longe mostra mais mapa e deixa os personagens menores.')}
       ${this.skinsRow()}
+      ${this.choiceRow('graphics', 'Gráficos', `${GRAPHICS_NOTES[this.settings.graphics]}${this.scene.graphics?.suggestion ? ` Sugerido para este aparelho: ${GRAPHICS_LABELS[this.scene.graphics.suggestion]}.` : ''}`)}
+      ${this.choiceRow('fpsCap30', 'Limite de quadros', 'Limitar a 30 fps gasta menos bateria e esquenta menos.')}
+      ${this.choiceRow('fpsCounter', 'Contador de fps', 'Mostra os quadros por segundo no canto da tela.')}
       ${this.choiceRow('sound', 'Som', '')}
       ${this.choiceRow('music', 'Música', 'Melodia simples de cada região.')}
       <div class="settings-panel__row">
