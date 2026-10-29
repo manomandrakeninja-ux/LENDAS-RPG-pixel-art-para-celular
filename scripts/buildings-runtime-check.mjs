@@ -119,7 +119,7 @@ await runInChrome({ name: 'buildings', port: 9351 }, async ({ inScene, capture, 
   check(complete.dungeon && complete.dungeonSprite, 'A masmorra não foi marcada.');
   check(complete.plots === 8 && complete.storageSlots === null && complete.wallHp === 20000 && complete.towers === 4,
     `Efeitos do nível 10 errados: ${JSON.stringify(complete)}`);
-  check(complete.fireRadius === 340 && complete.fireResistance >= 0.6, `Fogueira lendária: ${JSON.stringify(complete)}`);
+  check(complete.fireRadius === 440 && complete.fireResistance >= 0.6, `Fogueira lendária: ${JSON.stringify(complete)}`);
 
   await inScene((scene) => {
     scene.player.body.reset(scene.camp.x, scene.camp.y + 200);

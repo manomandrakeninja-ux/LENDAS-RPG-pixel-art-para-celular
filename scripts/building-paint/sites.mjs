@@ -3,13 +3,15 @@
 import {
   C, STONE, STONE_COOL, STONE_DARK, WOOD, WOOD_DARK, ROOF_RED, ROOF_SLATE, THATCH,
   rng, rect, px, line, ellipse, fillPoly, clip, veil, stones, planks, logs, tiles, thatch, mossBand, mossPatches,
-  windowLit, door, barrel, crate, sack, lanternBox, box, gableRoof, frontGable, baseShade, grassTufts, mixHex
+  windowLit, door, barrel, crate, sack, lanternBox, box, gableRoof, frontGable, baseShade, grassTufts, mixHex, enlarge, scaled
 } from './kit.mjs';
+import { bigDoor, bigWindow, wallLantern, eaveShade, wallLight } from './camp.mjs';
+import { cave } from './region.mjs';
 
 const GOLD = { dark: C.r0, mid: C.f2, light: C.f3, hi: C.f4 };
 
 /** Rocha arredondada com luz de cima-esquerda e textura. */
-function boulder(ctx, pts, { pal = STONE, seed = 1, light = [0.3, 0.25] } = {}) {
+export function boulder(ctx, pts, { pal = STONE, seed = 1, light = [0.3, 0.25] } = {}) {
   fillPoly(ctx, pts, pal.tones[0]);
   const xs = pts.map((p) => p[0]); const ys = pts.map((p) => p[1]);
   const [x0, x1, y0, y1] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)];
@@ -149,17 +151,19 @@ function signPost(ctx) {
 }
 
 function cabin(ctx) {
-  // Cabana do eremita: toras, telhado de ripas com musgo, janela acesa, varal de ervas.
-  const x = 7; const base = 35; const w = 24; const h = 11; const d = 12;
-  const { fy } = box(ctx, { x, base, w, h, d, front: (c, ww, hh) => logs(c, ww, hh, { seed: 2 }), side: (c, ww, hh) => logs(c, ww, hh, { seed: 3, ends: false }) });
-  gableRoof(ctx, { x, wallTop: fy, w, d, rise: 10, over: 3, drop: 2, roof: (c, ww, hh) => tiles(c, ww, hh, { pal: { line: C.w1, dark: C.w2, tones: [C.wg2, C.w3, C.wg2], light: C.w4, hi: C.w5 }, seed: 3, moss: 0.9 }), gable: (c, ww, hh) => logs(c, ww, hh, { seed: 4, ends: false }) });
-  door(ctx, x + 4, base - 9, 5, 9, { arch: false, step: false });
-  windowLit(ctx, x + 14, base - 8, 5, 4, { shutters: false });
-  rect(ctx, x + 12, base - 10, 9, 1, C.w2);
-  for (let k = 0; k < 4; k += 1) { rect(ctx, x + 13 + k * 2, base - 10, 1, 2, C.m2); px(ctx, x + 13 + k * 2, base - 8, C.m3); }
-  baseShade(ctx, x, base, w, 3);
-  barrel(ctx, x + w + 3, base + 1, { w: 5, h: 6 });
-  grassTufts(ctx, 2, base + 1, 36, { seed: 8, flowers: 0.2 });
+  // Cabana do eremita: toras grossas, telhado de ripas com muito musgo, janela acesa, varal de ervas, lenha e barril.
+  const x = 22; const base = 135; const w = 92; const h = 80; const d = 30;
+  const { fy } = box(ctx, { x, base, w, h, d, front: (c, ww, hh) => logs(c, ww, hh, { seed: 2, size: 8 }), side: (c, ww, hh) => logs(c, ww, hh, { seed: 3, size: 8, ends: false }) });
+  eaveShade(ctx, x, fy, w);
+  gableRoof(ctx, { x, wallTop: fy, w, d, rise: 22, over: 7, drop: 6, roof: (c, ww, hh) => tiles(c, ww, hh, { pal: { line: C.w1, dark: C.w2, tones: [C.wg2, C.w3, C.wg2], light: C.w4, hi: C.w5 }, seed: 3, moss: 1.2, rowH: 5, tileW: 7 }), gable: (c, ww, hh) => logs(c, ww, hh, { seed: 4, size: 8, ends: false }) });
+  bigDoor(ctx, x + 10, base - 72, 28, 72, { arch: false, step: false, seed: 4 });
+  bigWindow(ctx, x + 54, fy + 22, 22, 18, { seed: 5 });
+  rect(ctx, x + 48, fy + 12, 34, 2, C.w2);
+  for (let k = 0; k < 6; k += 1) { line(ctx, x + 51 + k * 5, fy + 13, x + 51 + k * 5, fy + 18, C.w2, 1); ellipse(ctx, x + 51 + k * 5, fy + 21, 1.8, 3.6, k % 2 ? C.m2 : C.m3); }
+  wallLantern(ctx, x + 42, base - 64);
+  wallLight(ctx, x, fy, w, base);
+  scaled(ctx, x + w + 18, base + 2, 3.2, () => barrel(ctx, 0, 0, { w: 6, h: 7 }));
+  grassTufts(ctx, 2, base + 2, 140, { seed: 8, flowers: 0.2 });
 }
 
 function fountain(ctx) {
@@ -268,9 +272,9 @@ function crypt(ctx) {
   // Cruz/emblema no frontão.
   rect(ctx, x + w / 2 - 0.5, fy - 9, 1, 6, C.g4); rect(ctx, x + w / 2 - 2, fy - 7, 4, 1, C.g4);
   for (const cx of [x + 4, x + w - 7]) { rect(ctx, cx, fy + 2, 3, h - 2, C.g3); rect(ctx, cx, fy + 2, 1, h - 2, C.g4); rect(ctx, cx + 2, fy + 2, 1, h - 2, C.g1); rect(ctx, cx - 1, fy + 1, 5, 1, C.g4); }
-  rect(ctx, x + 12, base - 14, 12, 14, C.ink); ellipse(ctx, x + 18, base - 14, 6, 3, C.ink);
-  for (let k = x + 13; k < x + 24; k += 2) rect(ctx, k, base - 15, 1, 15, C.g1);
-  rect(ctx, x + 12, base - 9, 12, 1, C.g2);
+  rect(ctx, x + 12, base - 19, 12, 19, C.ink); ellipse(ctx, x + 18, base - 19, 6, 2.6, C.ink);
+  for (let k = x + 13; k < x + 24; k += 2) rect(ctx, k, base - 20, 1, 20, C.g1);
+  rect(ctx, x + 12, base - 12, 12, 1, C.g2);
   for (const cx of [x + 9, x + 27]) { rect(ctx, cx, base - 3, 2, 3, C.paper); torchFlame(ctx, cx + 1, base - 3, 0.5); }
   veil(ctx, [[x, fy], [x + w, fy], [x + w, base], [x, base]], x, fy, x + w, base, [[0, 'rgba(255,236,190,0.08)'], [1, 'rgba(26,25,50,0.3)']]);
   grassTufts(ctx, 2, base + 1, 44, { seed: 9 });
@@ -342,10 +346,10 @@ function fortress(ctx) {
     rect(ctx, x + 4, 14, 2, 4, C.f1); px(ctx, x + 4, 14, C.f3);
     veil(ctx, [[x, 6], [x + 10, 6], [x + 10, 44], [x, 44]], x, 0, x + 10, 0, [[0, 'rgba(255,236,190,0.1)'], [1, 'rgba(26,25,50,0.45)']]);
   }
-  rect(ctx, 18, 28, 12, 16, C.night); ellipse(ctx, 24, 28, 6, 3, C.night);
-  for (let k = 19; k < 30; k += 2) rect(ctx, k, 26, 1, 18, C.g1);
-  rect(ctx, 18, 33, 12, 1, C.g1);
-  rect(ctx, 22, 19, 4, 3, C.f1); px(ctx, 22, 19, C.f3);
+  rect(ctx, 18, 26, 12, 18, C.night); ellipse(ctx, 24, 26, 6, 3, C.night);
+  for (let k = 19; k < 30; k += 2) rect(ctx, k, 24, 1, 20, C.g1);
+  rect(ctx, 18, 31, 12, 1, C.g1);
+  rect(ctx, 22, 18, 4, 3, C.f1); px(ctx, 22, 18, C.f3);
   rect(ctx, 23.5, 6, 1, 8, C.w1); fillPoly(ctx, [[24.5, 6], [31, 8], [24.5, 10]], C.r1);
   grassTufts(ctx, 0, 44, 48, { seed: 2, density: 0.2 });
 }
@@ -448,8 +452,19 @@ function dungeonEntrance(ctx) {
 }
 
 const S = (size, paint) => ({ w: size, h: size, paint, shadow: [size / 2, Math.round(size * 0.9), size * 0.42, Math.max(1.6, size / 16)] });
+const big = (spec, k) => enlarge(spec, k);
 
-export const SITE_PIECES = {
+// Item 19: escala de cada local para a escala do herói (56x64). Porta/abertura ~1,2–1,3x o herói em cabana,
+// cripta, fortaleza, mina, portal e masmorra; o resto proporcional (baú ~0,5x, poço ~1,2x, tenda ~1,6x).
+export const SITE_SCALE = {
+  'site-well': 2.25, 'site-crates': 2, 'site-cart': 2.4, 'site-tent': 3, 'site-merchantTent': 3, 'site-banner': 2.5,
+  'site-sign': 2, 'site-fountain': 2.4, 'site-ruins': 2.5, 'site-pillar': 2.5, 'site-pillarLit': 2.5, 'site-altar': 2.2,
+  'site-bridge': 2.5, 'site-bridgeFixed': 2.5, 'site-crypt': 3.6, 'site-tomb': 2, 'site-mine': 3.5, 'site-anvil': 1.75,
+  'site-fortress': 4, 'site-portal': 2.2, 'site-books': 2, 'site-mural': 2.5, 'site-chestSmall': 1.5, 'harvest-chest': 1.5,
+  'harvest-mineMarker': 4.5, 'dungeon-entrance': 3
+};
+
+const BASE_SITES = {
   'site-well': S(32, well),
   'site-crates': S(32, crates),
   'site-cart': S(40, cart),
@@ -457,7 +472,6 @@ export const SITE_PIECES = {
   'site-merchantTent': S(32, tentPaint([C.r0, C.wine, C.red], C.f3)),
   'site-banner': S(32, bannerPost),
   'site-sign': S(32, signPost),
-  'site-cabin': S(40, cabin),
   'site-fountain': S(40, fountain),
   'site-ruins': S(48, ruins),
   'site-pillar': S(32, (c) => pillar(c, false)),
@@ -477,4 +491,12 @@ export const SITE_PIECES = {
   'harvest-chest': S(32, chest),
   'harvest-mineMarker': { w: 32, h: 32, shadow: [16, 29, 15, 2.4], paint: mineMarker },
   'dungeon-entrance': { w: 40, h: 30, shadow: [20, 28, 18, 2], paint: dungeonEntrance }
+};
+
+export const SITE_PIECES = {
+  ...Object.fromEntries(Object.entries(BASE_SITES).map(([k, v]) => [k, big(v, SITE_SCALE[k])])),
+  'site-cabin': { w: 144, h: 150, paint: cabin, shadow: [72, 136, 60, 6] },
+  // Mina do Vale e mina da campanha: a mesma boca de mina escorada da caverna "earth" (192x160, boca ~1,4x o herói).
+  'site-mine': { w: 192, h: 160, paint: cave('earth'), shadow: [96, 148, 86, 7] },
+  'harvest-mineMarker': { w: 192, h: 160, paint: cave('earth'), shadow: [96, 148, 86, 7] }
 };

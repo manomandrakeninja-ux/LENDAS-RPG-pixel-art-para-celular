@@ -528,7 +528,9 @@ export class CampaignSystem {
       const def = site.def;
       if (['marker', 'enemies', 'boss', 'defend', 'assault'].includes(def.kind)) continue;
       const distance = Phaser.Math.Distance.Between(player.x, player.y, def.x, def.y);
-      if (distance < bestDistance + 8) {
+      // Item 19: a arte cresceu (escala do herói); quem está encostado num local largo também alcança.
+      const reach = 8 + Math.max(0, (site.sprite?.displayWidth ?? 0) - 64) * 0.25;
+      if (distance < bestDistance + reach) {
         const verbs = { source: 'Coletar em', loot: 'Revistar', investigate: 'Investigar', rescue: 'Resgatar', talk: 'Falar em', pillar: 'Ativar', choice: 'Decidir em', echo: 'Ouvir' };
         best = { type: 'site', id, label: `${verbs[def.kind] ?? 'Usar'} ${def.name}` };
         bestDistance = distance;
@@ -923,7 +925,7 @@ export class CampaignSystem {
     const created = this.spawnGroup(site, spec, count);
     created.forEach((enemy, index) => {
       const angle = (index / count) * Math.PI * 2;
-      enemy.body.reset(scene.camp.x + Math.cos(angle) * 460, scene.camp.y + Math.sin(angle) * 380);
+      enemy.body.reset(scene.camp.x + Math.cos(angle) * 540, scene.camp.y + Math.sin(angle) * 470);
     });
     scene.showEpic?.(site.def.name.toUpperCase(), 'Inimigos se aproximam do acampamento!', 3000);
   }

@@ -1,11 +1,11 @@
 // Prédios do acampamento (atlas "buildings"): casa, ferreiro, fazenda e mercado em 3 estágios,
-// fogueira (3 estágios x 4 quadros), cerca e lampião. Tamanhos e bases iguais aos antigos:
-// 64 x 64 com a base da parede em y≈55 e 80 x 80 com a base em y≈69 (origem 0.5, 0.84).
+// fogueira (3 estágios x 4 quadros), cerca e lampião. Item 19 (escala do herói, 56x64): estágio 1 em
+// 144x150 (base y=126), estágio 4 em 168x176 (base 148), estágio 8 em 200x200 (base 168); origem 0.5, 0.84.
 import {
   C, STONE, STONE_COOL, STONE_DARK, WOOD, WOOD_DARK, WOOD_RED, ROOF_RED, ROOF_SLATE, ROOF_BLUE, ROOF_WOOD, THATCH,
   rng, rect, px, line, ellipse, fillPoly, clip, veil, stones, planks, logs, tiles, thatch, mossBand, mossPatches,
   windowLit, windowDark, door, barrel, crate, sack, woodpile, hangingSign, lanternBox, chimney, box, gableRoof, frontGable,
-  baseShade, grassTufts, mixHex, KX, KY
+  baseShade, grassTufts, mixHex, KX, KY, scaled, enlarge
 } from './kit.mjs';
 
 // ---------- Materiais compostos ----------
@@ -15,7 +15,7 @@ function plaster(ctx, w, h, { seed = 21, tone = C.cream } = {}) {
   const r = rng(seed);
   rect(ctx, 0, 0, w, h, tone);
   for (let i = 0; i < w * h / 6; i += 1) px(ctx, r.int(0, w - 1), r.int(0, h - 1), r() < 0.6 ? C.peach : C.paper);
-  for (let i = 0; i < 2; i += 1) {
+  for (let i = 0; i < Math.max(2, Math.round(w * h / 500)); i += 1) {
     const x = r.int(2, w - 6); const y = r.int(2, h - 4);
     rect(ctx, x, y, 4, 2, C.w5); rect(ctx, x, y, 4, 1, C.w4); px(ctx, x + 2, y + 1, C.w3);
   }
@@ -23,18 +23,24 @@ function plaster(ctx, w, h, { seed = 21, tone = C.cream } = {}) {
 }
 
 /** Enxaimel: vigas de madeira escura sobre o reboco. */
-function timber(ctx, w, h, posts, { diag = true, beam = 2 } = {}) {
+function timber(ctx, w, h, posts, { diag = true, beam = 2, pw = 2, seed = 5 } = {}) {
   const P = WOOD_DARK;
+  const r = rng(seed);
   rect(ctx, 0, 0, w, beam, P.tones[0]); rect(ctx, 0, 0, w, 1, P.light);
   rect(ctx, 0, h - beam, w, beam, P.tones[0]); rect(ctx, 0, h - beam, w, 1, P.light); rect(ctx, 0, h - 1, w, 1, P.gap);
-  for (const x of posts) { rect(ctx, x, 0, 2, h, P.tones[0]); rect(ctx, x, 0, 1, h, P.light); rect(ctx, x + 2, 0, 1, h, 'rgba(28,18,28,0.35)'); }
+  if (beam > 3) for (let x = r.int(2, 9); x < w; x += r.int(6, 14)) { rect(ctx, x, 2, r.int(3, 7), 1, P.dark); rect(ctx, x + 2, h - beam + 2, r.int(3, 6), 1, P.dark); }
   if (diag) {
     for (let i = 0; i < posts.length - 1; i += 1) {
-      const a = posts[i] + 2; const b = posts[i + 1];
-      if (b - a < 8) continue;
-      line(ctx, a, beam, a + 4, h - beam, P.tones[0], 1.6);
-      line(ctx, b, beam, b - 4, h - beam, P.tones[0], 1.6);
+      const a = posts[i] + pw; const b = posts[i + 1];
+      if (b - a < 8 + pw * 2) continue;
+      const lean = pw > 2 ? (b - a) * 0.35 : 4;
+      line(ctx, a, beam, a + lean, h - beam, P.tones[0], pw > 2 ? pw - 1 : 1.6);
+      line(ctx, b, beam, b - lean, h - beam, P.tones[0], pw > 2 ? pw - 1 : 1.6);
     }
+  }
+  for (const x of posts) {
+    rect(ctx, x, 0, pw, h, P.tones[0]); rect(ctx, x, 0, 1, h, P.light); rect(ctx, x + pw, 0, 1, h, 'rgba(28,18,28,0.35)');
+    if (pw > 2) { rect(ctx, x + pw - 1, 0, 1, h, P.dark); for (let y = r.int(2, 8); y < h; y += r.int(5, 11)) rect(ctx, x + 1 + r.int(0, pw - 3), y, 1, r.int(2, 5), P.dark); px(ctx, x + Math.floor(pw / 2), beam + 1, C.g1); px(ctx, x + Math.floor(pw / 2), h - beam - 2, C.g1); }
   }
 }
 
@@ -63,93 +69,538 @@ function eaveShadow(ctx, x, y, w) {
   rect(ctx, x, y + 2, w, 1, 'rgba(26,25,50,0.2)');
 }
 
+// ---------- Item 19: peças na escala do herói (56x64, ~58 px de altura) ----------
+// Porta ~1,3x o herói (72–76 px), casa 2–3x. Tudo pintado em pixels finais (materiais no pixel final);
+// props pequenos (barril, caixote, saco, bigorna...) usam `scaled` sobre o desenho antigo.
+
+/** Sombra do beiral mais funda (prédios grandes). */
+export function eaveShade(ctx, x, y, w, depth = 5) {
+  rect(ctx, x, y, w, depth, 'rgba(26,25,50,0.42)');
+  rect(ctx, x, y + depth, w, 2, 'rgba(26,25,50,0.18)');
+}
+
+/** Luz na fachada grande e oclusão de 5 px na base. */
+export function wallLight(ctx, x, fy, w, base) {
+  veil(ctx, [[x, fy], [x + w, fy], [x + w, base], [x, base]], x, fy, x + w, base,
+    [[0, 'rgba(255,236,190,0.12)'], [0.5, 'rgba(0,0,0,0)'], [1, 'rgba(26,25,50,0.24)']]);
+  baseShade(ctx, x, base, w, 6);
+}
+
+/** Porta grande: batente, folha(s) de tábuas, ferragens com cravos, argola e degrau de pedra. */
+export function bigDoor(ctx, x, y, w, h, { pal = WOOD_DARK, arch = true, seed = 11, step = true, jamb = 'wood', double = false } = {}) {
+  const ah = arch ? Math.round(w * 0.32) : 0;
+  if (jamb === 'stone') {
+    ctx.save(); ctx.beginPath(); ctx.rect(x - 6, y - 2, w + 12, h + 2); if (arch) ctx.ellipse(x + w / 2, y, w / 2 + 6, ah + 6, 0, Math.PI, 0); ctx.clip();
+    ctx.translate(x - 6, y - ah - 6); stones(ctx, w + 12, h + ah + 8, { seed: seed + 3, rowH: [5, 6], blockW: [6, 9] }); ctx.restore();
+    if (arch) for (let i = 0; i <= 8; i += 1) {
+      const a = Math.PI + (i / 8) * Math.PI;
+      const ax = x + w / 2 + Math.cos(a) * (w / 2 + 3); const ay = y + Math.sin(a) * (ah + 3);
+      ellipse(ctx, ax, ay, 3, 3, i % 2 ? C.g3 : C.g4); px(ctx, ax - 1, ay - 1, C.slate4);
+    }
+  } else {
+    rect(ctx, x - 4, y - 2, w + 8, h + 2, C.w2); rect(ctx, x - 4, y - 2, 2, h + 2, C.w4); rect(ctx, x + w + 2, y - 2, 2, h + 2, C.w1);
+    if (arch) { ellipse(ctx, x + w / 2, y, w / 2 + 4, ah + 4, C.w2); ellipse(ctx, x + w / 2, y - 1, w / 2 + 2, ah + 2, C.w3); }
+    else { rect(ctx, x - 7, y - 7, w + 14, 5, C.w3); rect(ctx, x - 7, y - 7, w + 14, 1, C.w5); rect(ctx, x - 7, y - 3, w + 14, 1, C.w1); }
+  }
+  ctx.save(); ctx.beginPath(); ctx.rect(x, y, w, h); if (arch) ctx.ellipse(x + w / 2, y, w / 2, ah, 0, Math.PI, 0); ctx.clip();
+  rect(ctx, x, y - ah, w, h + ah, C.w0);
+  ctx.save(); ctx.translate(x, y - ah); planks(ctx, w, h + ah, { pal, seed, vertical: true, size: 5, nails: false, worn: 0.06 }); ctx.restore();
+  rect(ctx, x, y - ah, 2, h + ah, 'rgba(14,7,27,0.5)');
+  rect(ctx, x, y - ah, w, 3, 'rgba(14,7,27,0.4)');
+  if (double) { rect(ctx, x + w / 2 - 1, y - ah, 2, h + ah, C.w0); rect(ctx, x + w / 2 + 1, y - ah, 1, h + ah, pal.light); }
+  ctx.restore();
+  for (const hy of [y + Math.round(h * 0.15), y + Math.round(h * 0.75)]) {
+    const segs = double ? [[x + 1, w / 2 - 3], [x + w / 2 + 2, w / 2 - 3]] : [[x, Math.round(w * 0.74)]];
+    for (const [sx, sw] of segs) {
+      rect(ctx, sx, hy, sw, 4, C.g1); rect(ctx, sx, hy, sw, 1, C.g3);
+      for (let k = sx + 2; k < sx + sw - 1; k += 5) px(ctx, k, hy + 2, C.g4);
+      ellipse(ctx, double && sx > x + w / 2 ? sx + sw : sx + sw, hy + 2, 2.5, 2.5, C.g1);
+    }
+  }
+  const rx = double ? x + w / 2 - 6 : x + w - 7; const ry = y + Math.round(h * 0.52);
+  ellipse(ctx, rx, ry, 3, 3, C.g1); ellipse(ctx, rx, ry, 1.6, 1.6, pal.tones[0]); px(ctx, rx - 2, ry - 2, C.f3);
+  if (double) { ellipse(ctx, rx + 12, ry, 3, 3, C.g1); ellipse(ctx, rx + 12, ry, 1.6, 1.6, pal.tones[0]); }
+  if (step) {
+    rect(ctx, x - 8, y + h, w + 16, 6, C.g3); rect(ctx, x - 8, y + h, w + 16, 1, C.g4); rect(ctx, x - 8, y + h + 5, w + 16, 1, C.g2);
+    for (let k = x - 4; k < x + w + 8; k += 11) rect(ctx, k, y + h + 1, 1, 4, C.g2);
+  }
+}
+
+/** Janela grande: moldura grossa, vidro aceso (ou escuro), caixilho, cortina, peitoril, floreira e venezianas. */
+export function bigWindow(ctx, x, y, w, h, { shutters = false, box = false, arch = false, frame = WOOD_DARK, lit = true, seed = 1, curtain = true } = {}) {
+  const r = rng(seed);
+  const ah = arch ? Math.round(w * 0.4) : 0;
+  rect(ctx, x - 3, y - 3, w + 6, h + 6, frame.gap);
+  if (arch) ellipse(ctx, x + w / 2, y, w / 2 + 3, ah + 3, frame.gap);
+  rect(ctx, x - 2, y - 2, w + 4, h + 4, frame.tones[0]); rect(ctx, x - 2, y - 2, w + 4, 1, frame.light);
+  if (arch) ellipse(ctx, x + w / 2, y, w / 2 + 2, ah + 2, frame.tones[0]);
+  ctx.save(); ctx.beginPath(); ctx.rect(x, y, w, h); if (arch) ctx.ellipse(x + w / 2, y, w / 2, ah, 0, Math.PI, 0); ctx.clip();
+  if (lit) {
+    const g = ctx.createLinearGradient(x, y - ah, x + w * 0.5, y + h);
+    g.addColorStop(0, C.f4); g.addColorStop(0.45, C.f3); g.addColorStop(1, C.f1);
+    ctx.fillStyle = g; ctx.fillRect(x, y - ah, w, h + ah);
+    rect(ctx, x, y + h - 4, w, 4, C.f1);
+    if (curtain) { fillPoly(ctx, [[x, y - ah], [x + w * 0.3, y - ah], [x + 2, y + h * 0.6], [x, y + h * 0.6]], C.r1); fillPoly(ctx, [[x + w, y - ah], [x + w * 0.7, y - ah], [x + w - 2, y + h * 0.6], [x + w, y + h * 0.6]], C.r1); }
+    if (r() < 0.6) { ellipse(ctx, x + w * 0.65, y + h - 5, 2.5, 2, C.w2); rect(ctx, x + w * 0.65 - 0.5, y + h - 9, 1, 4, C.m2); ellipse(ctx, x + w * 0.65, y + h - 10, 2, 1.5, C.m3); }
+  } else {
+    rect(ctx, x, y - ah, w, h + ah, C.navy); rect(ctx, x, y - ah, w, 3, C.slate);
+  }
+  rect(ctx, x + Math.floor(w / 2) - 1, y - ah, 2, h + ah, frame.dark);
+  rect(ctx, x, y + Math.floor(h / 2) - 1, w, 2, frame.dark);
+  line(ctx, x + 2, y + 5, x + 5, y + 2, C.white, 1); px(ctx, x + w / 2 + 2, y + h / 2 + 2, lit ? C.f4 : C.slate3);
+  ctx.restore();
+  rect(ctx, x - 5, y + h + 2, w + 10, 3, frame.light); rect(ctx, x - 5, y + h + 2, w + 10, 1, frame.hi ?? C.w6); rect(ctx, x - 5, y + h + 5, w + 10, 1, frame.gap);
+  if (box) {
+    ctx.save(); ctx.translate(x - 3, y + h + 6); planks(ctx, w + 6, 6, { seed: seed + 4, size: 3, nails: false }); ctx.restore();
+    for (let i = 0; i < w + 6; i += 2) {
+      const fx = x - 3 + i + r.range(-0.5, 0.5); const fy = y + h + 5 - r.range(0, 4);
+      ellipse(ctx, fx, fy + 1, 1.6, 1.4, i % 4 ? C.m2 : C.m3);
+      if (r() < 0.55) ellipse(ctx, fx, fy - 1, 1.1, 1.1, r.pick([C.red, C.f3, C.paper, C.wine]));
+    }
+  }
+  if (shutters) {
+    const sw = Math.max(6, Math.round(w * 0.42));
+    for (const sx of [x - 4 - sw, x + w + 4]) {
+      ctx.save(); ctx.translate(sx, y - 2); planks(ctx, sw, h + 4, { pal: { gap: C.m0, dark: C.m0, tones: [C.m1, C.m1, C.m2], light: C.m2, hi: C.m3 }, seed: sx, vertical: true, size: 3, nails: false, worn: 0.04 }); ctx.restore();
+      line(ctx, sx + 1, y + h - 1, sx + sw - 1, y + 2, C.m0, 2);
+      for (const hy of [y + 2, y + h - 3]) { rect(ctx, sx, hy, sw, 1.5, C.g1); }
+    }
+  }
+}
+
+/** Lampião grande na parede (braço de ferro e caixa acesa). */
+export function wallLantern(ctx, x, y, side = 1) {
+  rect(ctx, x, y - 2, 3, 6, C.g1); line(ctx, x + 1.5, y, x + 1.5 + side * 7, y, C.g1, 2);
+  scaled(ctx, x + side * 7 - 4.4, y + 3, 2.2, () => lanternBox(ctx, 0, 0));
+}
+
+/** Escada de pedras do caminho na frente da porta. */
+function pathStones(ctx, cx, base, n = 3, seed = 3) {
+  const r = rng(seed);
+  for (let i = 0; i < n; i += 1) {
+    const sx = cx + r.range(-6, 6); const sy = base + 9 + i * 7;
+    ellipse(ctx, sx, sy + 1, 7, 3, C.g2); ellipse(ctx, sx - 0.5, sy, 6.5, 2.6, r.pick([C.g3, C.wg3])); ellipse(ctx, sx - 2, sy - 1, 2.5, 1, C.g4);
+  }
+}
+
+/** Banco de madeira encostado na parede. */
+function bench(ctx, x, base, w = 24) {
+  rect(ctx, x + 2, base - 10, 3, 10, C.w2); rect(ctx, x + w - 5, base - 10, 3, 10, C.w2);
+  ctx.save(); ctx.translate(x, base - 13); planks(ctx, w, 4, { seed: x, size: 4, nails: true }); ctx.restore();
+  rect(ctx, x, base - 13, w, 1, C.w6);
+}
+
+const BIG = { barrel: 3.4, crate: 3, sack: 3, anvil: 3 };
+const bigBarrel = (ctx, cx, base, s = BIG.barrel, o = {}) => scaled(ctx, cx, base, s, () => barrel(ctx, 0, 0, { w: 6, h: 7, ...o }));
+const bigCrate = (ctx, x, base, s = BIG.crate, size = 7) => scaled(ctx, x, base - size * s, s, () => crate(ctx, 0, 0, size));
+const bigSack = (ctx, cx, base, s = BIG.sack) => scaled(ctx, cx, base, s, () => sack(ctx, 0, 0));
+
 // ---------- Casa ----------
 
 function house1(ctx) {
-  // Cabana de toras com telhado de palha em "A", lenha e toco com machado.
-  const x = 19; const base = 55; const w = 26; const h = 11; const d = 15;
-  const { fy } = box(ctx, { x, base, w, h, d, kx: 0.08, front: (c, ww, hh) => logs(c, ww, hh, { seed: 3 }), side: (c, ww, hh) => logs(c, ww, hh, { seed: 4, ends: false }) });
-  eaveShadow(ctx, x, fy, w);
-  frontGable(ctx, { cx: x + w / 2, wallTop: fy, w, d, rise: 17, over: 3, drop: 3,
+  // Cabana de toras com telhado de palha em "A", porta de tábuas, lenha, toco com machado e lampião.
+  const x = 30; const base = 126; const w = 84; const h = 80; const d = 30;
+  const { fy } = box(ctx, { x, base, w, h, d, kx: 0.08, front: (c, ww, hh) => logs(c, ww, hh, { seed: 3, size: 8 }), side: (c, ww, hh) => logs(c, ww, hh, { seed: 4, size: 8, ends: false }) });
+  eaveShade(ctx, x, fy, w);
+  frontGable(ctx, { cx: x + w / 2, wallTop: fy, w, d, rise: 28, over: 7, drop: 7,
     roof: (c, ww, hh) => thatch(c, ww, hh, { seed: 7 }),
-    pediment: (c, ww, hh) => logs(c, ww, hh, { seed: 9, ends: false }) });
-  // Janelinha no frontão e porta.
-  windowLit(ctx, x + w / 2 - 1.5, fy - 7, 3, 3);
-  door(ctx, x + 10, base - 9, 6, 9, { arch: false, step: false });
-  windowLit(ctx, x + 3, base - 8, 3, 3);
-  frontLight(ctx, x, fy, w, base);
-  woodpile(ctx, x + w + 1, base + 1, { cols: 3, rows: 2, r: 1.5 });
-  // Toco com machado.
-  ellipse(ctx, x - 4, base - 1, 2.6, 1.3, C.w5); rect(ctx, x - 6.5, base - 1, 5, 2, C.w3);
-  line(ctx, x - 4, base - 2, x - 2, base - 6, C.w4, 1); rect(ctx, x - 3, base - 7, 2, 2, C.g3); px(ctx, x - 3, base - 7, C.g4);
-  grassTufts(ctx, x - 8, base + 1, w + 16, { seed: 6 });
+    pediment: (c, ww, hh) => planks(c, ww, hh, { seed: 9, vertical: true, size: 5 }) });
+  ellipse(ctx, x + w / 2, fy - 10, 6.5, 6.5, C.w1); ellipse(ctx, x + w / 2, fy - 10, 4.6, 4.6, C.f3); ellipse(ctx, x + w / 2 - 1.5, fy - 11.5, 1.8, 1.8, C.f4);
+  rect(ctx, x + w / 2 - 0.5, fy - 15, 1.5, 10, C.w1); rect(ctx, x + w / 2 - 5, fy - 10.5, 10, 1.5, C.w1);
+  bigWindow(ctx, x + 6, fy + 22, 16, 18, { seed: 2, box: true });
+  bigWindow(ctx, x + 64, fy + 22, 14, 18, { seed: 3 });
+  bigDoor(ctx, x + 28, base - 73, 28, 73, { arch: false, step: false, seed: 5 });
+  wallLantern(ctx, x + 60, base - 62);
+  // Ervas secando sob o beiral.
+  for (let k = 0; k < 4; k += 1) { line(ctx, x + 8 + k * 4, fy + 2, x + 8 + k * 4, fy + 8, C.w2, 1); ellipse(ctx, x + 8 + k * 4, fy + 11, 1.8, 3.5, k % 2 ? C.m2 : C.m1); }
+  wallLight(ctx, x, fy, w, base);
+  woodpile(ctx, x + w + 3, base + 1, { cols: 3, rows: 3, r: 3.6 });
+  scaled(ctx, x - 14, base + 1, 2.4, () => {
+    ellipse(ctx, 0, -1, 2.6, 1.3, C.w5); rect(ctx, -2.5, -1, 5, 2, C.w3); ellipse(ctx, 0, -1, 1.6, 0.7, C.w4);
+    line(ctx, 0, -2, 2, -6, C.w4, 1); rect(ctx, 1, -7, 2, 2, C.g3); px(ctx, 1, -7, C.g4);
+  });
+  pathStones(ctx, x + 42, base - 6, 2, 4);
+  grassTufts(ctx, 4, base + 2, 136, { seed: 6, flowers: 0.15 });
 }
 
 function house4(ctx) {
-  const x = 12; const base = 55; const w = 36; const h = 19; const d = 16;
-  const wall = mixedWall({ seed: 12, moss: 0.35 }, 8, (c, ww, hh) => { plaster(c, ww, hh, { seed: 4 }); timber(c, ww, hh, [0, 11, 23, ww - 2]); });
-  const { fy, dx, dy } = box(ctx, { x, base, w, h, d, front: wall,
-    side: mixedWall({ seed: 13, pal: STONE }, 8, (c, ww, hh) => { plaster(c, ww, hh, { seed: 5 }); timber(c, ww, hh, [0, ww - 2], { diag: false }); }) });
-  // Chaminé atrás do telhado.
-  chimney(ctx, x + w - 6, fy - 27, 5, 16, { seed: 3 });
-  eaveShadow(ctx, x, fy, w);
-  gableRoof(ctx, { x, wallTop: fy, w, d, rise: 13, over: 3, drop: 2, roof: roofPainter({ seed: 7, moss: 0.5, barrel: true }), gable: (c, ww, hh) => { plaster(c, ww, hh, { seed: 9 }); } });
-  // Lucarna na frente do telhado (empena para a frente) com janela redonda.
-  frontGable(ctx, { cx: x + 17, wallTop: fy + 1, w: 14, d: 10, rise: 12, over: 1.5, drop: 1, roof: roofPainter({ seed: 9, pal: ROOF_RED, barrel: true }),
-    pediment: (c, ww, hh) => { plaster(c, ww, hh, { seed: 2 }); rect(c, 0, hh - 2, ww, 2, C.w2); } });
-  ellipse(ctx, x + 17, fy - 3.5, 2.6, 2.6, C.w1);
-  ellipse(ctx, x + 17, fy - 3.5, 1.8, 1.8, C.f3); px(ctx, x + 16, fy - 5, C.f4); rect(ctx, x + 16.5, fy - 5.5, 1, 4, C.w2); rect(ctx, x + 15, fy - 4, 4, 1, C.w2);
-  // Fachada: janelas, porta, lampião, floreira.
-  windowLit(ctx, x + 4, fy + 4, 5, 5, { box: true });
-  windowLit(ctx, x + 27, fy + 4, 5, 5, { box: true });
-  door(ctx, x + 15, base - 11, 6, 11, { seed: 3 });
-  lanternBox(ctx, x + 22, base - 12);
-  frontLight(ctx, x, fy, w, base);
-  // Janela na lateral.
-  fillPoly(ctx, [[x + w + 2, fy + 6], [x + w + 4, fy + 4.6], [x + w + 4, fy + 9.6], [x + w + 2, fy + 11]], C.f2);
-  // Em volta: barril de chuva, caixotes, flores.
-  barrel(ctx, x + w + 3, base + 1, { w: 6, h: 7 });
-  crate(ctx, x - 7, base - 6, 6);
-  grassTufts(ctx, x - 8, base + 1, w + 18, { seed: 8, flowers: 0.2 });
+  // Casa de enxaimel com embasamento de pedra, telha-canal com musgo, lucarna, chaminé e floreiras.
+  const x = 22; const base = 148; const w = 114; const h = 92; const d = 36;
+  const posts = [0, 30, 58, 99, w - 5];
+  const wall = mixedWall({ seed: 12, moss: 0.35, rowH: [6, 8], blockW: [9, 15] }, 26, (c, ww, hh) => { plaster(c, ww, hh, { seed: 4 }); timber(c, ww, hh, posts, { pw: 5, beam: 5 }); });
+  const { fy } = box(ctx, { x, base, w, h, d, front: wall,
+    side: mixedWall({ seed: 13, rowH: [6, 8], blockW: [9, 15] }, 26, (c, ww, hh) => { plaster(c, ww, hh, { seed: 5 }); timber(c, ww, hh, [0, ww - 5], { diag: false, pw: 5, beam: 5 }); }) });
+  chimney(ctx, x + w - 28, fy - 50, 14, 42, { seed: 3 });
+  eaveShade(ctx, x, fy, w);
+  gableRoof(ctx, { x, wallTop: fy, w, d, rise: 26, over: 7, drop: 6, roof: roofPainter({ seed: 7, moss: 0.5, barrel: true, rowH: 5, tileW: 6 }), gable: (c, ww, hh) => plaster(c, ww, hh, { seed: 9 }) });
+  frontGable(ctx, { cx: x + 34, wallTop: fy + 4, w: 30, d: 18, rise: 22, over: 3, drop: 2, roof: roofPainter({ seed: 9, barrel: true, rowH: 5, tileW: 6 }),
+    pediment: (c, ww, hh) => { plaster(c, ww, hh, { seed: 2 }); rect(c, 0, hh - 4, ww, 4, C.w2); rect(c, 0, hh - 4, ww, 1, C.w4); } });
+  ellipse(ctx, x + 34, fy - 4, 5.5, 5.5, C.w1); ellipse(ctx, x + 34, fy - 4, 4, 4, C.f3); ellipse(ctx, x + 32.5, fy - 5.5, 1.5, 1.5, C.f4);
+  rect(ctx, x + 33.5, fy - 9, 1.5, 10, C.w1); rect(ctx, x + 29, fy - 4.5, 10, 1.5, C.w1);
+  bigWindow(ctx, x + 8, fy + 20, 18, 22, { box: true, seed: 3 });
+  bigWindow(ctx, x + 37, fy + 20, 17, 22, { box: true, seed: 4 });
+  bigDoor(ctx, x + 64, base - 74, 31, 74, { seed: 3, jamb: 'stone' });
+  wallLantern(ctx, x + 101, base - 70);
+  // Janela na lateral (parede em fuga).
+  fillPoly(ctx, [[x + w + 3, fy + 26], [x + w + 9, fy + 22], [x + w + 9, fy + 40], [x + w + 3, fy + 44]], C.w1);
+  fillPoly(ctx, [[x + w + 4, fy + 27], [x + w + 8, fy + 24.5], [x + w + 8, fy + 38.5], [x + w + 4, fy + 42]], C.f2);
+  wallLight(ctx, x, fy, w, base);
+  bigBarrel(ctx, x + w + 18, base + 2);
+  bigCrate(ctx, x - 18, base + 1);
+  bench(ctx, x + 6, base + 1, 26);
+  pathStones(ctx, x + 80, base - 4, 2, 7);
+  grassTufts(ctx, 2, base + 3, 164, { seed: 8, flowers: 0.22 });
 }
 
 function house8(ctx) {
-  const x = 10; const base = 69; const w = 54; const h = 32; const d = 18;
+  // Sobrado: térreo de pedra e andar de enxaimel, ardósia com 2 lucarnas, 2 chaminés, porta dupla, brasão.
+  const x = 18; const base = 168; const w = 150; const h = 124; const d = 32;
+  const up = 46;
+  const posts = [0, 30, 58, 92, 120, w - 5];
   const front = (c, ww, hh) => {
-    // Térreo de pedra e andar de enxaimel com beiral entre os dois.
-    plaster(c, ww, 16, { seed: 31 });
-    timber(c, ww, 16, [0, 12, 26, 40, ww - 2]);
-    c.save(); c.translate(0, 16); stones(c, ww, hh - 16, { seed: 33, moss: 0.4, cracks: 0.2 }); c.restore();
-    rect(c, 0, 16, ww, 2, C.w2); rect(c, 0, 16, ww, 1, C.w5);
+    plaster(c, ww, up, { seed: 31 });
+    timber(c, ww, up, posts, { pw: 5, beam: 5 });
+    c.save(); c.translate(0, up); stones(c, ww, hh - up, { seed: 33, moss: 0.4, cracks: 0.2, rowH: [6, 8], blockW: [9, 16] }); c.restore();
+    rect(c, 0, up - 2, ww, 7, C.w2); rect(c, 0, up - 2, ww, 2, C.w5); rect(c, 0, up + 4, ww, 1, C.w0);
+    for (let k = 4; k < ww; k += 14) { rect(c, k, up + 5, 4, 4, C.w3); px(c, k, up + 5, C.w5); }
   };
-  const side = (c, ww, hh) => { plaster(c, ww, 16, { seed: 35 }); timber(c, ww, 16, [0, ww - 2], { diag: false }); c.save(); c.translate(0, 16); stones(c, ww, hh - 16, { seed: 34 }); c.restore(); };
+  const side = (c, ww, hh) => { plaster(c, ww, up, { seed: 35 }); timber(c, ww, up, [0, ww - 5], { diag: false, pw: 5, beam: 5 }); c.save(); c.translate(0, up); stones(c, ww, hh - up, { seed: 34, rowH: [6, 8], blockW: [9, 16] }); c.restore(); };
   const { fy } = box(ctx, { x, base, w, h, d, front, side });
-  chimney(ctx, x + 6, fy - 29, 6, 20, { seed: 5 });
-  chimney(ctx, x + w - 7, fy - 31, 6, 22, { seed: 6 });
-  eaveShadow(ctx, x, fy, w);
-  gableRoof(ctx, { x, wallTop: fy, w, d, rise: 13, over: 3, drop: 2, roof: roofPainter({ seed: 17, pal: ROOF_SLATE, moss: 0.6, tileW: 6 }), gable: (c, ww, hh) => plaster(c, ww, hh, { seed: 3 }) });
-  // Duas lucarnas.
-  for (const cx of [x + 15, x + 39]) {
-    frontGable(ctx, { cx, wallTop: fy + 1, w: 12, d: 10, rise: 11, over: 1.5, drop: 1, roof: roofPainter({ seed: cx, pal: ROOF_SLATE, tileW: 5 }),
-      pediment: (c, ww, hh) => { plaster(c, ww, hh, { seed: cx }); } });
-    windowLit(ctx, cx - 2, fy - 4, 4, 4, { arch: true });
+  chimney(ctx, x + 14, fy - 38, 13, 34, { seed: 5 });
+  chimney(ctx, x + w - 26, fy - 40, 13, 36, { seed: 6 });
+  eaveShade(ctx, x, fy, w);
+  gableRoof(ctx, { x, wallTop: fy, w, d, rise: 24, over: 7, drop: 6, roof: roofPainter({ seed: 17, pal: ROOF_SLATE, moss: 0.6, tileW: 7, rowH: 5 }), gable: (c, ww, hh) => plaster(c, ww, hh, { seed: 3 }) });
+  for (const cx of [x + 44, x + 108]) {
+    frontGable(ctx, { cx, wallTop: fy + 3, w: 26, d: 16, rise: 20, over: 3, drop: 2, roof: roofPainter({ seed: cx, pal: ROOF_SLATE, tileW: 6, rowH: 5 }),
+      pediment: (c, ww, hh) => plaster(c, ww, hh, { seed: cx }) });
+    bigWindow(ctx, cx - 5, fy - 8, 10, 10, { arch: true, curtain: false, seed: cx });
   }
-  // Andar de cima: 3 janelas com venezianas; térreo: porta dupla e 2 janelas grandes.
-  for (const wx of [x + 4, x + 31, x + 45]) windowLit(ctx, wx, fy + 4, 5, 6, { box: true });
-  windowLit(ctx, x + 16, fy + 4, 5, 6, { box: true });
-  windowLit(ctx, x + 5, base - 13, 7, 7, { shutters: true });
-  windowLit(ctx, x + 41, base - 13, 7, 7, { shutters: true });
-  door(ctx, x + 23, base - 14, 9, 14, { seed: 8 });
-  // Placa com o brasão da casa (lua dourada).
-  hangingSign(ctx, x + 34, base - 15, 5, 5, (c, sx, sy) => { ellipse(c, sx + 1.5, sy + 1.5, 1.5, 1.5, C.f3); ellipse(c, sx + 2.2, sy + 1.1, 1.2, 1.2, C.w4); });
-  lanternBox(ctx, x + 20, base - 15);
-  frontLight(ctx, x, fy, w, base);
-  barrel(ctx, x + w + 4, base + 1, { w: 6, h: 8 });
-  barrel(ctx, x + w + 8, base + 2, { w: 5, h: 6 });
-  crate(ctx, x - 7, base - 7, 7);
-  sack(ctx, x - 2, base + 1);
-  grassTufts(ctx, x - 8, base + 2, w + 22, { seed: 18, flowers: 0.25 });
+  for (const [wx, s] of [[x + 9, 1], [x + 37, 2], [x + 98, 3], [x + 126, 4]]) bigWindow(ctx, wx, fy + 10, 17, 22, { box: true, seed: s });
+  // Brasão do sobrado entre as janelas de cima (lua dourada num escudo azul).
+  fillPoly(ctx, [[x + 66, fy + 9], [x + 84, fy + 9], [x + 84, fy + 24], [x + 75, fy + 31], [x + 66, fy + 24]], C.b1);
+  fillPoly(ctx, [[x + 66, fy + 9], [x + 75, fy + 9], [x + 75, fy + 31], [x + 66, fy + 24]], C.b2);
+  ellipse(ctx, x + 75, fy + 18, 5, 5, C.f3); ellipse(ctx, x + 77, fy + 16.5, 4, 4, C.b2); rect(ctx, x + 65, fy + 8, 20, 2, C.f2);
+  bigWindow(ctx, x + 12, base - 62, 26, 30, { shutters: true, seed: 6 });
+  bigWindow(ctx, x + 112, base - 62, 26, 30, { shutters: true, seed: 7 });
+  bigDoor(ctx, x + 55, base - 76, 40, 76, { seed: 8, double: true, jamb: 'stone' });
+  wallLantern(ctx, x + 47, base - 70, -1);
+  wallLantern(ctx, x + 101, base - 70, 1);
+  wallLight(ctx, x, fy, w, base);
+  bigBarrel(ctx, x + w + 14, base + 2);
+  bigBarrel(ctx, x + w + 25, base + 6, 2.8);
+  bigCrate(ctx, x - 14, base + 2);
+  bigSack(ctx, x - 4, base + 8);
+  pathStones(ctx, x + 75, base - 2, 3, 9);
+  grassTufts(ctx, 2, base + 4, 196, { seed: 18, flowers: 0.25 });
 }
+
+// ---------- Ferreiro (grande) ----------
+
+function forgeMouth(ctx, fx, base, fw, fh, { grate = false, seed = 1 } = {}) {
+  const ftop = base - fh;
+  const ah = Math.round(fw * 0.32);
+  ctx.save(); ctx.beginPath(); ctx.rect(fx - 6, ftop, fw + 12, fh); ctx.ellipse(fx + fw / 2, ftop, fw / 2 + 6, ah + 6, 0, Math.PI, 0); ctx.clip();
+  ctx.translate(fx - 6, ftop - ah - 6); stones(ctx, fw + 12, fh + ah + 6, { seed, pal: STONE, rowH: [5, 6], blockW: [6, 8] }); ctx.restore();
+  for (let i = 0; i <= 9; i += 1) {
+    const a = Math.PI + (i / 9) * Math.PI;
+    const ax = fx + fw / 2 + Math.cos(a) * (fw / 2 + 3); const ay = ftop + Math.sin(a) * (ah + 3);
+    ellipse(ctx, ax, ay, 3.2, 3.2, i % 2 ? C.g3 : C.g4); px(ctx, ax - 1, ay - 1, C.slate4);
+  }
+  ctx.save(); ctx.beginPath(); ctx.rect(fx, ftop, fw, fh); ctx.ellipse(fx + fw / 2, ftop, fw / 2, ah, 0, Math.PI, 0); ctx.clip();
+  rect(ctx, fx, ftop - ah, fw, fh + ah, C.ink);
+  const g = ctx.createRadialGradient(fx + fw / 2, base - 6, 0, fx + fw / 2, base - 6, fw * 0.62);
+  g.addColorStop(0, C.f4); g.addColorStop(0.25, C.f3); g.addColorStop(0.5, C.f1); g.addColorStop(0.8, C.r1); g.addColorStop(1, C.ink);
+  ctx.fillStyle = g; ctx.fillRect(fx, ftop - ah + 4, fw, fh + ah - 4);
+  const r = rng(seed);
+  for (let i = 0; i < fw / 2; i += 1) ellipse(ctx, fx + 2 + r() * (fw - 4), base - 2 - r() * 6, r.range(1, 2), r.range(0.8, 1.4), r.pick([C.f2, C.f3, C.r3, C.f4, C.g1]));
+  if (grate) for (let k = 4; k < fw - 2; k += 5) rect(ctx, fx + k, ftop - ah + 2, 2, fh + ah - 6, 'rgba(28,18,28,0.8)');
+  ctx.restore();
+  rect(ctx, fx - 2, base - 2, fw + 4, 3, C.g2); rect(ctx, fx - 2, base - 2, fw + 4, 1, C.g4);
+}
+
+function forgeGlow(ctx, cx, cy, r, area) {
+  ctx.save(); ctx.globalCompositeOperation = 'lighter';
+  const glow = ctx.createRadialGradient(cx, cy, 2, cx, cy, r);
+  glow.addColorStop(0, 'rgba(255,140,40,0.32)'); glow.addColorStop(1, 'rgba(255,140,40,0)');
+  ctx.fillStyle = glow; ctx.fillRect(...area); ctx.restore();
+}
+
+function toolRack(ctx, x, base, n = 4) {
+  rect(ctx, x, base - 30, 3, 30, C.w2); rect(ctx, x + 22, base - 30, 3, 30, C.w2);
+  rect(ctx, x - 1, base - 27, 27, 3, C.w4); rect(ctx, x - 1, base - 27, 27, 1, C.w6); rect(ctx, x - 1, base - 12, 27, 2, C.w3);
+  for (let i = 0; i < n; i += 1) {
+    const sx = x + 4 + i * 5;
+    line(ctx, sx, base - 2, sx, base - 36, i % 2 ? C.g4 : C.slate3, 2);
+    line(ctx, sx - 0.5, base - 36, sx - 0.5, base - 4, C.white, 0.6);
+    rect(ctx, sx - 3, base - 12, 6, 2, C.w1); rect(ctx, sx - 1, base - 10, 2, 7, C.w3);
+  }
+}
+
+function forge1(ctx) {
+  // Telheiro: 4 esteios, cobertura de tábuas, fornalha de pedra com chaminé, fole, bigorna, tina e ferramentas.
+  const x = 14; const base = 126; const w = 110; const top = 44;
+  const roofPts = [[x - 6, top + 4], [x + w + 6, top + 4], [x + w + 16, top - 18], [x + 4, top - 18]];
+  for (const px0 of [x + w + 4, x + 12]) { rect(ctx, px0, top - 14, 5, base - top - 4, C.w2); rect(ctx, px0, top - 14, 1, base - top - 4, C.w3); }
+  // Fornalha (fundo, à esquerda) com chaminé.
+  const fx = x + 10; const fwid = 40;
+  ctx.save(); ctx.translate(fx, base - 52); stones(ctx, fwid, 50, { seed: 3, rowH: [5, 6], blockW: [7, 10] }); ctx.restore();
+  rect(ctx, fx - 2, base - 54, fwid + 4, 4, C.g4); rect(ctx, fx - 2, base - 51, fwid + 4, 1, C.g2);
+  forgeMouth(ctx, fx + 10, base - 6, 20, 22, { seed: 4 });
+  chimney(ctx, fx + 12, 4, 16, base - 56, { seed: 4 });
+  // Cobertura.
+  clip(ctx, roofPts, () => { ctx.save(); ctx.translate(x - 6, top - 18); tiles(ctx, w + 24, 24, { pal: ROOF_WOOD, seed: 4, tileW: 7, rowH: 5 }); ctx.restore(); });
+  veil(ctx, roofPts, 0, top - 18, 0, top + 4, [[0, 'rgba(255,235,180,0.18)'], [1, 'rgba(26,25,50,0.28)']]);
+  line(ctx, x - 6, top + 4.5, x + w + 6, top + 4.5, C.ink, 1);
+  rect(ctx, x - 6, top + 5, w + 12, 3, C.w3); rect(ctx, x - 6, top + 5, w + 12, 1, C.w5); rect(ctx, x - 6, top + 8, w + 12, 2, 'rgba(26,25,50,0.5)');
+  chimney(ctx, fx + 12, 4, 16, 18, { seed: 4 });
+  // Esteios da frente com mão-francesa.
+  for (const px0 of [x, x + w - 5]) { rect(ctx, px0, top + 8, 5, base - top - 8, C.w3); rect(ctx, px0, top + 8, 1, base - top - 8, C.w5); rect(ctx, px0 + 4, top + 8, 1, base - top - 8, C.w1); }
+  line(ctx, x + 5, top + 26, x + 18, top + 10, C.w3, 3); line(ctx, x + w - 5, top + 26, x + w - 18, top + 10, C.w3, 3);
+  // Fole de couro ao lado da fornalha.
+  fillPoly(ctx, [[fx + fwid + 2, base - 30], [fx + fwid + 20, base - 26], [fx + fwid + 20, base - 18], [fx + fwid + 2, base - 22]], C.w2);
+  fillPoly(ctx, [[fx + fwid + 4, base - 29], [fx + fwid + 18, base - 25.5], [fx + fwid + 18, base - 23], [fx + fwid + 4, base - 26]], C.w4);
+  rect(ctx, fx + fwid + 20, base - 24, 8, 2, C.w3);
+  // Ferramentas penduradas na viga.
+  for (const [tx, len, head] of [[x + 62, 16, 'hammer'], [x + 70, 20, 'tongs'], [x + 78, 14, 'hammer']]) {
+    line(ctx, tx, top + 10, tx, top + 10 + len, C.w2, 2);
+    if (head === 'hammer') { rect(ctx, tx - 4, top + 8 + len, 8, 5, C.g2); rect(ctx, tx - 4, top + 8 + len, 8, 1, C.g4); }
+    else { line(ctx, tx, top + 10 + len, tx - 3, top + 18 + len, C.g1, 1.5); line(ctx, tx, top + 10 + len, tx + 3, top + 18 + len, C.g1, 1.5); }
+  }
+  scaled(ctx, x + 68, base + 2, BIG.anvil, () => anvil(ctx, 0, 0));
+  bigBarrel(ctx, x + 96, base + 2, 3.2);
+  rect(ctx, x + 87, base - 22, 18, 3, C.b2); rect(ctx, x + 88, base - 22, 6, 1, C.b4);
+  for (let i = 0; i < 8; i += 1) ellipse(ctx, x + 44 + (i % 4) * 4, base + 4 - Math.floor(i / 4) * 3, 2.4, 2, i % 3 ? C.g1 : C.ink);
+  forgeGlow(ctx, fx + 20, base - 14, 34, [x, top, w, base - top]);
+  grassTufts(ctx, x - 8, base + 3, w + 18, { seed: 2 });
+}
+
+function forge4(ctx) {
+  // Ferraria de pedra: boca da forja em arco, chaminé alta, porta, placa do martelo e pátio com bigorna.
+  const x = 16; const base = 148; const w = 118; const h = 90; const d = 32;
+  const { fy } = box(ctx, { x, base, w, h, d, front: (c, ww, hh) => stones(c, ww, hh, { seed: 41, moss: 0.3, cracks: 0.25, rowH: [6, 8], blockW: [9, 15] }), side: (c, ww, hh) => stones(c, ww, hh, { seed: 42, rowH: [6, 8], blockW: [9, 15] }) });
+  eaveShade(ctx, x, fy, w);
+  gableRoof(ctx, { x, wallTop: fy, w, d, rise: 22, over: 7, drop: 5, roof: roofPainter({ seed: 43, pal: ROOF_SLATE, tileW: 7, rowH: 5, moss: 0.3 }), gable: (c, ww, hh) => stones(c, ww, hh, { seed: 44 }) });
+  chimney(ctx, x + w - 24, 6, 16, 72, { seed: 45 });
+  rect(ctx, x + w - 24, 6, 16, 3, C.g1); rect(ctx, x + w - 22, 5, 12, 1, C.ink);
+  forgeMouth(ctx, x + 10, base, 36, 44, { seed: 46 });
+  forgeGlow(ctx, x + 28, base - 12, 40, [x, fy, w, h]);
+  bigWindow(ctx, x + 56, fy + 14, 14, 18, { seed: 5, curtain: false });
+  bigDoor(ctx, x + 78, base - 74, 30, 74, { seed: 9 });
+  scaled(ctx, x + 52, base - 52, 2.4, () => hangingSign(ctx, 0, 0, 7, 6, hammerIcon));
+  wallLight(ctx, x, fy, w, base);
+  scaled(ctx, x + 64, base + 16, BIG.anvil, () => anvil(ctx, 0, 0));
+  bigBarrel(ctx, x + w + 16, base + 4, 3.2);
+  rect(ctx, x + w + 7, base - 20, 18, 3, C.b2); rect(ctx, x + w + 8, base - 20, 6, 1, C.b4);
+  for (let i = 0; i < 6; i += 1) ellipse(ctx, x + 52 + (i % 3) * 5, base + 10 - Math.floor(i / 3) * 3, 2.6, 2, i % 2 ? C.g1 : C.ink);
+  grassTufts(ctx, x - 10, base + 4, w + 26, { seed: 4 });
+}
+
+function forge8(ctx) {
+  // Grande forja: salão de pedra, duas bocas com grade, chaminé larga, estandarte, porta dupla e cavalete de armas.
+  const x = 12; const base = 168; const w = 150; const h = 104; const d = 30;
+  const { fy } = box(ctx, { x, base, w, h, d, front: (c, ww, hh) => stones(c, ww, hh, { seed: 51, moss: 0.3, cracks: 0.25, rowH: [6, 8], blockW: [9, 16] }), side: (c, ww, hh) => stones(c, ww, hh, { seed: 52, rowH: [6, 8], blockW: [9, 16] }) });
+  chimney(ctx, x + 18, fy - 44, 12, 36, { seed: 56 });
+  eaveShade(ctx, x, fy, w);
+  gableRoof(ctx, { x, wallTop: fy, w, d, rise: 24, over: 7, drop: 5, roof: roofPainter({ seed: 53, pal: ROOF_SLATE, tileW: 7, rowH: 5, moss: 0.3 }), gable: (c, ww, hh) => stones(c, ww, hh, { seed: 54 }) });
+  chimney(ctx, x + w - 22, 4, 22, 86, { seed: 55 });
+  rect(ctx, x + w - 22, 4, 22, 3, C.g1); rect(ctx, x + w - 20, 3, 18, 1, C.ink);
+  for (const fx of [x + 8, x + 104]) {
+    forgeMouth(ctx, fx, base, 38, 48, { seed: fx, grate: true });
+    forgeGlow(ctx, fx + 19, base - 14, 42, [x, fy, w, h]);
+  }
+  // Estandarte vermelho com martelo dourado sobre a porta.
+  rect(ctx, x + 63, fy + 4, 24, 26, C.r1); rect(ctx, x + 63, fy + 4, 3, 26, C.r3); rect(ctx, x + 84, fy + 4, 3, 26, C.r0);
+  fillPoly(ctx, [[x + 63, fy + 30], [x + 75, fy + 37], [x + 87, fy + 30]], C.r1);
+  rect(ctx, x + 60, fy + 2, 30, 3, C.w4); rect(ctx, x + 60, fy + 2, 30, 1, C.w6);
+  rect(ctx, x + 74, fy + 11, 3, 16, C.f3); rect(ctx, x + 68, fy + 9, 15, 6, C.f3); rect(ctx, x + 68, fy + 9, 15, 1, C.f4); px(ctx, x + 69, fy + 10, C.white);
+  bigDoor(ctx, x + 57, base - 76, 36, 76, { seed: 4, double: true, jamb: 'stone' });
+  wallLight(ctx, x, fy, w, base);
+  scaled(ctx, x + 40, base + 20, 3.4, () => anvil(ctx, 0, 0));
+  toolRack(ctx, x + w + 2, base + 4, 4);
+  bigBarrel(ctx, x + 112, base + 16, 3);
+  for (let i = 0; i < 9; i += 1) ellipse(ctx, x + 56 + (i % 3) * 5, base + 16 - Math.floor(i / 3) * 3, 2.6, 2, i % 2 ? C.g1 : C.ink);
+  grassTufts(ctx, 2, base + 5, 196, { seed: 14 });
+}
+
+// ---------- Fazenda (grande) ----------
+
+function bigBarnDoors(ctx, x, y, w, h) {
+  rect(ctx, x - 3, y - 3, w + 6, h + 3, C.paper); rect(ctx, x - 3, y - 3, w + 6, 1, C.white);
+  ctx.save(); ctx.translate(x, y); planks(ctx, w, h, { pal: WOOD_RED, vertical: true, seed: 2, size: 5, nails: false }); ctx.restore();
+  rect(ctx, x + w / 2 - 1.5, y, 3, h, C.paper);
+  for (const sx of [x, x + w / 2 + 1.5]) {
+    const sw = w / 2 - 1.5;
+    rect(ctx, sx, y, sw, 3, C.paper); rect(ctx, sx, y + h - 3, sw, 3, C.paper);
+    line(ctx, sx + 1, y + 3, sx + sw - 1, y + h - 3, C.paper, 3); line(ctx, sx + sw - 1, y + 3, sx + 1, y + h - 3, C.paper, 3);
+  }
+  rect(ctx, x - 6, y - 7, w + 12, 3, C.g1); for (let k = x - 2; k < x + w + 4; k += 8) ellipse(ctx, k, y - 6, 1.6, 1.6, C.g3);
+}
+
+function hayBale(ctx, x, base, w = 22, h = 14) {
+  rect(ctx, x, base - h, w, h, C.r5); rect(ctx, x, base - h, w, 2, C.cream); rect(ctx, x, base - 2, w, 2, C.w4);
+  for (let k = 2; k < w; k += 3) rect(ctx, x + k, base - h + 2, 1, h - 4, C.sand);
+  rect(ctx, x + Math.round(w * 0.3), base - h, 2, h, C.w3); rect(ctx, x + Math.round(w * 0.7), base - h, 2, h, C.w3);
+}
+
+function farm1(ctx) {
+  // Galpão de tábuas, horta cercada com espantalho, ferramentas, sacos e repolhos.
+  const x = 10; const base = 126; const w = 62; const h = 82; const d = 24;
+  const { fy } = box(ctx, { x, base, w, h, d, front: (c, ww, hh) => planks(c, ww, hh, { vertical: true, seed: 6, size: 6 }), side: (c, ww, hh) => planks(c, ww, hh, { vertical: true, seed: 7, size: 6 }) });
+  eaveShade(ctx, x, fy, w);
+  gableRoof(ctx, { x, wallTop: fy, w, d, rise: 18, over: 5, drop: 4, roof: roofPainter({ seed: 3, pal: ROOF_WOOD, tileW: 7, rowH: 5 }), gable: (c, ww, hh) => planks(c, ww, hh, { seed: 8, vertical: true, size: 6 }) });
+  bigDoor(ctx, x + 18, base - 72, 28, 72, { arch: false, step: false, seed: 2 });
+  wallLight(ctx, x, fy, w, base);
+  scaled(ctx, x - 2, base, 2.6, () => { line(ctx, -1.5, 0, -0.5, -10, C.w4, 1); rect(ctx, -3, -11, 3, 1, C.g3); });
+  scaled(ctx, x + w + 6, base, 2.6, () => { line(ctx, 1.5, 0, 0.5, -9, C.w4, 1); rect(ctx, 0, -10, 2, 3, C.g3); });
+  scaled(ctx, 86, 92, 2.2, () => crops(ctx, 0, 0, 6, 3, 'sprout', 3));
+  scaled(ctx, 120, 102, 2.6, () => scarecrow(ctx, 0, 0));
+  scaled(ctx, 80, 112, 2.2, () => fenceRun(ctx, 0, 0, 28));
+  bigSack(ctx, 74, base + 6);
+  scaled(ctx, 14, base + 8, 2.2, () => crops(ctx, 0, 0, 4, 1, 'cabbage', 4));
+  grassTufts(ctx, 4, base + 14, 136, { seed: 9, flowers: 0.15 });
+}
+
+function farm4(ctx) {
+  // Celeiro vermelho com portas em X, lucarna do palheiro, silo, fardos de feno e trigo.
+  const x = 44; const base = 148; const w = 94; const h = 84; const d = 30;
+  scaled(ctx, 10, base, 2.4, () => silo(ctx, 0, 0, 10, 50));
+  const { fy } = box(ctx, { x, base, w, h, d, front: (c, ww, hh) => planks(c, ww, hh, { pal: WOOD_RED, vertical: true, seed: 4, size: 6, worn: 0.08 }), side: (c, ww, hh) => planks(c, ww, hh, { pal: WOOD_RED, vertical: true, seed: 5, size: 6, worn: 0.08 }) });
+  eaveShade(ctx, x, fy, w);
+  gableRoof(ctx, { x, wallTop: fy, w, d, rise: 26, over: 6, drop: 5, roof: roofPainter({ seed: 6, pal: ROOF_SLATE, tileW: 7, rowH: 5, moss: 0.4 }), gable: (c, ww, hh) => planks(c, ww, hh, { pal: WOOD_RED, vertical: true, seed: 7, size: 6 }) });
+  frontGable(ctx, { cx: x + 47, wallTop: fy + 3, w: 34, d: 16, rise: 24, over: 3, drop: 2, roof: roofPainter({ seed: 8, pal: ROOF_SLATE, tileW: 6, rowH: 5 }),
+    pediment: (c, ww, hh) => planks(c, ww, hh, { pal: WOOD_RED, vertical: true, seed: 9, size: 5 }) });
+  rect(ctx, x + 39, fy - 14, 16, 13, C.w1); rect(ctx, x + 41, fy - 7, 12, 6, C.r5); rect(ctx, x + 41, fy - 8, 12, 1, C.cream);
+  rect(ctx, x + 38, fy - 15, 18, 2, C.paper); rect(ctx, x + 46.5, fy - 24, 2, 9, C.g1); ellipse(ctx, x + 47.5, fy - 15, 2, 1.4, C.g1);
+  bigBarnDoors(ctx, x + 25, base - 74, 44, 74);
+  rect(ctx, x, fy + h - 3, w, 3, C.paper);
+  for (const wx of [x + 6, x + 76]) bigWindow(ctx, wx, fy + 16, 12, 14, { frame: { gap: C.paper, dark: C.paper, tones: [C.paper], light: C.white, hi: C.white }, curtain: false, seed: wx });
+  wallLight(ctx, x, fy, w, base);
+  hayBale(ctx, x + w + 2, base + 2); hayBale(ctx, x + w + 6, base - 11, 18, 13);
+  scaled(ctx, 6, 166, 2.2, () => crops(ctx, 0, 0, 8, 1, 'wheat', 5));
+  scaled(ctx, 4, base - 4, 2.2, () => fenceRun(ctx, 0, 0, 16));
+  grassTufts(ctx, 2, base + 4, 164, { seed: 11, flowers: 0.12 });
+}
+
+function farm8(ctx) {
+  // Fazenda grande: moinho de vento atrás, silo, celeirão com palheiro, campos de trigo e repolho, cerca branca.
+  const x = 70; const base = 168; const w = 100; const h = 92; const d = 28;
+  scaled(ctx, 50, base - 6, 3, () => windmill(ctx, 0, 0));
+  scaled(ctx, 172, base - 8, 2.6, () => silo(ctx, 0, 0, 9, 52));
+  const { fy } = box(ctx, { x, base, w, h, d, front: (c, ww, hh) => planks(c, ww, hh, { pal: WOOD_RED, vertical: true, seed: 14, size: 6, worn: 0.08 }), side: (c, ww, hh) => planks(c, ww, hh, { pal: WOOD_RED, vertical: true, seed: 15, size: 6, worn: 0.08 }) });
+  eaveShade(ctx, x, fy, w);
+  gableRoof(ctx, { x, wallTop: fy, w, d, rise: 26, over: 6, drop: 5, roof: roofPainter({ seed: 16, pal: ROOF_SLATE, tileW: 7, rowH: 5, moss: 0.4 }), gable: (c, ww, hh) => planks(c, ww, hh, { pal: WOOD_RED, vertical: true, seed: 17, size: 6 }) });
+  frontGable(ctx, { cx: x + 50, wallTop: fy + 3, w: 36, d: 14, rise: 24, over: 3, drop: 2, roof: roofPainter({ seed: 18, pal: ROOF_SLATE, tileW: 6, rowH: 5 }), pediment: (c, ww, hh) => planks(c, ww, hh, { pal: WOOD_RED, vertical: true, seed: 19, size: 5 }) });
+  rect(ctx, x + 42, fy - 14, 16, 13, C.w1); rect(ctx, x + 44, fy - 7, 12, 6, C.r5); rect(ctx, x + 44, fy - 8, 12, 1, C.cream);
+  rect(ctx, x + 41, fy - 15, 18, 2, C.paper); rect(ctx, x + 49.5, fy - 24, 2, 9, C.g1);
+  bigBarnDoors(ctx, x + 27, base - 76, 46, 76);
+  for (const wx of [x + 7, x + 80]) bigWindow(ctx, wx, fy + 16, 13, 16, { frame: { gap: C.paper, dark: C.paper, tones: [C.paper], light: C.white, hi: C.white }, curtain: false, seed: wx });
+  rect(ctx, x, fy + h - 3, w, 3, C.paper);
+  wallLight(ctx, x, fy, w, base);
+  for (const [px0, py0] of [[x - 10, base + 2], [x - 4, base + 6], [x + w + 14, base + 4]]) { ellipse(ctx, px0, py0, 5, 4, C.r4); ellipse(ctx, px0 - 1.5, py0 - 1, 2, 1.5, C.r5); rect(ctx, px0 - 0.5, py0 - 6, 1.5, 3, C.m2); }
+  bigCrate(ctx, x + w + 16, base - 4, 2.6);
+  scaled(ctx, 4, 194, 2.2, () => crops(ctx, 0, 0, 10, 1, 'wheat', 7));
+  scaled(ctx, 104, 194, 2.2, () => crops(ctx, 0, 0, 10, 1, 'cabbage', 8));
+  scaled(ctx, 2, 176, 2.2, () => fenceRun(ctx, 0, 0, 89, { pal: { gap: C.g2, dark: C.g4, tones: [C.slate4], light: C.white, hi: C.white } }));
+  grassTufts(ctx, 2, 199, 196, { seed: 19, flowers: 0.12 });
+}
+
+// ---------- Mercado (grande) ----------
+
+function goods(ctx, x, y, w, seed) {
+  const r = rng(seed);
+  for (let i = 0; i < w - 6; i += 10) {
+    ellipse(ctx, x + i + 5, y + 1, 5, 2.5, C.w2); ellipse(ctx, x + i + 5, y, 4.4, 2, C.w4);
+    const color = r.pick([C.red, C.f2, C.m3, C.f3, C.r4, C.wine]);
+    for (let k = 0; k < 4; k += 1) { ellipse(ctx, x + i + 2.5 + (k % 2) * 4 + (k > 1 ? 1 : 0), y - 1.5 - (k > 1 ? 2.5 : 0), 2, 1.8, color); px(ctx, x + i + 2 + (k % 2) * 4, y - 3 - (k > 1 ? 2.5 : 0), C.white); }
+  }
+}
+
+function bigStall(ctx, x, base, w, colors, { seed = 1, height = 88 } = {}) {
+  const top = base - height;
+  for (const px0 of [x + 3, x + w - 8]) { rect(ctx, px0, top + 8, 5, base - top - 8, C.w2); rect(ctx, px0, top + 8, 1, base - top - 8, C.w4); }
+  // Prateleira do fundo com potes e garrafas.
+  ctx.save(); ctx.translate(x + 8, top + 18); planks(ctx, w - 16, height - 52, { seed, size: 5, pal: WOOD_DARK, nails: false }); ctx.restore();
+  const r = rng(seed + 5);
+  for (const sy of [top + 30, top + 46]) {
+    if (sy > base - 38) continue;
+    rect(ctx, x + 8, sy, w - 16, 2, C.w4);
+    for (let k = x + 11; k < x + w - 12; k += 6) { const c = r.pick([C.b2, C.m2, C.r3, C.f2, C.slate3]); rect(ctx, k, sy - 7, 4, 7, c); rect(ctx, k + 1, sy - 9, 2, 2, C.w5); px(ctx, k, sy - 6, C.white); }
+  }
+  // Balcão.
+  ctx.save(); ctx.translate(x, base - 32); planks(ctx, w, 32, { seed: seed + 1, size: 6 }); ctx.restore();
+  rect(ctx, x - 3, base - 36, w + 6, 5, C.w5); rect(ctx, x - 3, base - 36, w + 6, 1, C.w6); rect(ctx, x - 3, base - 31, w + 6, 1, C.w1);
+  goods(ctx, x + 2, base - 38, w - 4, seed + 2);
+  awning(ctx, x - 7, top - 6, w + 14, 20, colors, 8);
+}
+
+function store1(ctx) {
+  // Barraca de feira: toldo listrado, prateleira de potes, balcão com cestos de fruta, caixotes, sacos e placa.
+  bigStall(ctx, 26, 124, 92, [C.red, C.paper], { seed: 3 });
+  bigCrate(ctx, 2, 112, 2.8);
+  bigCrate(ctx, 8, 128, 2.6);
+  bigSack(ctx, 24, 132);
+  bigBarrel(ctx, 128, 130, 3);
+  rect(ctx, 124, 34, 4, 74, C.w2); rect(ctx, 124, 34, 1, 74, C.w4); rect(ctx, 100, 32, 28, 3, C.w3); rect(ctx, 100, 32, 28, 1, C.w5);
+  scaled(ctx, 102, 42, 2.2, () => hangingSign(ctx, 0, 0, 10, 6, (c, sx, sy) => { ellipse(c, sx + 4, sy + 2, 2, 2, C.f3); px(c, sx + 3, sy + 1, C.f4); }));
+  grassTufts(ctx, 2, 136, 140, { seed: 21, flowers: 0.15 });
+}
+
+function store4(ctx) {
+  // Loja: tábuas, telha-canal, frontão com a placa da moeda, vitrines com toldo azul, balcões e porta.
+  const x = 20; const base = 148; const w = 118; const h = 90; const d = 30;
+  const { fy } = box(ctx, { x, base, w, h, d, front: (c, ww, hh) => planks(c, ww, hh, { seed: 61, size: 6, pal: WOOD }), side: (c, ww, hh) => planks(c, ww, hh, { seed: 62, size: 6 }) });
+  eaveShade(ctx, x, fy, w);
+  gableRoof(ctx, { x, wallTop: fy, w, d, rise: 24, over: 7, drop: 5, roof: roofPainter({ seed: 63, moss: 0.3, barrel: true, rowH: 5, tileW: 6 }), gable: (c, ww, hh) => planks(c, ww, hh, { seed: 64, size: 6, vertical: true }) });
+  frontGable(ctx, { cx: x + 59, wallTop: fy + 3, w: 40, d: 18, rise: 28, over: 3, drop: 2, roof: roofPainter({ seed: 65, barrel: true, rowH: 5, tileW: 6 }),
+    pediment: (c, ww, hh) => planks(c, ww, hh, { seed: 66, size: 5, vertical: true }) });
+  rect(ctx, x + 47, fy - 16, 24, 13, C.w1); rect(ctx, x + 48, fy - 15, 22, 11, C.w5); rect(ctx, x + 48, fy - 15, 22, 1, C.w6);
+  ellipse(ctx, x + 59, fy - 9.5, 4, 4, C.f2); ellipse(ctx, x + 59, fy - 9.5, 3, 3, C.f3); px(ctx, x + 57, fy - 12, C.f4); rect(ctx, x + 58.5, fy - 11.5, 1.5, 4, C.f1);
+  for (const wx of [x + 8, x + 84]) {
+    bigWindow(ctx, wx, fy + 26, 26, 24, { seed: wx, curtain: false });
+    awning(ctx, wx - 6, fy + 10, 38, 11, [C.b2, C.paper], 6);
+    ctx.save(); ctx.translate(wx - 4, base - 28); planks(ctx, 34, 28, { seed: wx + 1, size: 6 }); ctx.restore();
+    rect(ctx, wx - 6, base - 31, 38, 4, C.w5); rect(ctx, wx - 6, base - 31, 38, 1, C.w6);
+    goods(ctx, wx - 4, base - 33, 34, wx);
+  }
+  bigDoor(ctx, x + 44, base - 74, 30, 74, { seed: 6 });
+  wallLight(ctx, x, fy, w, base);
+  bigCrate(ctx, x - 18, base + 2, 2.8); bigSack(ctx, x + w + 14, base + 4); bigBarrel(ctx, x + w + 22, base + 8, 2.8);
+  grassTufts(ctx, 2, base + 4, 164, { seed: 22, flowers: 0.2 });
+}
+
+function store8(ctx) {
+  // Casa de comércio de dois andares, barracas coloridas nas pontas, bandeiras no telhado e lucarna.
+  const x = 30; const base = 168; const w = 140; const h = 120; const d = 28;
+  const up = 48;
+  const front = (c, ww, hh) => { plaster(c, ww, up, { seed: 71 }); timber(c, ww, up, [0, 30, 58, 82, 110, ww - 5], { pw: 5, beam: 5 }); c.save(); c.translate(0, up); planks(c, ww, hh - up, { seed: 72, size: 6 }); c.restore(); rect(c, 0, up - 2, ww, 5, C.w5); rect(c, 0, up - 2, ww, 1, C.w6); };
+  const side = (c, ww, hh) => { plaster(c, ww, up, { seed: 73 }); c.save(); c.translate(0, up); planks(c, ww, hh - up, { seed: 74, size: 6 }); c.restore(); };
+  const { fy } = box(ctx, { x, base, w, h, d, front, side });
+  chimney(ctx, x + w - 26, fy - 38, 12, 32, { seed: 75 });
+  eaveShade(ctx, x, fy, w);
+  gableRoof(ctx, { x, wallTop: fy, w, d, rise: 22, over: 7, drop: 5, roof: roofPainter({ seed: 76, moss: 0.4, barrel: true, rowH: 5, tileW: 6 }), gable: (c, ww, hh) => plaster(c, ww, hh, { seed: 77 }) });
+  frontGable(ctx, { cx: x + 70, wallTop: fy + 3, w: 38, d: 16, rise: 26, over: 3, drop: 2, roof: roofPainter({ seed: 78, barrel: true, rowH: 5, tileW: 6 }), pediment: (c, ww, hh) => plaster(c, ww, hh, { seed: 79 }) });
+  ellipse(ctx, x + 70, fy - 6, 7, 7, C.w1); ellipse(ctx, x + 70, fy - 6, 5.4, 5.4, C.f3); ellipse(ctx, x + 68, fy - 8, 1.6, 1.6, C.white);
+  rect(ctx, x + 69.3, fy - 11.5, 1.5, 11, C.w1); rect(ctx, x + 64.5, fy - 6.7, 11, 1.5, C.w1);
+  for (const [wx, s] of [[x + 9, 1], [x + 37, 2], [x + 89, 3], [x + 117, 4]]) bigWindow(ctx, wx, fy + 12, 16, 20, { box: true, seed: s });
+  bigWindow(ctx, x + 12, base - 60, 26, 28, { box: true, seed: 5 });
+  bigWindow(ctx, x + 102, base - 60, 26, 28, { box: true, seed: 6 });
+  bigDoor(ctx, x + 53, base - 74, 34, 74, { seed: 7 });
+  scaled(ctx, x + 90, base - 72, 2, () => hangingSign(ctx, 0, 0, 9, 6, (c, sx, sy) => { ellipse(c, sx + 3.5, sy + 2, 2, 2, C.f3); px(c, sx + 2.5, sy + 1, C.f4); }));
+  wallLight(ctx, x, fy, w, base);
+  for (const [fx, color] of [[x + 10, C.b2], [x + w - 12, C.red]]) {
+    rect(ctx, fx, fy - 46, 2, 30, C.w2);
+    fillPoly(ctx, [[fx + 2, fy - 46], [fx + 18, fy - 41], [fx + 2, fy - 35]], color);
+    px(ctx, fx + 4, fy - 44, C.white);
+  }
+  bigStall(ctx, 2, 186, 46, [C.m1, C.paper], { seed: 11, height: 70 });
+  bigStall(ctx, 152, 186, 46, [C.r1, C.paper], { seed: 12, height: 70 });
+  bigCrate(ctx, 56, base + 14, 2.4); bigSack(ctx, 144, base + 16);
+  grassTufts(ctx, 2, 196, 196, { seed: 24, flowers: 0.2 });
+}
+
+
+
+
 
 // ---------- Ferreiro ----------
 
@@ -165,114 +616,12 @@ function hammerIcon(c, x, y, w, h) {
   rect(c, x, y, w, 2, C.g1); px(c, x, y, C.g3);
 }
 
-function forge1(ctx) {
-  // Telheiro: 4 esteios, cobertura de tábuas, fornalha baixa de pedra e bigorna.
-  const x = 13; const base = 55; const w = 38; const top = 30;
-  const roofPts = [[x - 3, top + 2], [x + w + 3, top + 2], [x + w + 3 + 5, top - 6], [x + 2, top - 6]];
-  for (const px0 of [x + w - 1 + 4, x + 5]) { rect(ctx, px0, top - 4, 2, base - top - 2, C.w2); }
-  // Fornalha (fundo).
-  ctx.save(); ctx.translate(x + 2, base - 12); stones(ctx, 12, 12, { seed: 3, rowH: [3, 4], blockW: [3, 5] }); ctx.restore();
-  rect(ctx, x + 5, base - 7, 6, 5, C.ink); rect(ctx, x + 6, base - 5, 4, 3, C.f1); rect(ctx, x + 7, base - 5, 2, 2, C.f3); px(ctx, x + 7, base - 4, C.f4);
-  ctx.save(); ctx.translate(x + 6, top - 12); stones(ctx, 5, 12, { seed: 4, rowH: [3, 3], blockW: [3, 4] }); ctx.restore();
-  rect(ctx, x + 5, top - 13, 7, 2, C.g4);
-  // Cobertura.
-  clip(ctx, roofPts, () => { ctx.save(); ctx.translate(x - 3, top - 6); tiles(ctx, w + 12, 9, { pal: ROOF_WOOD, seed: 4, tileW: 5 }); ctx.restore(); });
-  veil(ctx, roofPts, 0, top - 6, 0, top + 2, [[0, 'rgba(255,235,180,0.15)'], [1, 'rgba(26,25,50,0.25)']]);
-  line(ctx, x - 3, top + 2.5, x + w + 3, top + 2.5, C.ink);
-  rect(ctx, x - 3, top + 3, w + 6, 1, 'rgba(26,25,50,0.5)');
-  for (const px0 of [x, x + w - 2]) { rect(ctx, px0, top + 2, 2, base - top - 2, C.w3); rect(ctx, px0, top + 2, 1, base - top - 2, C.w5); }
-  line(ctx, x + 2, top + 8, x + 7, top + 3, C.w3, 1.2);
-  line(ctx, x + w - 2, top + 8, x + w - 7, top + 3, C.w3, 1.2);
-  // Bigorna, balde e ferramentas penduradas.
-  anvil(ctx, x + 22, base);
-  barrel(ctx, x + 31, base, { w: 5, h: 5 });
-  rect(ctx, x + 29.5, base - 5, 4, 1, C.b2);
-  for (const [tx, len] of [[x + 15, 5], [x + 18, 6]]) { line(ctx, tx + 0.5, top + 4, tx + 0.5, top + 4 + len, C.w2); rect(ctx, tx - 0.5, top + 3 + len, 3, 2, C.g2); }
-  grassTufts(ctx, x - 4, base + 1, w + 10, { seed: 2 });
-}
 
 function forgeFront(seed) {
   return (c, w, h) => stones(c, w, h, { seed, moss: 0.3, cracks: 0.25, pal: STONE });
 }
 
-function forge4(ctx) {
-  const x = 11; const base = 55; const w = 36; const h = 19; const d = 16;
-  const { fy } = box(ctx, { x, base, w, h, d, front: forgeFront(41), side: (c, ww, hh) => stones(c, ww, hh, { seed: 42 }) });
-  eaveShadow(ctx, x, fy, w);
-  gableRoof(ctx, { x, wallTop: fy, w, d, rise: 12, over: 3, drop: 2, roof: roofPainter({ seed: 43, pal: ROOF_SLATE, tileW: 5, moss: 0.3 }), gable: (c, ww, hh) => stones(c, ww, hh, { seed: 44 }) });
-  // Chaminé alta de pedra à direita (fumaça animada sai do topo: x≈49, y≈11).
-  chimney(ctx, x + 35, 12, 7, 32, { seed: 45 });
-  rect(ctx, x + 35, 12, 7, 2, C.g1); rect(ctx, x + 36, 11, 5, 1, C.ink);
-  // Boca da forja em arco com fogo.
-  const fx = x + 5; const fw = 13; const ftop = base - 13;
-  ellipse(ctx, fx + fw / 2, ftop + 1, fw / 2 + 1.5, 3.5, C.g4);
-  rect(ctx, fx - 1.5, ftop + 1, fw + 3, 12, C.g4);
-  ellipse(ctx, fx + fw / 2, ftop + 1, fw / 2, 2.6, C.ink);
-  rect(ctx, fx, ftop + 1, fw, 12, C.ink);
-  const g = ctx.createRadialGradient(fx + fw / 2, base - 3, 0, fx + fw / 2, base - 3, 9);
-  g.addColorStop(0, C.f4); g.addColorStop(0.3, C.f3); g.addColorStop(0.6, C.f1); g.addColorStop(1, C.r1);
-  ctx.fillStyle = g; ctx.fillRect(fx + 1, ftop + 3, fw - 2, 10);
-  for (let i = 0; i < 5; i += 1) px(ctx, fx + 2 + i * 2.3, base - 2 - (i % 2), C.f4);
-  rect(ctx, fx, base - 1, fw, 1, C.r1);
-  // Luz da forja espalhando na parede.
-  ctx.save(); ctx.globalCompositeOperation = 'lighter';
-  const glow = ctx.createRadialGradient(fx + fw / 2, base - 4, 2, fx + fw / 2, base - 4, 14);
-  glow.addColorStop(0, 'rgba(255,140,40,0.35)'); glow.addColorStop(1, 'rgba(255,140,40,0)');
-  ctx.fillStyle = glow; ctx.fillRect(x, fy, w, h); ctx.restore();
-  // Janela, placa com martelo, porta lateral.
-  windowLit(ctx, x + 23, fy + 5, 4, 5);
-  door(ctx, x + 28, base - 11, 6, 11, { seed: 9 });
-  hangingSign(ctx, x + 21, base - 9, 5, 5, hammerIcon);
-  frontLight(ctx, x, fy, w, base);
-  // Pátio: bigorna, tina d'água, lenha/carvão e espadas encostadas.
-  anvil(ctx, x - 1, base + 2);
-  barrel(ctx, x + w + 5, base + 2, { w: 6, h: 6 });
-  rect(ctx, x + w + 2.5, base - 4, 5, 1, C.b2); px(ctx, x + w + 3, base - 4, C.b4);
-  for (let i = 0; i < 3; i += 1) { line(ctx, x + w + 9 + i * 1.6, base + 1, x + w + 10 + i * 1.6, base - 7, C.g4, 0.8); px(ctx, x + w + 10 + i * 1.6, base - 3, C.w2); }
-  grassTufts(ctx, x - 6, base + 2, w + 18, { seed: 4 });
-}
 
-function forge8(ctx) {
-  const x = 8; const base = 69; const w = 56; const h = 30; const d = 16;
-  const { fy } = box(ctx, { x, base, w, h, d, front: forgeFront(51), side: (c, ww, hh) => stones(c, ww, hh, { seed: 52 }) });
-  eaveShadow(ctx, x, fy, w);
-  gableRoof(ctx, { x, wallTop: fy, w, d, rise: 13, over: 3, drop: 2, roof: roofPainter({ seed: 53, pal: ROOF_SLATE, tileW: 5, moss: 0.3 }), gable: (c, ww, hh) => stones(c, ww, hh, { seed: 54 }) });
-  // Chaminé larga (fumaça em x≈61, y≈5).
-  chimney(ctx, x + 49, 6, 9, 36, { seed: 55 });
-  rect(ctx, x + 49, 6, 9, 2, C.g1); rect(ctx, x + 50, 5, 7, 1, C.ink);
-  chimney(ctx, x + 6, fy - 27, 6, 18, { seed: 56 });
-  // Duas bocas de forja grandes com grade de ferro.
-  for (const fx of [x + 5, x + 34]) {
-    const fw = 15; const ftop = base - 16;
-    ellipse(ctx, fx + fw / 2, ftop + 1, fw / 2 + 1.5, 4, C.g4);
-    rect(ctx, fx - 1.5, ftop + 1, fw + 3, 15, C.g4);
-    ellipse(ctx, fx + fw / 2, ftop + 1, fw / 2, 3, C.ink);
-    rect(ctx, fx, ftop + 1, fw, 15, C.ink);
-    const g = ctx.createRadialGradient(fx + fw / 2, base - 3, 0, fx + fw / 2, base - 3, 11);
-    g.addColorStop(0, C.f4); g.addColorStop(0.3, C.f3); g.addColorStop(0.6, C.f1); g.addColorStop(1, C.r1);
-    ctx.fillStyle = g; ctx.fillRect(fx + 1, ftop + 3, fw - 2, 13);
-    for (let k = 2; k < fw - 1; k += 3) rect(ctx, fx + k, ftop + 2, 1, 14, 'rgba(28,18,28,0.75)');
-    ctx.save(); ctx.globalCompositeOperation = 'lighter';
-    const glow = ctx.createRadialGradient(fx + fw / 2, base - 5, 2, fx + fw / 2, base - 5, 16);
-    glow.addColorStop(0, 'rgba(255,140,40,0.35)'); glow.addColorStop(1, 'rgba(255,140,40,0)');
-    ctx.fillStyle = glow; ctx.fillRect(x, fy, w, h); ctx.restore();
-  }
-  // Brasão: estandarte vermelho com martelo dourado no meio.
-  rect(ctx, x + 24, fy + 3, 7, 13, C.r1); rect(ctx, x + 24, fy + 3, 1, 13, C.r3);
-  fillPoly(ctx, [[x + 24, fy + 16], [x + 27.5, fy + 19], [x + 31, fy + 16]], C.r1);
-  rect(ctx, x + 23, fy + 2, 9, 1, C.w4);
-  rect(ctx, x + 27, fy + 7, 1, 7, C.f3); rect(ctx, x + 25, fy + 6, 5, 2, C.f3); px(ctx, x + 25, fy + 6, C.f4);
-  windowLit(ctx, x + 4, fy + 4, 4, 5); windowLit(ctx, x + 47, fy + 4, 4, 5);
-  door(ctx, x + 24, base - 12, 7, 12, { seed: 4 });
-  frontLight(ctx, x, fy, w, base);
-  // Pátio: bigorna grande, armas num cavalete, carvão e barril.
-  anvil(ctx, x - 1, base + 2);
-  rect(ctx, x + w + 2, base - 10, 1, 11, C.w2); rect(ctx, x + w + 9, base - 10, 1, 11, C.w2); rect(ctx, x + w + 1, base - 9, 10, 1, C.w4);
-  for (let i = 0; i < 4; i += 1) { line(ctx, x + w + 3 + i * 2, base + 1, x + w + 3 + i * 2, base - 12, i % 2 ? C.g4 : C.slate3, 0.9); rect(ctx, x + w + 2.5 + i * 2, base - 8, 2, 1, C.w2); }
-  barrel(ctx, x + 18, base + 3, { w: 5, h: 5 });
-  for (let i = 0; i < 6; i += 1) ellipse(ctx, x + 10 + (i % 3) * 2, base + 2 - Math.floor(i / 3) * 1.5, 1.2, 1, C.g1);
-  grassTufts(ctx, x - 6, base + 3, w + 22, { seed: 14 });
-}
 
 // ---------- Fazenda ----------
 
@@ -341,47 +690,7 @@ function silo(ctx, x, base, w, h) {
   rect(ctx, x + w / 2 - 1, top + 4, 2, 3, C.ink);
 }
 
-function farm1(ctx) {
-  // Galpão de tábuas, horta com cerca e espantalho.
-  const x = 10; const base = 44; const w = 18; const h = 11; const d = 10;
-  const { fy } = box(ctx, { x, base, w, h, d, front: (c, ww, hh) => planks(c, ww, hh, { vertical: true, seed: 6, size: 3 }), side: (c, ww, hh) => planks(c, ww, hh, { vertical: true, seed: 7, size: 3 }) });
-  eaveShadow(ctx, x, fy, w);
-  gableRoof(ctx, { x, wallTop: fy, w, d, rise: 9, over: 2, drop: 2, roof: roofPainter({ seed: 3, pal: ROOF_WOOD, tileW: 5 }), gable: (c, ww, hh) => planks(c, ww, hh, { seed: 8, vertical: true, size: 3 }) });
-  door(ctx, x + 6, base - 8, 6, 8, { arch: false, step: false, seed: 2 });
-  frontLight(ctx, x, fy, w, base);
-  // Ferramentas encostadas.
-  line(ctx, x - 1.5, base, x - 0.5, base - 10, C.w4, 1); rect(ctx, x - 3, base - 11, 3, 1, C.g3);
-  line(ctx, x + w + 1.5, base, x + w + 0.5, base - 9, C.w4, 1); rect(ctx, x + w, base - 10, 2, 3, C.g3);
-  // Horta.
-  crops(ctx, 33, 42, 5, 3, 'sprout', 3);
-  fenceRun(ctx, 30, 49, 26);
-  scarecrow(ctx, 47, 40);
-  sack(ctx, 26, 56);
-  crops(ctx, 12, 52, 3, 1, 'cabbage', 4);
-  grassTufts(ctx, 6, 58, 52, { seed: 9, flowers: 0.15 });
-}
 
-function farm4(ctx) {
-  // Celeiro vermelho com portas em X, palheiro, silo e trigo.
-  const x = 20; const base = 50; const w = 26; const h = 18; const d = 13;
-  silo(ctx, 8, 50, 9, 30);
-  const { fy } = box(ctx, { x, base, w, h, d, front: barnFront(4), side: barnFront(5) });
-  eaveShadow(ctx, x, fy, w);
-  gableRoof(ctx, { x, wallTop: fy, w, d, rise: 12, over: 2, drop: 2, roof: roofPainter({ seed: 6, pal: ROOF_SLATE, tileW: 5, moss: 0.4 }), gable: barnFront(7) });
-  // Frontão com o palheiro (portinhola aberta com feno).
-  rect(ctx, x + 10, fy + 2, 6, 4, C.w1); rect(ctx, x + 11, fy + 4, 4, 2, C.r5); px(ctx, x + 12, fy + 3, C.cream);
-  rect(ctx, x + 9, fy + 1, 8, 1, C.paper); rect(ctx, x + 12.5, fy - 2, 1, 3, C.g1);
-  barnDoors(ctx, x + 7, base - 10, 12, 10);
-  rect(ctx, x, fy + h - 1, w, 1, C.paper);
-  frontLight(ctx, x, fy, w, base);
-  // Fardos de feno e trigo na frente.
-  for (const [bx, by] of [[x + w + 2, base - 5], [x + w + 6, base - 2]]) {
-    rect(ctx, bx, by, 6, 4, C.r5); rect(ctx, bx, by, 6, 1, C.cream); rect(ctx, bx + 2, by, 1, 4, C.w4); rect(ctx, bx, by + 3, 6, 1, C.w4);
-  }
-  crops(ctx, 10, 58, 11, 1, 'wheat', 5);
-  fenceRun(ctx, 6, 52, 14);
-  grassTufts(ctx, 4, 62, 56, { seed: 11, flowers: 0.12 });
-}
 
 function windmill(ctx, cx, base) {
   // Torre de pedra cônica com pás de lona.
@@ -406,38 +715,26 @@ function windmill(ctx, cx, base) {
   ellipse(ctx, hub[0], hub[1], 1.6, 1.6, C.w1); px(ctx, hub[0] - 1, hub[1] - 1, C.w5);
 }
 
-function farm8(ctx) {
-  const x = 30; const base = 58; const w = 34; const h = 22; const d = 15;
-  windmill(ctx, 14, 58);
-  silo(ctx, 66, 58, 10, 36);
-  const { fy } = box(ctx, { x, base, w, h, d, front: barnFront(14), side: barnFront(15) });
-  eaveShadow(ctx, x, fy, w);
-  gableRoof(ctx, { x, wallTop: fy, w, d, rise: 13, over: 2, drop: 2, roof: roofPainter({ seed: 16, pal: ROOF_SLATE, tileW: 5, moss: 0.4 }), gable: barnFront(17) });
-  frontGable(ctx, { cx: x + 17, wallTop: fy + 1, w: 14, d: 8, rise: 9, over: 1.5, drop: 1, roof: roofPainter({ seed: 18, pal: ROOF_SLATE, tileW: 5 }), pediment: barnFront(19) });
-  rect(ctx, x + 14.5, fy - 5, 5, 4, C.w1); rect(ctx, x + 15.5, fy - 3, 3, 2, C.r5);
-  rect(ctx, x + 16.5, fy - 9, 1, 4, C.g1);
-  barnDoors(ctx, x + 10, base - 13, 14, 13);
-  windowLit(ctx, x + 3, fy + 6, 4, 4); windowLit(ctx, x + 27, fy + 6, 4, 4);
-  rect(ctx, x, fy + h - 1, w, 1, C.paper);
-  frontLight(ctx, x, fy, w, base);
-  // Campos e cerca branca; galinheiro de caixotes e abóboras.
-  crops(ctx, 4, 70, 9, 1, 'wheat', 7);
-  crops(ctx, 44, 70, 8, 1, 'cabbage', 8);
-  for (const [px0, py0] of [[x - 6, base - 1], [x - 3, base + 1]]) { ellipse(ctx, px0, py0, 2, 1.6, C.r4); px(ctx, px0, py0 - 2, C.m2); px(ctx, px0 - 1, py0 - 1, C.r5); }
-  fenceRun(ctx, 2, 63, 76, { pal: { gap: C.g2, dark: C.g4, tones: [C.slate4], light: C.white, hi: C.white } });
-  crate(ctx, x + w + 4, base - 6, 6);
-  grassTufts(ctx, 2, 76, 76, { seed: 19, flowers: 0.12 });
-}
 
 // ---------- Mercado ----------
 
-function awning(ctx, x, y, w, depth, colors = [C.red, C.paper]) {
-  // Toldo listrado inclinado com franja ondulada.
-  const pts = [[x, y + depth], [x + 2, y], [x + w - 2, y], [x + w, y + depth]];
-  clip(ctx, pts, () => { for (let k = 0; k < w; k += 3) rect(ctx, x + k, y, 3, depth, colors[(k / 3) % 2]); });
-  veil(ctx, pts, 0, y, 0, y + depth, [[0, 'rgba(255,240,200,0.18)'], [1, 'rgba(26,25,50,0.2)']]);
-  for (let k = 0; k < w; k += 3) { ellipse(ctx, x + k + 1.5, y + depth, 1.5, 1.2, colors[(k / 3) % 2]); px(ctx, x + k + 1, y + depth + 1, 'rgba(26,25,50,0.4)'); }
-  rect(ctx, x, y + depth + 2, w, 1, 'rgba(26,25,50,0.45)');
+function awning(ctx, x, y, w, depth, colors = [C.red, C.paper], sw = 3) {
+  // Toldo listrado inclinado com franja ondulada (sw = largura da listra).
+  const n = (k) => Math.round(k / sw) % 2;
+  const pts = [[x, y + depth], [x + sw * 0.7, y], [x + w - sw * 0.7, y], [x + w, y + depth]];
+  clip(ctx, pts, () => {
+    for (let k = 0; k < w; k += sw) {
+      rect(ctx, x + k, y, sw, depth, colors[n(k)]);
+      if (sw > 4) { rect(ctx, x + k, y, 1, depth, 'rgba(255,240,200,0.25)'); rect(ctx, x + k + sw - 1, y, 1, depth, 'rgba(26,25,50,0.22)'); }
+    }
+    if (sw > 4) for (let yy = y + 3; yy < y + depth; yy += 4) rect(ctx, x, yy, w, 1, 'rgba(26,25,50,0.08)');
+  });
+  veil(ctx, pts, 0, y, 0, y + depth, [[0, 'rgba(255,240,200,0.2)'], [1, 'rgba(26,25,50,0.24)']]);
+  for (let k = 0; k < w; k += sw) {
+    ellipse(ctx, x + k + sw / 2, y + depth, sw / 2, sw * 0.4, colors[n(k)]);
+    px(ctx, x + k + sw / 2 - 0.5, y + depth + sw * 0.3, 'rgba(26,25,50,0.4)');
+  }
+  rect(ctx, x, y + depth + Math.max(2, sw * 0.55), w, Math.max(1, sw / 4), 'rgba(26,25,50,0.4)');
 }
 
 function produce(ctx, x, y, w) {
@@ -456,67 +753,8 @@ function stall(ctx, x, base, w, colors) {
   awning(ctx, x - 2, base - 17, w + 4, 5, colors);
 }
 
-function store1(ctx) {
-  // Barraca de feira: toldo listrado, bancada com frutas, caixotes e sacos.
-  stall(ctx, 16, 53, 30, [C.red, C.paper]);
-  crate(ctx, 7, 46, 7);
-  crate(ctx, 47, 47, 6);
-  sack(ctx, 12, 56);
-  barrel(ctx, 52, 57, { w: 5, h: 6 });
-  rect(ctx, 47, 24, 2, 26, C.w2); rect(ctx, 47, 24, 1, 26, C.w4); rect(ctx, 37, 23, 12, 1, C.w3);
-  hangingSign(ctx, 37, 27, 10, 5, (c, sx, sy, sw) => { ellipse(c, sx + 4, sy + 1.5, 1.5, 1.5, C.f3); px(c, sx + 3, sy + 1, C.f4); });
-  grassTufts(ctx, 4, 58, 56, { seed: 21, flowers: 0.15 });
-}
 
-function store4(ctx) {
-  const x = 12; const base = 55; const w = 38; const h = 20; const d = 13;
-  const { fy } = box(ctx, { x, base, w, h, d, front: (c, ww, hh) => planks(c, ww, hh, { seed: 61, size: 3, pal: WOOD }), side: (c, ww, hh) => planks(c, ww, hh, { seed: 62, size: 3 }) });
-  eaveShadow(ctx, x, fy, w);
-  gableRoof(ctx, { x, wallTop: fy, w, d, rise: 13, over: 3, drop: 2, roof: roofPainter({ seed: 63, moss: 0.3, barrel: true }), gable: (c, ww, hh) => planks(c, ww, hh, { seed: 64, size: 3, vertical: true }) });
-  frontGable(ctx, { cx: x + 19, wallTop: fy + 1, w: 16, d: 10, rise: 13, over: 1.5, drop: 1, roof: roofPainter({ seed: 65, barrel: true }),
-    pediment: (c, ww, hh) => planks(c, ww, hh, { seed: 66, size: 3, vertical: true }) });
-  // Placa grande no frontão (moeda).
-  rect(ctx, x + 15, fy - 6, 8, 5, C.w1); rect(ctx, x + 15.5, fy - 5.5, 7, 4, C.w5);
-  ellipse(ctx, x + 19, fy - 3.5, 1.6, 1.6, C.f3); px(ctx, x + 18, fy - 4.5, C.f4);
-  // Balcão com toldo e mercadorias.
-  rect(ctx, x + 3, fy + 4, 32, 9, C.w1);
-  windowLit(ctx, x + 5, fy + 5, 6, 5); windowLit(ctx, x + 27, fy + 5, 6, 5);
-  door(ctx, x + 16, fy + 6, 6, h - 6, { seed: 6 });
-  awning(ctx, x - 1, fy + 1, w + 2, 4, [C.b2, C.paper]);
-  ctx.save(); ctx.translate(x + 1, base - 5); planks(ctx, 13, 5, { seed: 2, size: 3 }); ctx.restore();
-  ctx.save(); ctx.translate(x + 24, base - 5); planks(ctx, 13, 5, { seed: 3, size: 3 }); ctx.restore();
-  produce(ctx, x + 2, base - 6, 11); produce(ctx, x + 25, base - 6, 11);
-  frontLight(ctx, x, fy, w, base);
-  crate(ctx, x - 7, base - 6, 6); sack(ctx, x + w + 3, base + 1); barrel(ctx, x + w + 8, base + 2, { w: 5, h: 6 });
-  grassTufts(ctx, x - 8, base + 2, w + 20, { seed: 22, flowers: 0.2 });
-}
 
-function store8(ctx) {
-  // Casa de comércio de dois andares + barracas coloridas na frente + bandeiras.
-  const x = 14; const base = 56; const w = 52; const h = 28; const d = 14;
-  const front = (c, ww, hh) => { plaster(c, ww, 14, { seed: 71 }); timber(c, ww, 14, [0, 12, 24, 38, ww - 2]); c.save(); c.translate(0, 14); planks(c, ww, hh - 14, { seed: 72, size: 3 }); c.restore(); rect(c, 0, 14, ww, 1, C.w5); };
-  const side = (c, ww, hh) => { plaster(c, ww, 14, { seed: 73 }); c.save(); c.translate(0, 14); planks(c, ww, hh - 14, { seed: 74, size: 3 }); c.restore(); };
-  const { fy } = box(ctx, { x, base, w, h, d, front, side });
-  chimney(ctx, x + w - 8, fy - 27, 5, 17, { seed: 75 });
-  eaveShadow(ctx, x, fy, w);
-  gableRoof(ctx, { x, wallTop: fy, w, d, rise: 13, over: 3, drop: 2, roof: roofPainter({ seed: 76, moss: 0.4, barrel: true }), gable: (c, ww, hh) => plaster(c, ww, hh, { seed: 77 }) });
-  frontGable(ctx, { cx: x + 26, wallTop: fy + 1, w: 16, d: 10, rise: 13, over: 1.5, drop: 1, roof: roofPainter({ seed: 78, barrel: true }), pediment: (c, ww, hh) => plaster(c, ww, hh, { seed: 79 }) });
-  ellipse(ctx, x + 26, fy - 3.5, 3, 3, C.w1); ellipse(ctx, x + 26, fy - 3.5, 2.2, 2.2, C.f3); px(ctx, x + 25, fy - 5, C.white);
-  for (const wx of [x + 4, x + 16, x + 31, x + 43]) windowLit(ctx, wx, fy + 4, 5, 6, { box: true });
-  door(ctx, x + 23, base - 12, 7, 12, { seed: 7 });
-  frontLight(ctx, x, fy, w, base);
-  // Bandeiras no cume.
-  for (const [fx, color] of [[x + 6, C.b2], [x + 46, C.red]]) {
-    rect(ctx, fx, fy - 26, 1, 12, C.w2);
-    fillPoly(ctx, [[fx + 1, fy - 26], [fx + 7, fy - 24], [fx + 1, fy - 21]], color);
-    px(ctx, fx + 2, fy - 25, C.white);
-  }
-  // Barracas na frente.
-  stall(ctx, 3, 72, 20, [C.m1, C.paper]);
-  stall(ctx, 57, 72, 20, [C.r1, C.paper]);
-  crate(ctx, 27, 66, 6); barrel(ctx, 52, 73, { w: 5, h: 6 }); sack(ctx, 33, 73);
-  grassTufts(ctx, 2, 75, 76, { seed: 24, flowers: 0.2 });
-}
 
 // ---------- Fogueira ----------
 
@@ -648,26 +886,34 @@ function lamp(ctx) {
 
 // ---------- Registro ----------
 
-const P64 = (paint, shadow) => ({ w: 64, h: 64, paint, shadow });
-const P80 = (paint, shadow) => ({ w: 80, h: 80, paint, shadow });
+const S1 = (paint, shadow) => ({ w: 144, h: 150, paint, shadow });
+const S4 = (paint, shadow) => ({ w: 168, h: 176, paint, shadow });
+const S8 = (paint, shadow) => ({ w: 200, h: 200, paint, shadow });
 
-export const CAMP_PIECES = {
-  'house-1': P64(house1, [32, 57, 24, 3.5]),
-  house: P64(house4, [32, 57, 27, 4]),
-  'house-8': P80(house8, [38, 71, 36, 4.5]),
-  'forge-1': P64(forge1, [32, 57, 24, 3.5]),
-  forge: P64(forge4, [32, 57, 27, 4]),
-  'forge-8': P80(forge8, [38, 71, 36, 4.5]),
-  'farm-1': P64(farm1, [22, 46, 14, 2.5]),
-  farm: P64(farm4, [33, 52, 18, 3]),
-  'farm-8': P80(farm8, [46, 60, 22, 3.5]),
-  'store-1': P64(store1, [31, 55, 22, 3]),
-  store: P64(store4, [31, 57, 26, 4]),
-  'store-8': P80(store8, [40, 73, 36, 4]),
+const SMALL = {
   campfire: { w: 24, h: 30, frames: 4, shadow: [12, 26, 10, 2.5], paint: (ctx, f) => campfire(ctx, f, { w: 24, h: 30, base: 27, rx: 7, ry: 3.2, n: 9, flameH: 16, flameW: 4.2, size: 1.9 }) },
   campfire4: { w: 32, h: 32, frames: 4, shadow: [16, 28, 13, 3], paint: (ctx, f) => campfire(ctx, f, { w: 32, h: 32, base: 29, rx: 10, ry: 4.2, n: 11, flameH: 19, flameW: 5.6, logsN: 4, size: 2.3 }) },
   campfire8: { w: 40, h: 40, frames: 4, shadow: [20, 36, 17, 3.5], paint: (ctx, f) => campfire(ctx, f, { w: 40, h: 40, base: 36, rx: 11, ry: 4.6, n: 12, flameH: 23, flameW: 6.4, logsN: 5, size: 2.6, extra: (c, fr) => { brazier(c, 4, 38, fr, 0.9); brazier(c, 36, 38, fr, 0.9); } }) },
   fence: { w: 32, h: 16, paint: fence },
   'fence-v': { w: 12, h: 32, paint: fenceV },
   lamp: { w: 20, h: 36, shadow: [10, 34, 5, 1.5], paint: lamp }
+};
+
+/** Escala de cada peça pequena (fogueira ~0,8x o herói de largura, cerca na cintura, poste ~1,6x). */
+export const CAMP_SCALE = { campfire: 1.6, campfire4: 1.6, campfire8: 1.6, fence: 2.25, 'fence-v': 2.25, lamp: 2.5 };
+
+export const CAMP_PIECES = {
+  'house-1': S1(house1, [72, 129, 54, 6]),
+  house: S4(house4, [84, 151, 70, 7]),
+  'house-8': S8(house8, [100, 171, 90, 8]),
+  'forge-1': S1(forge1, [72, 129, 60, 6]),
+  forge: S4(forge4, [84, 151, 70, 7]),
+  'forge-8': S8(forge8, [100, 171, 90, 8]),
+  'farm-1': S1(farm1, [44, 129, 38, 5]),
+  farm: S4(farm4, [92, 151, 58, 6]),
+  'farm-8': S8(farm8, [122, 171, 62, 7]),
+  'store-1': S1(store1, [72, 127, 58, 6]),
+  store: S4(store4, [80, 151, 70, 7]),
+  'store-8': S8(store8, [100, 171, 92, 8]),
+  ...Object.fromEntries(Object.entries(SMALL).map(([name, spec]) => [name, enlarge(spec, CAMP_SCALE[name])]))
 };

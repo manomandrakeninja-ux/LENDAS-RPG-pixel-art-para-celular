@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { ensureNpcAnims, hasNpcSheet, npcOriginY, npcSheetKey } from './npcArt.js';
 import { PixelCanvas } from '../art/pixel.js';
-import { BUILDING_FOOTPRINTS } from './Obstacles.js';
+import { buildingFootprint } from './Obstacles.js';
 import { buildingVisual } from '../data/buildingVisuals.js';
 import {
   BUILDING_DEFS,
@@ -30,6 +30,8 @@ export const BUILDINGS = BUILDING_DEFS;
 // Prédios com sprite do atlas; Fogueira, Muralha e Torre têm visual próprio.
 const ATLAS_FRAMES = { forge: 'forge', farm: 'farm', house: 'house', market: 'store' };
 const DAMAGED_TINT = 0xff9c8a;
+// Postes de luz (relativos ao centro do acampamento), dos dois lados da trilha.
+export const LAMP_POSTS = Object.freeze([[-78, 120], [78, 120]]);
 const DESTROYED_TINT = 0x6b5751;
 
 function migrateLegacyLevel(value) {
@@ -61,7 +63,8 @@ export class Camp {
     }
     this.x = WORLD.camp.x;
     this.y = WORLD.camp.y;
-    this.interactionRadius = 165;
+    // Item 19: acampamento maior (prédios na escala do herói) → alcance para abrir o menu maior.
+    this.interactionRadius = 230;
     this.questKills = saved.questKills ?? 0;
     this.questClaimed = saved.questClaimed ?? false;
     this.dungeonRevealed = Boolean(saved.dungeonRevealed);
@@ -93,8 +96,8 @@ export class Camp {
 
   create() {
     const scene = this.scene;
-    this.fireGlow = scene.add.image(this.x, this.y + 18, 'buildings', 'warm-glow')
-      .setScale(4)
+    this.fireGlow = scene.add.image(this.x, this.y + 10, 'buildings', 'warm-glow')
+      .setScale(5)
       .setBlendMode(Phaser.BlendModes.ADD)
       .setAlpha(0.12)
       .setDepth(OVERLAY_DEPTH + 4500);
@@ -104,7 +107,7 @@ export class Camp {
       .setDepth(this.y + 18)
       .setInteractive({ useHandCursor: true })
       .play('campfire-loop');
-    this.embers = scene.add.particles(this.x, this.y + 10, 'vfx', {
+    this.embers = scene.add.particles(this.x, this.y + 4, 'vfx', {
       frame: 'ember-0',
       lifespan: { min: 700, max: 1300 },
       speedX: { min: -8, max: 8 },
@@ -115,7 +118,7 @@ export class Camp {
       frequency: 220,
       quantity: 1
     }).setDepth(this.y + 24);
-    this.buildings.campfire = { sprite: this.fire, label: this.makeLabel('campfire', this.fire.x, this.fire.y - 30), sprites: [this.fire] };
+    this.buildings.campfire = { sprite: this.fire, label: this.makeLabel('campfire', this.fire.x, this.fire.y - 46), sprites: [this.fire] };
     this.fire.on('pointerdown', (pointer, localX, localY, event) => {
       event?.stopPropagation?.();
       this.scene.openBuilding?.('campfire');
@@ -124,21 +127,24 @@ export class Camp {
     for (const key of Object.keys(ATLAS_FRAMES)) this.buildings[key] = this.drawBuilding(key);
 
     const forge = this.buildings.forge.sprite;
-    this.smoke = scene.add.sprite(forge.x + 17, forge.y - 43, 'buildings', 'smoke-0')
+    this.smoke = scene.add.sprite(forge.x + 36, forge.y - 144, 'buildings', 'smoke-0')
       .setOrigin(0.5, 1)
       .setDepth(forge.y - 36)
       .setAlpha(0.82)
       .play('forge-smoke');
 
-    for (const [x, y] of [[this.x - 138, this.y + 5], [this.x + 145, this.y + 36]]) {
-      const glow = scene.add.image(x, y - 10, 'buildings', 'warm-glow')
-        .setScale(1)
+    // Postes dos dois lados da trilha, entre a fogueira e o portão (lampião ~70 px acima do chão).
+    for (const [x, y] of LAMP_POSTS.map(([dx, dy]) => [this.x + dx, this.y + dy])) {
+      const glow = scene.add.image(x, y - 70, 'buildings', 'warm-glow')
+        .setScale(1.4)
         .setBlendMode(Phaser.BlendModes.ADD)
         .setAlpha(0.08)
         .setDepth(OVERLAY_DEPTH + 4501 + y / 1000);
       this.lightGlows.push(glow);
       const lamp = scene.add.image(x, y, 'buildings', 'lamp').setOrigin(0.5, 0.95).setDepth(y + 12);
-      scene.obstacles?.add(x, y - 2, 8, 6);
+      scene.obstacles?.add(x, y - 3, 14, 8);
+      lamp.lightX = x;
+      lamp.lightY = y - 70;
       this.lampVisuals.push(lamp);
     }
 
@@ -158,7 +164,7 @@ export class Camp {
         this.fireGlow.setAlpha(0.42 + offsets[this.flickerIndex]);
       }
     });
-    scene.add.text(this.x, this.y + 151, 'ACAMPAMENTO  •  C', {
+    scene.add.text(this.x, this.y + 236, 'ACAMPAMENTO  •  C', {
       fontFamily: 'Press Start 2P', fontSize: '8px', color: '#f8e7ba',
       backgroundColor: '#1d2b24d9', padding: { x: 8, y: 5 }
     }).setOrigin(0.5).setDepth(1000).setScale(0.5);
@@ -176,7 +182,8 @@ export class Camp {
     const definition = BUILDING_DEFS[key];
     const x = this.x + definition.position.x;
     const y = this.y + definition.position.y;
-    const sprite = this.scene.add.image(x, y, 'buildings', buildingVisual(key, this.levels[key])?.frame ?? ATLAS_FRAMES[key])
+    const visual = buildingVisual(key, this.levels[key]);
+    const sprite = this.scene.add.image(x, y, 'buildings', visual?.frame ?? ATLAS_FRAMES[key])
       .setOrigin(0.5, 0.84)
       .setDepth(y + 10)
       .setInteractive({ useHandCursor: true });
@@ -184,16 +191,26 @@ export class Camp {
       event?.stopPropagation?.();
       this.scene.openBuilding?.(key);
     });
-    const glow = this.scene.add.image(x, y - 14, 'buildings', 'warm-glow')
-      .setScale(key === 'forge' ? 2.6 : 2.2)
+    // Luz da noite na porta/janela acesa do prédio (ver BUILDING_VISUALS[...].light).
+    const glow = this.scene.add.image(x + (visual?.light?.x ?? 0), y + (visual?.light?.y ?? -40), 'buildings', 'warm-glow')
+      .setScale(key === 'forge' ? 3.2 : 2.8)
       .setBlendMode(Phaser.BlendModes.ADD)
       .setAlpha(0.05)
       .setDepth(OVERLAY_DEPTH + 4501 + y / 1000);
     if (key === 'forge') glow.setTint(0xff9a4a);
     this.lightGlows.push(glow);
-    const base = BUILDING_FOOTPRINTS[key];
-    if (base) this.scene.obstacles?.add(x + base.x, y + base.y, base.width, base.height);
-    return { sprite, glow, label: this.makeLabel(key, x, y - 55), sprites: [sprite] };
+    const building = { sprite, glow, label: this.makeLabel(key, x, y - 55), sprites: [sprite], obstacles: [] };
+    this.placeFootprint(key, building, visual?.stage ?? 1);
+    return building;
+  }
+
+  /** Colisão da base conforme o estágio (cada estágio tem um tamanho de prédio). */
+  placeFootprint(key, building, stage) {
+    const obstacles = this.scene.obstacles;
+    if (!obstacles) return;
+    obstacles.remove(building.obstacles);
+    const base = buildingFootprint(key, stage);
+    building.obstacles = base ? [obstacles.add(building.sprite.x + base.x, building.sprite.y + base.y, base.width, base.height)] : [];
   }
 
   labelText(key) {
@@ -241,7 +258,12 @@ export class Camp {
     else sprite.setFrame(visual.frame);
     const height = sprite.frame.height;
     if (sprite.input?.hitArea) sprite.input.hitArea.setTo(0, 0, sprite.frame.width, height);
-    building.label?.setY(sprite.y - height * 0.84 - (key === 'campfire' ? 6 : 2));
+    // Nome "CASA • NV 1" logo acima do telhado (topo real da arte, não do quadro).
+    building.label?.setY(sprite.y - height * 0.84 + (visual.labelTop ?? 0) - (key === 'campfire' ? 6 : 4));
+    if (key !== 'campfire') {
+      this.placeFootprint(key, building, visual.stage);
+      if (building.glow) building.glow.setPosition(sprite.x + (visual.light?.x ?? 0), sprite.y + (visual.light?.y ?? -40));
+    }
     if (key === 'forge' && this.smoke) {
       this.smoke.setVisible(Boolean(visual.smoke));
       if (visual.smoke) this.smoke.setPosition(sprite.x + visual.smoke.x, sprite.y + visual.smoke.y).setDepth(sprite.y + visual.smoke.y + 7);
@@ -271,20 +293,21 @@ export class Camp {
   }
 
   createAnimalPen() {
-    const cx = this.x + 130;
-    const cy = this.y + 102;
-    const halfWidth = 84;
-    const halfHeight = 42;
+    // Item 19: curral à direita da trilha, na frente do mercado; cerca 72x36 (2,25x), mourões a cada 63 px.
+    const cx = this.x + 175;
+    const cy = this.y + 205;
+    const halfWidth = 94;
+    const halfHeight = 46;
     this.pen = { cx, cy, halfWidth, halfHeight, fences: [] };
-    for (let x = cx - halfWidth; x < cx + halfWidth; x += 28) {
+    for (let x = cx - halfWidth + 31; x < cx + halfWidth; x += 63) {
       this.pen.fences.push(this.scene.add.image(x, cy - halfHeight, 'buildings', 'fence').setDepth(cy - halfHeight));
       this.pen.fences.push(this.scene.add.image(x, cy + halfHeight, 'buildings', 'fence').setDepth(cy + halfHeight + 5));
     }
     // Lados: cerca norte-sul própria ('fence-v'); a antiga girada 90° só se o atlas não tiver o quadro.
     const sideFrame = this.scene.textures.get('buildings').has('fence-v');
     if (sideFrame) {
-      // Pedaços de 32 px (base = pé dos mourões) cobrindo do topo até a cerca de baixo.
-      for (let base = cy - halfHeight + 30; base <= cy + halfHeight + 6; base += 28) {
+      // Pedaços de 72 px (base = pé dos mourões) cobrindo do topo até a cerca de baixo.
+      for (let base = cy - halfHeight + 66; base <= cy + halfHeight + 14; base += 63) {
         for (const x of [cx - halfWidth, cx + halfWidth]) {
           this.pen.fences.push(this.scene.add.image(x, base, 'buildings', 'fence-v').setOrigin(0.5, 1).setDepth(base));
         }
@@ -397,11 +420,11 @@ export class Camp {
       .filter((key) => this.buildings[key]?.glow && this.isBuilt(key) && this.durability[key] > 0)
       .map((key) => {
         const glow = this.buildings[key].glow;
-        return { object: glow, x: glow.x, y: glow.y, radius: key === 'forge' ? 125 : 100, kind: key === 'forge' ? 'forge' : 'lamp' };
+        return { object: glow, x: glow.x, y: glow.y, radius: key === 'forge' ? 150 : 120, kind: key === 'forge' ? 'forge' : 'lamp' };
       });
     return [
-      { object: this.fire, x: this.fire.x, y: this.fire.y, radius: 170, kind: 'fire' },
-      ...this.lampVisuals.map((lamp) => ({ object: lamp, x: lamp.x, y: lamp.y, radius: 105, kind: 'lamp' })),
+      { object: this.fire, x: this.fire.x, y: this.fire.y - 10, radius: 200, kind: 'fire' },
+      ...this.lampVisuals.map((lamp) => ({ object: lamp, x: lamp.lightX ?? lamp.x, y: lamp.lightY ?? lamp.y, radius: 120, kind: 'lamp' })),
       ...buildings,
       ...(this.defense?.lightSources?.() ?? [])
     ];

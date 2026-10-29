@@ -84,7 +84,7 @@ Object.assign(REGIONS, {
 // Personagens. home = posição relativa à fogueira quando estão no acampamento.
 export const NPCS = {
   vigia: {
-    name: 'Bram, o Vigia', role: 'Vigia', home: { x: -96, y: 150 }, startsInCamp: true,
+    name: 'Bram, o Vigia', role: 'Vigia', home: { x: -80, y: 292 }, startsInCamp: true,
     palette: { tunic: '#6b5a3a', scarf: '#8a6a3a', hair: '#8d8d8d', skin: '#d9a070', hat: '#4a3a2a' },
     lines: [
       'Fique perto do fogo à noite. A escuridão daqui tem dentes.',
@@ -93,7 +93,7 @@ export const NPCS = {
     ]
   },
   curandeira: {
-    name: 'Lia, a Curandeira', role: 'Curandeira', home: { x: 96, y: 200 },
+    name: 'Lia, a Curandeira', role: 'Curandeira', home: { x: 112, y: 112 },
     palette: { tunic: '#3f8a6a', scarf: '#e8d6ab', hair: '#c46a3a', skin: '#f0c08a' },
     lines: [
       'Ervas frescas salvam vidas. Traga o que encontrar.',
@@ -102,7 +102,7 @@ export const NPCS = {
     ]
   },
   ferreiro: {
-    name: 'Doran, o Ferreiro', role: 'Ferreiro', home: { x: -140, y: -10 },
+    name: 'Doran, o Ferreiro', role: 'Ferreiro', home: { x: -128, y: 18 },
     palette: { tunic: '#5a3a2a', scarf: '#3a3a3a', hair: '#2a1a12', skin: '#c98a5a', beard: true },
     lines: [
       'Ferro bom canta quando bate na bigorna.',
@@ -111,7 +111,7 @@ export const NPCS = {
     ]
   },
   cacador: {
-    name: 'Kael, o Caçador', role: 'Caçador', home: { x: 160, y: 110 },
+    name: 'Kael, o Caçador', role: 'Caçador', home: { x: 240, y: 52 },
     palette: { tunic: '#3a5a2a', scarf: '#6b4a2a', hair: '#3a2a1a', skin: '#d9a070', hat: '#2f4a22' },
     lines: [
       'A floresta fala. Basta saber ouvir os galhos quebrando.',
@@ -129,7 +129,7 @@ export const NPCS = {
     ]
   },
   capitao: {
-    name: 'Capitã Mirela', role: 'Capitã', home: { x: 40, y: -190 },
+    name: 'Capitã Mirela', role: 'Capitã', home: { x: 82, y: -112 },
     palette: { tunic: '#7a2a2a', scarf: '#d9b45c', hair: '#1a1a2a', skin: '#c98a5a', hat: '#8d8d8d' },
     lines: [
       'Soldados sem rei, mas não sem honra.',
@@ -138,7 +138,7 @@ export const NPCS = {
     ]
   },
   mercador: {
-    name: 'Zeno, o Mercador', role: 'Mercador', home: { x: 150, y: -60 },
+    name: 'Zeno, o Mercador', role: 'Mercador', home: { x: 150, y: 10 },
     palette: { tunic: '#5a3a7a', scarf: '#e8c15a', hair: '#2a1a12', skin: '#e0a676', hat: '#3a2a5a' },
     lines: [
       'Tudo tem preço, amigo. Até a esperança.',
@@ -186,7 +186,7 @@ export const SITES = {
   'ovelha-3': { name: 'Ovelha Perdida', ...at(700, -120), kind: 'rescue', art: 'sheep', group: 'ovelhas' },
   'refugiado-1': { name: 'Família de Refugiados', ...at(-760, 340), kind: 'rescue', art: 'tent', group: 'refugiados', residents: 2 },
   'refugiado-2': { name: 'Família de Refugiados', ...at(760, 160), kind: 'rescue', art: 'tent', group: 'refugiados', residents: 2 },
-  festival: { name: 'Festival da Fogueira', ...at(0, 50), kind: 'investigate', art: 'banner' },
+  festival: { name: 'Festival da Fogueira', ...at(-58, 26), kind: 'investigate', art: 'banner' },
   // Capítulo 3
   'ferreiro-perdido': { name: 'Ferreiro Desaparecido', x: 2260, y: 900, kind: 'rescue', art: 'tent', recruits: 'ferreiro' },
   saqueadores: { name: 'Noite dos Saqueadores', ...at(0, 0), kind: 'assault', enemies: { kind: 'skeleton', visual: 'bandit', name: 'Saqueador', tag: 'saqueador', count: 6 } },

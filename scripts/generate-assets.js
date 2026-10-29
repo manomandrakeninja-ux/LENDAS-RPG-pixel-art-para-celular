@@ -28,8 +28,7 @@ function makeSheet(file, frameWidth, frameHeight, columns, rows, drawFrame, { ou
   writePng(path.join(root, file), sheet);
 }
 
-function makeAtlas(file, entries, { enhance = null, occlusion = false } = {}) {
-  const atlasWidth = 256;
+function makeAtlas(file, entries, { enhance = null, occlusion = false, atlasWidth = 256 } = {}) {
   let x = 2;
   let y = 2;
   let rowHeight = 0;
@@ -1110,9 +1109,10 @@ for (const entry of buildingEntries) {
   const [, stage, frame] = entry.name.match(/^(campfire\d?)-(\d)$/) ?? [];
   const baked = stage ? bakedBuilding(stage, Number(frame)) : bakedBuilding(entry.name);
   if (!baked) continue;
-  Object.assign(entry, { draw: (sprite) => sprite.blit(baked, 0, 0), enhance: false, outline: false });
+  // Item 19: a arte pintada define o tamanho do quadro (prédios na escala do herói).
+  Object.assign(entry, { width: baked.width, height: baked.height, draw: (sprite) => sprite.blit(baked, 0, 0), enhance: false, outline: false });
 }
-makeAtlas('buildings/camp-atlas.json', buildingEntries, { enhance: enhanceBuilding });
+makeAtlas('buildings/camp-atlas.json', buildingEntries, { enhance: enhanceBuilding, atlasWidth: 512 });
 
 makeAtlas('ui/panel-atlas.json', [{
   name: 'panel', width: 24, height: 24, outline: false,

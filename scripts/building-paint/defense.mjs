@@ -4,7 +4,7 @@
 import {
   C, STONE, STONE_COOL, WOOD, WOOD_DARK, ROOF_RED, ROOF_BLUE, ROOF_WOOD,
   rng, rect, px, line, ellipse, fillPoly, clip, veil, stones, planks, logs, tiles, mossBand,
-  windowLit, door, barrel, crate, lanternBox, baseShade, grassTufts, mixHex
+  windowLit, door, barrel, crate, lanternBox, baseShade, grassTufts, mixHex, enlarge
 } from './kit.mjs';
 
 // ---------- Peças básicas ----------
@@ -139,19 +139,24 @@ function wallcorner8(ctx) {
 
 function gate1(ctx) {
   // Pórtico de toras com viga, crânio de troféu e tochas acesas em cima.
-  for (const x of [3, 47]) { stake(ctx, x, 0, 30, 6, x); rope(ctx, x, 12, 6); rope(ctx, x, 20, 6); }
-  rect(ctx, 3, 6, 50, 4, C.w3); rect(ctx, 3, 6, 50, 1, C.w5); rect(ctx, 3, 9, 50, 1, C.w1);
-  for (let x = 8; x < 48; x += 6) px(ctx, x, 7, C.w2);
+  for (const x of [3, 47]) { stake(ctx, x, 0, 36, 6, x); rope(ctx, x, 14, 6); rope(ctx, x, 26, 6); }
+  rect(ctx, 3, 3, 50, 4, C.w3); rect(ctx, 3, 3, 50, 1, C.w5); rect(ctx, 3, 6, 50, 1, C.w1);
+  for (let x = 8; x < 48; x += 6) px(ctx, x, 4, C.w2);
   // Placa de boas-vindas.
-  rect(ctx, 21, 10, 14, 6, C.w4); rect(ctx, 21, 10, 14, 1, C.w6); rect(ctx, 21, 15, 14, 1, C.w2);
-  for (let k = 0; k < 4; k += 1) rect(ctx, 23 + k * 3, 12, 2, 2, C.w1);
-  line(ctx, 23, 10, 25, 9, C.g1, 0.6); line(ctx, 33, 10, 31, 9, C.g1, 0.6);
-  baseShade(ctx, 3, 30, 6, 3); baseShade(ctx, 47, 30, 6, 3);
-  grassTufts(ctx, 0, 30, 12, { seed: 2 }); grassTufts(ctx, 44, 30, 12, { seed: 3 });
+  rect(ctx, 21, 7, 14, 5, C.w4); rect(ctx, 21, 7, 14, 1, C.w6); rect(ctx, 21, 11, 14, 1, C.w2);
+  for (let k = 0; k < 4; k += 1) rect(ctx, 23 + k * 3, 8.5, 2, 2, C.w1);
+  baseShade(ctx, 3, 36, 6, 3); baseShade(ctx, 47, 36, 6, 3);
+  grassTufts(ctx, 0, 36, 12, { seed: 2 }); grassTufts(ctx, 44, 36, 12, { seed: 3 });
 }
 
 function gate4(ctx) {
   // Portaria de madeira: duas torrinhas de toras com plataforma e paliçada, viga com estandarte.
+  for (const x of [2, 48]) { rect(ctx, x, 46, 3, 4, C.w3); rect(ctx, x + 11, 46, 3, 4, C.w2); }
+  ctx.save(); ctx.translate(0, 4); gate4Body(ctx); ctx.restore();
+  grassTufts(ctx, 0, 50, 18, { seed: 5 }); grassTufts(ctx, 46, 50, 18, { seed: 6 });
+}
+
+function gate4Body(ctx) {
   for (const x of [2, 48]) {
     for (const [px0, s] of [[x, 1], [x + 11, 2]]) { rect(ctx, px0, 17, 3, 29, C.w3); rect(ctx, px0, 17, 1, 29, C.w5); rect(ctx, px0 + 2, 17, 1, 29, C.w2); }
     line(ctx, x + 2, 22, x + 12, 40, C.w2, 1.4); line(ctx, x + 12, 22, x + 2, 40, C.w2, 1.4);
@@ -163,10 +168,9 @@ function gate4(ctx) {
   }
   // Viga e estandarte vermelho do acampamento.
   rect(ctx, 16, 17, 32, 4, C.w3); rect(ctx, 16, 17, 32, 1, C.w5); rect(ctx, 16, 20, 32, 1, C.w1);
-  rect(ctx, 28, 21, 8, 11, C.r1); rect(ctx, 28, 21, 1, 11, C.r3);
-  fillPoly(ctx, [[28, 32], [32, 35], [36, 32]], C.r1);
-  ellipse(ctx, 32, 26, 2, 2, C.f3); px(ctx, 31, 25, C.f4);
-  grassTufts(ctx, 0, 46, 18, { seed: 5 }); grassTufts(ctx, 46, 46, 18, { seed: 6 });
+  rect(ctx, 28, 21, 8, 6, C.r1); rect(ctx, 28, 21, 1, 6, C.r3);
+  fillPoly(ctx, [[28, 27], [32, 29], [36, 27]], C.r1);
+  ellipse(ctx, 32, 24, 1.8, 1.8, C.f3); px(ctx, 31, 23, C.f4);
 }
 
 function gate8(ctx) {
@@ -240,6 +244,31 @@ function buildSite(ctx) {
   grassTufts(ctx, 0, 26, 22, { seed: 3, density: 0.4 });
 }
 
+// ---------- Arqueiro e canhão das torres (escala do herói, atrás do parapeito) ----------
+
+function towerArcher(ctx) {
+  // Busto do arqueiro: elmo de couro, rosto, gola, ombros verdes, arco em pé e aljava.
+  ellipse(ctx, 10, 25, 9, 6, C.m1); rect(ctx, 1, 20, 18, 8, C.m1); rect(ctx, 2, 20, 6, 8, C.m2); rect(ctx, 15, 20, 3, 8, C.m0);
+  rect(ctx, 6, 17, 8, 4, C.w3); rect(ctx, 6, 17, 8, 1, C.w5);
+  ellipse(ctx, 10, 11, 5, 5.5, C.peach); ellipse(ctx, 9, 10, 3.5, 4, C.cream);
+  px(ctx, 8, 11, C.ink); px(ctx, 12, 11, C.ink); rect(ctx, 9, 14, 3, 1, C.r2);
+  ellipse(ctx, 10, 7, 6, 4, C.w3); rect(ctx, 4, 7, 12, 2, C.w2); rect(ctx, 5, 5, 4, 1, C.w5);
+  line(ctx, 3, 18, 1, 26, C.w4, 1.4); rect(ctx, 0, 17, 3, 3, C.w2);
+  ctx.strokeStyle = C.w3; ctx.lineWidth = 1.6; ctx.beginPath(); ctx.arc(19, 14, 12, Math.PI * 0.62, Math.PI * 1.38); ctx.stroke();
+  line(ctx, 14.6, 3, 14.6, 25, C.paper, 0.6);
+}
+
+function towerCannon(ctx) {
+  // Canhão de bronze num reparo de madeira, boca para a direita.
+  ctx.save(); ctx.translate(2, 4); planks(ctx, 18, 8, { seed: 3, size: 4 }); ctx.restore();
+  for (const cx of [6, 16]) { ellipse(ctx, cx, 13, 4, 4, C.w1); ellipse(ctx, cx, 13, 3, 3, C.w4); ellipse(ctx, cx, 13, 1, 1, C.g1); }
+  const g = ctx.createLinearGradient(0, 1, 0, 9); g.addColorStop(0, C.r5); g.addColorStop(0.4, C.f2); g.addColorStop(1, C.r2);
+  ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(4, 2); ctx.lineTo(30, 3); ctx.lineTo(30, 8); ctx.lineTo(4, 9); ctx.closePath(); ctx.fill();
+  rect(ctx, 30, 2, 4, 7, C.f2); rect(ctx, 30, 2, 4, 1, C.f4); ellipse(ctx, 34, 5.5, 1.2, 2.2, C.ink);
+  for (const bx of [10, 18, 25]) rect(ctx, bx, 2, 2, 7, C.r5);
+  ellipse(ctx, 4, 5.5, 2.5, 3.5, C.r2);
+}
+
 // ---------- Torres de vigia ----------
 
 function tower1(ctx) {
@@ -263,8 +292,8 @@ function tower1(ctx) {
 function towerWood(ctx) {
   // Torre de toras fechada (ícone do menu e alternativa): corpo de toras, plataforma com ameias de tábua.
   ctx.save(); ctx.translate(7, 17); logs(ctx, 16, 39, { seed: 3, size: 4 }); ctx.restore();
-  rect(ctx, 13, 26, 4, 7, C.ink); rect(ctx, 14, 27, 2, 5, C.w1);
-  door(ctx, 12, 47, 6, 9, { arch: false, step: false });
+  rect(ctx, 13, 21, 4, 7, C.ink); rect(ctx, 14, 22, 2, 5, C.w1);
+  door(ctx, 11, 32, 8, 24, { arch: false, step: false });
   ctx.save(); ctx.translate(1, 9); planks(ctx, 28, 8, { seed: 4, size: 4 }); ctx.restore();
   for (let x = 1; x < 29; x += 6) { ctx.save(); ctx.translate(x, 3); planks(ctx, 4, 6, { seed: x, size: 2, vertical: true, nails: false }); ctx.restore(); }
   rect(ctx, 1, 16, 28, 1, 'rgba(26,25,50,0.5)');
@@ -278,8 +307,8 @@ function towerStone(ctx) {
   stoneWall(ctx, { w: 18, base: 58, faceTop: 18, depth: 2, seed: 81, moss: 0.4 });
   ctx.restore();
   veil(ctx, [[18, 18], [24, 18], [24, 58], [18, 58]], 18, 0, 24, 0, [[0, 'rgba(26,25,50,0)'], [1, 'rgba(26,25,50,0.45)']]);
-  rect(ctx, 13, 27, 4, 8, C.ink); rect(ctx, 14, 28, 2, 6, C.night);
-  door(ctx, 12, 49, 6, 9, { step: false });
+  rect(ctx, 13, 21, 4, 7, C.ink); rect(ctx, 14, 22, 2, 5, C.night);
+  door(ctx, 11, 34, 8, 24, { step: false });
   // Plataforma em balanço com mísulas.
   ctx.save(); ctx.translate(1, 6); stones(ctx, 28, 9, { seed: 82, rowH: [4, 5], blockW: [5, 7] }); ctx.restore();
   rect(ctx, 1, 6, 28, 2, C.g4); rect(ctx, 1, 6, 28, 1, C.slate4);
@@ -296,8 +325,8 @@ function tower8(ctx) {
   stoneWall(ctx, { w, base, faceTop: deck + 6, depth: 2, pal: STONE_COOL, seed: 91, ashlar: true, moss: 0.35 });
   ctx.restore();
   veil(ctx, [[x + w - 7, deck], [x + w, deck], [x + w, base], [x + w - 7, base]], x + w - 7, 0, x + w, 0, [[0, 'rgba(26,25,50,0)'], [1, 'rgba(26,25,50,0.5)']]);
-  for (const y of [36, 50]) windowLit(ctx, x + 9, y, 4, 6, { arch: true, frame: { gap: C.deep, dark: C.slate, light: C.slate3, tones: [C.slate2] } });
-  door(ctx, x + 7, base - 10, 8, 10, { step: false, seed: 5 });
+  windowLit(ctx, x + 9, 35, 4, 5, { arch: true, frame: { gap: C.deep, dark: C.slate, light: C.slate3, tones: [C.slate2] } });
+  door(ctx, x + 6, base - 24, 10, 24, { step: false, seed: 5 });
   // Sacada.
   rect(ctx, 3, deck, 30, 6, C.slate3); rect(ctx, 3, deck, 30, 1, C.slate4); rect(ctx, 3, deck + 5, 30, 1, C.slate);
   for (let k = 4; k < 32; k += 4) { rect(ctx, k, deck + 1, 2, 4, C.slate2); }
@@ -324,21 +353,32 @@ function tower8(ctx) {
   grassTufts(ctx, x - 2, base, w + 4, { seed: 9, density: 0.35 });
 }
 
-export const DEFENSE_PIECES = {
+// Item 19: muralha, portões, porta, tocha e obra 2,6x; torres 3x (porta ~72 px). Arqueiro e canhão já em pixels finais.
+export const WALL_SCALE = 2.6;
+export const TOWER_SCALE = 3;
+const BASE_PIECES = {
   'wallseg-1': { w: 16, h: 30, paint: wallseg1 },
   'wallcorner-1': { w: 22, h: 40, shadow: [11, 39, 9, 1.6], paint: wallcorner1 },
   'wallseg-4': { w: 16, h: 30, paint: wallseg4 },
   'wallcorner-4': { w: 30, h: 54, shadow: [15, 53, 13, 2], paint: wallcorner4 },
   'wallseg-8': { w: 16, h: 36, paint: wallseg8 },
   'wallcorner-8': { w: 36, h: 76, shadow: [18, 75, 16, 2.4], paint: wallcorner8 },
-  'gate-1': { w: 56, h: 30, shadow: [28, 29, 24, 1.6], paint: gate1 },
-  'gate-4': { w: 64, h: 46, shadow: [32, 45, 28, 2], paint: gate4 },
+  'gate-1': { w: 56, h: 36, shadow: [28, 35, 24, 1.6], paint: gate1 },
+  'gate-4': { w: 64, h: 50, shadow: [32, 49, 28, 2], paint: gate4 },
   'gate-8': { w: 72, h: 56, shadow: [36, 55, 32, 2.2], paint: gate8 },
   'wall-door': { w: 18, h: 24, paint: wallDoor },
   'gate-torch': { w: 10, h: 24, shadow: [5, 23, 3, 1], paint: gateTorch },
-  'build-site': { w: 22, h: 26, shadow: [11, 25, 7, 1.4], paint: buildSite },
+  'build-site': { w: 22, h: 26, shadow: [11, 25, 7, 1.4], paint: buildSite }
+};
+const TOWER_PIECES = {
   'tower-1': { w: 30, h: 50, shadow: [15, 48, 11, 2], paint: tower1 },
   'tower-wood': { w: 30, h: 58, shadow: [15, 56, 12, 2], paint: towerWood },
   'tower-stone': { w: 30, h: 58, shadow: [15, 56, 12, 2], paint: towerStone },
   'tower-8': { w: 36, h: 70, shadow: [18, 68, 14, 2.4], paint: tower8 }
+};
+export const DEFENSE_PIECES = {
+  ...Object.fromEntries(Object.entries(BASE_PIECES).map(([k, v]) => [k, enlarge(v, WALL_SCALE)])),
+  ...Object.fromEntries(Object.entries(TOWER_PIECES).map(([k, v]) => [k, enlarge(v, TOWER_SCALE)])),
+  'tower-archer': { w: 22, h: 28, paint: towerArcher },
+  'tower-cannon': { w: 36, h: 18, paint: towerCannon }
 };

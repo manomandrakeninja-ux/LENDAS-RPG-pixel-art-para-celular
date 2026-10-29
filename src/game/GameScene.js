@@ -1827,10 +1827,10 @@ export class GameScene extends Phaser.Scene {
   createDungeonMarker() {
     if (this.dungeonMarker || !(this.camp.dungeonRevealed || this.camp.defense?.dragonRadar)) return;
     if (!this.textures.exists('dungeon-entrance')) {
-      const texture = this.textures.createCanvas('dungeon-entrance', 40, 30);
       // Portal de pedra escura com runas e brilho vermelho do Dragão.
-      // Arte pintada em alta resolução (Fase 20 G-predios); o desenho abaixo fica de reserva.
+      // Arte pintada em alta resolução (Fase 20 G-predios; item 19: 120x90, boca ~1,2x o herói); o desenho abaixo fica de reserva.
       const baked = bakedBuilding('dungeon-entrance');
+      const texture = this.textures.createCanvas('dungeon-entrance', baked?.width ?? 40, baked?.height ?? 30);
       const gate = baked ?? new PixelCanvas(40, 30);
       if (!baked) {
         const stone = ['#1f1a1d', '#3a3337', '#544a50', '#6f6469', '#8a7f84'];
@@ -1849,12 +1849,12 @@ export class GameScene extends Phaser.Scene {
         }
         gate.outline();
       }
-      texture.getContext().putImageData(new ImageData(quantizePixels(gate).data, 40, 30), 0, 0);
+      texture.getContext().putImageData(new ImageData(quantizePixels(gate).data, gate.width, gate.height), 0, 0);
       texture.setFilter(Phaser.Textures.FilterMode.NEAREST);
       texture.refresh();
     }
     const sprite = this.add.image(DUNGEON_CONFIG.x, DUNGEON_CONFIG.y, 'dungeon-entrance').setOrigin(0.5, 1).setDepth(DUNGEON_CONFIG.y);
-    const label = this.add.text(DUNGEON_CONFIG.x, DUNGEON_CONFIG.y - 40, DUNGEON_CONFIG.label.toUpperCase(), {
+    const label = this.add.text(DUNGEON_CONFIG.x, DUNGEON_CONFIG.y - sprite.height - 8, DUNGEON_CONFIG.label.toUpperCase(), {
       fontFamily: 'Press Start 2P', fontSize: '8px', color: '#ffb0a0', backgroundColor: '#2a1513dd', padding: { x: 5, y: 3 }
     }).setOrigin(0.5).setDepth(DUNGEON_CONFIG.y + 1);
     this.hudCamera?.ignore([sprite, label]);

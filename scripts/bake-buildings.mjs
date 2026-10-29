@@ -20,8 +20,9 @@ import { writePng } from './png.js';
 import { CAMP_PIECES } from './building-paint/camp.mjs';
 import { DEFENSE_PIECES } from './building-paint/defense.mjs';
 import { SITE_PIECES } from './building-paint/sites.mjs';
+import { REGION_PIECES } from './building-paint/region.mjs';
 
-const PIECES = { ...CAMP_PIECES, ...DEFENSE_PIECES, ...SITE_PIECES };
+const PIECES = { ...CAMP_PIECES, ...DEFENSE_PIECES, ...SITE_PIECES, ...REGION_PIECES };
 const SS = 4;
 const OUT = path.resolve('src/art/buildingSprites.js');
 

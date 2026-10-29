@@ -14,6 +14,7 @@ import { ensureNpcAnims, ensureNpcPortrait, hasNpcSheet, npcOriginY, npcSheetKey
 import { SPEAKERS } from '../data/story.js';
 import { quantizePixels } from '../art/palette.js';
 import { OVERLAY_DEPTH } from './depths.js';
+import { bakedBuilding } from '../art/bakedBuildings.js';
 
 // Mundo grande: chão em tilemap (o Phaser só desenha o que a câmera vê), água e lava
 // animadas numa camada de baixo, e objetos/recursos montados por blocos perto do jogador.
@@ -210,10 +211,13 @@ export class RegionWorld {
     }
     for (const cave of DUNGEONS) {
       const { x, y } = cave.entrance;
-      const sprite = scene.add.image(x, y, 'biome', `cave-${cave.theme}`).setOrigin(0.5, 0.92).setDepth(y);
-      if (cave.tower) sprite.setScale(0.9, 1.3);
+      const key = this.ensureEntranceTexture(cave);
+      const sprite = key
+        ? scene.add.image(x, y, key).setOrigin(0.5, 0.92).setDepth(y)
+        : scene.add.image(x, y, 'biome', `cave-${cave.theme}`).setOrigin(0.5, 0.92).setDepth(y);
+      if (!key && cave.tower) sprite.setScale(0.9, 1.3);
       this.features.push({ type: 'cave', cave, x, y: y + 4, sprite, label: `ENTRAR • ${cave.name}` });
-      this.addHint(sprite, x, y - 82, cave.name);
+      this.addHint(sprite, x, y - Math.round(sprite.displayHeight * 0.92) - 10, cave.name);
     }
     for (const dock of DOCKS) {
       const position = dockPosition(dock);
@@ -245,6 +249,20 @@ export class RegionWorld {
         scene.hudCamera?.ignore(down);
       }
     }
+  }
+
+  /** Textura pintada (scripts/building-paint/region.mjs) da entrada da masmorra ou da torre da região. */
+  ensureEntranceTexture(cave) {
+    const key = `region-${cave.tower ? 'tower' : 'cave'}-${cave.theme}`;
+    const textures = this.scene.textures;
+    if (textures.exists(key)) return key;
+    const baked = bakedBuilding(key);
+    if (!baked) return null;
+    const texture = textures.createCanvas(key, baked.width, baked.height);
+    texture.getContext().putImageData(new ImageData(quantizePixels(baked).data, baked.width, baked.height), 0, 0);
+    texture.setFilter(Phaser.Textures.FilterMode.NEAREST);
+    texture.refresh();
+    return key;
   }
 
   addHint(target, x, y, text) {

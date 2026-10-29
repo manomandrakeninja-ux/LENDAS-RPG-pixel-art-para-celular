@@ -8,6 +8,8 @@ import { OVERLAY_DEPTH } from './depths.js';
 
 const WALL = BUILDING_DEFS.wall;
 const TOWER = BUILDING_DEFS.tower;
+// Item 19: muralha, portão, porta, tocha e obra pintados 2,6x maiores (escala do herói); torres 3x.
+const K = 2.6;
 
 const MATERIAL_COLORS = {
   wood: { body: '#8a5a32', light: '#b98352', dark: '#4e321d' },
@@ -19,10 +21,11 @@ const MATERIAL_COLORS = {
 
 function drawTexture(scene, key, width, height, draw) {
   if (scene.textures.exists(key)) return;
-  const texture = scene.textures.createCanvas(key, width, height);
-  // Arte pintada em alta resolução (Fase 20 G-predios), quando existir; senão, o desenho abaixo.
+  // Arte pintada em alta resolução (Fase 20 G-predios), quando existir; ela define o tamanho (item 19).
   const baked = bakedBuilding(key);
-  const pixels = baked && baked.width === width && baked.height === height ? baked : new PixelCanvas(width, height);
+  if (baked) { width = baked.width; height = baked.height; }
+  const texture = scene.textures.createCanvas(key, width, height);
+  const pixels = baked ?? new PixelCanvas(width, height);
   if (!baked) {
     draw(pixels);
     pixels.outline();
@@ -401,8 +404,8 @@ export class CampDefense {
   lightSources() {
     const wallUp = this.wallLevel > 0 && this.wallStanding;
     return [
-      ...(wallUp ? this.gateLights ?? [] : []).map((glow) => ({ object: glow, x: glow.x, y: glow.y, radius: 80, kind: 'torch' })),
-      ...(this.towerLights ?? []).map((glow) => ({ object: glow, x: glow.x, y: glow.y, radius: 110, kind: 'torch' }))
+      ...(wallUp ? this.gateLights ?? [] : []).map((glow) => ({ object: glow, x: glow.x, y: glow.y, radius: 110, kind: 'torch' })),
+      ...(this.towerLights ?? []).map((glow) => ({ object: glow, x: glow.x, y: glow.y, radius: 140, kind: 'torch' }))
     ];
   }
 
@@ -420,7 +423,7 @@ export class CampDefense {
     const cy = this.camp.y;
     const gateX = cx;
     const gateY = cy + this.radius;
-    const sign = this.track(this.scene.add.image(gateX + 40, gateY - 6, 'build-site')
+    const sign = this.track(this.scene.add.image(gateX + 104, gateY - 10, 'build-site')
       .setOrigin(0.5, 1)
       .setDepth(gateY + 4)
       .setInteractive({ useHandCursor: true }), this.wallObjects);
@@ -429,14 +432,14 @@ export class CampDefense {
       this.scene.openBuilding?.('wall');
     });
     sign.setVisible(this.wallLevel === 0);
-    const label = this.track(this.camp.makeLabel('wall', gateX, gateY - 44), this.wallObjects);
+    const label = this.track(this.camp.makeLabel('wall', gateX, gateY - 120), this.wallObjects);
     this.posts = [];
     this.doors = [];
     if (this.wallLevel === 0) {
       this.wallBuilding.sprite = sign;
       this.wallBuilding.sprites = [sign];
       this.wallBuilding.label = label;
-      label.setPosition(gateX + 40, gateY - 40);
+      label.setPosition(gateX + 104, gateY - 88);
       return;
     }
 
@@ -448,17 +451,17 @@ export class CampDefense {
     const vertices = this.octagonVertices(this.radius);
     if (this.wallStat('moatDamageRatio') > 0) {
       const moat = this.track(this.scene.add.graphics().setDepth(cy - this.radius - 40), this.wallObjects);
-      const outer = this.octagonVertices(this.radius + 30);
-      moat.lineStyle(10, 0x2e6f8f, 0.75);
+      const outer = this.octagonVertices(this.radius + 62);
+      moat.lineStyle(22, 0x2e6f8f, 0.75);
       moat.strokePoints(outer, true);
-      moat.lineStyle(2, 0x8fd3ee, 0.55);
-      moat.strokePoints(this.octagonVertices(this.radius + 26), true);
+      moat.lineStyle(3, 0x8fd3ee, 0.55);
+      moat.strokePoints(this.octagonVertices(this.radius + 54), true);
       // Ponte de tábuas sobre o fosso, na frente do portão.
-      const bridgeY = cy + this.radius + 30;
-      moat.fillStyle(0x7a5236, 1).fillRect(gateX - 26, bridgeY - 9, 52, 18);
+      const bridgeY = cy + this.radius + 62;
+      moat.fillStyle(0x7a5236, 1).fillRect(gateX - 64, bridgeY - 20, 128, 40);
       moat.fillStyle(0x94633a, 1);
-      for (let x = gateX - 26; x < gateX + 26; x += 6) moat.fillRect(x, bridgeY - 9, 5, 18);
-      moat.fillStyle(0x4a2f1e, 1).fillRect(gateX - 27, bridgeY - 10, 54, 2).fillRect(gateX - 27, bridgeY + 8, 54, 2);
+      for (let x = gateX - 64; x < gateX + 64; x += 8) moat.fillRect(x, bridgeY - 20, 7, 40);
+      moat.fillStyle(0x4a2f1e, 1).fillRect(gateX - 66, bridgeY - 22, 132, 3).fillRect(gateX - 66, bridgeY + 19, 132, 3);
     }
     // Lados: blocos posicionados de forma que se sobreponham (nenhum vão).
     for (let index = 0; index < vertices.length; index += 1) {
@@ -472,31 +475,33 @@ export class CampDefense {
       // Diagonal (Fase 22c): blocos a cada 3 px de altura, bem sobrepostos, para a muralha subir em rampa
       // contínua em vez dos degraus de 7 px de antes.
       const diagonal = Math.abs(ux) > 0.3 && Math.abs(uy) > 0.3;
-      const step = diagonal ? 3 / Math.abs(uy) : Math.min(Math.abs(ux) > 0.01 ? 13 / Math.abs(ux) : Infinity, Math.abs(uy) > 0.01 ? 7 / Math.abs(uy) : Infinity);
+      const step = diagonal ? 5 / Math.abs(uy) : Math.min(Math.abs(ux) > 0.01 ? 13 * K / Math.abs(ux) : Infinity, Math.abs(uy) > 0.01 ? 7 * K / Math.abs(uy) : Infinity);
       for (let along = 0; along <= length; along += step) {
         const x = from.x + ux * along;
         const y = from.y + uy * along;
         // Vão do portão no lado sul.
-        if (Math.abs(y - gateY) < 2 && Math.abs(x - gateX) < 34) continue;
-        this.addWallPiece(x, y, visual.segment, 16, 12);
+        if (Math.abs(y - gateY) < 2 && Math.abs(x - gateX) < 34 * K) continue;
+        this.addWallPiece(x, y, visual.segment, 16 * K, 24);
       }
     }
-    for (const vertex of vertices) this.addWallPiece(vertex.x, vertex.y + 2, visual.corner, 26, 16, 4);
-    // Torres que ladeiam o portão.
-    for (const side of [-1, 1]) this.addWallPiece(gateX + side * 44, gateY + 2, visual.corner, 26, 16, 4);
-    const gatehouse = this.track(this.scene.add.image(gateX, gateY + 4, visual.gate).setOrigin(0.5, 1).setDepth(gateY + 1), this.wallObjects);
+    for (const vertex of vertices) this.addWallPiece(vertex.x, vertex.y + 4, visual.corner, 26 * K, 30, 4);
+    // Item 19: sem as torres que ladeavam o portão — na escala nova elas encostavam nas torres dos vértices
+    // (a 157 px do centro do lado sul); o próprio portão já tem as suas.
+    const gatehouse = this.track(this.scene.add.image(gateX, gateY + 8, visual.gate).setOrigin(0.5, 1).setDepth(gateY + 1), this.wallObjects);
+    // Nome "MURALHA • NV" logo acima do portão.
+    label.setY(gateY + 8 - gatehouse.height - 10);
     if (celebrate) this.camp.celebrateEvolution('wall', gatehouse, visual.stage);
     this.gateLights = [];
     for (const side of [-1, 1]) {
-      const torchX = gateX + side * 30;
-      this.track(this.scene.add.image(torchX, gateY + 2, 'gate-torch').setOrigin(0.5, 1).setDepth(gateY + 4), this.wallObjects);
-      const glow = this.track(this.scene.add.image(torchX, gateY - 20, 'buildings', 'warm-glow')
-        .setScale(1.4).setBlendMode(Phaser.BlendModes.ADD).setAlpha(0.05).setDepth(OVERLAY_DEPTH + 4502), this.wallObjects);
+      const torchX = gateX + side * 30 * K;
+      this.track(this.scene.add.image(torchX, gateY + 4, 'gate-torch').setOrigin(0.5, 1).setDepth(gateY + 4), this.wallObjects);
+      const glow = this.track(this.scene.add.image(torchX, gateY - 54, 'buildings', 'warm-glow')
+        .setScale(2).setBlendMode(Phaser.BlendModes.ADD).setAlpha(0.05).setDepth(OVERLAY_DEPTH + 4502), this.wallObjects);
       this.gateLights.push(glow);
     }
     if (this.wallStat('gates')) {
       for (const side of [-1, 1]) {
-        const door = this.track(this.scene.add.image(gateX + side * 9, gateY, 'wall-door')
+        const door = this.track(this.scene.add.image(gateX + side * 9 * K, gateY, 'wall-door')
           .setOrigin(0.5, 1)
           .setDepth(gateY + 3), this.wallObjects);
         door.closedX = door.x;
@@ -505,7 +510,7 @@ export class CampDefense {
       }
     }
     // Ponto clicável da muralha: o portão sul.
-    const gate = this.track(this.scene.add.zone(gateX, gateY - 12, 64, 40).setInteractive({ useHandCursor: true }), this.wallObjects);
+    const gate = this.track(this.scene.add.zone(gateX, gateY - 40, 64 * K, 104).setInteractive({ useHandCursor: true }), this.wallObjects);
     gate.on('pointerdown', (pointer, localX, localY, event) => {
       event?.stopPropagation?.();
       this.scene.openBuilding?.('wall');
@@ -630,7 +635,7 @@ export class CampDefense {
   outerSlowFor(distanceToCamp) {
     const slow = this.wallStanding ? this.wallStat('outerSlow') ?? 0 : 0;
     if (slow <= 0) return 1;
-    return distanceToCamp > this.radius && distanceToCamp < this.radius + 48 ? 1 - slow : 1;
+    return distanceToCamp > this.radius && distanceToCamp < this.radius + 96 ? 1 - slow : 1;
   }
 
   // ---------- Torres ----------
@@ -648,7 +653,7 @@ export class CampDefense {
       TOWER.fourthPosition
     ];
     const first = { x: this.camp.x + positions[0].x, y: this.camp.y + positions[0].y };
-    const label = this.track(this.camp.makeLabel('tower', first.x, first.y - 70), this.towerObjects);
+    const label = this.track(this.camp.makeLabel('tower', first.x, first.y - 90), this.towerObjects);
     if (this.towerLevel === 0) {
       const sign = this.track(this.scene.add.image(first.x, first.y, 'build-site')
         .setOrigin(0.5, 1)
@@ -658,7 +663,7 @@ export class CampDefense {
         event?.stopPropagation?.();
         this.scene.openBuilding?.('tower');
       });
-      label.setPosition(first.x, first.y - 38);
+      label.setPosition(first.x, first.y - 82);
       Object.assign(this.towerBuilding, { sprite: sign, sprites: [sign], label });
       return;
     }
@@ -682,21 +687,21 @@ export class CampDefense {
       });
       const archers = this.towerStat('archers');
       for (let archer = 0; archer < archers; archer += 1) {
-        this.track(this.scene.add.image(x - 9 + archer * 6, y - top, 'tower-archer')
+        this.track(this.scene.add.image(x - 30 + archer * 16, y - top, 'tower-archer')
           .setOrigin(0.5, 1)
           .setDepth(y + 11), this.towerObjects);
       }
       if (this.towerLevel >= TOWER.cannon.level) {
-        this.track(this.scene.add.image(x + 12, y - top + 8, 'tower-cannon').setDepth(y + 12), this.towerObjects);
+        this.track(this.scene.add.image(x + 28, y - top - 6, 'tower-cannon').setDepth(y + 12), this.towerObjects);
       }
       sprites.push(sprite);
-      const lantern = this.track(this.scene.add.image(x, y - top + 6, 'buildings', 'warm-glow')
-        .setScale(1.6).setBlendMode(Phaser.BlendModes.ADD).setAlpha(0.05).setDepth(OVERLAY_DEPTH + 4502), this.towerObjects);
+      const lantern = this.track(this.scene.add.image(x, y - top + 14, 'buildings', 'warm-glow')
+        .setScale(2.2).setBlendMode(Phaser.BlendModes.ADD).setAlpha(0.05).setDepth(OVERLAY_DEPTH + 4502), this.towerObjects);
       this.towerLights.push(lantern);
-      if (this.scene.obstacles) this.towerObstacles.push(this.scene.obstacles.add(x, y - 6, 18, 10));
-      this.towers.push({ x, y: y - 50, cooldown: 600 * index, cannonCooldown: TOWER.cannon.intervalMs });
+      if (this.scene.obstacles) this.towerObstacles.push(this.scene.obstacles.add(x, y - 9, 56, 18));
+      this.towers.push({ x, y: y - top + 10, cooldown: 600 * index, cannonCooldown: TOWER.cannon.intervalMs });
     }
-    label.setPosition(first.x, first.y - top - 24);
+    label.setPosition(first.x, first.y - sprites[0].height - 12);
     Object.assign(this.towerBuilding, { sprite: sprites[0], sprites, label });
     if (celebrate) for (const sprite of sprites) this.camp.celebrateEvolution('tower', sprite, visual.stage);
   }
@@ -769,9 +774,9 @@ export class CampDefense {
     const player = this.scene.player;
     if (!player) return;
     const gateY = this.camp.y + this.radius;
-    const near = Phaser.Math.Distance.Between(player.x, player.y, this.camp.x, gateY) < 70;
+    const near = Phaser.Math.Distance.Between(player.x, player.y, this.camp.x, gateY) < 130;
     for (const door of this.doors) {
-      const target = door.closedX + (near ? door.side * 16 : 0);
+      const target = door.closedX + (near ? door.side * 16 * K : 0);
       door.x += (target - door.x) * 0.2;
     }
   }
@@ -779,7 +784,7 @@ export class CampDefense {
   fireArrow(tower, target, index) {
     const kind = this.towerStat('arrow');
     const damage = this.towerStat('damage');
-    const startX = tower.x + (index - 1.5) * 4;
+    const startX = tower.x + (index - 1.5) * 14;
     const startY = tower.y;
     const arrow = this.scene.add.rectangle(startX, startY, 7, 2, ARROW_COLORS[kind]).setDepth(OVERLAY_DEPTH + 9000);
     this.scene.hudCamera?.ignore(arrow);

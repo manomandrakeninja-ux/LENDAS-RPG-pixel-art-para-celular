@@ -205,15 +205,16 @@ export class HarvestStructures {
     for (const type of Object.keys(HARVEST_STRUCTURE_TYPES)) {
       const key = `${TEXTURE_KEY_PREFIX}${type}`;
       if (this.scene.textures.exists(key)) continue;
-      const texture = this.scene.textures.createCanvas(key, TEXTURE_SIZE, TEXTURE_SIZE);
-      // Baú e mina pintados em alta resolução (Fase 20 G-predios); o resto segue desenhado aqui.
+      // Baú e mina pintados em alta resolução (Fase 20 G-predios; item 19: na escala do herói); o resto segue desenhado aqui.
       const baked = bakedBuilding(`harvest-${type}`);
       const pixels = baked ?? new PixelCanvas(TEXTURE_SIZE, TEXTURE_SIZE);
+      const texture = this.scene.textures.createCanvas(key, pixels.width, pixels.height);
       if (!baked) {
         (STRUCTURE_DRAWERS[type] ?? drawTree)(pixels);
         pixels.outline();
       }
-      texture.getContext().putImageData(new ImageData(quantizePixels(pixels).data, TEXTURE_SIZE, TEXTURE_SIZE), 0, 0);
+      texture.getContext().putImageData(new ImageData(quantizePixels(pixels).data, pixels.width, pixels.height), 0, 0);
+      if (baked) this.scene.textures.get(key).customData = { painted: true };
       texture.setFilter(Phaser.Textures.FilterMode.NEAREST);
       texture.refresh();
     }
@@ -230,7 +231,8 @@ export class HarvestStructures {
       .setOrigin(0.5, 0.9)
       .setDepth(structure.y + 8);
     // Fase 22c: baús, arbustos, cogumelos e pedras na escala do herói 56x64 (antes eram do cavaleiro 32x40).
-    const scale = definition.poi ? 1.45 : structure.type === 'tree' ? 1 : GROUND_SCALE;
+    const painted = Boolean(this.scene.textures.get(`${TEXTURE_KEY_PREFIX}${structure.type}`)?.customData?.painted);
+    const scale = painted ? 1 : definition.poi ? 1.45 : structure.type === 'tree' ? 1 : GROUND_SCALE;
     node.setScale(scale);
     const hintY = structure.y - (structure.type === 'tree' ? 42 : Math.round(31 * scale));
     const hint = definition.poi ? null : this.scene.add.text(structure.x, hintY, 'E', {
@@ -241,7 +243,7 @@ export class HarvestStructures {
     structure.node = node;
     structure.hint = hint;
     structure.markerLabel = definition.poi
-      ? this.scene.add.text(structure.x, structure.y - 52, 'MINA', {
+      ? this.scene.add.text(structure.x, structure.y - Math.round(node.displayHeight * 0.9) - 8, 'MINA', {
         fontFamily: 'Press Start 2P', fontSize: '8px', color: '#ffdb74',
         backgroundColor: '#2d241ddd', padding: { x: 5, y: 4 }
       }).setOrigin(0.5).setDepth(structure.y + 35)

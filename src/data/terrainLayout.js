@@ -57,7 +57,7 @@ function cornerNoise(i, j) {
 function pathCell(col, row, camp) {
   const centerX = col * TILE + TILE / 2;
   const centerY = row * TILE + TILE / 2;
-  const inPath = (y) => Math.abs(centerX - camp.x) < 42 && y > camp.y - 36 && y < camp.y + 420;
+  const inPath = (y) => Math.abs(centerX - camp.x) < 42 && y > camp.y - 36 && y < camp.y + 480;
   if (!inPath(centerY)) return null;
   return { side: centerX < camp.x ? 0 : 1, end: !inPath(centerY + TILE) };
 }

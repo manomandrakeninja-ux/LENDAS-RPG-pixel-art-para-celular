@@ -46,7 +46,7 @@ export class World {
     for (let i = 0; i < 155; i += 1) {
       const x = rand(40, width - 40);
       const y = rand(40, height - 40);
-      if (Phaser.Math.Distance.Between(x, y, camp.x, camp.y) < 260) continue;
+      if (Phaser.Math.Distance.Between(x, y, camp.x, camp.y) < 470) continue;
       const tree = this.scene.add.sprite(x, y, 'nature', 'pine-0')
         .setOrigin(0.5, 0.88)
         .setDepth(y + 10)
@@ -68,7 +68,7 @@ export class World {
     for (let i = 0; i < 48; i += 1) {
       const x = rand(32, width - 32);
       const y = rand(32, height - 32);
-      if (Phaser.Math.Distance.Between(x, y, camp.x, camp.y) < 180) continue;
+      if (Phaser.Math.Distance.Between(x, y, camp.x, camp.y) < 450) continue;
       this.bushes.push({ x, y });
       this.scene.add.image(x, y, 'nature', 'bush')
         .setOrigin(0.5, 0.9)
@@ -85,7 +85,7 @@ export class World {
         do {
           x = rand(90, VALLEY.width - 90);
           y = rand(90, VALLEY.height - 90);
-        } while (Phaser.Math.Distance.Between(x, y, camp.x, camp.y) < 220);
+        } while (Phaser.Math.Distance.Between(x, y, camp.x, camp.y) < 460);
         this.resources.push(this.makeResource(type, x, y));
       }
     }
@@ -100,7 +100,7 @@ export class World {
         for (let attempt = 0; attempt < 40 && !valid; attempt += 1) {
           x = rand(90, VALLEY.width - 90);
           y = rand(90, VALLEY.height - 90);
-          valid = Phaser.Math.Distance.Between(x, y, camp.x, camp.y) > 390;
+          valid = Phaser.Math.Distance.Between(x, y, camp.x, camp.y) > 470;
         }
         if (!valid) continue;
         this.nightResources.push(this.makeResource(type, x, y, true));

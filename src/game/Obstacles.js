@@ -27,10 +27,17 @@ export class Obstacles {
   }
 }
 
-// Base de cada prédio do acampamento, relativa ao ponto de apoio do sprite.
+// Base de cada prédio do acampamento, relativa ao ponto de apoio do sprite, por estágio visual (1, 4, 8).
+// Item 19: os prédios foram repintados na escala do herói (2–3x a altura dele), então a base cresceu junto.
 export const BUILDING_FOOTPRINTS = {
-  house: { x: 0, y: -8, width: 42, height: 17 },
-  forge: { x: 0, y: -8, width: 43, height: 17 },
-  farm: { x: -4, y: -8, width: 52, height: 17 },
-  market: { x: 4, y: -8, width: 50, height: 17 }
+  house: { 1: { x: 1, y: -10, width: 84, height: 20 }, 4: { x: -5, y: -11, width: 112, height: 22 }, 8: { x: -7, y: -11, width: 148, height: 22 } },
+  forge: { 1: { x: -3, y: -9, width: 104, height: 16 }, 4: { x: -9, y: -11, width: 116, height: 22 }, 8: { x: -13, y: -11, width: 148, height: 22 } },
+  farm: { 1: { x: -31, y: -10, width: 60, height: 20 }, 4: { x: -10, y: -11, width: 126, height: 22 }, 8: { x: 13, y: -11, width: 160, height: 22 } },
+  market: { 1: { x: 0, y: -10, width: 92, height: 18 }, 4: { x: -5, y: -11, width: 116, height: 22 }, 8: { x: 0, y: -2, width: 190, height: 30 } }
 };
+
+/** Base do prédio no estágio visual (1, 4 ou 8). */
+export function buildingFootprint(key, stage) {
+  const byStage = BUILDING_FOOTPRINTS[key];
+  return byStage?.[stage] ?? byStage?.[1] ?? null;
+}

@@ -107,10 +107,10 @@ export class MapRenderer {
     // Caminho de terra até o acampamento e a clareira da fogueira.
     const camp = WORLD.camp;
     context.fillStyle = '#9a7652';
-    context.fillRect((camp.x - 48) / MAP_SCALE, (camp.y - 36) / MAP_SCALE, 96 / MAP_SCALE, 456 / MAP_SCALE);
+    context.fillRect((camp.x - 48) / MAP_SCALE, (camp.y - 36) / MAP_SCALE, 96 / MAP_SCALE, 516 / MAP_SCALE);
     context.fillStyle = '#7f5f42';
-    context.fillRect((camp.x - 48) / MAP_SCALE, (camp.y - 36) / MAP_SCALE, 2, 456 / MAP_SCALE);
-    context.fillRect((camp.x + 48) / MAP_SCALE - 2, (camp.y - 36) / MAP_SCALE, 2, 456 / MAP_SCALE);
+    context.fillRect((camp.x - 48) / MAP_SCALE, (camp.y - 36) / MAP_SCALE, 2, 516 / MAP_SCALE);
+    context.fillRect((camp.x + 48) / MAP_SCALE - 2, (camp.y - 36) / MAP_SCALE, 2, 516 / MAP_SCALE);
 
     // Arbustos, rochas, recursos e árvores (sombra + copa com luz).
     const world = this.scene.world;

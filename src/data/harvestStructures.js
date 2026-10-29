@@ -216,6 +216,8 @@ export class HarvestStructureState {
       const x = MINE_CONFIG.x + Math.cos(angle) * radius;
       const y = MINE_CONFIG.y + Math.sin(angle) * radius;
       if (this.structures.some((structure) => Math.hypot(x - structure.x, y - structure.y) < 28)) continue;
+      // Item 19: a boca da mina tem 192 px de largura; os veios ficam na frente ou dos lados, não atrás dela.
+      if (y < MINE_CONFIG.y + 14 && Math.abs(x - MINE_CONFIG.x) < 100) continue;
       return { x, y };
     }
     return { x: MINE_CONFIG.x + 48, y: MINE_CONFIG.y + 48 };
@@ -225,7 +227,8 @@ export class HarvestStructureState {
     const width = this.world?.width ?? 2880;
     const height = this.world?.height ?? 2160;
     const camp = this.world?.camp ?? { x: 1440, y: 1080 };
-    const minimumDistance = definition.minCampDistance ?? 240;
+    // Item 19: fora da muralha nova do acampamento (380; vértice a ~411).
+    const minimumDistance = definition.minCampDistance ?? 460;
     const maximumDistance = definition.maxCampDistance ?? Infinity;
     let fallback = { x: camp.x + minimumDistance, y: camp.y + 120 };
     for (let attempt = 0; attempt < 180; attempt += 1) {

@@ -45,6 +45,40 @@ export function rng(seed = 1) {
   return next;
 }
 
+// ---------- Item 19: geometria em escala, detalhe no pixel final ----------
+// O bake escala o contexto em SS=4 (unidade = 1 pixel final). Peças "ampliadas" (scaled) escalam a
+// geometria k vezes; os materiais (pedra, tábua, tora, telha, palha, musgo, grama) voltam ao pixel final
+// e ganham mais blocos/veios em vez de ficarem grossos. px() e linhas finas continuam com ~1 pixel final.
+export const SS = 4;
+/** Pixels finais por unidade no transform atual (1 = sem ampliação). */
+export function unitScale(ctx) {
+  const t = ctx.getTransform();
+  return Math.sqrt(Math.abs(t.a * t.d - t.b * t.c)) / SS;
+}
+/** Multiplicador dos tamanhos dos materiais quando ampliados (blocos um pouco maiores, mas finos). */
+export function detailMul(s) { return s > 1.05 ? 1 + (s - 1) * 0.3 : 1; }
+/** Pinta fn(w, h, mul) no pixel final dentro da área local 0..w x 0..h. */
+export function fineArea(ctx, w, h, fn) {
+  const s = unitScale(ctx);
+  if (s < 1.05) return fn(w, h, 1);
+  ctx.save(); ctx.scale(1 / s, 1 / s);
+  const out = fn(Math.ceil(w * s), Math.ceil(h * s), detailMul(s));
+  ctx.restore();
+  return out;
+}
+/** Igual a fineArea, mas ancorado em (x, bottom) com largura w (faixas de grama/musgo). */
+export function fineStrip(ctx, x, bottom, w, fn) {
+  const s = unitScale(ctx);
+  if (s < 1.05) return fn(x, bottom, w, 1);
+  ctx.save(); ctx.translate(x, bottom); ctx.scale(1 / s, 1 / s);
+  fn(0, 0, Math.ceil(w * s), detailMul(s));
+  ctx.restore();
+}
+/** Pinta fn em escala s ao redor de (x, y): props e peças pequenas dentro de prédios grandes. */
+export function scaled(ctx, x, y, s, fn) {
+  ctx.save(); ctx.translate(x, y); ctx.scale(s, s); fn(); ctx.restore();
+}
+
 export function path(ctx, pts) {
   ctx.beginPath();
   pts.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)));
@@ -52,8 +86,17 @@ export function path(ctx, pts) {
 }
 export function fillPoly(ctx, pts, color) { path(ctx, pts); ctx.fillStyle = color; ctx.fill(); }
 export function rect(ctx, x, y, w, h, color) { ctx.fillStyle = color; ctx.fillRect(x, y, w, h); }
-export function px(ctx, x, y, color) { ctx.fillStyle = color; ctx.fillRect(x, y, 1, 1); }
+export function px(ctx, x, y, color) {
+  ctx.fillStyle = color;
+  const s = unitScale(ctx);
+  if (s < 1.05) { ctx.fillRect(x, y, 1, 1); return; }
+  // Ampliado: o pontinho fica com ~1,6 pixel final, centrado na célula.
+  const d = Math.min(1, 1.6 / s);
+  ctx.fillRect(x + (1 - d) / 2, y + (1 - d) / 2, d, d);
+}
 export function line(ctx, x0, y0, x1, y1, color, width = 1) {
+  const s = unitScale(ctx);
+  if (s >= 1.05 && width <= 1) width = Math.max(1, width * s * 0.6) / s;
   ctx.strokeStyle = color; ctx.lineWidth = width; ctx.lineCap = 'butt';
   ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke();
 }
@@ -82,7 +125,12 @@ export function veil(ctx, pts, x0, y0, x1, y1, stops) {
 // ---------------- Materiais (em coordenadas locais 0..w x 0..h) ----------------
 
 /** Alvenaria de pedra irregular: blocos com luz no topo-esquerda, sombra embaixo-direita e rejunte. */
-export function stones(ctx, w, h, { pal = STONE, seed = 1, rowH = [4, 5], blockW = [5, 9], moss = 0, cracks = 0, top = 0 } = {}) {
+export function stones(ctx, w0, h0, opts = {}) {
+  return fineArea(ctx, w0, h0, (w, h, m) => stonesRaw(ctx, w, h, m === 1 ? opts : {
+    ...opts, rowH: (opts.rowH ?? [4, 5]).map((v) => Math.round(v * m)), blockW: (opts.blockW ?? [5, 9]).map((v) => Math.round(v * m)), top: Math.round((opts.top ?? 0) * m)
+  }));
+}
+function stonesRaw(ctx, w, h, { pal = STONE, seed = 1, rowH = [4, 5], blockW = [5, 9], moss = 0, cracks = 0, top = 0 } = {}) {
   const r = rng(seed);
   ctx.save(); ctx.beginPath(); ctx.rect(0, 0, w, h); ctx.clip();
   rect(ctx, -1, -1, w + 2, h + 2, pal.mortar);
@@ -123,7 +171,10 @@ export function stones(ctx, w, h, { pal = STONE, seed = 1, rowH = [4, 5], blockW
 }
 
 /** Musgo crescendo de baixo para cima (e nas juntas). */
-export function mossBand(ctx, x, bottom, w, { seed = 3, density = 0.5, reach = 6 } = {}) {
+export function mossBand(ctx, x0, bottom0, w0, opts = {}) {
+  fineStrip(ctx, x0, bottom0, w0, (x, bottom, w, m) => mossBandRaw(ctx, x, bottom, w, m === 1 ? opts : { ...opts, reach: (opts.reach ?? 6) * m }));
+}
+function mossBandRaw(ctx, x, bottom, w, { seed = 3, density = 0.5, reach = 6 } = {}) {
   const r = rng(seed);
   for (let i = 0; i < w; i += 1) {
     if (r() > density) continue;
@@ -136,7 +187,10 @@ export function mossBand(ctx, x, bottom, w, { seed = 3, density = 0.5, reach = 6
 }
 
 /** Manchas de musgo espalhadas (telhado, topo de pedra). */
-export function mossPatches(ctx, w, h, { seed = 9, count = 4, size = 3 } = {}) {
+export function mossPatches(ctx, w0, h0, opts = {}) {
+  fineArea(ctx, w0, h0, (w, h, m) => mossPatchesRaw(ctx, w, h, m === 1 ? opts : { ...opts, count: Math.round((opts.count ?? 4) * m * m), size: Math.round((opts.size ?? 3) * m) }));
+}
+function mossPatchesRaw(ctx, w, h, { seed = 9, count = 4, size = 3 } = {}) {
   const r = rng(seed);
   for (let i = 0; i < count; i += 1) {
     const cx = r() * w; const cy = r() * h;
@@ -149,7 +203,10 @@ export function mossPatches(ctx, w, h, { seed = 9, count = 4, size = 3 } = {}) {
 }
 
 /** Tábuas com veios, nós e pregos. vertical: tábuas em pé. */
-export function planks(ctx, w, h, { pal = WOOD, seed = 2, vertical = false, size = 4, nails = true, worn = 0.15 } = {}) {
+export function planks(ctx, w0, h0, opts = {}) {
+  fineArea(ctx, w0, h0, (w, h, m) => planksRaw(ctx, w, h, m === 1 ? opts : { ...opts, size: Math.round((opts.size ?? 4) * m) }));
+}
+function planksRaw(ctx, w, h, { pal = WOOD, seed = 2, vertical = false, size = 4, nails = true, worn = 0.15 } = {}) {
   const r = rng(seed);
   const long = vertical ? h : w;
   const across = vertical ? w : h;
@@ -190,7 +247,10 @@ export function planks(ctx, w, h, { pal = WOOD, seed = 2, vertical = false, size
 }
 
 /** Toras horizontais (cabana): roliças, com as pontas aparecendo. */
-export function logs(ctx, w, h, { pal = WOOD, seed = 4, size = 4, ends = true } = {}) {
+export function logs(ctx, w0, h0, opts = {}) {
+  fineArea(ctx, w0, h0, (w, h, m) => logsRaw(ctx, w, h, m === 1 ? opts : { ...opts, size: Math.round((opts.size ?? 4) * m) }));
+}
+function logsRaw(ctx, w, h, { pal = WOOD, seed = 4, size = 4, ends = true } = {}) {
   const r = rng(seed);
   for (let y = 0; y < h; y += size) {
     const tone = r.pick(pal.tones);
@@ -212,7 +272,10 @@ export function logs(ctx, w, h, { pal = WOOD, seed = 4, size = 4, ends = true } 
 
 /** Telhas em fileiras (v desce do cume ao beiral): cada telha arredondada embaixo, com luz no alto
  * e a sombra da fileira de cima; algumas mais claras, quebradas ou com musgo. */
-export function tiles(ctx, w, h, { pal = ROOF_RED, seed = 5, rowH = 4, tileW = 5, moss = 0, broken = 0.03, barrel = false } = {}) {
+export function tiles(ctx, w0, h0, opts = {}) {
+  fineArea(ctx, w0, h0, (w, h, m) => tilesRaw(ctx, w, h, m === 1 ? opts : { ...opts, rowH: Math.round((opts.rowH ?? 4) * m), tileW: Math.round((opts.tileW ?? 5) * m) }));
+}
+function tilesRaw(ctx, w, h, { pal = ROOF_RED, seed = 5, rowH = 4, tileW = 5, moss = 0, broken = 0.03, barrel = false } = {}) {
   const r = rng(seed);
   if (barrel) return barrelTiles(ctx, w, h, { pal, seed, rowH, tileW: Math.max(3, tileW - 1), moss });
   rect(ctx, -1, -1, w + 2, h + 2, pal.line);
@@ -264,7 +327,10 @@ export function shingles(ctx, w, h, opts = {}) {
 }
 
 /** Palha: fileiras de feixes com borda franjada, fios escuros em pé e brilho no alto de cada fileira. */
-export function thatch(ctx, w, h, { pal = THATCH, seed = 6 } = {}) {
+export function thatch(ctx, w0, h0, opts = {}) {
+  fineArea(ctx, w0, h0, (w, h) => thatchRaw(ctx, w, h, opts));
+}
+function thatchRaw(ctx, w, h, { pal = THATCH, seed = 6 } = {}) {
   const r = rng(seed);
   rect(ctx, -1, -1, w + 2, h + 2, pal.line);
   for (let y = 0; y < h; y += 4) {
@@ -573,7 +639,10 @@ export function groundShadow(ctx, cx, cy, rx, ry) {
 }
 
 /** Tufos de grama e flores na base (contam história e ligam o prédio ao chão). */
-export function grassTufts(ctx, x, base, w, { seed = 12, density = 0.35, flowers = 0.1 } = {}) {
+export function grassTufts(ctx, x0, base0, w0, opts = {}) {
+  fineStrip(ctx, x0, base0, w0, (x, base, w) => grassTuftsRaw(ctx, x, base, w, opts));
+}
+function grassTuftsRaw(ctx, x, base, w, { seed = 12, density = 0.35, flowers = 0.1 } = {}) {
   const r = rng(seed);
   for (let i = 0; i < w; i += 1) {
     if (r() > density) continue;
@@ -581,4 +650,15 @@ export function grassTufts(ctx, x, base, w, { seed = 12, density = 0.35, flowers
     for (let k = 0; k < hgt; k += 1) px(ctx, x + i + (k === 2 ? (r() < 0.5 ? -1 : 1) : 0), base - 1 - k, k === hgt - 1 ? C.m4 : k ? C.m3 : C.m2);
     if (r() < flowers) px(ctx, x + i, base - hgt - 1, r.pick([C.f3, C.paper, C.red]));
   }
+}
+
+/** Item 19: a mesma peça k vezes maior (geometria em escala; materiais e pontinhos no pixel final). */
+export function enlarge(spec, k) {
+  const w = Math.round(spec.w * k); const h = Math.round(spec.h * k);
+  const kx = w / spec.w; const ky = h / spec.h;
+  return {
+    ...spec, w, h, k,
+    shadow: spec.shadow && [spec.shadow[0] * kx, spec.shadow[1] * ky, spec.shadow[2] * kx, spec.shadow[3] * ky],
+    paint: (ctx, f) => { ctx.save(); ctx.scale(kx, ky); spec.paint(ctx, f); ctx.restore(); }
+  };
 }

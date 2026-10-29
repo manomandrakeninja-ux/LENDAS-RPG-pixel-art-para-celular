@@ -1,5 +1,5 @@
 export const SPAWNING_CONFIG = {
-  safeZoneRadius: 300,
+  safeZoneRadius: 380,
   activeLimit: {
     day: 18,
     night: 32
@@ -17,8 +17,8 @@ export const SPAWNING_CONFIG = {
     night: 1900
   },
   distanceRings: [
-    { min: 340, max: 680, weight: 5 },
-    { min: 680, max: 1080, weight: 3 },
+    { min: 430, max: 720, weight: 5 },
+    { min: 720, max: 1080, weight: 3 },
     { min: 1080, max: 1320, weight: 1.5 }
   ],
   nightScaling: {
