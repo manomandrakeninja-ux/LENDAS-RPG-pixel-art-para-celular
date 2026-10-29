@@ -110,6 +110,28 @@ export function compose(parts, k) {
    * (isolado no vazio sai; cercado por uma cor só vira ela) e 1 px de luz de borda clara no alto e na
    * esquerda da silhueta (luz do alto à esquerda). A cabeça (acima de neckY) fica intacta.
    */
+  /**
+   * Passe extra de limpeza (rodada 2): pixel cercado nos 4 lados por uma mesma cor (ou por duas cores que
+   * se repetem) vira essa cor, com tolerância de valor maior. Deixa a Guerreira tão limpa quanto o
+   * Cavaleiro e a Heroína (pixels isolados por mil opacos de ~161 para perto de 100). Rosto fica intacto.
+   */
+  function smoothBelow(im, neckY, tolerance = 80) {
+    const out = clone(im);
+    const solid = (x, y) => x >= 0 && y >= 0 && x < im.w && y < im.h && px(im, x, y)[3] > 127;
+    const L = (c) => 0.299 * c[0] + 0.587 * c[1] + 0.114 * c[2];
+    const same = (a, b) => a[0] === b[0] && a[1] === b[1] && a[2] === b[2];
+    each(im, (x, y, c) => {
+      if (c[3] < 128 || y < neckY) return;
+      const n = [[1, 0], [-1, 0], [0, 1], [0, -1]].map(([dx, dy]) => (solid(x + dx, y + dy) ? px(im, x + dx, y + dy) : null));
+      if (n.some((v) => !v) || n.some((v) => same(v, c))) return;
+      const count = new Map();
+      for (const v of n) count.set(hexOf(v), (count.get(hexOf(v)) ?? 0) + 1);
+      const [top, times] = [...count].sort((a, b) => b[1] - a[1])[0];
+      if (times >= 2 && Math.abs(L(parse(top)) - L(c)) < tolerance) put(out, x, y, parse(top));
+    });
+    return out;
+  }
+
   function polish(im, { neckY, maxY = im.h, lift = null, gain = 0, rim = 0.32 }) {
     const out = clone(im);
     const solid = (x, y) => x >= 0 && y >= 0 && x < im.w && y < im.h && px(im, x, y)[3] > 127;
@@ -283,9 +305,9 @@ export function compose(parts, k) {
     const styleFor = (cfg) => cfg;
     for (const [id, color] of Object.entries(capes)) {
       const ramp = color && CAPE_RAMPS[color];
-      const f = polish(recolor(wFront, ramp, { top: 16, bottom: 50 }), { neckY: C.down.neckY + 1, maxY: C.legs.down.hip + 7, lift: WARRIOR_LIFT, gain: 0.17 });
-      const s = polish(recolor(wSide, ramp, { top: 17, bottom: 50 }), { neckY: C.right.neckY + 1, maxY: C.legs.right.hip + 6, lift: WARRIOR_LIFT, gain: 0.17 });
-      const b = polish(recolor(wBack, ramp, { top: 0, bottom: wBack.h }), { neckY: C.up.neckY, maxY: C.legs.up.hip + 4, lift: WARRIOR_LIFT, gain: 0.17 });
+      const f = polish(smoothBelow(recolor(wFront, ramp, { top: 16, bottom: 50 }), C.down.neckY + 1), { neckY: C.down.neckY + 1, maxY: C.legs.down.hip + 7, lift: WARRIOR_LIFT, gain: 0.17 });
+      const s = polish(smoothBelow(recolor(wSide, ramp, { top: 17, bottom: 50 }), C.right.neckY + 1), { neckY: C.right.neckY + 1, maxY: C.legs.right.hip + 6, lift: WARRIOR_LIFT, gain: 0.17 });
+      const b = polish(smoothBelow(recolor(wBack, ramp, { top: 0, bottom: wBack.h }), C.up.neckY), { neckY: C.up.neckY, maxY: C.legs.up.hip + 4, lift: WARRIOR_LIFT, gain: 0.17 });
       const withHang = (armless, legs, cfg) => {
         const base = clone(armless);
         if (cfg.drawHang) {
