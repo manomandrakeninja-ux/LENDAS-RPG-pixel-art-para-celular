@@ -11,7 +11,8 @@ export const HALO = {
   forge: ['#ffc825', '#ffa214', '#ff5000', '#e07438', '#c64524', '#8e251d', '#571c27'],
   lava: ['#ffa214', '#ff5000', '#c64524', '#8e251d', '#571c27'],
   crystal: ['#94fdff', '#00cdf9', '#0098dc', '#0069aa', '#00396d'],
-  ice: ['#ffffff', '#d5e8ef', '#9cc8e6', '#657392', '#424c6e'],
+  // Rodada 4: sem branco no centro (virava um disco opaco); azul-claro que esfria para fora.
+  ice: ['#9cc8e6', '#0098dc', '#0069aa', '#00396d'],
   shroom: ['#d3fc7e', '#99e65f', '#5ac54f', '#33984b', '#1e6f50'],
   torch: ['#ffeb57', '#ffc825', '#ffa214', '#e07438', '#c64524', '#8e251d']
 };
@@ -24,8 +25,9 @@ export const KIND = {
   lamp: { glow: 0.52, flicker: 0.05 },
   forge: { glow: 0.5, flicker: 0.05 },
   lava: { glow: 0.38, flicker: 0.04 },
-  crystal: { glow: 0.44, flicker: 0.02 },
-  ice: { glow: 0.44, flicker: 0.02 },
+  // smooth: halo contínuo (sem degraus), para os cristais.
+  crystal: { glow: 0.46, flicker: 0.02, smooth: true },
+  ice: { glow: 0.46, flicker: 0.02, smooth: true },
   shroom: { glow: 0.32, flicker: 0.03 }
 };
 
