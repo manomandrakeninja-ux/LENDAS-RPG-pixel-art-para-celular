@@ -28,6 +28,15 @@ function slime(ctx, f, o) {
       fill(ctx, ell(ctx, bx + lean * 0.5 - r * 0.35, by - r * 0.35, r * 0.45, r * 0.45), '#d3fc7e');
     }
     stroke(ctx, [[cx - w + 4, base - 1.6], [cx, base + 0.2], [cx + w - 4, base - 1.6]], 1.6, '#5ac54f');
+    // Rodada 3: coisas engolidas dentro da gosma (moeda e osso) dão mais rampas ao desenho.
+    const mx = cx - 7 + lean * 0.4; const my = base - h * 0.3;
+    fill(ctx, ell(ctx, mx, my, 3.4, 2.6, -0.3), '#9e4539');
+    fill(ctx, ell(ctx, mx - 0.2, my - 0.3, 2.8, 2.1, -0.3), '#ed7614');
+    fill(ctx, ell(ctx, mx - 0.5, my - 0.6, 1.9, 1.4, -0.3), '#ffc825');
+    fill(ctx, ell(ctx, mx - 1, my - 1, 0.8, 0.6), '#ffeb57');
+    stroke(ctx, [[cx + 6 + lean * 0.4, base - 6], [cx + 13 + lean * 0.4, base - 9]], 1.8, '#92a1b9');
+    stroke(ctx, [[cx + 6 + lean * 0.4, base - 6.6], [cx + 13 + lean * 0.4, base - 9.6]], 0.9, '#c7cfdd');
+    for (const [bx, by] of [[cx + 5.4, base - 6], [cx + 13.6, base - 9.2]]) fill(ctx, ell(ctx, bx + lean * 0.4, by, 1.3, 1.3), '#c7cfdd');
   });
   // Brilho grande e curvo no alto à esquerda.
   stroke(ctx, [[cx - w * 0.68 + lean, base - h * 0.42], [cx - w * 0.62 + lean, top + h * 0.2], [cx - w * 0.22 + lean, top + 2.6]], 2.6, '#ffffff');

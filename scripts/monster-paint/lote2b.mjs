@@ -315,6 +315,17 @@ function iceElemental(ctx, f, o) {
     stroke(ctx, [[23, 36], [31, 30], [39, 38]], 0.8, '#0069aa');
   });
   rimWarm(ctx, torso, [22, 14, 20, 32], '#ffffff', 1.1 * o.px, { alpha: 0.9 });
+  // Rodada 3: geada roxa nas faces de sombra e neve acumulada nos ombros (rampas próprias).
+  inside(ctx, torso, () => {
+    fill(ctx, poly(ctx, [[34, 34], [39, 38], [33, 46], [31, 40]]), hexA('#424c6e', 0.8));
+    fill(ctx, poly(ctx, [[35, 36], [38, 38], [34, 43]]), hexA('#657392', 0.8));
+    fill(ctx, poly(ctx, [[23, 32], [27, 35], [24, 37]]), hexA('#8e7cc3', 0.6));
+  });
+  for (const [x, y] of [[24, 19.6], [38, 19.6]]) {
+    fill(ctx, ell(ctx, x, y, 3.4, 1.6), '#d5e8ef');
+    fill(ctx, ell(ctx, x - 0.6, y - 0.6, 2.2, 0.9), '#ffffff');
+    fill(ctx, ell(ctx, x + 1.2, y + 0.9, 1.6, 0.6), '#9cc8e6');
+  }
   // Nucleo brilhante.
   glow(ctx, 31, 29, at ? 11 : 8.4, '#00cdf9', { core: '#ffffff', alpha: 0.9 });
   fill(ctx, ell(ctx, 31, 29, 3.3, 3.9), '#94fdff');

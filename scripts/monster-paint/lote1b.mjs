@@ -27,6 +27,14 @@ function boar(ctx, f, o) {
     fill(ctx, P(ctx, 'M12,40 C20,44 34,45 50,40 L52,50 L10,50 Z'), hexA('#391f21', 0.55));
     fur(ctx, [14, 28], [46, 22], 12, 3.2, '#391f21', 0.8, { dx: -0.9, dy: 0.7, seed: 7 });
     fur(ctx, [16, 34], [44, 32], 9, 2.8, '#8a4836', 0.6, { dx: -0.9, dy: 0.7, seed: 17 });
+    // Rodada 3: lama seca na barriga (2 tons), cicatriz rosada e pelos grisalhos no lombo.
+    for (const [x, y, r] of [[19, 43, 3.2], [27, 44.4, 2.6], [36, 44, 3], [44, 42.6, 2.2]]) {
+      fill(ctx, ell(ctx, x, y, r, r * 0.6), '#4e3434');
+      fill(ctx, ell(ctx, x - r * 0.3, y - r * 0.2, r * 0.5, r * 0.3), '#7a5d4c');
+    }
+    stroke(ctx, [[30, 27], [34, 30.4], [37, 29]], 1.3, '#c64524');
+    stroke(ctx, [[30.4, 26.6], [34, 29.8]], 0.6, '#f68187');
+    fur(ctx, [24, 23], [40, 18], 6, 2.2, '#9a8c80', 0.7, { dx: -0.9, dy: 0.7, seed: 29 });
   });
   // Crina escura e eriçada ao longo do dorso, da nuca até o meio das costas.
   const mane = P(ctx, 'M17,24 C20,20.6 24,19.4 27,17.6 C31,14.6 35,12 40,11.6 C44.6,11.4 47.6,13.6 48.4,17.6 C44,18 38,19.6 32,22.2 C26,24.6 21,25.6 17,24 Z');
