@@ -278,6 +278,9 @@ export function compose(parts, k) {
     rigs[id] = out;
   };
   const sheets = {};
+  const SKIN_COLORS = new Set(['#d2704e', '#a95542', '#e2885e', '#f0a476', '#c46a4c', '#844036', '#a0533e', '#e0845c']);
+  const CURL_COLORS = new Set(['#c46a4c', '#844036', '#a0533e', '#06030a', '#0b0710']);
+  const HAIR_COLORS = new Set(['#684443', '#1e131c', '#281922', '#352027', '#150d16', '#4d3032', '#472023', '#33151b', '#0b0710', '#06030a']);
   /** Fecha furos de 1-2 px dentro da silhueta (a capa de lado tinha pontos do chão aparecendo). */
   const fillHoles = (f) => {
     const out = clone(f);
@@ -293,8 +296,55 @@ export function compose(parts, k) {
     }
     return out;
   };
+  /**
+   * Rodada 4: limpeza final da Guerreira. O sprite reduzido da referência tinha ~17 % de pixels soltos
+   * (cor diferente dos 8 vizinhos: pele/capa/couro misturados em manchas de 1-2 px). Cada pixel solto
+   * (e cada mancha de 2 px) vira a cor mais comum em volta, em 3 passes. Ficam de fora: a cabeça (rosto
+   * aprovado, olhos e franja: as 22 linhas de cima da silhueta), os cachos (cabelo e pontos âmbar) e o
+   * contorno escuro. Depois o contorno externo é fechado (1 px contínuo).
+   */
+  const despeckle = (f) => {
+    const out = clone(f);
+    const key = (c) => (c[3] > 127 ? (c[0] << 16) | (c[1] << 8) | c[2] : -1);
+    const Lc = (c) => 0.299 * c[0] + 0.587 * c[1] + 0.114 * c[2];
+    const at = (im, x, y) => (x >= 0 && y >= 0 && x < im.w && y < im.h ? px(im, x, y) : [0, 0, 0, 0]);
+    const N8 = [[-1, -1], [0, -1], [1, -1], [-1, 0], [1, 0], [-1, 1], [0, 1], [1, 1]];
+    let top = -1;
+    for (let y = 0; y < f.h && top < 0; y += 1) for (let x = 0; x < f.w; x += 1) if (px(f, x, y)[3] > 127) { top = y; break; }
+    if (top < 0) return out;
+    // Rosto: caixa da pele nas 22 linhas de cima da silhueta (+1 px), intocada.
+    let fx0 = f.w; let fy0 = f.h; let fx1 = -1; let fy1 = -1;
+    each(f, (x, y, c) => { if (c[3] > 127 && y <= top + 22 && SKIN_COLORS.has(hexOf(c))) { fx0 = Math.min(fx0, x); fx1 = Math.max(fx1, x); fy0 = Math.min(fy0, y); fy1 = Math.max(fy1, y); } });
+    const inFace = (x, y) => x >= fx0 - 1 && x <= fx1 + 1 && y >= fy0 - 1 && y <= fy1 + 1;
+    // Quase-pretos do contorno e das sombras do cabelo viram um tom só (eram 4-5 tons trocando a cada pixel).
+    const INK = parse('#0b0710');
+    each(f, (x, y, c) => { if (c[3] > 127 && Lc(c) < 14 && !inFace(x, y)) put(out, x, y, [...INK.slice(0, 3), c[3]]); });
+    const curl = (im, x, y, c) => {
+      if (!CURL_COLORS.has(hexOf(c))) return false;
+      let hair = 0; for (const [i, j] of N8) if (HAIR_COLORS.has(hexOf(at(im, x + i, y + j)))) hair += 1;
+      return hair >= 3;
+    };
+    const dist = (a, b) => (a[0] - b[0]) ** 2 * 0.3 + (a[1] - b[1]) ** 2 * 0.59 + (a[2] - b[2]) ** 2 * 0.11;
+    for (let pass = 0; pass < 4; pass += 1) {
+      const src = clone(out);
+      each(src, (x, y, c) => {
+        if (c[3] < 128 || inFace(x, y) || curl(src, x, y, c)) return;
+        const k = key(c);
+        const same = N8.filter(([i, j]) => key(at(src, x + i, y + j)) === k).length;
+        if (same > 0) return;
+        // Pixel solto: vira o vizinho opaco mais parecido (desempate: o mais comum em volta).
+        const count = new Map();
+        for (const [i, j] of N8) { const n = at(src, x + i, y + j); if (n[3] < 128) continue; const kk = key(n); count.set(kk, { n: (count.get(kk)?.n ?? 0) + 1, c: n }); }
+        let best = null; let bestScore = Infinity;
+        for (const e of count.values()) { const score = dist(e.c, c) / (1 + 0.5 * e.n); if (score < bestScore) { bestScore = score; best = e.c; } }
+        if (best) put(out, x, y, [...best.slice(0, 3), c[3]]);
+        else put(out, x, y, [0, 0, 0, 0]); // ponto flutuando no vazio (sobra da capa atrasada)
+      });
+    }
+    return out;
+  };
   const finish = (id, down, right, up) => {
-    if (id.startsWith('warrior')) for (const set of [down, right, up]) set.frames = set.frames.map(fillHoles);
+    if (id.startsWith('warrior')) for (const set of [down, right, up]) set.frames = set.frames.map(fillHoles).map(despeckle);
     const left = flipSet(right);
     sheets[id] = sheetOf([down.frames, left.frames, right.frames, up.frames]);
     return { down, left, right, up };
