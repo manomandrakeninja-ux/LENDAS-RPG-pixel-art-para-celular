@@ -209,6 +209,42 @@ function calmTufts(canvas, kind, field, core, { density = 0.6, size = 1 } = {}) 
   }
 }
 
+/**
+ * Micro-textura (rodada 3): a floresta e o brejo tinham ficado em manchas lisas de 2 tons. Nas manchas
+ * escuras entram pontinhos de folha/semente (1 px, um tom acima ou abaixo, em grade de 3 px para não
+ * encostarem) e a divisa entre as manchas ganha 1 faixa de pontilhado de 2 px (sem degrau reto).
+ * Só no miolo do ladrilho (margem de 2 px), então nada corta na emenda.
+ */
+const MICRO = { [T.FOREST]: { speck: 0.5, leaf: ['#5d2c28', '#8a4836'] }, [T.SWAMP]: { speck: 0.42, leaf: ['#2d2e25', '#5b6b3a'] } };
+function microTexture(canvas, kind, calm, seed) {
+  const ramp = RAMP[kind];
+  const [lo, hi] = GRASS_LEVELS[kind];
+  const floor = new Set([ramp[lo], ramp[hi]]);
+  const cfg = MICRO[kind];
+  const ground = (x, y) => floor.has(canvas.colorAt(x, y));
+  // Pontilhado da divisa: alterna o tom vizinho em xadrez numa faixa estreita.
+  for (let y = 2; y < S - 2; y += 1) {
+    for (let x = 2; x < S - 2; x += 1) {
+      const t = calm[y * S + x];
+      if (Math.abs(t - 0.5) > 0.03 || (x + y) % 2 || !ground(x, y)) continue;
+      canvas.pixel(x, y, ramp[t < 0.5 ? hi : lo]);
+    }
+  }
+  for (let gy = 2; gy < S - 3; gy += 3) {
+    for (let gx = 2; gx < S - 3; gx += 3) {
+      const x = gx + Math.floor(hash(gx, gy, seed + 61) * 2);
+      const y = gy + Math.floor(hash(gx, gy, seed + 62) * 2);
+      const dark = calm[y * S + x] < 0.5;
+      if (hash(gx, gy, seed + 63) > (dark ? cfg.speck : cfg.speck * 0.35)) continue;
+      if (![[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]].every(([dx, dy]) => ground(x + dx, y + dy))) continue;
+      const level = dark ? lo : hi;
+      const r = hash(gx, gy, seed + 64);
+      const color = r < 0.4 ? ramp[Math.min(5, level + 1)] : r < 0.75 ? ramp[Math.max(0, level - 1)] : cfg.leaf[r < 0.88 ? 0 : 1];
+      canvas.pixel(x, y, color);
+    }
+  }
+}
+
 // ---------- Detalhes pequenos ----------
 
 /** Seixo com luz no alto à esquerda, sombra embaixo à direita e sombra de contato. size 0..2. */
@@ -371,6 +407,7 @@ function base(canvas, kind, variant) {
       [T.SWAMP]: { density: 0.7, size: 0 }
     }[kind];
     calmTufts(canvas, kind, calm, core, options);
+    if (kind === T.FOREST || kind === T.SWAMP) microTexture(canvas, kind, calm, s);
     if (kind === T.FOREST) {
       // Folhas caídas e gravetos no miolo.
       scatterInner(s + 1, 2 + core, (x, y, i) => {
@@ -799,30 +836,35 @@ const underCache = new Map();
  * Lava em 4 tons + crosta: placas de crosta escura (células de Voronoi periódicas) separadas por veios
  * acesos (núcleo amarelo → laranja → vermelho) que pulsam de quadro em quadro.
  */
-const LAVA_CELL = 36;
+// Rodada 3: placas de 3 tamanhos (12-40 px). Diagrama de Voronoi com peso: cada semente numa grade de
+// 12 px recebe um peso de 0, 7 ou 15 px; as pesadas engolem as vizinhas e viram placas grandes.
+const LAVA_GRID = 12;
 function lavaTone(x, y, frame, seed, v) {
-  const cells = BIG / LAVA_CELL;
-  const gx = Math.floor(x / LAVA_CELL); const gy = Math.floor(y / LAVA_CELL);
-  let f1 = Infinity; let f2 = Infinity; let id = 0;
-  for (let j = -1; j <= 1; j += 1) {
-    for (let i = -1; i <= 1; i += 1) {
+  const cells = BIG / LAVA_GRID;
+  const gx = Math.floor(x / LAVA_GRID); const gy = Math.floor(y / LAVA_GRID);
+  let f1 = Infinity; let f2 = Infinity; let id = 0; let id2 = 0; let heavy = 0;
+  for (let j = -3; j <= 3; j += 1) {
+    for (let i = -3; i <= 3; i += 1) {
       const cx = gx + i; const cy = gy + j;
       const wx = ((cx % cells) + cells) % cells; const wy = ((cy % cells) + cells) % cells;
-      const px = (cx + 0.15 + hash(wx, wy, seed + 31) * 0.7) * LAVA_CELL;
-      const py = (cy + 0.15 + hash(wx, wy, seed + 32) * 0.7) * LAVA_CELL;
-      const d = Math.hypot((x + 0.5 - px) * 0.9, y + 0.5 - py);
-      if (d < f1) { f2 = f1; f1 = d; id = hash(wx, wy, seed + 33); } else if (d < f2) f2 = d;
+      const px = (cx + 0.1 + hash(wx, wy, seed + 31) * 0.8) * LAVA_GRID;
+      const py = (cy + 0.1 + hash(wx, wy, seed + 32) * 0.8) * LAVA_GRID;
+      const r = hash(wx, wy, seed + 34);
+      const weight = r < 0.3 ? 15 : r < 0.62 ? 8 : 0;
+      const d = Math.hypot((x + 0.5 - px) * 0.9, y + 0.5 - py) - weight;
+      if (d < f1) { f2 = f1; f1 = d; id2 = id; id = hash(wx, wy, seed + 33); heavy = weight; } else if (d < f2) { f2 = d; id2 = hash(wx, wy, seed + 33); }
     }
   }
-  // Distância até o veio, com a borda das placas irregular.
-  const e = f2 - f1 + (v - 0.5) * 6;
+  // Distância até o veio, com a borda das placas irregular; a largura do veio (1-3 px) varia por divisa.
+  const e = f2 - f1 + (v - 0.5) * 5;
+  const width = 0.6 + ((id * 7.3 + id2 * 3.1) % 1) * 1.6;
   const pulse = [0, 0.5, 1, 0.5][frame % 4];
-  // Uma placa em cada cinco derreteu: vira poça de lava aberta (laranja com manchas claras).
-  if (id < 0.2) return v > 0.62 ? 4 : v < 0.3 ? 2 : 3;
-  if (e < 1.2 + pulse * 0.5) return 5;
-  if (e < 2.8 + pulse * 0.3) return 4;
-  if (e < 4.2) return 3;
-  if (e < 5.4) return 2;
+  // 3 placas em cada 10 derreteram: lava aberta (laranja com manchas claras), sem crosta.
+  if (id < 0.2 && heavy >= 8) return v > 0.66 ? 4 : v < 0.3 ? 2 : 3;
+  if (e < width * (1 + pulse * 0.4)) return 5;
+  if (e < width + 1 + pulse * 0.3) return 4;
+  if (e < width + 1.9) return 3;
+  if (e < width + 2.8) return 2;
   // Crosta: dois tons em manchas largas (sem anéis concêntricos).
   return v > 0.6 ? 1 : 0;
 }
