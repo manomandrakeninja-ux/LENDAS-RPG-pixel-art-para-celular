@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { CONSUMABLES } from '../data/consumables.js';
 import { GLOW_LEVELS, HALO_RGB, KIND, lightBand } from '../art/light.js';
 import { OVERLAY_DEPTH } from './depths.js';
-import { T } from '../data/worldRegions.js';
+import { T, TILE } from '../data/worldRegions.js';
 
 const LAVA_KIND = T.LAVA;
 
@@ -163,56 +163,102 @@ export class LightingSystem {
   }
 
   /**
-   * Lava emite luz própria: as células da tela sobre lava não escurecem com a noite (ficam a ~85 %)
-   * e ganham um brilho laranja aditivo que pulsa devagar. Amostragem a cada 2 células (8 px de tela), com a borda em degradê.
+   * Lava emite luz própria. A máscara segue a lava PINTADA (o mesmo campo dos cantos que o terreno usa:
+   * cada vértice da grade vale a fração dos 4 ladrilhos em volta que são lava, interpolado em bilinear),
+   * então a luz acompanha a margem curva e não os quadrados dos ladrilhos. Depois um borrão largo
+   * (2 passes de caixa de 7 células) deixa o brilho vazar 1-2 ladrilhos sobre a cinza em volta.
    */
   lightLava(light, glow, camera, glowScale, t) {
     const world = this.scene.regionWorld;
-    if (!world?.terrainAtPoint) return;
+    const grid = world?.grid;
+    if (!grid?.terrain) return;
     const width = this.width;
     const height = this.height;
     const toWorld = CELL / camera.zoom;
     const view = camera.worldView;
-    const ramp = HALO_RGB.lava;
-    const pulse = 1 + 0.08 * Math.sin(t * 2.1);
-    const warmth = (0.1 + 0.22 * glowScale) * pulse;
-    // Máscara grossa (1 amostra a cada 2 células) e média 3x3: a borda da lava vira um degradê
-    // em degraus, sem os quadrados dos ladrilhos.
-    const gw = Math.ceil(width / 2); const gh = Math.ceil(height / 2);
-    const mask = new Uint8Array(gw * gh);
+    const TILE_W = TILE;
+    const pad = 3;
+    const c0 = Math.floor(view.x / TILE_W) - pad; const r0 = Math.floor(view.y / TILE_W) - pad;
+    const c1 = Math.ceil(view.right / TILE_W) + pad; const r1 = Math.ceil(view.bottom / TILE_W) + pad;
+    const vw = c1 - c0 + 1; const vh = r1 - r0 + 1;
+    const isLava = (col, row) => (col >= 0 && row >= 0 && col < grid.cols && row < grid.rows && grid.terrain[row * grid.cols + col] === LAVA_KIND ? 1 : 0);
+    // Valor de cada vértice (canto entre 4 ladrilhos).
+    const vertex = new Float32Array(vw * vh);
     let any = false;
-    for (let gy = 0; gy < gh; gy += 1) {
-      for (let gx = 0; gx < gw; gx += 1) {
-        const wx = view.x + (gx * 2 + 1) * toWorld; const wy = view.y + (gy * 2 + 1) * toWorld;
-        // Só o miolo da lava (a 20 px de qualquer outro terreno): a franja de cinza que invade a borda
-        // do ladrilho fica escura e a luz não vaza em quadrados para o chão.
-        if (![[0, 0], [20, 0], [-20, 0], [0, 20], [0, -20]].every(([ox, oy]) => world.terrainAtPoint(wx + ox, wy + oy) === LAVA_KIND)) continue;
-        mask[gy * gw + gx] = 1; any = true;
+    for (let j = 0; j < vh; j += 1) {
+      for (let i = 0; i < vw; i += 1) {
+        const col = c0 + i; const row = r0 + j;
+        const v = (isLava(col - 1, row - 1) + isLava(col, row - 1) + isLava(col - 1, row) + isLava(col, row)) / 4;
+        vertex[j * vw + i] = v;
+        if (v) any = true;
       }
     }
     if (!any) return;
-    for (let gy = 0; gy < gh; gy += 1) {
-      for (let gx = 0; gx < gw; gx += 1) {
-        let sum = 0;
-        for (let j = -1; j <= 1; j += 1) for (let i = -1; i <= 1; i += 1) {
-          const xx = gx + i; const yy = gy + j;
-          if (xx >= 0 && yy >= 0 && xx < gw && yy < gh) sum += mask[yy * gw + xx];
+    const n = width * height;
+    if (!this.lavaField || this.lavaField.length !== n) {
+      this.lavaField = new Float32Array(n);
+      this.lavaBlur = new Float32Array(n);
+      this.lavaTemp = new Float32Array(n);
+    }
+    const field = this.lavaField;
+    for (let y = 0; y < height; y += 1) {
+      const wy = view.y + (y + 0.5) * toWorld;
+      const fy = wy / TILE_W - r0; const jy = Math.min(vh - 2, Math.max(0, Math.floor(fy))); const ty = fy - jy;
+      for (let x = 0; x < width; x += 1) {
+        const wx = view.x + (x + 0.5) * toWorld;
+        const fx = wx / TILE_W - c0; const ix = Math.min(vw - 2, Math.max(0, Math.floor(fx))); const tx = fx - ix;
+        const k = jy * vw + ix;
+        const top = vertex[k] + (vertex[k + 1] - vertex[k]) * tx;
+        const bottom = vertex[k + vw] + (vertex[k + vw + 1] - vertex[k + vw]) * tx;
+        let v = top + (bottom - top) * ty;
+        if (v > 0 && v < 1) {
+          // Mesma ondulação leve da margem pintada, em coordenadas do mundo (sem emenda entre ladrilhos).
+          v += 0.07 * (Math.sin(wx * 0.23 + wy * 0.05) + Math.sin(wy * 0.19 - wx * 0.07)) + 0.03 * Math.sin((wx + wy) * 0.61);
         }
-        if (!sum) continue;
-        const k = Math.ceil(Math.min(1, sum / 6) * 4) / 4;
-        for (let dy = 0; dy < 2; dy += 1) {
-          for (let dx = 0; dx < 2; dx += 1) {
-            const x = gx * 2 + dx; const y = gy * 2 + dy;
-            if (x >= width || y >= height) continue;
-            const index = y * width + x;
-            if (light[index] < 0.85 * k) light[index] = 0.85 * k;
-            const color = ramp[1];
-            glow[index * 3] += color[0] * warmth * k;
-            glow[index * 3 + 1] += color[1] * warmth * k;
-            glow[index * 3 + 2] += color[2] * warmth * k;
-          }
+        // Rampa curta (~6 px do mundo) em volta da margem de 0,5.
+        const m = Math.min(1, Math.max(0, (v - 0.44) * 8));
+        field[y * width + x] = m;
+      }
+    }
+    // Borrão separável: 2 passes de caixa (raio 7 células) = degradê triangular de ~14 células.
+    const blur = this.lavaBlur; const temp = this.lavaTemp;
+    const R = 7; const norm = 1 / (2 * R + 1);
+    const boxH = (src, dst) => {
+      for (let y = 0; y < height; y += 1) {
+        const row = y * width; let sum = 0;
+        for (let x = -R; x <= R; x += 1) sum += src[row + Math.min(width - 1, Math.max(0, x))];
+        for (let x = 0; x < width; x += 1) {
+          dst[row + x] = sum * norm;
+          sum += src[row + Math.min(width - 1, x + R + 1)] - src[row + Math.max(0, x - R)];
         }
       }
+    };
+    const boxV = (src, dst) => {
+      for (let x = 0; x < width; x += 1) {
+        let sum = 0;
+        for (let y = -R; y <= R; y += 1) sum += src[Math.min(height - 1, Math.max(0, y)) * width + x];
+        for (let y = 0; y < height; y += 1) {
+          dst[y * width + x] = sum * norm;
+          sum += src[Math.min(height - 1, y + R + 1) * width + x] - src[Math.max(0, y - R) * width + x];
+        }
+      }
+    };
+    boxH(field, temp); boxV(temp, blur); boxH(blur, temp); boxV(temp, blur);
+    const ramp = HALO_RGB.lava;
+    const pulse = 1 + 0.08 * Math.sin(t * 2.1);
+    const warmth = (0.1 + 0.22 * glowScale) * pulse;
+    const inner = ramp[1]; const outer = ramp[Math.min(ramp.length - 1, 2)];
+    for (let index = 0; index < n; index += 1) {
+      const m = field[index];
+      // Vazamento em degraus de 1/8 (estilo pixel, mas sem seguir a grade dos ladrilhos).
+      const spill = Math.ceil(Math.min(1, blur[index] * 1.6) * 8) / 8;
+      if (!m && !spill) continue;
+      const open = Math.max(0.85 * m, 0.62 * spill);
+      if (light[index] < open) light[index] = open;
+      const a = warmth * m; const b = warmth * 0.85 * spill * (1 - m);
+      glow[index * 3] += inner[0] * a + outer[0] * b;
+      glow[index * 3 + 1] += inner[1] * a + outer[1] * b;
+      glow[index * 3 + 2] += inner[2] * a + outer[2] * b;
     }
   }
 

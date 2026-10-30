@@ -822,17 +822,20 @@ export class RegionWorld {
     const lights = [];
     const visible = (x, y) => x > view.x - 120 && x < view.right + 120 && y > view.y - 120 && y < view.bottom + 120;
     for (const feature of this.features) {
-      if (feature.type !== 'cave' && feature.type !== 'dock' && visible(feature.x, feature.y)) lights.push({ x: feature.x, y: feature.y, radius: 70, kind: feature.type === 'chest' ? 'lamp' : null });
+      if (feature.type === 'dock' || !visible(feature.x, feature.y)) continue;
+      // Entrada de caverna: braseiro na boca (halo quente que guia o jogador à noite).
+      if (feature.type === 'cave') lights.push({ x: feature.x, y: feature.y - 6, radius: 84, kind: 'torch' });
+      else lights.push({ x: feature.x, y: feature.y, radius: 70, kind: feature.type === 'chest' ? 'lamp' : null });
     }
     for (const chunk of this.chunks.values()) {
       if (!chunk.active) continue;
       for (const prop of chunk.plan.props) {
         if (!GLOWING_PROPS.has(prop.frame) && !prop.frame.startsWith('stalagmite')) continue;
         if (!visible(prop.x, prop.y)) continue;
-        lights.push({ x: prop.x, y: prop.y - 10, radius: prop.frame.startsWith('stalagmite') ? 34 : 58, kind: PROP_LIGHT_KIND[prop.frame] ?? null });
+        lights.push({ x: prop.x, y: prop.y - 10, radius: prop.frame.startsWith('stalagmite') ? 34 : prop.frame === 'ice-crystal' || prop.frame === 'cave-crystal' ? 74 : 58, kind: PROP_LIGHT_KIND[prop.frame] ?? null });
       }
     }
-    return lights.slice(0, 18);
+    return lights.slice(0, 24);
   }
 
   /** Lodo deixa mais lento; gelo e o resto, velocidade normal. */
