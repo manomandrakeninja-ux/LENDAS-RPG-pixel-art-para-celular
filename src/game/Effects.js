@@ -91,8 +91,9 @@ export class PixelEffects {
       '.122222.',
       '........'
     ]);
+    // Rodada 3: faíscas vivem 250-340 ms (ainda visíveis na captura de +110 ms).
     this.sparkEmitter = scene.add.particles(0, 0, spark, {
-      lifespan: { min: 150, max: 300 },
+      lifespan: { min: 250, max: 340 },
       speed: { min: 45, max: 130 },
       angle: { min: 0, max: 360 },
       scale: 1,
@@ -242,16 +243,19 @@ export class PixelEffects {
   spawnSpecial(x, y) {
     const scene = this.scene;
     const key = ensureWave(scene);
+    // Rodada 3: a onda passa POR BAIXO do herói (profundidade do chão em volta dele) e a 60 %.
     const wave = scene.add.sprite(x, y + 2, key, 0)
       .setOrigin(0.5)
-      .setDepth(OVERLAY_DEPTH + 4190)
+      .setDepth(y - 2)
+      .setAlpha(0.6)
       .setBlendMode(Phaser.BlendModes.ADD);
     scene.hudCamera?.ignore(wave);
     wave.play(key);
     scene.tweens.add({ targets: wave, alpha: 0, delay: 220, duration: 100, onComplete: () => wave.destroy() });
 
     const flash = scene.add.image(x, y - 6, 'vfx', 'ring-1')
-      .setDepth(OVERLAY_DEPTH + 4191)
+      .setDepth(y - 1)
+      .setAlpha(0.7)
       .setScale(0.6)
       .setTint(0xffeb57)
       .setBlendMode(Phaser.BlendModes.ADD);
@@ -286,7 +290,7 @@ export class PixelEffects {
       .setScale(1)
       .setBlendMode(Phaser.BlendModes.ADD);
     this.scene.hudCamera?.ignore(flash);
-    this.scene.time.delayedCall(80, () => flash.destroy());
+    this.scene.time.delayedCall(100, () => flash.destroy());
   }
 
   spawnDamage(x, y, amount, tint = '#fff0b8') {

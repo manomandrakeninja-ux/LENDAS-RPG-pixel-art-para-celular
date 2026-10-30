@@ -83,7 +83,10 @@ export function waveTone(x, y, frame) {
   const r = waveRadius(frame);
   const d = Math.hypot(x + 0.5 - WAVE_SIZE / 2, y + 0.5 - WAVE_SIZE / 2);
   const depth = r - d;
-  const thin = frame >= WAVE_FRAMES - 2 ? 0.6 : 1; // nos últimos quadros o anel afina
+  // Rodada 3: espessura variável ao longo do anel (não é mais um círculo perfeito).
+  const angle = Math.atan2(y + 0.5 - WAVE_SIZE / 2, x + 0.5 - WAVE_SIZE / 2);
+  const vary = 0.65 + 0.45 * Math.abs(Math.sin(angle * 3 + frame * 0.7)) + 0.15 * Math.sin(angle * 7);
+  const thin = (frame >= WAVE_FRAMES - 2 ? 0.6 : 1) * vary; // nos últimos quadros o anel afina
   if (depth < 0 || depth > 15 * thin) return -1;
   if (depth < 2) return 0;
   if (depth < 5 * thin) return 1;
@@ -107,9 +110,11 @@ export function swingArcTone(x, y, frame) {
   // Último quadro: só o fio de fora, se desfazendo do começo do arco para a frente.
   if (frame === 3 && (depth > 3.2 || angle < -0.6)) return -1;
   if (frame === 2 && angle < -1.2 && depth > 2.2) return -1;
-  if (depth < 1.2) return 0;
+  // Rodada 3: núcleo branco só no meio do arco (as pontas afinam no tom da arma), borda de dentro
+  // pontilhada (lê como transparente).
+  if (depth < 1.2) return Math.abs(angle) < 0.95 ? 0 : 1;
   if (depth < 2.8) return 1;
   if (inner - R > 1.2) return 2;
-  return 3;
+  return (x + y) % 2 === 0 ? 3 : -1;
 }
 
