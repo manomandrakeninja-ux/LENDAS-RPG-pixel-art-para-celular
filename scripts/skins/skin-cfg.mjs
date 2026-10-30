@@ -8,6 +8,10 @@ const BODY_UP = { 4: [0, 1], 5: [0, 0], 6: [0, 0], 7: [1, 1], 8: [-2, 3], 9: [-1
 const STRIDE_DOWN = { 7: [1, -1], 8: [3, -3], 9: [1, -1] };
 const STRIDE_SIDE = { 7: [-1, 1], 8: [4, -3], 9: [2, -1] };
 const STRIDE_UP = { 7: [1, -1], 8: [3, -3], 9: [1, -1] };
+// Guerreira: capa e cachos atrasam em relação ao tronco (sentido contrário ao golpe).
+const TRAIL_DOWN = { 7: 1, 8: -3, 9: -1 };
+const TRAIL_SIDE = { 7: 1, 8: -4, 9: -2 };
+const TRAIL_UP = { 7: -1, 8: 3, 9: 1 };
 const REL_DOWN = { 5: [8, 2], 6: [1, -11], 7: [-1, -13], 8: [4, 12], 9: [2, 9] };
 const REL_SIDE = { 5: [-8, 2], 6: [-1, -11], 7: [1, -13], 8: [9, 10], 9: [6, 8] };
 const REL_UP = { 5: [-8, 2], 6: [-1, -11], 7: [1, -13], 8: [-4, 12], 9: [-2, 9] };
@@ -38,8 +42,8 @@ export const SKIN_CFG = {
   warrior: {
     legs: { down: { hip: 42, x0: 17, x1: 42, mid: 31 }, right: { hip: 44, x0: 12, x1: 47, mid: 29 }, up: { hip: 47, x0: 2, x1: 23, mid: 13 } },
     // backGrip/backAngle: de frente o cabo da espada nas costas sai acima do ombro, à esquerda do cabelo.
-    down: { J: [23, 26], hang: [20, 37], drawHang: true, neckY: 17, backGrip: [19, 12], backAngle: 58, outward: -1, style: W_STYLE, rel: REL_DOWN, body: BODY_DOWN, stride: STRIDE_DOWN, headShift: { 10: [1, 0] }, eyes: { closed: [[30, 11, '#d2704e']], squint: [[30, 11, '#d2704e']] } },
-    right: { J: [31, 26], hang: [31, 38], drawHang: true, neckY: 18, outward: 1, style: W_STYLE, rel: REL_SIDE, body: BODY_SIDE, headShift: { 10: [-1, 0] }, stride: STRIDE_SIDE },
-    up: { J: [21, 27], hang: [22, 38], neckY: 14, outward: 1, style: W_STYLE, rel: REL_UP, body: BODY_UP, stride: STRIDE_UP, headShift: { 10: [-1, 0] } }
+    down: { J: [23, 26], hang: [20, 37], drawHang: true, neckY: 17, backGrip: [19, 12], backAngle: 58, outward: -1, style: W_STYLE, rel: REL_DOWN, body: BODY_DOWN, stride: STRIDE_DOWN, trail: TRAIL_DOWN, headShift: { 10: [1, 0] }, eyes: { closed: [[30, 11, '#d2704e']], squint: [[30, 11, '#d2704e']] } },
+    right: { J: [31, 26], hang: [31, 38], drawHang: true, neckY: 18, outward: 1, style: W_STYLE, rel: REL_SIDE, body: BODY_SIDE, trail: TRAIL_SIDE, headShift: { 10: [-1, 0] }, stride: STRIDE_SIDE },
+    up: { J: [21, 27], hang: [22, 38], neckY: 14, outward: 1, style: W_STYLE, rel: REL_UP, body: BODY_UP, trail: TRAIL_UP, stride: STRIDE_UP, headShift: { 10: [-1, 0] } }
   }
 };

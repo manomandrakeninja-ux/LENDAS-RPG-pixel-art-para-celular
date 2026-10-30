@@ -103,7 +103,23 @@ export function buildPoses({ base, armless, cfg, ox, oy, k, FW, FH }) {
     const bodyImg = { w: src.w, h: src.h, d: new Uint8ClampedArray(src.d) };
     for (let y = cfg.hip; y < src.h; y += 1) for (let x = 0; x < src.w; x += 1) put(bodyImg, x, y, [0, 0, 0, 0]);
     // limpa a faixa do quadril onde o passo abriu buraco (repete a linha do quadril)
-    place(k, frame, bodyImg, ox, oy, (x, y) => [bdx + (y <= cfg.neckY ? hdx : 0), bdy + (y <= cfg.neckY ? hdy : 0)]);
+    // Capa e cabelo atrasados (rodada 3): no golpe o tronco vai à frente e eles ficam para trás.
+    const lag = cfg.trail?.[col] ?? 0;
+    if (lag && cfg.isTrail) {
+      const trail = { w: src.w, h: src.h, d: new Uint8ClampedArray(bodyImg.d) };
+      const rest = { w: src.w, h: src.h, d: new Uint8ClampedArray(bodyImg.d) };
+      for (let y = 0; y < src.h; y += 1) for (let x = 0; x < src.w; x += 1) {
+        const c = px(bodyImg, x, y);
+        if (c[3] < 128) continue;
+        if (y > cfg.neckY - 6 && cfg.isTrail(c)) put(rest, x, y, [0, 0, 0, 0]); else put(trail, x, y, [0, 0, 0, 0]);
+      }
+      // Primeiro no lugar (fecha os buracos), depois a cópia atrasada por cima e o corpo por último.
+      place(k, frame, trail, ox, oy, () => [bdx, bdy]);
+      place(k, frame, trail, ox, oy, () => [bdx + lag, bdy]);
+      place(k, frame, rest, ox, oy, (x, y) => [bdx + (y <= cfg.neckY ? hdx : 0), bdy + (y <= cfg.neckY ? hdy : 0)]);
+    } else {
+      place(k, frame, bodyImg, ox, oy, (x, y) => [bdx + (y <= cfg.neckY ? hdx : 0), bdy + (y <= cfg.neckY ? hdy : 0)]);
+    }
     if (rel) {
       const J = [ox + cfg.J[0] + bdx + 0.5, oy + cfg.J[1] + bdy + 0.5];
       const H = [J[0] + rel[0], J[1] + rel[1]];
