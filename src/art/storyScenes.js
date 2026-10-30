@@ -619,6 +619,17 @@ function scene1(sc) {
   sc.hero(160, 206, { dir: 'right', weapon: 'back' });
   sc.npc('vigia', 250, 205, { flip: true, rimSide: -1 });
   sc.paint('solid', (c) => campfire(c, 205, 208, 1.1));
+  // Rodada 3: primeiro plano (tronco caído à esquerda e carroça quebrada à direita) para a cena não
+  // ficar vazia sob o céu estrelado; a fogueira acende só a borda deles.
+  sc.paint('solid', (c) => {
+    line(c, 96, 223, 150, 219, '#1c121c', 10); line(c, 98, 220, 148, 216, '#391f21', 6); line(c, 100, 218, 146, 214, '#5d2c28', 2);
+    ell(c, 150, 218, 4, 5, '#5d2c28'); ell(c, 150, 218, 2.4, 3, '#8a4836'); ell(c, 150, 218, 1, 1.4, '#391f21');
+    line(c, 118, 214, 112, 206, '#391f21', 2); line(c, 112, 206, 108, 204, '#391f21', 1);
+    line(c, 286, 222, 352, 216, '#1c121c', 7); line(c, 288, 219, 350, 213, '#391f21', 3);
+    for (const x of [300, 340]) { ell(c, x, 219, 9, 9, '#1c121c'); ell(c, x, 219, 7, 7, '#391f21'); ell(c, x, 219, 2, 2, '#1c121c'); line(c, x - 6, 219, x + 6, 219, '#1c121c', 1); line(c, x, 213, x, 225, '#1c121c', 1); }
+    line(c, 352, 216, 372, 206, '#391f21', 2);
+    line(c, 288, 213, 296, 212, '#c64524', 1); line(c, 101, 216, 120, 214, '#e07438', 1);
+  });
   sc.paint('soft', (c) => vignette(c, '#0e071b', 0.5, 205, 190));
   sc.paint('add', (c) => {
     glow(c, 205, 190, 150, '#e07438', 0.42, 0.7);

@@ -764,7 +764,12 @@ body.is-phone .quest-tracker h3 {
 @media (max-width: 560px) and (orientation: portrait) {
   .quest-chapter__card {
     grid-template-columns: 1fr;
-    grid-template-rows: 38% minmax(0, 1fr);
+    /* Rodada 3: a ilustração ocupa metade do cartão (antes 38 % e sobrava cartão vazio embaixo). */
+    grid-template-rows: 50% minmax(0, 1fr);
+  }
+
+  .quest-chapter__art img {
+    object-position: 50% 72%;
   }
 }
 
