@@ -57,11 +57,81 @@ export class WorldTexts {
     return ((text.cameraFilter | (text.parentContainer?.cameraFilter ?? 0)) & hud.id) !== 0;
   }
 
+  /**
+   * Rodada 4: o que um balão não pode cobrir (herói e faixas de aviso) e os personagens que um rótulo não
+   * pode cruzar. Calculado uma vez por quadro, em coordenadas de tela do canvas.
+   */
+  blockers(camera, zoom) {
+    const scene = this.scene;
+    const view = camera.worldView;
+    const toScreen = (x0, y0, x1, y1) => ({ l: (x0 - view.x) * zoom, t: (y0 - view.y) * zoom, r: (x1 - view.x) * zoom, b: (y1 - view.y) * zoom });
+    const player = scene.player;
+    const hero = player ? toScreen(player.x - 16, player.y - 54, player.x + 16, player.y + 6) : null;
+    const bands = [];
+    const message = scene.ui?.message;
+    if (message?.visible && message.alpha > 0.05 && message.text) {
+      const w = message.displayWidth; const h = message.displayHeight;
+      bands.push({ l: message.x - w * message.originX - 6, t: message.y - h * message.originY - 6, r: message.x + w * (1 - message.originX) + 6, b: message.y + h * (1 - message.originY) + 6 });
+    }
+    // Faixas em HTML (avisos da campanha): convertidas para o espaço do canvas.
+    const canvasRect = scene.game.canvas?.getBoundingClientRect?.();
+    if (canvasRect?.width) {
+      const k = scene.scale.width / canvasRect.width;
+      for (const el of document.querySelectorAll('.quest-toast, #epic-banner')) {
+        if (el.hidden || el.classList?.contains('is-leaving')) continue;
+        const r = el.getBoundingClientRect();
+        if (!r.width) continue;
+        bands.push({ l: (r.left - canvasRect.left) * k - 6, t: (r.top - canvasRect.top) * k - 6, r: (r.right - canvasRect.left) * k + 6, b: (r.bottom - canvasRect.top) * k + 6 });
+      }
+    }
+    return { hero, bands };
+  }
+
+  /** Personagens (mundo): herói, moradores e NPCs da campanha, como retângulos dos pés à cabeça. */
+  characterRects() {
+    const scene = this.scene;
+    const list = [];
+    const player = scene.player;
+    if (player) list.push({ owner: player, l: player.x - 14, r: player.x + 14, t: player.y - 52, b: player.y + 4 });
+    for (const v of scene.villagers?.villagers?.values?.() ?? []) {
+      const c = v.container; if (!c?.active) continue;
+      list.push({ owner: c, l: c.x - 13, r: c.x + 13, t: c.y - 50, b: c.y + 4 });
+    }
+    for (const npc of scene.campaign?.npcs?.values?.() ?? []) {
+      const sp = npc.sprite; if (!sp?.active) continue;
+      const b = sp.getBounds();
+      list.push({ owner: npc.label, l: b.x + 4, r: b.right - 4, t: b.y + 2, b: b.bottom });
+    }
+    return list;
+  }
+
+  /** Rótulo sobe até não cruzar nenhum personagem (fora o próprio dono); "!" fica ao lado do nome. */
+  avoidCharacters(text, rects) {
+    // Alguém reposicionou o rótulo (nível novo, portão...): essa passa a ser a altura de origem.
+    if (text.homeY === undefined || (text.avoidY !== undefined && Math.abs(text.y - text.avoidY) > 0.5)) text.homeY = text.y;
+    const halfW = text.displayWidth / 2; const h = text.displayHeight;
+    let y = text.homeY;
+    for (let guard = 0; guard < 4; guard += 1) {
+      const top = y - h * text.originY; const bottom = top + h;
+      const hit = rects.find((r) => r.owner !== text && r.r > text.x - halfW && r.l < text.x + halfW && r.b > top && r.t < bottom);
+      if (!hit) break;
+      y = hit.t - 2 - h * (1 - text.originY);
+    }
+    if (Math.abs(text.y - y) > 0.5) text.setY(y);
+    text.avoidY = text.y;
+    const marker = text.sideMarker;
+    if (marker?.active) marker.setPosition(text.x + halfW + marker.displayWidth / 2 + 2, text.y);
+  }
+
   update() {
     const scene = this.scene;
     const camera = scene.cameras.main;
     const zoom = camera.zoom || 1;
     const boost = screenBoost(scene);
+    this.blocked = this.blockers(camera, zoom);
+    this.avoidTimer = (this.avoidTimer ?? 0) - 1;
+    const rects = this.avoidTimer <= 0 ? this.characterRects() : null;
+    if (rects) this.avoidTimer = 6;
     for (const text of this.texts) {
       if (!text.active || text.skipWorldScale || !this.isWorld(text)) continue;
       text.baseScale ??= text.scaleX || 1;
@@ -73,6 +143,20 @@ export class WorldTexts {
       if (text.style.resolution !== resolution) text.setResolution(resolution);
       if (text.keepOnScreen) this.keepOnScreen(text, screen, zoom, camera);
     }
+    // Rótulos: os de baixo primeiro; cada um, já no lugar, vira obstáculo para os seguintes
+    // (VIGIA e CONSTRUTOR não se sobrepõem mais).
+    if (rects) {
+      const labels = [...this.texts].filter((t) => t.active && t.avoidSprites && t.visible && t.text && this.isWorld(t));
+      labels.sort((a, b) => (b.homeY ?? b.y) - (a.homeY ?? a.y));
+      for (const label of labels) {
+        this.avoidCharacters(label, rects);
+        const w = label.displayWidth; const h = label.displayHeight;
+        const l = label.x - w * label.originX; const t = label.y - h * label.originY;
+        rects.push({ owner: label, l: l - 2, r: l + w + 2, t: t - 1, b: t + h + 1 });
+        const m = label.sideMarker;
+        if (m?.active && m.text) rects.push({ owner: label, l: m.x - m.displayWidth / 2, r: m.x + m.displayWidth / 2, t: m.y - m.displayHeight / 2, b: m.y + m.displayHeight / 2 });
+      }
+    }
   }
 
   /** Balão de fala: quebra de linha pela largura da tela e posição presa dentro da tela. */
@@ -80,7 +164,9 @@ export class WorldTexts {
     if (!text.visible) return;
     const width = this.scene.scale.width;
     const height = this.scene.scale.height;
-    const wrap = Math.floor(Math.min(MAX_BUBBLE_WIDTH, (width - MARGIN * 2) / screen - 12));
+    // No celular em pé o balão ocupa no máximo 60 % da largura da tela.
+    const usable = isPortraitPhone(width, height) ? width * 0.6 : width - MARGIN * 2;
+    const wrap = Math.floor(Math.min(MAX_BUBBLE_WIDTH, usable / screen - 12));
     if (text.style.wordWrapWidth !== wrap) text.setWordWrapWidth(wrap, true);
     const parent = text.parentContainer;
     const originX = parent ? parent.x : 0;
@@ -96,5 +182,11 @@ export class WorldTexts {
     sx = Math.min(Math.max(sx, MARGIN + halfW), width - MARGIN - halfW);
     sy = Math.min(Math.max(sy, MARGIN + tall), height - MARGIN);
     text.setPosition(sx / zoom + view.x - originX, sy / zoom + view.y - originY);
+    // Nunca sobre o herói nem atrás de uma faixa de aviso (texto fantasma): some enquanto cruzar.
+    const box = { l: sx - halfW, r: sx + halfW, t: sy - tall, b: sy };
+    const cross = (r) => r && r.r > box.l && r.l < box.r && r.b > box.t && r.t < box.b;
+    const blocked = cross(this.blocked?.hero) || (this.blocked?.bands ?? []).some(cross);
+    const alpha = blocked ? 0 : 1;
+    if (text.alpha !== alpha) text.setAlpha(alpha);
   }
 }

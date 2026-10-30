@@ -77,7 +77,8 @@
   padding: 8px 12px;
   border: 2px solid #8a6440;
   border-radius: 8px;
-  background: rgba(36, 25, 15, 0.92);
+  /* Rodada 4: fundo opaco (com 92 % o botão SETA e a missão apareciam por trás, como texto fantasma). */
+  background: rgb(36, 25, 15);
   color: #f4e6c6;
   font: 8px/1.5 var(--pixel-font);
   text-align: center;

@@ -173,10 +173,13 @@ export class Camp {
   }
 
   makeLabel(key, x, y) {
-    return this.scene.add.text(x, y, '', {
+    // Rodada 4: o rótulo sobe se cruzar um personagem (WorldTexts.avoidCharacters).
+    const label = this.scene.add.text(x, y, '', {
       fontFamily: 'Press Start 2P', fontSize: '8px', color: '#f8edcc',
       backgroundColor: '#1d2b24d9', padding: { x: 5, y: 4 }
     }).setOrigin(0.5).setDepth(y + 80).setScale(0.5);
+    label.avoidSprites = true;
+    return label;
   }
 
   drawBuilding(key) {

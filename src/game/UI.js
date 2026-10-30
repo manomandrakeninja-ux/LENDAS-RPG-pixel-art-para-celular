@@ -246,7 +246,7 @@ export class GameUI {
     this.fixed.push(this.mapBg, this.mapLabel, this.minimapImage);
 
     this.message = this.text(width / 2, 120, '', {
-      fontSize: '8px', fontStyle: 'bold', align: 'center', backgroundColor: '#14161ee8',
+      fontSize: '8px', fontStyle: 'bold', align: 'center', backgroundColor: '#14161e',
       padding: { x: 12, y: 7 }, wordWrap: { width: Math.min(520, width - 32) }
     }).setOrigin(0.5).setAlpha(0);
     this.message.setDepth(OVERLAY_DEPTH + 5100);
