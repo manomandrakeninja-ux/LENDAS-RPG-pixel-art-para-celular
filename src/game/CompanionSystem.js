@@ -309,8 +309,10 @@ export class CompanionSystem {
     const sprite = this.petSprite;
     if (!sprite) return;
     this.bob += delta;
-    const tx = player.x - 20;
-    const ty = player.y + 8;
+    // Montado (rodada 3): o mascote fica a >= 40 px, atrás e ao lado do cavalo (não cola na montaria).
+    const mounted = Boolean(this.mountSprite);
+    const tx = player.x - (mounted ? 46 : 20);
+    const ty = player.y + (mounted ? 22 : 8);
     const distance = Phaser.Math.Distance.Between(this.px, this.py, tx, ty);
     if (distance > 240) {
       this.px = tx;

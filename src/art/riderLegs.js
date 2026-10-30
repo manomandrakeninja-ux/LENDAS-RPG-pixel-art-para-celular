@@ -63,7 +63,8 @@ export function riderLegs(frame, dir) {
   } else {
     // Abre cada perna para o seu lado: a coxa vai em diagonal e a canela pende ao lado do cavalo.
     const cx = (x0 + x1) / 2;
-    const spread = Math.round(8 * k);
+    // Rodada 3: as pernas abriam como asas para fora do cavalo; agora 3 px mais para dentro.
+    const spread = Math.round(5 * k);
     const thighRows = Math.max(2, Math.round(5 * k));
     for (let y = hip; y <= bottom; y += 1) {
       const t = Math.min(1, (y - hip) / thighRows);

@@ -698,16 +698,18 @@ function paintBack(ctx, frame, layer) {
   stroke(ctx, [[49, Y(41.6)], [56, Y(40.6)], [63, Y(41.6)]], 0.8, C.leatherShine);
   stroke(ctx, [[48.5, Y(45.6)], [63.5, Y(45.6)]], 0.8, C.stitch);
   // Garupa: dois glúteos redondos, sulco no meio, brilho azulado.
-  const glutes = poly(ctx, [[41, Y(52)], [43, Y(46)], [49, Y(44.2)], [56, Y(45.6)], [63, Y(44.2)], [69, Y(46)], [71, Y(52)], [70, Y(62)], [65, Y(68)], [47, Y(68)], [42, Y(62)]], true);
+  // Rodada 3: garupa 20 % mais estreita e mais baixa (o tronco da amazona aparece de costas).
+  const nx = (x) => 56 + (x - 56) * 0.8;
+  const glutes = poly(ctx, [[nx(41), Y(54)], [nx(43), Y(49)], [nx(49), Y(47.4)], [56, Y(48.6)], [nx(63), Y(47.4)], [nx(69), Y(49)], [nx(71), Y(54)], [nx(70), Y(62)], [nx(65), Y(68)], [nx(47), Y(68)], [nx(42), Y(62)]], true);
   vol(ctx, glutes, C.coat, C.coatShadow, C.coatLight, { d: [1.4, 1.8], h: [1, 1.1] });
   inside(ctx, glutes, () => {
-    const l = poly(ctx, ellPts(48.8, Y(54), 7.6, 9));
-    const r = poly(ctx, ellPts(63.2, Y(54), 7.6, 9));
+    const l = poly(ctx, ellPts(nx(48.8), Y(56), 6.2, 8));
+    const r = poly(ctx, ellPts(nx(63.2), Y(56), 6.2, 8));
     vol(ctx, l, C.coat, C.coatShadow, C.coatLight, { d: [1.2, 1.4], h: [1.1, 1.1] });
     vol(ctx, r, C.coat, C.coatShadow, C.coatLight, { d: [1.2, 1.4], h: [1.1, 1.1] });
-    stroke(ctx, [[44, Y(50)], [46.5, Y(46.4)], [50, Y(45.6)]], 1.1, C.coatShine);
-    px(ctx, 46, Y(47.4), C.coatSpec, 1, 1);
-    stroke(ctx, [[58.4, Y(46.4)], [62, Y(45.6)]], 1, C.coatLight);
+    stroke(ctx, [[nx(44), Y(52)], [nx(46.5), Y(49)], [nx(50), Y(48.4)]], 1.1, C.coatShine);
+    px(ctx, nx(46), Y(50), C.coatSpec, 1, 1);
+    stroke(ctx, [[58.4, Y(49)], [nx(62), Y(48.4)]], 1, C.coatLight);
   });
   // Posteriores (perto da câmera).
   const hindL = frontLeg(ctx, [48.5, Y(64)], pose.legs.hindFar, { far: false, depth: 3, fore: false, view: 'up' });
@@ -717,12 +719,13 @@ function paintBack(ctx, frame, layer) {
   const lift = pose.tailLift;
   for (let i = 0; i < 6; i += 1) {
     const off = (i - 2.5) * 1.2;
-    const end = [56 + tailSway * 7 + off * 1.6, Y(lerp(84, 70, lift))];
-    const mid = [56 + tailSway * 3 + off, Y(lerp(64, 58, lift))];
-    stroke(ctx, [[56 + off * 0.4, Y(46)], mid, end], i === 0 || i === 5 ? 1.8 : 2.8, [C.maneMid, C.mane, C.maneDeep, C.mane, C.maneMid, C.mane][i]);
+    // Rodada 3: cauda mais junta (não encosta nas pernas) e saindo de baixo da garupa nova.
+    const end = [56 + tailSway * 5 + off * 0.9, Y(lerp(84, 70, lift))];
+    const mid = [56 + tailSway * 2.4 + off * 0.7, Y(lerp(64, 58, lift))];
+    stroke(ctx, [[56 + off * 0.3, Y(49)], mid, end], i === 0 || i === 5 ? 1.5 : 2.4, [C.maneMid, C.mane, C.maneDeep, C.mane, C.maneMid, C.mane][i]);
   }
-  stroke(ctx, [[55.4, Y(46.4)], [55 + tailSway * 2, Y(56)]], 1, C.maneShine);
-  stroke(ctx, [[57, Y(47)], [57.6 + tailSway * 2.6, Y(60)]], 1, C.maneLight);
+  stroke(ctx, [[55.4, Y(49.4)], [55 + tailSway * 2, Y(58)]], 1, C.maneShine);
+  stroke(ctx, [[57, Y(50)], [57.6 + tailSway * 2.2, Y(61)]], 1, C.maneLight);
   return out;
 }
 
