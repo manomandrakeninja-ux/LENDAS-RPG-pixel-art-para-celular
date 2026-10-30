@@ -301,6 +301,10 @@ function ensureTextures(scene) {
     canvas.rect(10, 12, 1, 22, STONE_WALL[1]);
     canvas.rect(0, 34, 16, 2, STONE_WALL[0]);
   });
+  // Rodada 4: lances contínuos dos lados diagonais (cisalhados em diagonalRun).
+  for (const [key, height] of [['wallrun-1', 30], ['wallrun-4', 30], ['wallrun-8', 36]]) {
+    drawTexture(scene, key, 96, height, (canvas) => { stoneFace(canvas, 0, 6, 96, height - 6); canvas.rect(0, 6, 96, 1, STONE_WALL[4]); });
+  }
   drawTexture(scene, 'wallcorner-8', 36, 76, (canvas) => {
     canvas.shadow(18, 75, 16, 2.4, 120);
     stoneFace(canvas, 4, 30, 28, 46);
@@ -448,6 +452,7 @@ export class CampDefense {
     const celebrate = this.wallStage !== undefined && this.wallStage !== visual.stage;
     this.wallStage = visual.stage;
     this.wallVisuals = [];
+    this.frontSlices = [];
     const vertices = this.octagonVertices(this.radius);
     if (this.wallStat('moatDamageRatio') > 0) {
       const moat = this.track(this.scene.add.graphics().setDepth(cy - this.radius - 40), this.wallObjects);
@@ -472,23 +477,21 @@ export class CampDefense {
       const length = Math.hypot(dx, dy);
       const ux = dx / length;
       const uy = dy / length;
-      // Diagonal (Fase 22c): blocos a cada 3 px de altura, bem sobrepostos, para a muralha subir em rampa
-      // contínua em vez dos degraus de 7 px de antes.
       const diagonal = Math.abs(ux) > 0.3 && Math.abs(uy) > 0.3;
-      const step = diagonal ? 5 / Math.abs(uy) : Math.min(Math.abs(ux) > 0.01 ? 13 * K / Math.abs(ux) : Infinity, Math.abs(uy) > 0.01 ? 7 * K / Math.abs(uy) : Infinity);
-      // Rodada 3: na diagonal os blocos empilhados repetiam a ameia a cada 5 px (listras regulares).
-      // Agora a face é contínua (bloco sem ameia e com rejunte suavizado) e a ameia aparece em ritmo
-      // irregular (2 ou 3 blocos de intervalo).
-      const flat = diagonal ? this.diagonalSegment(visual.segment) : visual.segment;
-      let piece = 0;
+      // Rodada 4: o lado diagonal é UMA peça pintada (lance contínuo cisalhado), não blocos empilhados.
+      // A colisão continua em blocos (zonas invisíveis) a cada 5 px de altura.
+      if (diagonal) {
+        this.addDiagonalRun(from, to, visual.segment.replace('wallseg', 'wallrun'));
+        for (let along = 0; along <= length; along += 5 / Math.abs(uy)) this.addWallBody(from.x + ux * along, from.y + uy * along, 16 * K, 24);
+        continue;
+      }
+      const step = Math.min(Math.abs(ux) > 0.01 ? 13 * K / Math.abs(ux) : Infinity, Math.abs(uy) > 0.01 ? 7 * K / Math.abs(uy) : Infinity);
       for (let along = 0; along <= length; along += step) {
         const x = from.x + ux * along;
         const y = from.y + uy * along;
         // Vão do portão no lado sul.
         if (Math.abs(y - gateY) < 2 && Math.abs(x - gateX) < 34 * K) continue;
-        const merlon = !diagonal || piece % 7 === 0 || piece % 7 === 4;
-        this.addWallPiece(x, y, merlon ? visual.segment : flat, 16 * K, 24);
-        piece += 1;
+        this.addWallPiece(x, y, visual.segment, 16 * K, 24);
       }
     }
     for (const vertex of vertices) this.addWallPiece(vertex.x, vertex.y + 4, visual.corner, 26 * K, 30, 4);
@@ -543,47 +546,83 @@ export class CampDefense {
   }
 
   /**
-   * Versão do bloco para as diagonais: sem a ameia (tudo acima da primeira linha cheia sai) e com o
-   * rejunte suavizado (cada linha puxa 45 % para a cor média dela), para a face lateral ler contínua.
+   * Lance diagonal pintado como peça própria: cada coluna x do lance plano (`wallrun-*`) desce/sobe
+   * 1 px por px, então fiadas, rejunte, passarela e ameias seguem a inclinação do lado do octógono.
+   * `rising`: a base sobe da esquerda para a direita ("/").
    */
-  diagonalSegment(key) {
-    const out = `${key}-diag`;
+  diagonalRun(runKey, width, height, rising) {
+    const out = `${runKey}-diag-${rising ? 'up' : 'down'}-${width}x${height}`;
     const textures = this.scene.textures;
     if (textures.exists(out)) return out;
-    if (!textures.exists(key)) return key;
-    const frame = textures.getFrame(key);
-    const w = frame.cutWidth; const h = frame.cutHeight;
-    const canvas = textures.createCanvas(out, w, h);
-    if (!canvas) return key;
+    if (!textures.exists(runKey)) return null;
+    const frame = textures.getFrame(runKey);
+    const runW = frame.cutWidth; const runH = frame.cutHeight;
+    const canvas = textures.createCanvas(out, width, height + runH);
+    if (!canvas) return null;
     const ctx = canvas.getContext();
-    ctx.drawImage(frame.source.image, frame.cutX, frame.cutY, w, h, 0, 0, w, h);
-    const image = ctx.getImageData(0, 0, w, h);
-    const d = image.data;
-    let faceTop = 0;
-    for (let y = 0; y < h; y += 1) {
-      let full = true;
-      for (let x = 0; x < w; x += 1) if (d[(y * w + x) * 4 + 3] < 128) { full = false; break; }
-      if (full) { faceTop = y; break; }
+    ctx.imageSmoothingEnabled = false;
+    const slope = height / Math.max(1, width - 1);
+    // Pula a coluna de contorno das pontas do lance plano (as pontas ficam sob as torres de canto).
+    const span = Math.max(1, runW - 4);
+    for (let x = 0; x < width; x += 1) {
+      const u = 2 + (x % span);
+      const top = Math.round((rising ? width - 1 - x : x) * slope);
+      ctx.drawImage(frame.source.image, frame.cutX + u, frame.cutY, 1, runH, x, top, 1, runH);
     }
-    for (let y = 0; y < faceTop; y += 1) for (let x = 0; x < w; x += 1) d[(y * w + x) * 4 + 3] = 0;
-    for (let y = faceTop + 1; y < h - 1; y += 1) {
-      const mean = [0, 0, 0];
-      for (let x = 0; x < w; x += 1) for (let c = 0; c < 3; c += 1) mean[c] += d[(y * w + x) * 4 + c] / w;
-      for (let x = 0; x < w; x += 1) {
-        // Face contínua: cor da linha (sem o rejunte de cada bloco), luz à esquerda e sombra à direita,
-        // e um rejunte irregular raro (~5 %) para não virar chapado.
-        const side = 1.08 - 0.16 * (x / Math.max(1, w - 1));
-        const seam = ((x * 73 + y * 151) % 97) < 5 ? 0.72 : 1;
-        for (let c = 0; c < 3; c += 1) {
-          const i = (y * w + x) * 4 + c;
-          d[i] = Math.max(0, Math.min(255, Math.round((d[i] * 0.15 + mean[c] * 0.85) * side * seam)));
-        }
-      }
-    }
-    ctx.putImageData(image, 0, 0);
     canvas.setFilter(Phaser.Textures.FilterMode.NEAREST);
     canvas.refresh();
     return out;
+  }
+
+  /**
+   * Põe o lance diagonal no mundo em fatias de 8 px, cada uma com a profundidade da própria base:
+   * quem está do lado de dentro de um lado de trás fica na frente, e o lado da frente cobre só o que
+   * está atrás dele naquele trecho (e fica translúcido quando o herói passa por trás, ver updateOcclusion).
+   */
+  addDiagonalRun(from, to, runKey) {
+    const left = from.x < to.x ? from : to;
+    const right = from.x < to.x ? to : from;
+    const width = Math.round(right.x - left.x) + 1;
+    const height = Math.round(Math.abs(right.y - left.y));
+    const rising = right.y < left.y;
+    const key = this.diagonalRun(runKey, width, height, rising);
+    if (!key) return;
+    const runH = this.scene.textures.getFrame(runKey).cutHeight;
+    const top = Math.min(left.y, right.y) - runH;
+    const front = (left.y + right.y) / 2 > this.camp.y;
+    const SLICE = 8;
+    this.frontSlices ??= [];
+    for (let x = 0; x < width; x += SLICE) {
+      const w = Math.min(SLICE, width - x);
+      const baseY = rising ? left.y - (x + w / 2) * height / width : left.y + (x + w / 2) * height / width;
+      const image = this.track(this.scene.add.image(left.x, top, key).setOrigin(0, 0).setCrop(x, 0, w, height + runH)
+        .setDepth(baseY + 2), this.wallObjects);
+      image.baseY = baseY;
+      image.sliceX = left.x + x + w / 2;
+      this.wallVisuals.push(image);
+      if (front) this.frontSlices.push(image);
+    }
+  }
+
+  addWallBody(x, y, bodyWidth, bodyHeight) {
+    const body = this.track(this.scene.add.zone(x, y - bodyHeight / 2 + 2, bodyWidth, bodyHeight), this.wallObjects);
+    this.scene.physics.add.existing(body, true);
+    this.posts.push(body);
+    return body;
+  }
+
+  /** Lado da frente translúcido onde o herói está logo atrás dele (como a copa das árvores). */
+  updateOcclusion(player) {
+    if (!this.frontSlices?.length || !player) return;
+    for (const slice of this.frontSlices) {
+      if (!slice.active) continue;
+      // Só quando o corpo do herói cruza a face (pés entre a base e ~70 % da altura do muro), com a
+      // transparência caindo suave para os lados (sem faixa recortada).
+      const behind = player.y < slice.baseY - 2 && player.y > slice.baseY - 56;
+      const near = behind ? Math.max(0, 1 - Math.abs(player.x - slice.sliceX) / 44) : 0;
+      const target = Math.round((1 - 0.55 * near) * 20) / 20;
+      if (slice.alpha !== target && !slice.broken) slice.setAlpha(target);
+    }
   }
 
   addWallPiece(x, y, texture, bodyWidth, bodyHeight, depthOffset = 2) {
@@ -607,6 +646,7 @@ export class CampDefense {
     const ratio = this.wallMaxHp > 0 ? this.wallHp / this.wallMaxHp : 0;
     const broken = this.wallLevel >= 1 && this.wallHp <= 0;
     for (const piece of this.wallVisuals ?? []) {
+      piece.broken = broken;
       piece.setAlpha(broken ? 0.35 : 1);
       if (broken) piece.setTint(0x5a4a44);
       else if (ratio < 0.5) piece.setTint(0xffb1a0);
@@ -784,6 +824,7 @@ export class CampDefense {
 
   update(delta, enemies = []) {
     this.updateGates();
+    this.updateOcclusion(this.scene.player);
     if (this.raidActive && this.wallLevel >= 1) {
       const repair = this.wallStat('autoRepairPerSecond') ?? 0;
       if (repair > 0 && this.wallHp < this.wallMaxHp) {

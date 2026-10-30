@@ -295,8 +295,10 @@ export class Camp {
 
   createAnimalPen() {
     // Item 19: curral à direita da trilha, na frente do mercado; cerca 72x36 (2,25x), mourões a cada 63 px.
-    const cx = this.x + 175;
-    const cy = this.y + 205;
+    // Rodada 4: 25 px para a esquerda e 13 px para cima: o canto do curral encostava na muralha diagonal e
+    // o herói lá dentro ficava atrás dela.
+    const cx = this.x + 150;
+    const cy = this.y + 192;
     const halfWidth = 94;
     const halfHeight = 46;
     this.pen = { cx, cy, halfWidth, halfHeight, fences: [] };

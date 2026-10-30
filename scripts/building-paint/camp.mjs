@@ -426,11 +426,13 @@ function forge8(ctx) {
 
 // Rodada 3: o celeiro era o vermelho mais saturado da tela, com X branco puro. Vermelho mais terroso
 // (tábuas com veio, mais desgaste) e acabamento em creme envelhecido.
-const BARN_RED = { gap: '#391f21', dark: '#571c27', tones: ['#8e251d', '#8e251d', '#8a4836'], light: '#a14b33', hi: '#bf6f4a' };
-const BARN_TRIM = '#e8c9a0';
+// Rodada 4: o vermelho ainda saía puro depois da quantização (#8e251d domina). Agora a tábua é marrom-avermelhada
+// desbotada (#8a4836 / #775c5b, só 1 em 5 com o vermelho antigo), veio escuro e acabamento cor de palha.
+const BARN_RED = { gap: '#391f21', dark: '#5d2c28', tones: ['#8a4836', '#8a4836', '#775c5b', '#8a4836', '#8e251d'], light: '#ad7954', hi: '#bf6f4a' };
+const BARN_TRIM = '#cba36f';
 
 function bigBarnDoors(ctx, x, y, w, h) {
-  rect(ctx, x - 3, y - 3, w + 6, h + 3, BARN_TRIM); rect(ctx, x - 3, y - 3, w + 6, 1, C.white);
+  rect(ctx, x - 3, y - 3, w + 6, h + 3, BARN_TRIM); rect(ctx, x - 3, y - 3, w + 6, 1, '#f6ca9f');
   ctx.save(); ctx.translate(x, y); planks(ctx, w, h, { pal: BARN_RED, vertical: true, seed: 2, size: 5, nails: false }); ctx.restore();
   rect(ctx, x + w / 2 - 1.5, y, 3, h, BARN_TRIM);
   for (const sx of [x, x + w / 2 + 1.5]) {
@@ -478,7 +480,7 @@ function farm4(ctx) {
   rect(ctx, x + 38, fy - 15, 18, 2, BARN_TRIM); rect(ctx, x + 46.5, fy - 24, 2, 9, C.g1); ellipse(ctx, x + 47.5, fy - 15, 2, 1.4, C.g1);
   bigBarnDoors(ctx, x + 25, base - 74, 44, 74);
   rect(ctx, x, fy + h - 3, w, 3, BARN_TRIM);
-  for (const wx of [x + 6, x + 76]) bigWindow(ctx, wx, fy + 16, 12, 14, { frame: { gap: BARN_TRIM, dark: BARN_TRIM, tones: [BARN_TRIM], light: C.white, hi: C.white }, curtain: false, seed: wx });
+  for (const wx of [x + 6, x + 76]) bigWindow(ctx, wx, fy + 16, 12, 14, { frame: { gap: BARN_TRIM, dark: BARN_TRIM, tones: [BARN_TRIM], light: '#f6ca9f', hi: '#f6ca9f' }, curtain: false, seed: wx });
   wallLight(ctx, x, fy, w, base);
   hayBale(ctx, x + w + 2, base + 2); hayBale(ctx, x + w + 6, base - 11, 18, 13);
   scaled(ctx, 6, 166, 2.2, () => crops(ctx, 0, 0, 8, 1, 'wheat', 5));
@@ -498,7 +500,7 @@ function farm8(ctx) {
   rect(ctx, x + 42, fy - 14, 16, 13, C.w1); rect(ctx, x + 44, fy - 7, 12, 6, C.r5); rect(ctx, x + 44, fy - 8, 12, 1, C.cream);
   rect(ctx, x + 41, fy - 15, 18, 2, BARN_TRIM); rect(ctx, x + 49.5, fy - 24, 2, 9, C.g1);
   bigBarnDoors(ctx, x + 27, base - 76, 46, 76);
-  for (const wx of [x + 7, x + 80]) bigWindow(ctx, wx, fy + 16, 13, 16, { frame: { gap: BARN_TRIM, dark: BARN_TRIM, tones: [BARN_TRIM], light: C.white, hi: C.white }, curtain: false, seed: wx });
+  for (const wx of [x + 7, x + 80]) bigWindow(ctx, wx, fy + 16, 13, 16, { frame: { gap: BARN_TRIM, dark: BARN_TRIM, tones: [BARN_TRIM], light: '#f6ca9f', hi: '#f6ca9f' }, curtain: false, seed: wx });
   rect(ctx, x, fy + h - 3, w, 3, BARN_TRIM);
   wallLight(ctx, x, fy, w, base);
   for (const [px0, py0] of [[x - 10, base + 2], [x - 4, base + 6], [x + w + 14, base + 4]]) { ellipse(ctx, px0, py0, 5, 4, C.r4); ellipse(ctx, px0 - 1.5, py0 - 1, 2, 1.5, C.r5); rect(ctx, px0 - 0.5, py0 - 6, 1.5, 3, C.m2); }
@@ -687,10 +689,10 @@ function silo(ctx, x, base, w, h) {
   ctx.fillStyle = g; ctx.fillRect(x, top, w, h);
   for (let y = top + 3; y < base; y += 4) rect(ctx, x, y, w, 1, 'rgba(28,18,28,0.35)');
   for (let y = top + 2; y < base; y += 8) for (let k = 1; k < w; k += 3) px(ctx, x + k, y, C.g4);
-  ellipse(ctx, x + w / 2, top, w / 2 + 0.5, 3, C.r1);
-  fillPoly(ctx, [[x - 0.5, top], [x + w / 2, top - 5], [x + w + 0.5, top]], C.r3);
-  fillPoly(ctx, [[x + w / 2, top - 5], [x + w + 0.5, top], [x + w / 2 + 1, top]], C.r1);
-  line(ctx, x, top + 0.5, x + w / 2, top - 4.5, C.r4, 1);
+  ellipse(ctx, x + w / 2, top, w / 2 + 0.5, 3, '#5d2c28');
+  fillPoly(ctx, [[x - 0.5, top], [x + w / 2, top - 5], [x + w + 0.5, top]], '#8a4836');
+  fillPoly(ctx, [[x + w / 2, top - 5], [x + w + 0.5, top], [x + w / 2 + 1, top]], '#5d2c28');
+  line(ctx, x, top + 0.5, x + w / 2, top - 4.5, '#bf6f4a', 1);
   baseShade(ctx, x, base, w, 3);
   rect(ctx, x + w / 2 - 1, top + 4, 2, 3, C.ink);
 }

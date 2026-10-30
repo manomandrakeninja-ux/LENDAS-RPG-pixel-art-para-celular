@@ -60,6 +60,42 @@ function wallseg1(ctx) {
   grassTufts(ctx, 0, 30, 16, { seed: 4, density: 0.5 });
 }
 
+// Rodada 4: lances contínuos para os lados diagonais do octógono. O jogo cisalha cada lance (cada coluna
+// desce 1 px por px andado) e a muralha diagonal vira uma peça só, sem a escada de blocos empilhados.
+// Largura 96 (x2,6 = 250 px), maior que o vão diagonal (~223 px); as pontas ficam sob as torres de canto.
+const RUN_W = 96;
+
+function wallrun1(ctx) {
+  const r = rng(71);
+  for (let x = 0; x < RUN_W; x += 5) stake(ctx, x + 0.5, r.int(0, 2), 30, 5.2, 100 + x);
+  rope(ctx, 0, 12, RUN_W); rope(ctx, 0, 22, RUN_W);
+  baseShade(ctx, 0, 30, RUN_W, 3);
+  grassTufts(ctx, 0, 30, RUN_W, { seed: 72, density: 0.5 });
+}
+
+/**
+ * Ameias largas com vãos curtos (11-12 / 5-6): cisalhadas, ameias estreitas viravam lascas soltas;
+ * assim o topo lê como um parapeito contínuo com seteiras, em ritmo levemente irregular.
+ */
+function runMerlons(seed) {
+  const r = rng(seed); const list = [];
+  for (let x = r.int(0, 3); x < RUN_W - 4; ) { const w = r.int(11, 12); list.push([x, w]); x += w + r.int(5, 6); }
+  return list;
+}
+
+function wallrun4(ctx) {
+  stoneWall(ctx, { w: RUN_W, base: 30, faceTop: 10, depth: 3, seed: 73, merlons: runMerlons(74) });
+}
+
+function wallrun8(ctx) {
+  stoneWall(ctx, { w: RUN_W, base: 36, faceTop: 12, depth: 3, pal: STONE_COOL, seed: 75, merlons: runMerlons(76), merlonH: 6, ashlar: true, moss: 0.3 });
+  for (let x = 10; x < RUN_W - 6; x += 32) {
+    rect(ctx, x, 13, 5, 23, C.slate3); rect(ctx, x, 13, 1, 23, C.slate4); rect(ctx, x + 4, 13, 1, 23, C.slate);
+    for (let y = 17; y < 36; y += 5) rect(ctx, x, y, 5, 1, C.slate);
+  }
+  baseShade(ctx, 0, 36, RUN_W, 3);
+}
+
 function wallcorner1(ctx) {
   // Poste de canto: tora grossa com plataforma e tocha apagada.
   stake(ctx, 4, 0, 40, 14, 5);
@@ -362,6 +398,9 @@ const BASE_PIECES = {
   'wallseg-4': { w: 16, h: 30, paint: wallseg4 },
   'wallcorner-4': { w: 30, h: 54, shadow: [15, 53, 13, 2], paint: wallcorner4 },
   'wallseg-8': { w: 16, h: 36, paint: wallseg8 },
+  'wallrun-1': { w: 96, h: 30, paint: wallrun1 },
+  'wallrun-4': { w: 96, h: 30, paint: wallrun4 },
+  'wallrun-8': { w: 96, h: 36, paint: wallrun8 },
   'wallcorner-8': { w: 36, h: 76, shadow: [18, 75, 16, 2.4], paint: wallcorner8 },
   'gate-1': { w: 56, h: 36, shadow: [28, 35, 24, 1.6], paint: gate1 },
   'gate-4': { w: 64, h: 50, shadow: [32, 49, 28, 2], paint: gate4 },
