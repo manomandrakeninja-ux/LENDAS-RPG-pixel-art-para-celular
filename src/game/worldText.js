@@ -9,6 +9,17 @@ const PHONE_BOOST = 1.25;
 const MARGIN = 8;
 const MAX_BUBBLE_WIDTH = 260;
 
+/**
+ * Dica de tecla "E" sobre recursos e baús (rodada 3): era um quadrado de ~32 px na tela, cobrindo árvores
+ * e o cavalo. Agora metade da escala (letra de 8 px na tela, caixa <= 16 px) e as cores da moldura da
+ * interface (madeira escura e letra dourada da ui-skin).
+ */
+export const KEY_HINT_STYLE = Object.freeze({
+  fontFamily: 'Press Start 2P', fontSize: '8px', color: '#f4d88f',
+  backgroundColor: '#2b1d14e6', padding: { x: 3, y: 2 }, stroke: '#140f14', strokeThickness: 0
+});
+export const KEY_HINT_SCALE = 0.5;
+
 /** Multiplicador de escala para o zoom atual (use no lugar do zoom 2 fixo). */
 export function worldTextFactor(scene, boost = 1) {
   const camera = scene.cameras.main;

@@ -8,6 +8,7 @@ import { WORLD } from './config.js';
 import { PixelCanvas, dither, ramp } from '../art/pixel.js';
 import { bakedBuilding } from '../art/bakedBuildings.js';
 import { quantizePixels } from '../art/palette.js';
+import { KEY_HINT_SCALE, KEY_HINT_STYLE } from './worldText.js';
 
 const TEXTURE_SIZE = 32;
 const TEXTURE_KEY_PREFIX = 'harvest-structure-';
@@ -243,10 +244,7 @@ export class HarvestStructures {
     const scale = painted ? 1 : definition.poi ? 1.45 : structure.type === 'tree' ? 1 : GROUND_SCALE;
     node.setScale(scale);
     const hintY = structure.y - (structure.type === 'tree' ? 42 : Math.round(31 * scale));
-    const hint = definition.poi ? null : this.scene.add.text(structure.x, hintY, 'E', {
-      fontFamily: 'Press Start 2P', fontSize: '8px', color: '#fff3cf',
-      backgroundColor: '#26392dcc', padding: { x: 4, y: 3 }
-    }).setOrigin(0.5).setDepth(structure.y + 35).setVisible(false);
+    const hint = definition.poi ? null : this.scene.add.text(structure.x, hintY, 'E', KEY_HINT_STYLE).setScale(KEY_HINT_SCALE).setOrigin(0.5).setDepth(structure.y + 35).setVisible(false);
 
     structure.node = node;
     structure.hint = hint;

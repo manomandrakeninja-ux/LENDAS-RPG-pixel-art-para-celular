@@ -681,3 +681,14 @@ body.is-phone .quest-tracker {
     grid-template-columns: repeat(8, minmax(0, 1fr));
   }
 }
+
+/* Rodada 3: texto de corpo legível no celular em pé (cartões da loja e legenda do mapa >= 12 px). */
+@media (max-width: 480px) {
+  .building-menu__card p,
+  .building-menu__card .building-menu__stat,
+  .world-map__legend,
+  .world-map__legend-tip {
+    font-size: 12px;
+    line-height: 1.35;
+  }
+}

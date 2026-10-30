@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { KEY_HINT_SCALE, KEY_HINT_STYLE } from './worldText.js';
 
 export class DeathBackpackManager {
   constructor(scene, savedBackpacks = []) {
@@ -38,10 +39,7 @@ export class DeathBackpackManager {
     backpack.sprite = chest && this.scene.textures.exists('harvest-structure-chest')
       ? this.scene.add.image(backpack.x, backpack.y, 'harvest-structure-chest').setOrigin(0.5, 0.88).setDepth(backpack.y).setScale(1.3)
       : this.scene.add.image(backpack.x, backpack.y, 'nature', 'death-backpack').setOrigin(0.5, 0.84).setDepth(backpack.y).setScale(1.3);
-    backpack.hint = this.scene.add.text(backpack.x, backpack.y - 25, 'E', {
-      fontFamily: 'Press Start 2P', fontSize: '8px', color: '#fff3cf',
-      backgroundColor: '#26392dcc', padding: { x: 4, y: 3 }
-    }).setOrigin(0.5).setDepth(backpack.y + 30).setVisible(false);
+    backpack.hint = this.scene.add.text(backpack.x, backpack.y - 25, 'E', KEY_HINT_STYLE).setScale(KEY_HINT_SCALE).setOrigin(0.5).setDepth(backpack.y + 30).setVisible(false);
     this.backpacks.push(backpack);
     this.scene.hudCamera?.ignore([backpack.glow, backpack.sprite, backpack.hint]);
     return backpack;
