@@ -429,7 +429,10 @@ export class QuestUI {
     this.toastQueue ??= [];
     const visible = [...this.toasts.children].filter((el) => !el.classList.contains('is-leaving'));
     if (visible.some((el) => el.textContent === text) || this.toastQueue.some((t) => t.text === text)) return;
-    if (visible.length >= 2) { this.toastQueue.push({ text, tone }); return; }
+    // Fila única com o aviso do jogo (UI.showMessage, ex.: "Torre de Vigia melhorada"): ele ocupa 1 das 2 vagas.
+    const banner = this.scene?.ui?.message;
+    const limit = banner && banner.alpha > 0.05 && banner.text ? 1 : 2;
+    if (visible.length >= limit) { this.toastQueue.push({ text, tone }); return; }
     const item = document.createElement('div');
     item.className = `quest-toast ${tone ? `quest-toast--${tone}` : ''}`;
     item.textContent = text;
@@ -440,6 +443,12 @@ export class QuestUI {
       const next = this.toastQueue.shift();
       if (next) this.toast(next.text, next.tone);
     }, 3200);
+  }
+
+  /** O aviso do jogo entrou: com 2 avisos na tela, o mais antigo sai antes da hora (nunca 3 faixas). */
+  yieldSlot() {
+    const visible = [...(this.toasts?.children ?? [])].filter((el) => !el.classList.contains('is-leaving'));
+    if (visible.length >= 2) visible[0].classList.add('is-leaving');
   }
 
   showReward(mission, rewards, lore) {

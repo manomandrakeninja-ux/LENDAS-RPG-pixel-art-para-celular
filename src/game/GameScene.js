@@ -725,6 +725,7 @@ export class GameScene extends Phaser.Scene {
       this.effectsPanel?.update(delta);
       this.camp.defense.update(delta, this.enemies);
       this.updateBuildingLabels();
+      this.updateCanopyFade(delta);
       this.villagers?.update(delta);
       this.regionWorld.update(delta);
       this.shadows?.update(delta, this.timeState);
@@ -1806,15 +1807,55 @@ export class GameScene extends Phaser.Scene {
    * do herói, no celular e no PC, com transição suave (120 -> 180 px); assim não cobrem a arte do
    * acampamento nem uns aos outros. "Sempre" mostra todos.
    */
+  /**
+   * Copas na frente do herói (rodada 3): árvore, pinheiro ou rocha alta desenhada DEPOIS do herói (base mais
+   * abaixo) cujo desenho cobre o corpo dele fica semitransparente (45 %), com transição curta.
+   */
+  updateCanopyFade(delta) {
+    this.canopyTimer = (this.canopyTimer ?? 0) - delta;
+    const step = Math.min(1, delta / 120);
+    if (this.canopyTimer <= 0) {
+      this.canopyTimer = 90;
+      const p = this.player;
+      const hero = { left: p.x - 9, right: p.x + 9, top: p.y - 46, bottom: p.y - 4 };
+      const list = [...(this.world?.treeSprites ?? [])];
+      for (const chunk of this.regionWorld?.chunks?.values() ?? []) if (chunk.active) for (const o of chunk.objects) if (o.displayHeight > 40 && o.depth > -900) list.push(o);
+      const faded = new Set();
+      for (const o of list) {
+        if (!o.active || o.depth <= (p.depth ?? p.y) || o.y - p.y > 120 || Math.abs(o.x - p.x) > 90) continue;
+        const b = o.getBounds();
+        // Só a copa (acima do tronco) conta: passar na frente do pé da árvore não apaga nada.
+        const bottom = o.y - Math.min(18, o.displayHeight * 0.18);
+        if (b.right > hero.left && b.left < hero.right && b.top < hero.bottom && bottom > hero.top) faded.add(o);
+      }
+      for (const o of this.canopyFaded ?? []) if (!faded.has(o)) o.canopyTarget = 1;
+      for (const o of faded) o.canopyTarget = 0.45;
+      this.canopyFaded = new Set([...(this.canopyFaded ?? []), ...faded]);
+    }
+    for (const o of this.canopyFaded ?? []) {
+      if (!o.active) { this.canopyFaded.delete(o); continue; }
+      const target = o.canopyTarget ?? 1;
+      const alpha = o.alpha + (target - o.alpha) * step * 2;
+      o.setAlpha(Math.abs(alpha - target) < 0.02 ? target : alpha);
+      if (target === 1 && o.alpha === 1) this.canopyFaded.delete(o);
+    }
+  }
+
   updateBuildingLabels() {
     const mode = this.settingsPanel?.labels ?? 'auto';
     const labels = [...Object.values(this.camp.buildings).map((building) => building.label), this.camp.defense?.wallBuilding?.label]
       .filter((label, index, list) => label?.active && list.indexOf(label) === index);
+    // Rodada 3: só o rótulo mais próximo do herói (nada de "ACAMPAMENTO" e "MURALHA" empilhados) e nenhum
+    // rótulo com inimigo a menos de 120 px dele (não cobre a luta).
+    const distanceOf = (label) => Phaser.Math.Distance.Between(this.player.x, this.player.y, label.x, label.y + 30);
+    const nearest = mode === 'always' ? null : labels.reduce((best, label) => (!best || distanceOf(label) < distanceOf(best) ? label : best), null);
+    const enemies = this.enemies ? [...this.enemies].filter((enemy) => enemy?.active) : [];
     for (const label of labels) {
       let alpha = 1;
       if (mode !== 'always') {
-        const distance = Phaser.Math.Distance.Between(this.player.x, this.player.y, label.x, label.y + 30);
-        alpha = distance <= 120 ? 1 : distance >= 180 ? 0 : 1 - (distance - 120) / 60;
+        const distance = distanceOf(label);
+        alpha = label !== nearest ? 0 : distance <= 120 ? 1 : distance >= 180 ? 0 : 1 - (distance - 120) / 60;
+        if (alpha > 0 && enemies.some((enemy) => Math.abs(enemy.x - label.x) < 120 && Math.abs(enemy.y - label.y) < 120)) alpha = 0;
       }
       if (Math.abs(label.alpha - alpha) > 0.02) label.setAlpha(alpha);
     }

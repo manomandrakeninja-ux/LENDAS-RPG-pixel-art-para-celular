@@ -750,6 +750,7 @@ export class GameUI {
   showMessage(text) {
     if (this.messageTimer) this.messageTimer.remove(false);
     this.message.setText(text).setAlpha(1);
+    this.scene.campaign?.ui?.yieldSlot?.();
     this.message.setPosition(this.scene.scale.width / 2, 120);
     this.message.setDepth(OVERLAY_DEPTH + 5100);
     this.messageTimer = this.scene.time.delayedCall(1900, () => {
