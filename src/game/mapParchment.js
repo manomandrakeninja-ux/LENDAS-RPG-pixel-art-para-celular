@@ -41,6 +41,23 @@ export function smoothNoise(x, y, seed) {
 export function paintParchment(context, W, H, kindOf) {
   const kinds = new Uint8Array(W * H);
   for (let y = 0; y < H; y += 1) for (let x = 0; x < W; x += 1) kinds[y * W + x] = kindOf(x, y);
+  // Rodada 3: fronteira entre biomas em terra vira orgânica (amostra deslocada por ruído de ~20-30 px);
+  // a costa (mar e vazio) não se mexe, para o desenho continuar batendo com o mundo.
+  const land = (k) => k !== T.SEA && k !== T.VOID;
+  const warped = new Uint8Array(kinds);
+  for (let y = 0; y < H; y += 1) {
+    for (let x = 0; x < W; x += 1) {
+      const own = kinds[y * W + x];
+      if (!land(own)) continue;
+      const dx = (smoothNoise(x / 18, y / 18, 71) - 0.5) * 28 + (smoothNoise(x / 6, y / 6, 73) - 0.5) * 6;
+      const dy = (smoothNoise(x / 18, y / 18, 72) - 0.5) * 28 + (smoothNoise(x / 6, y / 6, 74) - 0.5) * 6;
+      const sx = Math.max(0, Math.min(W - 1, Math.round(x + dx)));
+      const sy = Math.max(0, Math.min(H - 1, Math.round(y + dy)));
+      const other = kinds[sy * W + sx];
+      if (land(other)) warped[y * W + x] = other;
+    }
+  }
+  kinds.set(warped);
   const kindAt = (x, y) => kinds[Math.max(0, Math.min(H - 1, y)) * W + Math.max(0, Math.min(W - 1, x))];
   const height = new Float32Array(W * H);
   for (let y = 0; y < H; y += 1) {
@@ -144,12 +161,13 @@ export function paintClouds(width, height) {
   const image = context.createImageData(width, height);
   const bandAt = (x, y) => {
     const n = smoothNoise(x / 60, y / 44, 61) * 0.6 + smoothNoise(x / 22, y / 18, 62) * 0.28 + smoothNoise(x / 7, y / 7, 63) * 0.12;
-    return n > 0.68 ? 0 : n > 0.61 ? 1 : n > 0.48 ? 2 : 3;
+    // Rodada 3: miolo das nuvens em ~10 % da área (era ~24 %) e véu curto: bordas e locais aparecem.
+    return n > 0.74 ? 0 : n > 0.69 ? 1 : n > 0.63 ? 2 : 3;
   };
   const bands = new Uint8Array(width * height);
   for (let y = 0; y < height; y += 1) for (let x = 0; x < width; x += 1) bands[y * width + x] = bandAt(x, y);
   const tones = [[246, 238, 216], [228, 216, 190], [214, 200, 172], [200, 186, 160]];
-  const alphas = [176, 140, 64, 26];
+  const alphas = [176, 140, 52, 18];
   for (let y = 0; y < height; y += 1) {
     for (let x = 0; x < width; x += 1) {
       const index = (y * width + x) * 4;

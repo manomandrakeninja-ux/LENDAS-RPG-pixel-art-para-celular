@@ -300,16 +300,34 @@ export class WorldMapOverlay {
   /** Área do mundo visível: o mundo todo, ou um recorte centrado no jogador quando há zoom. */
   view() {
     const zoom = ZOOM_LEVELS[this.zoomIndex];
-    const width = WORLD.width / zoom;
+    // Celular em pé (rodada 3): o canvas segue a proporção da tela; o recorte do mundo usa a mesma
+    // proporção (altura inteira do mundo, largura cortada em volta do herói) em vez de faixas vazias.
+    const aspect = this.canvas.width / this.canvas.height;
+    const tall = aspect < WORLD.width / WORLD.height - 0.05;
     const height = WORLD.height / zoom;
+    const width = tall ? height * aspect : WORLD.width / zoom;
     const player = this.surfacePlayer() ?? WORLD.camp;
     const left = Math.max(0, Math.min(WORLD.width - width, player.x - width / 2));
     const top = Math.max(0, Math.min(WORLD.height - height, player.y - height / 2));
     return { left, top, width, height, zoom };
   }
 
+  /** Ajusta o tamanho interno do canvas à caixa dele na tela quando ela é mais alta que larga. */
+  fitCanvas() {
+    const box = this.canvas.getBoundingClientRect();
+    if (!box.width || !box.height) return;
+    const aspect = box.width / box.height;
+    const width = 960;
+    const height = aspect < 1.2 ? Math.round(width / Math.max(0.7, aspect)) : 720;
+    if (this.canvas.width !== width || this.canvas.height !== height) {
+      this.canvas.width = width;
+      this.canvas.height = height;
+    }
+  }
+
   render() {
     if (!this.isOpen) return;
+    this.fitCanvas();
     const context = this.context;
     const width = this.canvas.width;
     const height = this.canvas.height;
