@@ -9,9 +9,24 @@ const PINE_TIERS = [
   { top: 4, bottom: 26, hw: 9, sway: 2.2 }
 ];
 
-export function paintPine(ctx, shift, { ramp = RAMPS.pine, seed = 100, snow = false } = {}) {
+export function paintPine(ctx, shift, { ramp = RAMPS.pine, seed = 100, snow = false, squat = 0 } = {}) {
   trunk(ctx, { cx: 32, top: 60, base: 82, wTop: 5, wBase: 9, seed: seed + 1, roots: 3, rootSpread: 6 });
-  PINE_TIERS.forEach((t, i) => pineTier(ctx, { cx: 32, top: t.top, bottom: t.bottom, hw: t.hw, ramp, seed: seed + 10 + i, snow, dx: shift * 1.8 * t.sway }));
+  // squat: andares de cima descem (pinheiro mais baixo e largo; a ponta desce `squat` px).
+  PINE_TIERS.forEach((t, i) => pineTier(ctx, { cx: 32, top: t.top + squat * (i / 3), bottom: t.bottom + squat * (i / 3) * 0.7, hw: t.hw * (1 - squat * 0.006), ramp, seed: seed + 10 + i, snow, dx: shift * 1.8 * t.sway }));
+}
+
+// Rodada 3: 3ª variante, mais alta e estreita (5 andares), com os andares deslocados para lados
+// alternados e pontas caídas de um lado só: as metades da copa ficam bem diferentes.
+const PINE_TALL = [
+  { top: 54, bottom: 76, hw: 17, sway: 0.25, off: -2.2 },
+  { top: 41, bottom: 62, hw: 14, sway: 0.45, off: 1.8 },
+  { top: 28, bottom: 48, hw: 11.5, sway: 0.7, off: -1.4 },
+  { top: 15, bottom: 34, hw: 9, sway: 1, off: 1.6 },
+  { top: 3, bottom: 21, hw: 6, sway: 2, off: 0.4 }
+];
+export function paintPineTall(ctx, shift, { ramp = RAMPS.pine, seed = 220 } = {}) {
+  trunk(ctx, { cx: 30, top: 70, base: 94, wTop: 4.5, wBase: 8, seed: seed + 1, roots: 3, rootSpread: 5 });
+  PINE_TALL.forEach((t, i) => pineTier(ctx, { cx: 30 + t.off, top: t.top, bottom: t.bottom, hw: t.hw, ramp, seed: seed + 10 + i, dx: shift * 1.8 * t.sway }));
 }
 
 const CROWN = [[36, 38, 25, 20], [19, 42, 13, 11], [53, 42, 13, 11], [26, 22, 16, 14], [46, 22, 16, 14], [36, 14, 13, 10]];
@@ -41,9 +56,12 @@ export const TREE_PIECES = {
   'pine-1': { w: 64, h: 88, paint: (ctx) => paintPine(ctx, -1) },
   'pine-2': { w: 64, h: 88, paint: (ctx) => paintPine(ctx, 1) },
   // Segunda variante de pinheiro (outras assimetrias e pontas de galho), também com 3 quadros de balanço.
-  'pine-b-0': { w: 64, h: 88, paint: (ctx) => paintPine(ctx, 0, { seed: 160 }) },
-  'pine-b-1': { w: 64, h: 88, paint: (ctx) => paintPine(ctx, -1, { seed: 160 }) },
-  'pine-b-2': { w: 64, h: 88, paint: (ctx) => paintPine(ctx, 1, { seed: 160 }) },
+  'pine-b-0': { w: 64, h: 88, paint: (ctx) => paintPine(ctx, 0, { seed: 160, squat: 10 }) },
+  'pine-b-1': { w: 64, h: 88, paint: (ctx) => paintPine(ctx, -1, { seed: 160, squat: 10 }) },
+  'pine-b-2': { w: 64, h: 88, paint: (ctx) => paintPine(ctx, 1, { seed: 160, squat: 10 }) },
+  'pine-c-0': { w: 60, h: 100, paint: (ctx) => paintPineTall(ctx, 0) },
+  'pine-c-1': { w: 60, h: 100, paint: (ctx) => paintPineTall(ctx, -1) },
+  'pine-c-2': { w: 60, h: 100, paint: (ctx) => paintPineTall(ctx, 1) },
   'oak-tree': { w: 72, h: 88, paint: (ctx) => paintRound(ctx, { ramp: RAMPS.oak, seed: 200, bias: 0.04 }) },
   'autumn-tree': { w: 72, h: 88, paint: (ctx) => paintRound(ctx, { ramp: RAMPS.autumn, seed: 300, bias: 0.02 }) },
   'fruit-tree': { w: 72, h: 88, paint: (ctx) => paintRound(ctx, { ramp: RAMPS.leaf, seed: 400, bias: 0.06, fruit: '#ea323c' }) }

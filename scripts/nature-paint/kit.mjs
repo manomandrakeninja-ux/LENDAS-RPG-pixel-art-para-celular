@@ -8,7 +8,8 @@ export { rng, ellipse, fillPoly, line, rect, px, mixHex, clip, path };
 export const RAMPS = {
   leaf: ['#1a1932', '#134c4c', '#1e6f50', '#33984b', '#5ac54f', '#99e65f', '#d3fc7e'],
   oak: ['#1a1932', '#0c2e44', '#134c4c', '#1e6f50', '#33984b', '#5ac54f', '#99e65f'],
-  autumn: ['#3b1443', '#571c27', '#8e251d', '#c64524', '#e07438', '#ffa214', '#ffc825'],
+  // Rodada 3: outono menos saturado (era a área mais viva da tela) e sombra marrom-roxa.
+  autumn: ['#3b1443', '#4e2b3c', '#71413b', '#a14b33', '#c9693b', '#dd8f45', '#edb46a'],
   pine: ['#1a1932', '#0c2e44', '#134c4c', '#1e6f50', '#33984b', '#5ac54f', '#99e65f'],
   snow: ['#2a2f4e', '#424c6e', '#657392', '#92a1b9', '#c7cfdd', '#d5e8ef', '#ffffff'],
   frost: ['#1a1932', '#2a2f4e', '#424c6e', '#657392', '#9cc8e6', '#d5e8ef', '#ffffff'],
