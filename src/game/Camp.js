@@ -164,7 +164,8 @@ export class Camp {
         this.fireGlow.setAlpha(0.42 + offsets[this.flickerIndex]);
       }
     });
-    scene.add.text(this.x, this.y + 236, 'ACAMPAMENTO  •  C', {
+    // Placa do acampamento: entra na regra de "só o rótulo mais próximo" (GameScene.updateBuildingLabels).
+    this.campSign = scene.add.text(this.x, this.y + 236, 'ACAMPAMENTO  •  C', {
       fontFamily: 'Press Start 2P', fontSize: '8px', color: '#f8e7ba',
       backgroundColor: '#1d2b24d9', padding: { x: 8, y: 5 }
     }).setOrigin(0.5).setDepth(1000).setScale(0.5);

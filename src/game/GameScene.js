@@ -1843,7 +1843,7 @@ export class GameScene extends Phaser.Scene {
 
   updateBuildingLabels() {
     const mode = this.settingsPanel?.labels ?? 'auto';
-    const labels = [...Object.values(this.camp.buildings).map((building) => building.label), this.camp.defense?.wallBuilding?.label]
+    const labels = [...Object.values(this.camp.buildings).map((building) => building.label), this.camp.defense?.wallBuilding?.label, this.camp.campSign]
       .filter((label, index, list) => label?.active && list.indexOf(label) === index);
     // Rodada 3: só o rótulo mais próximo do herói (nada de "ACAMPAMENTO" e "MURALHA" empilhados) e nenhum
     // rótulo com inimigo a menos de 120 px dele (não cobre a luta).

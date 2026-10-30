@@ -140,6 +140,14 @@ function personFrames(spec) {
   return { cols: 4, rows: 5, frames: [...frames, ...idle] };
 }
 
+// Rodada 3: animais do curral 1,25x maiores (vaca 1,6x: >= 0,8 da altura do herói) (pintados no tamanho novo, sem esticar pixel no jogo).
+const GROW = { chicken: 1.25, sheep: 1.25, pig: 1.25, cow: 1.6 };
+const grown = (id, spec) => {
+  const k = GROW[id] ?? 1;
+  if (k === 1) return spec;
+  return { ...spec, w: Math.round(spec.w * k), h: Math.round(spec.h * k), feet: Math.round((spec.feet + 0.5) * k - 0.5), shadow: spec.shadow?.map((v) => v * k), paint: (ctx, f) => { ctx.scale(k, k); spec.paint(ctx, f); } };
+};
+
 function creatureFrames(spec) {
   const frames = [];
   for (let f = 0; f < spec.frames; f += 1) frames.push(bake(spec.w, spec.h, (ctx) => spec.paint(ctx, f), { shadow: spec.shadow }));
@@ -172,7 +180,7 @@ const index = {};
 const preview = [];
 const all = [
   ...Object.entries(PEOPLE).map(([id, spec]) => [id, 'person', spec]),
-  ...Object.entries(CREATURES).map(([id, spec]) => [id, 'creature', spec])
+  ...Object.entries(CREATURES).map(([id, spec]) => [id, 'creature', grown(id, spec)])
 ];
 for (const [id, kind, spec] of all) {
   const want = !only || only.includes(id);
