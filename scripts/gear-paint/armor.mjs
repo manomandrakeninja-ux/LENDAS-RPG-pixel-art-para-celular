@@ -64,6 +64,8 @@ function helmet(ctx, set) {
       line(ctx, [[7.6, 9.6], [16, 6], [24.4, 9.6]], 0.8, set === 'brejo' ? '#33984b' : '#bf6f4a');
       if (set === 'brejo') { line(ctx, [[8, 7], [6, 1.6]], 1, '#cba36f'); line(ctx, [[10, 6.4], [9.6, 2]], 0.9, '#ad7954'); fill(ctx, ellipse(ctx, 6, 2.2, 0.9, 1.6), '#5d2c28'); }
       line(ctx, [[8, 26.6], [16, 24.6], [24, 26.6]], 1.1, mid(t));
+      // Rodada 3: cordão claro do capuz de couro (acento próprio da peça).
+      if (set === 'couro') for (const [x0, x1] of [[13.2, 12.6], [18.8, 19.4]]) { line(ctx, [[x0, 25.6], [x1, 30]], 0.8, '#f6ca9f'); fill(ctx, ellipse(ctx, x1, 30.2, 0.9, 1), '#edab50'); }
       glyph(ctx, set, 16, 26.4, 1.8);
       return;
     }
@@ -182,7 +184,9 @@ function chest(ctx, set) {
     fill(ctx, path(ctx, [[12.4, 5.4], [16, 8], [19.6, 5.4]]), '#8a4836');
   }
   fill(ctx, path(ctx, [[9.4, 22.6], [22.6, 22.6], [22.4, 24.8], [9.6, 24.8]]), lin(ctx, 0, 22.6, 0, 24.8, s.body === 'tunic' ? R.gold : t === R.lava ? R.obsidian : R.leather.slice(1)));
-  fill(ctx, path(ctx, [[14.6, 22.2], [17.4, 22.2], [17.4, 25.2], [14.6, 25.2]]), lin(ctx, 14, 22, 18, 25, s.body === 'leather' ? R.bronze : t));
+  // Rodada 3: fivela de metal no gibão de couro (antes bronze, igual ao resto do couro).
+  fill(ctx, path(ctx, [[14.2, 21.8], [17.8, 21.8], [17.8, 25.6], [14.2, 25.6]]), lin(ctx, 14, 22, 18, 25, s.body === 'leather' ? R.iron.slice(2) : t));
+  if (s.body === 'leather') fill(ctx, path(ctx, [[15.2, 22.8], [16.8, 22.8], [16.8, 24.6], [15.2, 24.6]]), '#1c121c');
   const glyphY = s.body === 'coat' ? 24 : 15;
   if (s.body === 'coat') glyph(ctx, set, 16, 18.6, 2.3);
   else medallion(ctx, set, 16, glyphY, 3.2);
@@ -257,6 +261,7 @@ function boots(ctx, set) {
     fill(ctx, path(ctx, [[x - 0.4, 26.4], [x + 13.2, 26.4], [x + 13.2, 29.6], [x - 0.4, 29.6]]), '#1c121c');
     line(ctx, [[x + 0.4, 26.8], [x + 12.8, 26.8]], 0.6, '#5d2c28');
     if (set === 'corsario') fill(ctx, path(ctx, [[x + 2, 20.6], [x + 6, 20.6], [x + 6, 23.4], [x + 2, 23.4]]), '#ffc825');
+    if (set === 'couro') { fill(ctx, path(ctx, [[x + 1.6, 15.4], [x + 6.6, 15.4], [x + 6.6, 17.8], [x + 1.6, 17.8]]), '#92a1b9'); fill(ctx, path(ctx, [[x + 2.6, 16], [x + 5.6, 16], [x + 5.6, 17.2], [x + 2.6, 17.2]]), '#2a2f4e'); }
     if (set === 'bosque') { fill(ctx, ellipse(ctx, x + 2.2, 7, 2, 1.1, -0.4), '#99e65f'); }
     if (set === 'vulcanico') line(ctx, [[x + 3, 12], [x + 4.6, 15.4], [x + 3.4, 18]], 0.8, '#ff5000');
     if (set === 'celestial') fill(ctx, path(ctx, [[x + 8, 9], [x + 12.6, 5], [x + 11.6, 9], [x + 12.4, 10.6], [x + 8.4, 13]]), lin(ctx, x + 8, 5, x + 12, 13, R.white));
