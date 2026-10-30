@@ -64,14 +64,48 @@ export class ShadowSystem {
     this.timer = 0;
   }
 
+  /**
+   * Silhueta da sombra longa com borda pontilhada (rodada 3): um tom só e, nos 2-3 px da borda, um
+   * xadrez de blocos de 2 px, para a sombra do prédio não virar um polígono chapado de aresta dura.
+   */
+  ditherKey(image) {
+    const key = `shadow-dither:${image.texture.key}:${image.frame.name}`;
+    const textures = this.scene.textures;
+    if (textures.exists(key)) return key;
+    const frame = image.frame;
+    const w = Math.max(1, frame.cutWidth); const h = Math.max(1, frame.cutHeight);
+    const canvas = textures.createCanvas(key, w, h);
+    const context = canvas.getContext();
+    context.drawImage(frame.source.image, frame.cutX, frame.cutY, w, h, 0, 0, w, h);
+    const data = context.getImageData(0, 0, w, h);
+    const d = data.data;
+    const solid = (x, y) => x >= 0 && y >= 0 && x < w && y < h && d[(y * w + x) * 4 + 3] > 96;
+    const keep = new Uint8Array(w * h);
+    for (let y = 0; y < h; y += 1) {
+      for (let x = 0; x < w; x += 1) {
+        if (!solid(x, y)) continue;
+        let edge = false;
+        for (let j = -2; j <= 2 && !edge; j += 1) for (let i = -2; i <= 2; i += 1) if (Math.abs(i) + Math.abs(j) <= 3 && !solid(x + i, y + j)) { edge = true; break; }
+        keep[y * w + x] = edge ? ((x >> 1) + (y >> 1)) % 2 === 0 : 1;
+      }
+    }
+    for (let k = 0; k < w * h; k += 1) {
+      d[k * 4] = 255; d[k * 4 + 1] = 255; d[k * 4 + 2] = 255; d[k * 4 + 3] = keep[k] ? 255 : 0;
+    }
+    context.putImageData(data, 0, 0);
+    canvas.refresh();
+    return key;
+  }
+
   register(images = []) {
     for (const image of images) {
       if (!image?.active || this.entries.has(image)) continue;
-      const shadow = this.scene.add.image(image.x, image.y, image.texture.key, image.frame.name)
+      const shadow = this.scene.add.image(image.x, image.y, this.ditherKey(image))
         .setOrigin(image.originX, image.originY)
         .setTintFill(SHADOW_COLOR)
         .setDepth(-998);
       this.scene.hudCamera?.ignore(shadow);
+      shadow.sourceFrame = image.frame.name;
       this.apply(shadow);
       this.entries.set(image, shadow);
       if (!BAKED_CONTACT.has(image.texture.key)) this.addContact(image);
@@ -173,7 +207,7 @@ export class ShadowSystem {
         this.contacts.delete(image);
         continue;
       }
-      if (shadow.frame.name !== image.frame.name) shadow.setFrame(image.frame.name);
+      if (shadow.sourceFrame !== image.frame.name) { shadow.setTexture(this.ditherKey(image)); shadow.sourceFrame = image.frame.name; }
       shadow.setPosition(image.x, image.y).setVisible(image.visible && !this.simple);
       this.apply(shadow);
       const contact = this.contacts.get(image);

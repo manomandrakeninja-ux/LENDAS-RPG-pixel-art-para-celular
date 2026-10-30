@@ -476,12 +476,19 @@ export class CampDefense {
       // contínua em vez dos degraus de 7 px de antes.
       const diagonal = Math.abs(ux) > 0.3 && Math.abs(uy) > 0.3;
       const step = diagonal ? 5 / Math.abs(uy) : Math.min(Math.abs(ux) > 0.01 ? 13 * K / Math.abs(ux) : Infinity, Math.abs(uy) > 0.01 ? 7 * K / Math.abs(uy) : Infinity);
+      // Rodada 3: na diagonal os blocos empilhados repetiam a ameia a cada 5 px (listras regulares).
+      // Agora a face é contínua (bloco sem ameia e com rejunte suavizado) e a ameia aparece em ritmo
+      // irregular (2 ou 3 blocos de intervalo).
+      const flat = diagonal ? this.diagonalSegment(visual.segment) : visual.segment;
+      let piece = 0;
       for (let along = 0; along <= length; along += step) {
         const x = from.x + ux * along;
         const y = from.y + uy * along;
         // Vão do portão no lado sul.
         if (Math.abs(y - gateY) < 2 && Math.abs(x - gateX) < 34 * K) continue;
-        this.addWallPiece(x, y, visual.segment, 16 * K, 24);
+        const merlon = !diagonal || piece % 7 === 0 || piece % 7 === 4;
+        this.addWallPiece(x, y, merlon ? visual.segment : flat, 16 * K, 24);
+        piece += 1;
       }
     }
     for (const vertex of vertices) this.addWallPiece(vertex.x, vertex.y + 4, visual.corner, 26 * K, 30, 4);
@@ -533,6 +540,50 @@ export class CampDefense {
       const angle = Math.PI / 8 + index * (Math.PI / 4);
       return new Phaser.Math.Vector2(this.camp.x + Math.cos(angle) * radius, this.camp.y + Math.sin(angle) * radius);
     });
+  }
+
+  /**
+   * Versão do bloco para as diagonais: sem a ameia (tudo acima da primeira linha cheia sai) e com o
+   * rejunte suavizado (cada linha puxa 45 % para a cor média dela), para a face lateral ler contínua.
+   */
+  diagonalSegment(key) {
+    const out = `${key}-diag`;
+    const textures = this.scene.textures;
+    if (textures.exists(out)) return out;
+    if (!textures.exists(key)) return key;
+    const frame = textures.getFrame(key);
+    const w = frame.cutWidth; const h = frame.cutHeight;
+    const canvas = textures.createCanvas(out, w, h);
+    if (!canvas) return key;
+    const ctx = canvas.getContext();
+    ctx.drawImage(frame.source.image, frame.cutX, frame.cutY, w, h, 0, 0, w, h);
+    const image = ctx.getImageData(0, 0, w, h);
+    const d = image.data;
+    let faceTop = 0;
+    for (let y = 0; y < h; y += 1) {
+      let full = true;
+      for (let x = 0; x < w; x += 1) if (d[(y * w + x) * 4 + 3] < 128) { full = false; break; }
+      if (full) { faceTop = y; break; }
+    }
+    for (let y = 0; y < faceTop; y += 1) for (let x = 0; x < w; x += 1) d[(y * w + x) * 4 + 3] = 0;
+    for (let y = faceTop + 1; y < h - 1; y += 1) {
+      const mean = [0, 0, 0];
+      for (let x = 0; x < w; x += 1) for (let c = 0; c < 3; c += 1) mean[c] += d[(y * w + x) * 4 + c] / w;
+      for (let x = 0; x < w; x += 1) {
+        // Face contínua: cor da linha (sem o rejunte de cada bloco), luz à esquerda e sombra à direita,
+        // e um rejunte irregular raro (~5 %) para não virar chapado.
+        const side = 1.08 - 0.16 * (x / Math.max(1, w - 1));
+        const seam = ((x * 73 + y * 151) % 97) < 5 ? 0.72 : 1;
+        for (let c = 0; c < 3; c += 1) {
+          const i = (y * w + x) * 4 + c;
+          d[i] = Math.max(0, Math.min(255, Math.round((d[i] * 0.15 + mean[c] * 0.85) * side * seam)));
+        }
+      }
+    }
+    ctx.putImageData(image, 0, 0);
+    canvas.setFilter(Phaser.Textures.FilterMode.NEAREST);
+    canvas.refresh();
+    return out;
   }
 
   addWallPiece(x, y, texture, bodyWidth, bodyHeight, depthOffset = 2) {
