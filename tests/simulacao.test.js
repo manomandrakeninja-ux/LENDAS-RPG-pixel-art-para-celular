@@ -10,6 +10,7 @@ import {
 import { weatherAt } from '../src/data/weather.js';
 import { COMBAT_CONFIG } from '../src/data/combat.js';
 import { BIOME_PROP_ENTRIES } from '../src/art/biomeProps.js';
+import { ENEMY_TYPES } from '../src/data/enemies.js';
 import { PlayerSkills } from '../src/data/skills.js';
 import { migrateSave, createSaveEnvelope, SAVE_VERSION } from '../src/game/save.js';
 
@@ -191,6 +192,22 @@ test('simulação: props de bioma — nomes únicos e draw() gera pixels não va
   // As flores novas dos ciclos 38-41 devem existir.
   for (const name of ['snow-flower-0', 'dune-flower-0', 'swamp-flower-0', 'ash-flower-0']) {
     assert.ok(names.has(name), `prop ${name} faltando no atlas`);
+  }
+});
+
+test('simulação: toda caverna/torre referencia monstros e boss válidos (ENEMY_TYPES)', () => {
+  assert.ok(CAVES.length >= 8, 'esperava várias cavernas');
+  for (const cave of CAVES) {
+    assert.ok(cave.floors >= 1 && cave.floors <= 5, `caverna ${cave.id} com andares desarrazoados (${cave.floors})`);
+    for (const kind of cave.monsters) assert.ok(ENEMY_TYPES[kind], `caverna ${cave.id} referencia monstro inexistente: ${kind}`);
+    assert.ok(ENEMY_TYPES[cave.boss], `caverna ${cave.id} referencia boss inexistente: ${cave.boss}`);
+    assert.ok(cave.entrance && Number.isFinite(cave.entrance.x) && Number.isFinite(cave.entrance.y), `caverna ${cave.id} sem entrada válida`);
+    assert.ok(cave.region && REGION_INFO[cave.region], `caverna ${cave.id} em região inexistente: ${cave.region}`);
+  }
+  for (const tower of Object.values(TOWERS)) {
+    // boss é opcional (algumas torres são só de Recursos), mas se declarado precisa existir.
+    if (tower.boss) assert.ok(ENEMY_TYPES[tower.boss], `torre ${tower.name} com boss inexistente: ${tower.boss}`);
+    assert.ok(REGION_INFO[tower.region], `torre ${tower.name} em região inexistente: ${tower.region}`);
   }
 });
 

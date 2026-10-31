@@ -54,6 +54,10 @@ Linha base (antes do ciclo 01):
 | 43 | 49/49 arquivos (simulacao 9/9) | 89 / 91 / 98 / 84 / 96 / 74 / 86 |
 | 44 | 49/49 arquivos (simulacao 10/10) | 89 / 91 / 98 / 84 / 96 / 74 / 86 |
 | 45 | 49/49 arquivos; atlas 79 obj; 24 fotos | 90 / 91 / 98 / 84 / 96 / 74 / 86 |
+| 46 | 49/49; atlas 81 | 90 / 91 / 98 / 84 / 96 / 74 / 86 |
+| 47 | 49/49; atlas 83; 25 fotos | 90 / 91 / 98 / 84 / 96 / 74 / 86 |
+| 48 | 49/49; atlas 87 | 90 / 91 / 98 / 84 / 96 / 74 / 86 |
+| 49 | 49/49 arquivos | 90 / 91 / 98 / 84 / 96 / 74 / 86 |
 
 ## Início (base) vs fim
 | Eixo | Base | Final |

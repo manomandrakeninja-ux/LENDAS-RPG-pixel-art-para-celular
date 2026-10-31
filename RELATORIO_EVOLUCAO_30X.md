@@ -125,6 +125,10 @@
 ### Ciclo 42/130 — Game feel: recoil do FUS RO DAH ✅ · Ciclo 43/130 — Teste COMBAT_CONFIG ✅ · Ciclo 44/130 — Teste de props do atlas ✅ · Ciclo 45/130 — Flor tropical na selva (foto 24, atlas 79) ✅
 - Suite 49/49 e simulacao 10/10 em todos. Notas: 90 / 91 / 98 / 84 / 96 / 74 / 86.
 
+### Ciclos 46–49/130 ✅ CONCLUÍDOS
+- 46: flor de praia (atlas 81) · 47: flor da floresta (atlas 83, foto 25) · 48: pedrinhas em 4 biomas (atlas 87; teste pegou bug no `shade` e foi corrigido) · 49: waypoint com clamp nos limites do mundo.
+- Suite 49/49 e simulacao 10/10 em todos. Notas: 90 / 91 / 98 / 84 / 96 / 74 / 86.
+
 ### Ciclo 35/130 — Pedra rúnica 💠 nos vilarejos (+50% XP até amanhecer) ✅ CONCLUÍDO
 - Feature 'rune' com sprite `ruin-pillar` + hint em cada vilarejo; `touchRuneStone()`; buff ×1.5 no XP do dia; persistido em `runeDay` (compatível com saves antigos). Suite 49/49; simulacao 8/8; atlas regerado.
 - Notas: 87 / 90 / 97 / 84 / 95 / 74 / 86.

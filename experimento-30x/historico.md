@@ -69,6 +69,23 @@
 - **D:** suite 49/49.
 - Notas 0–100: visual 79 · código 87 · estabilidade 95 · desempenho 83 · jogabilidade 88 · mobile 70 · originalidade 81.
 
+### Ciclo 49 — QoL: waypoint do mapa grande agora é limitado aos limites do mundo (clamp)
+- **C:** `setWaypoint` faz clamp em [0, WORLD_COLS*TILE] × [0, OVERWORLD_ROWS*TILE].
+- **D:** suite 49/49.
+- Notas: visual 90 · código 91 · estabilidade 98 · desempenho 84 · jogabilidade 96 · mobile 74 · originalidade 86.
+
+### Ciclo 48 — Arte: pedrinhas (pebbles) em floresta/neve/areia/cinzas (atlas 83→87; bug do shade corrigido pelo teste)
+- **C/D:** 2 props novos em 4 biomas; teste de props pegou `shade` com 1 cor → corrigido. Atlas 87; suite 49/49; simulacao 10/10.
+- Notas: visual 90 · código 91 · estabilidade 98 · desempenho 84 · jogabilidade 96 · mobile 74 · originalidade 86.
+
+### Ciclo 47 — Arte: flor azul da floresta (atlas 81→83) + foto 25
+- **C/D:** `forestFlower` no T.FOREST; atlas regerado; suite 49/49.
+- Notas: visual 90 · código 91 · estabilidade 98 · desempenho 84 · jogabilidade 96 · mobile 74 · originalidade 86.
+
+### Ciclo 46 — Arte: flor de praia na areia da costa (atlas 79→81)
+- **C/D:** `beachFlower` no T.BEACH; atlas regerado; suite 49/49.
+- Notas: visual 90 · código 91 · estabilidade 98 · desempenho 84 · jogabilidade 96 · mobile 74 · originalidade 86.
+
 ### Ciclo 45 — Arte: flor tropical rosa na selva (atlas 77→79) + foto 24
 - **C:** `jungleFlower` nos props do T.JUNGLE.
 - **D:** atlas regerado (79 objetos); suite 49/49; simulacao 10/10; foto 24.

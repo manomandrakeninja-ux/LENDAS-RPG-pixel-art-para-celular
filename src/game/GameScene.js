@@ -15,7 +15,7 @@ import { BOSS_CONFIG } from '../data/boss.js';
 import { CONSUMABLES, HOTKEY_ITEMS, POTION_COOLDOWN_MS, itemForHotkey, useConsumable } from '../data/consumables.js';
 import { ENCHANTMENTS, FARM_CROPS } from '../data/buildingSystems.js';
 import { BUILDING_DEFS, CAMP_COMPLETION_MESSAGE, DUNGEON_CONFIG } from '../data/buildings.js';
-import { isRaining, weatherAt } from '../data/weather.js';
+import { isRaining, WEATHER_ICONS, weatherAt } from '../data/weather.js';
 import { CampfireTravelers, TRAVELER_GOODS } from '../data/travelers.js';
 import { INVENTORY_CONFIG, WORLD, RESOURCE_TYPES } from './config.js';
 import { AudioManager } from './Audio.js';
@@ -965,6 +965,12 @@ export class GameScene extends Phaser.Scene {
     this.invasion.checkDay(day);
     this.announceXpEvent();
     this.campaign?.onDayAdvance(day);
+    // Avisa o clima do novo dia na região atual (só no amanhecer natural, não ao dormir — já avisa lá).
+    if (!this.sleptJustNow) {
+      const w = weatherAt(this.regionWorld.currentRegion(), this.timeState);
+      const label = { clear: 'céu limpo ☀️', rain: 'chuva 🌧️', snow: 'neve ❄️', dust: 'poeira 🌪️', ash: 'cinzas 🌋' }[w] ?? w;
+      this.ui.showMessage(`🌅 Dia ${day} — clima na região: ${label}`);
+    }
     this.save();
   }
 
@@ -2739,7 +2745,9 @@ export class GameScene extends Phaser.Scene {
     }
     this.dayNight.skipNight();
     this.enemyDirector.clearNightEnemies();
+    this.sleptJustNow = true; // evita aviso duplo de clima (o doSleep já mostra na própria mensagem)
     this.handleDayAdvance(this.dayNight.dayCount);
+    this.sleptJustNow = false;
     this.world.setNight(false);
     this.harvestStructures.setNight(false);
     this.lastPhase = 'day';
@@ -2748,7 +2756,10 @@ export class GameScene extends Phaser.Scene {
     const recoveryMessage = this.recoverAtCamp();
     const extra = this.applyWakeUp();
     this.audio.playDawn();
-    const message = `Você dormiu até amanhecer no ${place}. Dia ${this.dayNight.dayCount} começou. ${recoveryMessage}${extra}`;
+    // Clima previsto para o novo dia na região atual.
+    const todayWeather = weatherAt(this.regionWorld.currentRegion(), this.timeState);
+    const weatherLabel = { clear: 'céu limpo ☀️', rain: 'chuva 🌧️', snow: 'neve ❄️', dust: 'poeira 🌪️', ash: 'cinzas 🌋' }[todayWeather] ?? todayWeather;
+    const message = `Você dormiu até amanhecer no ${place}. Dia ${this.dayNight.dayCount} começou (${weatherLabel}). ${recoveryMessage}${extra}`;
     this.ui.showMessage(message);
     this.save();
     return { ok: true, message };
