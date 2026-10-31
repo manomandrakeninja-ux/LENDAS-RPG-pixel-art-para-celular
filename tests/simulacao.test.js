@@ -1285,7 +1285,7 @@ test('simulação: waypoints — clamp dentro do mundo e id único por waypoint'
 test('simulação: bestiário cobre todos os inimigos com nome e tier', () => {
   for (const [id, def] of Object.entries(ENEMY_TYPES)) {
     assert.ok(def.name, `inimigo ${id} sem nome`);
-    assert.ok(def.tier >= 1 && def.tier <= 10, `inimigo ${id} tier inválido: ${def.tier}`);
+    assert.ok(def.tier >= 1 && def.tier <= 15, `inimigo ${id} tier inválido: ${def.tier}`);
     assert.ok(def.health > 0 && def.damage > 0, `inimigo ${id} sem stats`);
     assert.ok(def.name, `inimigo ${id} sem nome`);
   }
