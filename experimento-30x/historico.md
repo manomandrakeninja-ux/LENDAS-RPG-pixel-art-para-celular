@@ -69,6 +69,17 @@
 - **D:** suite 49/49.
 - Notas 0–100: visual 79 · código 87 · estabilidade 95 · desempenho 83 · jogabilidade 88 · mobile 70 · originalidade 81.
 
+### Ciclo 59 — Baú de tesouro do mundo também dá XP (além de moedas/equipamento)
+- **C:** `openWorldChest` chama `grantExperience` com valor por nível da região.
+- **D:** suite 49/49; simulacao 14/14.
+- Notas: visual 90 · código 92 · estabilidade 98 · desempenho 85 · jogabilidade 96 · mobile 74 · originalidade 86.
+
+### Ciclo 58 — Teste de performance: build fria do grid < 2 s, cache < 5 ms (medido; 82 ms fria, ~0 ms quente)
+- **D:** simulacao 14/14 (2 fixes de assert: rows é número 736, terrain achatado 294400). Suite 49/49.
+
+### Ciclo 57 — Arte: tronco congelado no gelo (atlas 87→88)
+- **C/D:** prop `frozen-log` no T.SNOW; atlas regerado; suite 49/49.
+
 ### Ciclos 50–56 (lote) ✅
 - 50: clima do novo dia na msg de amanhecer (dormir) · 51: clima no amanhecer natural (sem duplicar) · 52: teste cavernas/torres vs ENEMY_TYPES (11/11) · 53: loja mostra saldo 🪙 no título · 54: teste de economia (nunca negativa, hook onGain) · 55: rastro fantasma azul na esquiva · 56: teste de consumíveis (13/13; corrigido modelo real: comida=heal baixo).
 - Suite 49/49 em todos; simulacao 13/13; atlas 87; 25 fotos.

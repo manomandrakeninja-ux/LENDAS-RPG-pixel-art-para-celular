@@ -287,6 +287,25 @@ test('simulação: consumíveis — poção cura sem passar do máx, comida ench
   }
 });
 
+test('simulação: todo porto fica na borda do mar (tem água vizinha) e em região válida', () => {
+  assert.ok(DOCKS.length >= 5, 'esperava vários portos');
+  for (const dock of DOCKS) {
+    assert.ok(REGION_INFO[dock.region], `porto ${dock.name} em região inexistente: ${dock.region}`);
+    const pos = dockPosition(dock);
+    assert.ok(Number.isFinite(pos.x) && Number.isFinite(pos.y), `porto ${dock.name} sem posição`);
+    // Ao menos um dos 8 vizinhos da posição do barco é mar.
+    let nearSea = false;
+    for (let dx = -2; dx <= 2 && !nearSea; dx += 1) {
+      for (let dy = -2; dy <= 2 && !nearSea; dy += 1) {
+        if (terrainAt(pos.boatY ? pos.x + dx * TILE : pos.x + dx * TILE, (pos.boatY ?? pos.y) + dy * TILE) === T.SEA) nearSea = true;
+      }
+    }
+    assert.ok(nearSea, `porto ${dock.name} não está na costa (sem mar por perto)`);
+    // A píer/entrada não pode estar em terreno bloqueante.
+    assert.ok(![T.SEA, T.LAVA, T.WALL, T.VOID].includes(terrainAt(pos.x, pos.y)), `porto ${dock.name} em terreno bloqueante`);
+  }
+});
+
 test('simulação: o jogador não sai do mapa — trava física de limites do mundo ativa no Player', async () => {
   // terrainAt é infinita (gera terreno até fora do mapa), então a proteção real é física:
   // Player.js precisa chamar body.setCollideWorldBounds(true). Conferimos no código-fonte.

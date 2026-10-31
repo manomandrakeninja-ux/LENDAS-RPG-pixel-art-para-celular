@@ -858,6 +858,16 @@ function flowerTuft(seed = 402) {
   return finish(p, { outline: 0.3 });
 }
 
+/** Conchinha na areia da praia (detalhe pequeno). */
+function shell(seed = 577) {
+  const p = new Painter(10, 8, { transparent: true });
+  p.sphere(5, 5, 3, '#e8d8c8', '#f4e8dc');
+  p.set(5, 5, '#fff4e8');
+  p.set(4, 4, '#d8c0b0');
+  p.set(6, 6, '#d8c0b0');
+  return finish(p, { outline: 0.35 });
+}
+
 /** Pedrinhas espalhadas no chão (detalhe de chão, sem colisão). */
 function pebbles(seed = 563) {
   const p = new Painter(18, 8, { transparent: true });
@@ -1045,6 +1055,8 @@ const PAINTED_ENTRIES = [
   { name: 'pebbles-0', draw: () => pebbles(563) },
   { name: 'pebbles-1', draw: () => pebbles(571) },
   { name: 'frozen-log', draw: () => fallenLog(true) },
+  { name: 'shell-0', draw: () => shell(577) },
+  { name: 'shell-1', draw: () => shell(583) },
   { name: 'shipwreck', draw: shipwreck },
   { name: 'sea-rock', draw: seaRock },
   { name: 'charred-tree', draw: () => deadTree(['#0c0808', '#1a1010', '#2a1a16', '#3a2620', '#4a3228'], true) },

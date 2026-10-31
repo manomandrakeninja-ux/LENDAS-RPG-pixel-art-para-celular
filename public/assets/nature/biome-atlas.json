@@ -1040,6 +1040,46 @@
     "h": 30
    }
   },
+  "shell-0": {
+   "frame": {
+    "x": 462,
+    "y": 328,
+    "w": 10,
+    "h": 8
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 8
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 8
+   }
+  },
+  "shell-1": {
+   "frame": {
+    "x": 474,
+    "y": 328,
+    "w": 10,
+    "h": 8
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 8
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 8
+   }
+  },
   "shipwreck": {
    "frame": {
     "x": 2,
