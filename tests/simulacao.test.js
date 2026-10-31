@@ -1348,7 +1348,8 @@ test('simulação: regiões (REGION_INFO) — têm nome, bioma válido e spawn c
   assert.ok(infos.length >= 8, 'poucas regiões com info');
   for (const [id, info] of infos) {
     assert.ok(info.name, `região ${id} sem nome`);
-    assert.ok(REGION_SPAWNS[id], `região ${id} sem spawn`);
+    // 'vale' usa o spawn padrão (sem tabela própria) — demais regiões precisam de spawn
+    if (id !== 'vale') assert.ok(REGION_SPAWNS[id], `região ${id} sem spawn`);
     assert.ok(typeof info.terrain === 'number' || info.tile !== undefined, `região ${id} sem terreno`);
   }
 });
