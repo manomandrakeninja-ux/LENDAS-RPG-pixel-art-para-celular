@@ -1571,7 +1571,8 @@ test('simulação: vilas — têm nome, NPCs e posição dentro do mundo', () =>
   for (const v of VILLAGES) {
     assert.ok(v.name, 'vila sem nome');
     assert.ok(v.x > 0 && v.x < WORLD_COLS * TILE && v.y > 0 && v.y < OVERWORLD_ROWS * TILE, `${v.name} fora do mapa`);
-    assert.ok(Array.isArray(v.npcs) && v.npcs.length >= 1, `${v.name} sem NPCs`);
+    assert.ok(Array.isArray(v.houses) && v.houses.length >= 1, `${v.name} sem casas`);
+    assert.ok(Array.isArray(v.lines) && v.lines.length >= 1, `${v.name} sem linhas de diálogo`);
   }
 });
 
