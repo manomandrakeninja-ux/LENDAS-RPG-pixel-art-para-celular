@@ -68,7 +68,8 @@ const TIPS = [
   'De dia na selva, uma borboleta dourada 🦋 pode dar um pouco de XP.',
   'À noite de céu limpo na floresta, um cogumelo lunar 🍄 pode brilhar com XP.',
   'De dia no sol do deserto, um cacto em flor 🌵 pode dar um pouco de XP.',
-  'Na nevasca do gelo, à noite, a neve mágica ❄️ rende bastante XP.'
+  'Na nevasca do gelo, à noite, a neve mágica ❄️ rende bastante XP.',
+  'Na chuva do brejo, de dia, um sapo 🐸 pode dar um pouco de XP.'
 ];
 
 export function setupSplash() {

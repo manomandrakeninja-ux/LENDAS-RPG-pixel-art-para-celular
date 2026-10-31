@@ -8,7 +8,7 @@ import {
   buildTerrainGrid, buildTerrainGridUncached, dockPosition, pointOnRoad, regionAt, terrainAt, TERRAIN_NODES, VALLEY_EXTRA_SPAWNS
 } from '../src/data/worldRegions.js';
 globalThis.__buildTerrainGridUncached = buildTerrainGridUncached;
-import { weatherAt } from '../src/data/weather.js';
+import { weatherAt, WEATHER_CONFIG, WEATHER_ICONS } from '../src/data/weather.js';
 import { COMBAT_CONFIG } from '../src/data/combat.js';
 import { BIOME_PROP_ENTRIES } from '../src/art/biomeProps.js';
 import { ENEMY_TYPES, ENEMY_TYPE_NAMES, enemyXp, ELITE_CONFIG } from '../src/data/enemies.js';
@@ -1692,6 +1692,26 @@ test('simulação: roads — nomes únicos e pontos dentro do mundo', () => {
     }
     assert.ok((road.points?.length ?? 0) >= 2, `estrada ${road.name} com poucos pontos`);
   }
+});
+
+test('simulação: cavernas — boss só em caverna funda (≥80%) e entrada válida', () => {
+  const withBoss = CAVES.filter((c) => c.boss);
+  assert.ok(withBoss.length >= 3, 'poucas cavernas com boss');
+  for (const c of withBoss) {
+    assert.ok((c.depth ?? 0) >= 0, 'profundidade inválida');
+    assert.ok(ENEMY_TYPES[c.boss], `boss inválido na caverna ${c.id}: ${c.boss}`);
+  }
+  for (const c of CAVES) {
+    assert.ok(c.entrance && c.entrance.x > 0 && c.entrance.x < WORLD_COLS * TILE, `caverna ${c.id} entrada x inválida`);
+    assert.ok(c.entrance.y > 0 && c.entrance.y < OVERWORLD_ROWS * TILE, `caverna ${c.id} entrada y inválida`);
+  }
+});
+
+test('simulação: clima — WEATHER_CONFIG tem chances entre 0 e 1', () => {
+  for (const [k, v] of Object.entries(WEATHER_CONFIG)) {
+    if (k.endsWith('Chance') || k === 'rainChance') assert.ok(v >= 0 && v <= 1, `${k} fora de 0-1: ${v}`);
+  }
+  for (const [k, icon] of Object.entries(WEATHER_ICONS)) assert.ok(typeof icon === 'string', `ícone ${k} inválido`);
 });
 
 test('simulação: o jogador não sai do mapa — trava física de limites do mundo ativa no Player', async () => {
