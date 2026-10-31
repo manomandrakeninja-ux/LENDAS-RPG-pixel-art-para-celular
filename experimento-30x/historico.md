@@ -74,6 +74,11 @@
 - Estado: atlas 99 objetos; suite 49/49; simulacao 20/20.
 - Notas: visual 91 · código 92 · estabilidade 98 · desempenho 86 · jogabilidade 97 · mobile 74 · originalidade 87.
 
+### Ciclos 101–110 ✅ (lote)
+- 101–105: props — cogumelo azul (brejo), flor de brasa, grama alta dourada, âncora quebrada, raiz de selva · 106: teste BuffSystem (apply objeto, expira, persiste) · 107: teste Bestiary (kills, persiste) · 108: teste Achievements (goal "all" aceito) · 109: evento 🍀 trevo da sorte à noite (+15–30 XP) · 110: verificação parcial.
+- Estado: atlas 138 objetos; suite 49/49; simulacao 30/30.
+- Notas: visual 93 · código 93 · estabilidade 98 · desempenho 86 · jogabilidade 97 · mobile 74 · originalidade 88.
+
 ### Ciclo 100 — MARCO 100/1000: 303 arquivos sintaxe OK, suite 49/49, simulacao 27/27, atlas 129 obj, foto 29
 ### Ciclos 98–99 — props (pedrinha, lírio aquático grande, espeto de gelo, onda de duna, flor amarela) + testes scaleEnemy/gear + evento 🔥 onda de calor
 

@@ -858,6 +858,51 @@ function flowerTuft(seed = 402) {
   return finish(p, { outline: 0.3 });
 }
 
+/** Pedrinha com musgo (brejo). */
+function mossPebble(seed = 839) {
+  const p = new Painter(12, 8, { transparent: true });
+  p.sphere(6, 5, 4, '#7a7a70', '#9a9a90');
+  p.sphere(4, 4, 2, '#3f6e2c', '#57a050');
+  return finish(p, { outline: 0.35 });
+}
+
+/** Florzinha branca (neve). */
+function whiteFlower(seed = 841) {
+  const p = new Painter(10, 12, { transparent: true });
+  p.rect(4, 6, 2, 5, '#7a9a6a');
+  for (const [dx, dy] of [[-3, -2], [3, -2], [-2, 2], [2, 2], [0, -4]]) p.set(5 + dx, 5 + dy, '#f4f8ff');
+  p.set(5, 5, '#e8d060');
+  return finish(p, { outline: 0.3 });
+}
+
+/** Casca caída no chão da floresta. */
+function barkScrap(seed = 853) {
+  const p = new Painter(16, 8, { transparent: true });
+  p.rect(2, 3, 12, 3, '#6a5030');
+  p.rect(3, 2, 10, 1, '#8a6c42');
+  p.set(5, 4, '#4a3820');
+  return finish(p, { outline: 0.35 });
+}
+
+/** Concha espiral (praia). */
+function spiralShell(seed = 857) {
+  const p = new Painter(12, 12, { transparent: true });
+  p.sphere(6, 6, 4.4, '#d8b898', '#f0d8c0');
+  p.set(6, 6, '#a87858');
+  p.set(5, 5, '#c89878');
+  p.set(7, 7, '#b88868');
+  return finish(p, { outline: 0.35 });
+}
+
+/** Pedra vulcânica arredondada (cinzas). */
+function lavaRock(seed = 863) {
+  const p = new Painter(16, 10, { transparent: true });
+  p.sphere(8, 6, 5.5, '#2a2026', '#3e3038');
+  p.set(6, 4, '#4a3a44');
+  p.set(10, 7, '#1a1418');
+  return finish(p, { outline: 0.35 });
+}
+
 /** Cogumelo azul do brejo. */
 function blueMushroom(seed = 797) {
   const p = new Painter(10, 10, { transparent: true });
@@ -1364,6 +1409,15 @@ const PAINTED_ENTRIES = [
   { name: 'broken-anchor', draw: () => brokenAnchor(821) },
   { name: 'jungle-root-0', draw: () => jungleRoot(827) },
   { name: 'jungle-root-1', draw: () => jungleRoot(829) },
+  { name: 'moss-pebble-0', draw: () => mossPebble(839) },
+  { name: 'moss-pebble-1', draw: () => mossPebble(843) },
+  { name: 'white-flower-0', draw: () => whiteFlower(841) },
+  { name: 'white-flower-1', draw: () => whiteFlower(847) },
+  { name: 'bark-scrap-0', draw: () => barkScrap(853) },
+  { name: 'bark-scrap-1', draw: () => barkScrap(859) },
+  { name: 'spiral-shell', draw: () => spiralShell(857) },
+  { name: 'lava-rock-0', draw: () => lavaRock(863) },
+  { name: 'lava-rock-1', draw: () => lavaRock(867) },
   { name: 'shipwreck', draw: shipwreck },
   { name: 'sea-rock', draw: seaRock },
   { name: 'charred-tree', draw: () => deadTree(['#0c0808', '#1a1010', '#2a1a16', '#3a2620', '#4a3228'], true) },

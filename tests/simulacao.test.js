@@ -20,6 +20,7 @@ import { GEAR_ITEMS, RARITIES } from '../src/data/gear.js';
 import { BuffSystem, BUFF_DEFINITIONS } from '../src/game/BuffSystem.js';
 import { Bestiary } from '../src/game/Bestiary.js';
 import { Achievements, ACHIEVEMENTS } from '../src/data/achievements.js';
+import { DAY_NIGHT_CONFIG, DAY_NIGHT_TOTAL_SECONDS } from '../src/data/dayNight.js';
 import { PlayerSkills } from '../src/data/skills.js';
 import { migrateSave, createSaveEnvelope, SAVE_VERSION } from '../src/game/save.js';
 
@@ -561,6 +562,25 @@ test('simulação: Achievements — conta stats, completa ao bater a meta e pers
   for (const a of ACHIEVEMENTS) {
     assert.ok(a.id && a.stat && (a.goal === 'all' || a.goal > 0) && a.name && a.title, `conquista mal formada: ${JSON.stringify(a)}`);
   }
+});
+
+test('simulação: ciclo dia/noite sadio — durações positivas, dawn antes do dusk, total consistente', () => {
+  const c = DAY_NIGHT_CONFIG;
+  assert.ok(c.dayDurationSeconds > 60 && c.nightDurationSeconds > 30, 'dia e noite com duração razoável');
+  assert.ok(c.transitionDurationSeconds > 0 && c.transitionDurationSeconds < c.dayDurationSeconds, 'transição sadia');
+  assert.ok(c.dawnHour < c.duskHour, 'amanhecer antes do anoitecer');
+  assert.ok(c.dawnHour >= 0 && c.duskHour <= 24, 'horários no relógio');
+  assert.equal(DAY_NIGHT_TOTAL_SECONDS, c.dayDurationSeconds + c.nightDurationSeconds);
+});
+
+test('simulação: combate sadio — esquiva tem i-frames, combo de 3 golpes, finisher mais forte', () => {
+  assert.ok(COMBAT_CONFIG.dodgeInvulnerabilityMs > 0, 'esquiva precisa de i-frames');
+  assert.equal(COMBAT_CONFIG.combo.length, 3, 'combo de 3 golpes');
+  assert.ok(COMBAT_CONFIG.finisherMultiplier > 1, 'finisher causa mais dano');
+  assert.ok(COMBAT_CONFIG.basicAttackRange > 0 && COMBAT_CONFIG.cooldownMs > 0, 'ataque básico sadio');
+  assert.ok(COMBAT_CONFIG.windowMs > COMBAT_CONFIG.cooldownMs, 'janela do combo cobre o cooldown');
+  assert.ok(COMBAT_CONFIG.shout.maxCharge >= 100, 'grito carrega até 100');
+  assert.ok(COMBAT_CONFIG.shout.chargePerHit > 0 && COMBAT_CONFIG.shout.chargePerFinisher > COMBAT_CONFIG.shout.chargePerHit, 'finisher carrega mais grito');
 });
 
 test('simulação: o jogador não sai do mapa — trava física de limites do mundo ativa no Player', async () => {
