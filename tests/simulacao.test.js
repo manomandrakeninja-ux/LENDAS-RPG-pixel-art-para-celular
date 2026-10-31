@@ -989,13 +989,19 @@ test('simulação: quests de viajantes — goods têm preço > 0 e yield válido
   const t = new CampfireTravelers();
   t.refresh(100, 99);
   assert.ok(t.present, 'viajante presente no dia 100 com fogueira nv 99');
-  const quest = t.acceptQuest();
-  assert.ok(quest, 'quest aceita');
-  const storage = { take: (type, amt) => ({ ok: true }), add: () => ({ ok: true }) };
-  const inventory = { items: { [quest.item]: quest.amount + 5 } };
-  assert.ok(t.questReady({ inventory, storage }), 'quest pronta com itens suficientes');
-  const reward = t.claim({ inventory, storage }, (res) => res);
-  assert.ok(reward && (reward.coins > 0 || reward.item), 'recompensa recebida');
+  assert.ok(t.acceptQuest(), 'quest aceita');
+  const quest = TRAVELER_QUESTS.find((q) => q.id === t.activeQuest.id);
+  assert.ok(quest, 'quest ativa encontrada em TRAVELER_QUESTS');
+  const storage = {};
+  const inventory = { items: {} };
+  if (quest.kind === 'kill') {
+    for (let i = 0; i < quest.count; i += 1) t.recordKill(quest.enemy ?? 'wolf');
+  } else {
+    for (const [type, amount] of Object.entries(quest.items)) inventory.items[type] = amount + 5;
+  }
+  assert.ok(t.questReady({ inventory, storage }), 'quest pronta após progresso/itens');
+  const reward = t.claim({ inventory, storage }, () => true);
+  assert.ok(reward && (reward.coins > 0 || reward.items), 'recompensa recebida');
 });
 
 test('simulação: save v2 — envelope serializa e migra de v1 sem perder dados', () => {
