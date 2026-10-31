@@ -858,6 +858,50 @@ function flowerTuft(seed = 402) {
   return finish(p, { outline: 0.3 });
 }
 
+/** Flor de gelo lilás (neve). */
+function lilacIceFlower(seed = 1237) {
+  const p = new Painter(10, 12, { transparent: true });
+  p.rect(4, 6, 2, 5, '#8aa8a0');
+  for (const [dx, dy] of [[-3, -2], [3, -2], [-2, 2], [2, 2], [0, -4]]) p.set(5 + dx, 5 + dy, '#d0a8f0');
+  p.set(5, 5, '#ffffff');
+  return finish(p, { outline: 0.3 });
+}
+
+/** Pedrinha rosa (praia). */
+function pinkPebble(seed = 1243) {
+  const p = new Painter(10, 7, { transparent: true });
+  p.sphere(5, 4, 3.4, '#d8a8b0', '#f0c8d0');
+  p.set(4, 3, '#ffffff');
+  return finish(p, { outline: 0.35 });
+}
+
+/** Galho seco (deserto). */
+function dryBranch(seed = 1249) {
+  const p = new Painter(18, 10, { transparent: true });
+  const wood = ['#8a7048', '#a88c60'];
+  p.rect(2, 5, 12, 2, shade([wood[0], wood[1]], 0.5));
+  p.rect(12, 3, 4, 2, wood[1]);
+  p.set(5, 4, '#6e5836');
+  return finish(p, { outline: 0.35 });
+}
+
+/** Cogumelo bege (floresta). */
+function tanShroom(seed = 1255) {
+  const p = new Painter(10, 10, { transparent: true });
+  p.rect(4, 6, 2, 3, '#d8c8b0');
+  p.sphere(5, 5, 3.2, '#a8895a', '#c8a878');
+  p.set(4, 4, '#efe0c8');
+  return finish(p, { outline: 0.35 });
+}
+
+/** Pedregulho de cinza claro (cinzas). */
+function paleAshRock(seed = 1259) {
+  const p = new Painter(16, 10, { transparent: true });
+  p.sphere(8, 6, 5.5, '#6e686e', '#8a848a');
+  p.set(6, 4, '#a8a2a8');
+  return finish(p, { outline: 0.35 });
+}
+
 /** Cristal de cinza (roxo fumê). */
 function ashCrystal(seed = 1201) {
   const p = new Painter(10, 14, { transparent: true });
@@ -1960,6 +2004,13 @@ const PAINTED_ENTRIES = [
   { name: 'dune-gravel', draw: () => duneGravel(1223) },
   { name: 'wet-stone-0', draw: () => wetStone(1229) },
   { name: 'wet-stone-1', draw: () => wetStone(1231) },
+  { name: 'lilac-ice-flower-0', draw: () => lilacIceFlower(1237) },
+  { name: 'lilac-ice-flower-1', draw: () => lilacIceFlower(1241) },
+  { name: 'pink-pebble', draw: () => pinkPebble(1243) },
+  { name: 'dry-branch', draw: () => dryBranch(1249) },
+  { name: 'tan-shroom-0', draw: () => tanShroom(1255) },
+  { name: 'tan-shroom-1', draw: () => tanShroom(1257) },
+  { name: 'pale-ash-rock', draw: () => paleAshRock(1259) },
   { name: 'shipwreck', draw: shipwreck },
   { name: 'sea-rock', draw: seaRock },
   { name: 'charred-tree', draw: () => deadTree(['#0c0808', '#1a1010', '#2a1a16', '#3a2620', '#4a3228'], true) },

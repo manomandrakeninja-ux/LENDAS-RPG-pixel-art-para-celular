@@ -865,6 +865,24 @@ test('simulação: elite config sadio — multiplicadores > 1 e aura definida', 
   assert.ok(enemyXp('wolf', true, 5) > enemyXp('wolf', false, 5), 'elite dá mais XP');
 });
 
+test('simulação: totems/estátuas (ruin-pillar) — posição dentro do mundo e não bloqueante', () => {
+  // Vilarejos têm pedra rúnica (ciclo 35): validamos as posições das vilas + runa desplazada.
+  for (const village of VILLAGES) {
+    const rune = { x: village.x + 56, y: village.y + 52 };
+    assert.ok(rune.x > 0 && rune.x < WORLD_COLS * TILE && rune.y > 0 && rune.y < OVERWORLD_ROWS * TILE, `${village.name}: runa fora do mapa`);
+    assert.ok(![T.SEA, T.LAVA, T.WALL, T.VOID].includes(terrainAt(rune.x, rune.y)), `${village.name}: runa em terreno bloqueante`);
+  }
+});
+
+test('simulação: ilhas esmeralda/brasa são alcançáveis por porto e têm docks', () => {
+  const islandDocks = DOCKS.filter((d) => ['esmeralda', 'brasa'].includes(d.region));
+  assert.ok(islandDocks.length >= 2, 'ilhas precisam de porto próprio');
+  for (const dock of islandDocks) {
+    assert.ok(['esmeralda', 'brasa'].includes(dock.region), `dock ${dock.name} região errada`);
+    assert.ok(dock.name.toLowerCase().includes('ilha') || dock.route, `dock ${dock.name} sem rota para ilha`);
+  }
+});
+
 test('simulação: o jogador não sai do mapa — trava física de limites do mundo ativa no Player', async () => {
   // terrainAt é infinita (gera terreno até fora do mapa), então a proteção real é física:
   // Player.js precisa chamar body.setCollideWorldBounds(true). Conferimos no código-fonte.
