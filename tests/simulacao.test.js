@@ -25,7 +25,6 @@ import { Achievements, ACHIEVEMENTS } from '../src/data/achievements.js';
 import { DAY_NIGHT_CONFIG, DAY_NIGHT_TOTAL_SECONDS } from '../src/data/dayNight.js';
 import { MISSIONS } from '../src/data/campaign.js';
 import { CRAFT_RECIPES } from '../src/data/craftRecipes.js';
-import { TRAVELER_GOODS, TRAVELER_QUESTS } from '../src/data/travelers.js';
 // Validamos uso cruzado do atlas com regex em TODOS os fontes de src/ (RegionWorld importa Phaser).
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
