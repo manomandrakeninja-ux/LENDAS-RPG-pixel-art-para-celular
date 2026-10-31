@@ -34,7 +34,8 @@ const TIPS = [
   'Em dias de sol aberto ☀️ o calor rende um tiquinho de XP.',
   'Em noites limpas ⭐ podem cair estrelas cadentes com moeditas.',
   'No brejo, um sapo 🐸 pode te beijar e devolver um pouco de vida.',
-  'À noite no deserto, um escorpião dourado 🦂 pode deixar moeditas para trás.'
+  'À noite no deserto, um escorpião dourado 🦂 pode deixar moeditas para trás.',
+  'Na beira do mar, a onda 🌊 às vezes molha seus pés e dá um pouco de XP.'
 ];
 
 export function setupSplash() {

@@ -3520,9 +3520,189 @@
     "h": 7
    }
   },
-  "shipwreck": {
+  "hot-ash-0": {
    "frame": {
     "x": 26,
+    "y": 448,
+    "w": 12,
+    "h": 8
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 12,
+    "h": 8
+   },
+   "sourceSize": {
+    "w": 12,
+    "h": 8
+   }
+  },
+  "hot-ash-1": {
+   "frame": {
+    "x": 40,
+    "y": 448,
+    "w": 12,
+    "h": 8
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 12,
+    "h": 8
+   },
+   "sourceSize": {
+    "w": 12,
+    "h": 8
+   }
+  },
+  "clear-ice-rock-0": {
+   "frame": {
+    "x": 54,
+    "y": 448,
+    "w": 14,
+    "h": 9
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 9
+   },
+   "sourceSize": {
+    "w": 14,
+    "h": 9
+   }
+  },
+  "clear-ice-rock-1": {
+   "frame": {
+    "x": 70,
+    "y": 448,
+    "w": 14,
+    "h": 9
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 9
+   },
+   "sourceSize": {
+    "w": 14,
+    "h": 9
+   }
+  },
+  "wreck-log": {
+   "frame": {
+    "x": 86,
+    "y": 448,
+    "w": 26,
+    "h": 10
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 26,
+    "h": 10
+   },
+   "sourceSize": {
+    "w": 26,
+    "h": 10
+   }
+  },
+  "jungle-bush-0": {
+   "frame": {
+    "x": 114,
+    "y": 448,
+    "w": 20,
+    "h": 14
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 20,
+    "h": 14
+   },
+   "sourceSize": {
+    "w": 20,
+    "h": 14
+   }
+  },
+  "jungle-bush-1": {
+   "frame": {
+    "x": 136,
+    "y": 448,
+    "w": 20,
+    "h": 14
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 20,
+    "h": 14
+   },
+   "sourceSize": {
+    "w": 20,
+    "h": 14
+   }
+  },
+  "desert-stone-0": {
+   "frame": {
+    "x": 158,
+    "y": 448,
+    "w": 14,
+    "h": 9
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 9
+   },
+   "sourceSize": {
+    "w": 14,
+    "h": 9
+   }
+  },
+  "desert-stone-1": {
+   "frame": {
+    "x": 174,
+    "y": 448,
+    "w": 14,
+    "h": 9
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 9
+   },
+   "sourceSize": {
+    "w": 14,
+    "h": 9
+   }
+  },
+  "shipwreck": {
+   "frame": {
+    "x": 190,
     "y": 448,
     "w": 116,
     "h": 70
@@ -3542,7 +3722,7 @@
   },
   "sea-rock": {
    "frame": {
-    "x": 144,
+    "x": 308,
     "y": 448,
     "w": 44,
     "h": 32
@@ -3562,7 +3742,7 @@
   },
   "charred-tree": {
    "frame": {
-    "x": 190,
+    "x": 354,
     "y": 448,
     "w": 60,
     "h": 84
@@ -3582,7 +3762,7 @@
   },
   "obsidian": {
    "frame": {
-    "x": 252,
+    "x": 416,
     "y": 448,
     "w": 44,
     "h": 48
@@ -3602,7 +3782,7 @@
   },
   "lava-vent": {
    "frame": {
-    "x": 298,
+    "x": 462,
     "y": 448,
     "w": 40,
     "h": 30
@@ -3622,8 +3802,8 @@
   },
   "fire-crystal": {
    "frame": {
-    "x": 340,
-    "y": 448,
+    "x": 2,
+    "y": 534,
     "w": 34,
     "h": 40
    },
@@ -3642,8 +3822,8 @@
   },
   "ash-bush": {
    "frame": {
-    "x": 376,
-    "y": 448,
+    "x": 38,
+    "y": 534,
     "w": 30,
     "h": 22
    },
@@ -3662,7 +3842,7 @@
   },
   "cave-earth": {
    "frame": {
-    "x": 2,
+    "x": 70,
     "y": 534,
     "w": 104,
     "h": 80
@@ -3682,7 +3862,7 @@
   },
   "cave-swamp": {
    "frame": {
-    "x": 108,
+    "x": 176,
     "y": 534,
     "w": 104,
     "h": 80
@@ -3702,7 +3882,7 @@
   },
   "cave-ice": {
    "frame": {
-    "x": 214,
+    "x": 282,
     "y": 534,
     "w": 104,
     "h": 80
@@ -3722,7 +3902,7 @@
   },
   "cave-tomb": {
    "frame": {
-    "x": 320,
+    "x": 388,
     "y": 534,
     "w": 104,
     "h": 80

@@ -858,6 +858,50 @@ function flowerTuft(seed = 402) {
   return finish(p, { outline: 0.3 });
 }
 
+/** Cinza quente (brasa viva no chão). */
+function hotAsh(seed = 1171) {
+  const p = new Painter(12, 8, { transparent: true });
+  p.sphere(6, 5, 4, '#2a2026', '#3e3038');
+  p.set(5, 4, '#ff8030');
+  p.set(7, 6, '#ffb050');
+  return finish(p, { outline: 0.3 });
+}
+
+/** Pedra de gelo clara (neve). */
+function clearIceRock(seed = 1177) {
+  const p = new Painter(14, 9, { transparent: true });
+  p.sphere(7, 5, 5, '#b8d8f0', '#dceefc');
+  p.set(5, 3, '#ffffff');
+  return finish(p, { outline: 0.35 });
+}
+
+/** Tronco de naufrágio (praia). */
+function wreckLog(seed = 1181) {
+  const p = new Painter(26, 10, { transparent: true });
+  const wood = ['#6e5a40', '#8a745a'];
+  p.rect(2, 4, 22, 4, shade([wood[0], wood[1]], 0.5));
+  p.set(2, 4, '#4a3a28'); p.set(23, 7, '#4a3a28');
+  p.set(10, 5, '#9a8468');
+  return finish(p, { outline: 0.35 });
+}
+
+/** Arbusto denso de selva. */
+function jungleBush(seed = 1187) {
+  const p = new Painter(20, 14, { transparent: true });
+  p.sphere(10, 8, 7, shade(['#1e3a14', '#3f6e2c'], 0.5), '#2e5a24');
+  p.set(7, 5, '#57a050');
+  p.set(13, 10, '#1a2e10');
+  return finish(p, { outline: 0.35 });
+}
+
+/** Pedra do deserto (ocre). */
+function desertStone(seed = 1193) {
+  const p = new Painter(14, 9, { transparent: true });
+  p.sphere(7, 5, 5, '#b89a5e', '#d0b878');
+  p.set(5, 3, '#e8d09a');
+  return finish(p, { outline: 0.35 });
+}
+
 /** Pedra avermelhada (cinzas). */
 function redStone(seed = 1139) {
   const p = new Painter(14, 9, { transparent: true });
@@ -1853,6 +1897,15 @@ const PAINTED_ENTRIES = [
   { name: 'dune-bloom', draw: () => duneBloom(1157) },
   { name: 'swamp-pebble-0', draw: () => swampPebble(1163) },
   { name: 'swamp-pebble-1', draw: () => swampPebble(1167) },
+  { name: 'hot-ash-0', draw: () => hotAsh(1171) },
+  { name: 'hot-ash-1', draw: () => hotAsh(1173) },
+  { name: 'clear-ice-rock-0', draw: () => clearIceRock(1177) },
+  { name: 'clear-ice-rock-1', draw: () => clearIceRock(1179) },
+  { name: 'wreck-log', draw: () => wreckLog(1181) },
+  { name: 'jungle-bush-0', draw: () => jungleBush(1187) },
+  { name: 'jungle-bush-1', draw: () => jungleBush(1189) },
+  { name: 'desert-stone-0', draw: () => desertStone(1193) },
+  { name: 'desert-stone-1', draw: () => desertStone(1197) },
   { name: 'shipwreck', draw: shipwreck },
   { name: 'sea-rock', draw: seaRock },
   { name: 'charred-tree', draw: () => deadTree(['#0c0808', '#1a1010', '#2a1a16', '#3a2620', '#4a3228'], true) },

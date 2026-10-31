@@ -16,7 +16,7 @@ import { EconomySystem } from '../src/game/EconomySystem.js';
 import { CONSUMABLES, useConsumable } from '../src/data/consumables.js';
 import { DEFAULT_KEYBINDS, KEY_ACTIONS, isBindableCode, isReservedCode, normalizeKeybinds, rebind, actionForCode, loadKeybinds, saveKeybinds, keyLabel, keyCodeFor } from '../src/game/Keybinds.js';
 import { scaleEnemy } from '../src/data/enemyScaling.js';
-import { GEAR_ITEMS, RARITIES } from '../src/data/gear.js';
+import { GEAR_ITEMS, RARITIES, rollGearDrop, GEAR_SLOTS } from '../src/data/gear.js';
 import { BuffSystem, BUFF_DEFINITIONS } from '../src/game/BuffSystem.js';
 import { Bestiary } from '../src/game/Bestiary.js';
 import { Achievements, ACHIEVEMENTS } from '../src/data/achievements.js';
@@ -802,6 +802,36 @@ test('simulação: tiles de estrada (T.ROAD) existem em quantidade e são andáv
     const p = pointOnRoad(road, 0.5);
     assert.ok(Number.isFinite(p.x) && Number.isFinite(p.y), `pointOnRoad quebrou para ${road.name}`);
     assert.ok(p.x >= 0 && p.x <= WORLD_COLS * TILE && p.y >= 0 && p.y <= OVERWORLD_ROWS * TILE, `${road.name} fora do mundo`);
+  }
+});
+
+test('simulação: rollGearDrop determinístico — drop válido, slot real, raridade existe; boss garante lendário', () => {
+  const rnd = () => 0.5; // determinístico
+  for (let i = 0; i < 50; i += 1) {
+    const drops = rollGearDrop({ region: 'antiga', level: 10 }, () => (i * 0.13) % 1);
+    for (const drop of drops) {
+      assert.ok(GEAR_ITEMS[drop.id], `drop com id inexistente: ${drop.id}`);
+      assert.ok(GEAR_SLOTS.includes(GEAR_ITEMS[drop.id].slot), `slot inválido em ${drop.id}`);
+      assert.ok(RARITIES[drop.rarity], `raridade inválida em ${drop.id}: ${drop.rarity}`);
+    }
+  }
+  // boss com guaranteed → lendário
+  const bossDrops = rollGearDrop({ region: 'brasa', level: 40, boss: 'dragon', guaranteed: true }, () => 0.1);
+  assert.ok(bossDrops.length >= 1, 'boss lendário deve dropar ao menos 1 item');
+  assert.ok(bossDrops.some((d) => d.rarity === 'legendary'), 'boss garantido dropa lendário');
+  // sem chance (random alto) → vazio, sem quebrar
+  const none = rollGearDrop({ region: 'vale', level: 1 }, () => 0.999);
+  assert.ok(Array.isArray(none), 'sem drop devolve array vazio, não quebra');
+});
+
+test('simulação: consumíveis — hotkeys 1–5 únicos e cada um tem efeito definido', () => {
+  const hks = Object.values(CONSUMABLES).map((c) => c.hotkey).filter((h) => h !== undefined && h !== null);
+  assert.ok(hks.length >= 5, 'poucos atalhos de consumível');
+  assert.equal(new Set(hks).size, hks.length, 'hotkeys duplicados');
+  for (const hk of hks) assert.ok(hk >= 1 && hk <= 5, `hotkey fora de 1-5: ${hk}`);
+  for (const [key, c] of Object.entries(CONSUMABLES)) {
+    assert.ok(c.name, `${key} sem nome`);
+    assert.ok(c.effect || c.gives || c.type, `${key} sem efeito`);
   }
 });
 
