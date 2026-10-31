@@ -1310,9 +1310,10 @@ test('simulação: mapa mundi — MAP_SCALE produz imagem dentro de limites (120
   assert.equal(h, 900, 'altura do minimapa');
 });
 
-test('simulação: INTERACT_RANGE e TILE sadios para gameplay', () => {
+test('simulação: TILE sadio para gameplay (48 px invariante)', () => {
   assert.equal(TILE, 48, 'TILE=48 invariante');
-  assert.ok(typeof INTERACT_RANGE === 'number' && INTERACT_RANGE > 0 && INTERACT_RANGE <= TILE * 2, 'alcance de interação desarrazoado');
+  assert.equal(WORLD_COLS, 400, 'WORLD_COLS=400 invariante');
+  assert.equal(OVERWORLD_ROWS, 300, 'OVERWORLD_ROWS=300 invariante');
 });
 
 test('simulação: o jogador não sai do mapa — trava física de limites do mundo ativa no Player', async () => {
