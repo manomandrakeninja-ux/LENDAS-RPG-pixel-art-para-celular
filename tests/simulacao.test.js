@@ -2077,10 +2077,14 @@ test('simulação: FARM_CROPS — culturas têm custo, produção e tempo de cre
   }
 });
 
-test('simulação: repairCostFor/upgradeCostFor — custo nunca negativo e cresce', () => {
-  assert.ok(repairCostFor(100) >= 0, 'reparo não negativo');
-  assert.ok(repairCostFor(200) >= repairCostFor(100), 'reparo cresce com o dano');
-  assert.ok(upgradeCostFor({ coins: 10 }) >= 0, 'upgrade não negativo');
+test('simulação: repairCostFor/upgradeCostFor — custo em recursos, não negativo e cresce', () => {
+  const r100 = repairCostFor(100);
+  const r200 = repairCostFor(200);
+  assert.ok(r100 && typeof r100 === 'object', 'reparo devolve objeto de recursos');
+  const soma = (o) => Object.values(o).reduce((a, b) => a + (b ?? 0), 0);
+  assert.ok(soma(r100) >= 0 && soma(r200) >= soma(r100), 'reparo não negativo e cresce com o dano');
+  const up = upgradeCostFor({ iron: 2, coins: 10 });
+  assert.ok(up && typeof up === 'object' && soma(up) >= 0, 'upgrade devolve objeto não negativo');
   assert.ok(Object.keys(FORGE_SERVICES).length >= 2, 'poucos serviços de forja');
   assert.ok(AUTO_ANIMAL_PRODUCTS.every((p) => RESOURCE_TYPES[p]), 'produtos automáticos válidos');
 });
