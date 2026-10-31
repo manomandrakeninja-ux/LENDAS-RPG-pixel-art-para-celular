@@ -80,6 +80,12 @@
 - **D:** suite 49/49.
 - **Notas 0–100:** visual 79 · código 87 · estabilidade 95 · desempenho 83 · jogabilidade 88 · mobile 70 · originalidade 81.
 
+## Ciclo 17/30 — Iluminação: tocha do jogador à noite ✅ CONCLUÍDO
+
+- **C:** `getLightSources()` inclui o player (luz 'torch' raio 120, prioridade na lista de 24 luzes).
+- **D:** suite 49/49.
+- **Notas 0–100:** visual 83 · código 87 · estabilidade 95 · desempenho 83 · jogabilidade 89 · mobile 70 · originalidade 82.
+
 ## Ciclo 16/30 — QoL: caveira de morte no minimapa ✅ CONCLUÍDO
 
 - **C:** `deathMarker` no respawn → 💀 vermelho no minimapa; limpa ao chegar perto (160 px) — ajuda a recuperar o loot.

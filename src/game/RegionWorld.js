@@ -1117,6 +1117,9 @@ export class RegionWorld {
     const view = this.scene.cameras.main.worldView;
     const lights = [];
     const visible = (x, y) => x > view.x - 120 && x < view.right + 120 && y > view.y - 120 && y < view.bottom + 120;
+    // O jogador carrega uma tocha: halo quente própria (entra primeiro para não ser cortado pelo limite).
+    const player = this.scene.player;
+    if (player) lights.push({ x: player.x, y: player.y - 6, radius: 120, kind: 'torch' });
     for (const feature of this.features) {
       if (feature.type === 'dock' || !visible(feature.x, feature.y)) continue;
       // Entrada de caverna: braseiro na boca (halo quente que guia o jogador à noite).
