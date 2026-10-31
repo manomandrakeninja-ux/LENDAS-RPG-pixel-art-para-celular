@@ -1773,6 +1773,21 @@ test('simulação: dayNight — fases dentro do ciclo: dia, transição, noite',
   assert.ok(c.transitionDurationSeconds < c.dayDurationSeconds, 'transição menor que o dia');
 });
 
+test('simulação: CONSUMABLES — heal não negativo e hotkey dentro de 1-5', () => {
+  for (const [id, c] of Object.entries(CONSUMABLES)) {
+    assert.ok((c.heal ?? 0) >= 0, `consumível ${id} cura negativa`);
+    if (c.hotkey !== undefined) assert.ok(c.hotkey >= 1 && c.hotkey <= 5, `consumível ${id} hotkey inválida: ${c.hotkey}`);
+  }
+  // ao menos 3 consumíveis
+  assert.ok(Object.keys(CONSUMABLES).length >= 3, 'poucos consumíveis');
+});
+
+test('simulação: enemyXp — tier alto dá mais xp que tier baixo', () => {
+  const low = enemyXp(Object.keys(ENEMY_TYPES).find((k) => ENEMY_TYPES[k].tier === 1), false, 1);
+  const high = enemyXp(Object.keys(ENEMY_TYPES).find((k) => (ENEMY_TYPES[k].tier ?? 1) >= 8), true, 20);
+  assert.ok(high > low, `xp elite alto (${high}) deve superar tier 1 (${low})`);
+});
+
 test('simulação: o jogador não sai do mapa — trava física de limites do mundo ativa no Player', async () => {
   // terrainAt é infinita (gera terreno até fora do mapa), então a proteção real é física:
   // Player.js precisa chamar body.setCollideWorldBounds(true). Conferimos no código-fonte.

@@ -1682,7 +1682,12 @@ export class GameScene extends Phaser.Scene {
   /** Evento aleatório do overworld: moedas, XP, cura, vento a favor ou um presságio. */
   randomEvent() {
     const roll = Math.random();
-    if (roll < 0.000001 && this.timeState?.phase === 'night' && this.regionWorld?.currentRegion?.() === 'cinzas') {
+    if (roll < 0.0000008 && this.timeState?.phase === 'day' && this.regionWorld?.currentRegion?.() === 'esmeralda' && this.weather === 'clear') {
+      const xp = Phaser.Math.Between(10, 16);
+      this.grantExperience(xp);
+      this.effects.spawnDamage(this.player.x, this.player.y - 30, '💚', '#7af0b0');
+      this.ui.showMessage(`💚 Evento: fonte de vida da ilha Esmeralda! +${xp} XP`);
+    } else if (roll < 0.000001 && this.timeState?.phase === 'night' && this.regionWorld?.currentRegion?.() === 'cinzas') {
       const xp = Phaser.Math.Between(12, 20);
       this.grantExperience(xp);
       this.effects.spawnDamage(this.player.x, this.player.y - 30, '💀', '#d8d0c8');
