@@ -36,6 +36,8 @@ import { REBIRTH_CONFIG, rebirthMultiplier, canRebirth } from '../src/data/rebir
 import { PETS, PET_IDS, EGG_PET_IDS, SHOP_PET_IDS, MOUNT_LEVEL, MOUNT_SPEED, petAbility, mountUnlocked } from '../src/data/companions.js';
 import { CHEST_LOOT, CHEST_TIERS, rollMonsterChest } from '../src/data/monsterChests.js';
 import { MAX_ENHANCE, enhanceChance, enhanceCost, enhanceMultiplier, JEWELS, JEWEL_TYPES, SOCKET_SLOTS, socketCount, jewelValue, describeJewel, rollJewelDrop } from '../src/data/enhance.js';
+import { PERK_LEVELS, PERK_OFFER_SIZE, PERKS, respecCost, xpRequiredForLevel } from '../src/data/progression.js';
+import { VILLAGERS, VILLAGER_STATS } from '../src/data/villagers.js';
 // Validamos uso cruzado do atlas com regex em TODOS os fontes de src/ (RegionWorld importa Phaser).
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -1960,6 +1962,28 @@ test('simulação: jewels — tipos válidos dão valor positivo e socketCount r
   }
   const drop = rollJewelDrop({ elite: true }, () => 0.01);
   assert.ok(drop === null || Array.isArray(drop) || typeof drop === 'object', 'drop de joia válido');
+});
+
+test('simulação: progressão — xp por nível cresce e perk levels são crescentes', () => {
+  assert.ok(xpRequiredForLevel(2) > xpRequiredForLevel(1), 'xp nível 2 > nível 1');
+  assert.ok(xpRequiredForLevel(10) > xpRequiredForLevel(5), 'xp cresce com nível');
+  for (let i = 1; i < PERK_LEVELS.length; i += 1) {
+    assert.ok(PERK_LEVELS[i] > PERK_LEVELS[i - 1], 'perk levels estritamente crescentes');
+  }
+  assert.ok(PERK_OFFER_SIZE >= 2, 'oferece pelo menos 2 perks');
+  assert.ok(respecCost(1) >= 0 && respecCost(150) >= respecCost(1), 'respec não negativo e cresce');
+  assert.ok(Object.keys(PERKS).length >= 5, 'poucos perks');
+});
+
+test('simulação: villagers — aldeões têm stats positivos e IDs únicos', () => {
+  assert.ok(VILLAGERS.length >= 3, 'poucos aldeões');
+  const ids = new Set();
+  for (const v of VILLAGERS) {
+    assert.ok(v.id && !ids.has(v.id), `aldeão sem id ou duplicado: ${v.id}`);
+    ids.add(v.id);
+  }
+  assert.ok(VILLAGER_STATS.health > 0 && VILLAGER_STATS.attack > 0, 'stats de aldeão positivos');
+  assert.ok(VILLAGER_STATS.sight > VILLAGER_STATS.range, 'aldeão enxerga longe');
 });
 
 test('simulação: o jogador não sai do mapa — trava física de limites do mundo ativa no Player', async () => {
