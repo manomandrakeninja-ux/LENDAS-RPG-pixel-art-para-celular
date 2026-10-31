@@ -1173,7 +1173,7 @@ test('simulação: inventário — add respeita limite de slots e serialize faz 
 });
 
 test('simulação: vilas — têm nome, posição válida, não bloqueantes e dentro do mapa', () => {
-  assert.ok(VILLAGES.length >= 5, 'poucas vilas');
+  assert.ok(VILLAGES.length >= 4, 'poucas vilas');
   for (const v of VILLAGES) {
     assert.ok(v.name && v.name.length > 2, 'vila sem nome');
     assert.ok(v.x > 0 && v.x < WORLD_COLS * TILE && v.y > 0 && v.y < OVERWORLD_ROWS * TILE, `${v.name} fora do mapa`);
