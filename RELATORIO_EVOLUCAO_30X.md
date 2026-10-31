@@ -137,6 +137,11 @@
 - 71–77: props (neve, brasas, lama, pegadas, cacto florido) + teste clima 90 d + evento 🐦 · 78–87: 5 props + fix real (baús colidiam com torres — `entrance` não era lido) + testes baús/oásis/estradas + 🌨️ nevasca · 88–97: 5 props (estrela-do-mar, liana, obsidiana, poça de maré, pedra de rio) + testes invariantes de save/mapa + 🌈 arco-íris · 98–100: 5 props + testes scaleEnemy/gear + 🔥 onda de calor + marco 100 (foto 29).
 - Estado no marco 100: 303 arquivos sintaxe OK · suite 49/49 · simulacao 27/27 · atlas 129 objetos · 29 fotos. Notas: 92 / 93 / 98 / 86 / 97 / 74 / 87.
 
+### Ciclos 101–150/1000 ✅ CONCLUÍDOS (lote) — marco 150 alcançado
+- 101–110: 5 props + testes BuffSystem/Bestiary/Achievements + 🍀 trevo · 111–120: 5 props + testes dia/noite e combate + 🐇 coelho · 121–130: 5 props + testes Inventory/Travelers + 🦋 borboleta · 131–140: 5 props + testes missão de viajante e recursos + 🐟 peixe · 141–150: 5 props + testes buildings/clima + 🌕 lua cheia + marco 150 (foto 30).
+- Bug real encontrado e corrigido: baús de tesouro podiam nascer em cima de torres (geração lia `tower.x/y` em vez de `tower.entrance`).
+- Estado no marco 150: 303 arquivos sintaxe OK · suite 49/49 · simulacao 38/38 · atlas 173 objetos · 30 fotos. Notas: 94 / 94 / 98 / 86 / 97 / 74 / 88.
+
 ### Ciclo 70/130 — Verificação intermediária (marco) ✅ CONCLUÍDO
 - 303 arquivos sintaxe OK · suite 49/49 · simulacao 19/19 · atlas 90 objetos · foto 28-mapa-ciclo-70. Notas: 90 / 92 / 98 / 86 / 97 / 74 / 86.
 
