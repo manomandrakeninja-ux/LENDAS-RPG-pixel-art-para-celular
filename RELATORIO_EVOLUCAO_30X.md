@@ -80,6 +80,11 @@
 - **D:** suite 49/49.
 - **Notas 0–100:** visual 79 · código 87 · estabilidade 95 · desempenho 83 · jogabilidade 88 · mobile 70 · originalidade 81.
 
+## Ciclo 25/30 — Teste de conteúdo: biomas/regiões completos ✅ CONCLUÍDO
+
+- **D:** simulacao.test.js ganhou teste de conteúdo: terrenos do overworld presentes, recursos por terreno, spawns de monstros em todas as regiões (vale incluído). 7/7; suite 49/49.
+- **Notas 0–100:** visual 85 · código 89 · estabilidade 96 · desempenho 83 · jogabilidade 91 · mobile 73 · originalidade 83.
+
 ## Ciclo 24/30 — Feedback de perigo: vinheta vermelha com vida < 25% ✅ CONCLUÍDO
 
 - **C:** vinheta pulsante (CSS) no HUD; liga/desliga no update conforme vida; some no modo foto.

@@ -69,6 +69,11 @@
 - **D:** suite 49/49.
 - Notas 0–100: visual 79 · código 87 · estabilidade 95 · desempenho 83 · jogabilidade 88 · mobile 70 · originalidade 81.
 
+### Ciclo 25 — Teste de conteúdo: biomas com terreno+recursos e regiões com spawns
+- **D:** novo teste em simulacao.test.js: todos os terrenos de gameplay aparecem no mapa; todo terreno de recurso está no grid; toda região do overworld tem monstros em REGION_SPAWNS (vale usa VALLEY_EXTRA_SPAWNS).
+- **D:** simulacao 7/7; suite 49/49.
+- Notas 0–100: visual 85 · código 89 · estabilidade 96 · desempenho 83 · jogabilidade 91 · mobile 73 · originalidade 83.
+
 ### Ciclo 24 — Feedback: vinheta vermelha pulsante com vida < 25%
 - **C:** `#low-hp-vignette` (CSS pulse) liga no update quando vida < 25% do máx; some no modo foto ou com vida cheia/safe.
 - **D:** suite 49/49.

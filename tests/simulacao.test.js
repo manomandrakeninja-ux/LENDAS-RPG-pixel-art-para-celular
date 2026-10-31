@@ -4,8 +4,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  CAVES, DOCKS, OVERWORLD, T, TOWERS, TREASURE_SPOTS, VILLAGES, WORLD_COLS, OVERWORLD_ROWS, TILE,
-  buildTerrainGrid, dockPosition, regionAt, terrainAt
+  CAVES, DOCKS, OVERWORLD, REGION_INFO, REGION_SPAWNS, T, TOWERS, TREASURE_SPOTS, VILLAGES, WORLD_COLS, OVERWORLD_ROWS, TILE,
+  buildTerrainGrid, dockPosition, regionAt, terrainAt, TERRAIN_NODES, VALLEY_EXTRA_SPAWNS
 } from '../src/data/worldRegions.js';
 import { weatherAt } from '../src/data/weather.js';
 import { PlayerSkills } from '../src/data/skills.js';
@@ -117,6 +117,30 @@ test('simulação: mapa grande cabe na memória de grade e não vaza para fora',
   }
   assert.ok(regionAt(10, 10));
   assert.ok(dockPosition(DOCKS[0]));
+});
+
+test('simulação: conteúdo por bioma — todo terreno de overworld aparece no mapa e tem recursos possíveis', () => {
+  const grid = buildTerrainGrid();
+  const present = new Set();
+  for (let row = 0; row < OVERWORLD_ROWS; row += 1) {
+    for (let col = 0; col < WORLD_COLS; col += 1) present.add(grid.terrain[row * WORLD_COLS + col]);
+  }
+  // Terrenos de gameplay do overworld que devem existir no mapa.
+  for (const kind of [T.FOREST, T.SWAMP, T.SNOW, T.SAND, T.DUNE, T.BEACH, T.JUNGLE, T.ASH, T.ROAD, T.SEA]) {
+    assert.ok(present.has(kind), `terreno ${kind} não aparece no mapa`);
+  }
+  // Todo terreno com recursos possíveis tem tabela de nós; os de recurso têm nome no REGION_NODES.
+  for (const kind of Object.keys(TERRAIN_NODES).map(Number)) {
+    assert.ok(present.has(kind), `terreno de recurso ${kind} não aparece no mapa`);
+  }
+  // Toda região do overworld tem monstros para spawn (REGION_SPAWNS ou spawns extras do vale).
+  for (const key of Object.keys(REGION_INFO)) {
+    if (key === 'mar' || key === 'caverna') continue;
+    const spawns = key === 'vale'
+      ? [...VALLEY_EXTRA_SPAWNS.day, ...VALLEY_EXTRA_SPAWNS.night]
+      : [...(REGION_SPAWNS[key]?.day ?? []), ...(REGION_SPAWNS[key]?.night ?? [])];
+    assert.ok(spawns.length > 0, `região ${key} sem monstros para spawn`);
+  }
 });
 
 test('simulação: o jogador não sai do mapa — trava física de limites do mundo ativa no Player', async () => {
