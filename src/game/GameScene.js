@@ -1682,7 +1682,12 @@ export class GameScene extends Phaser.Scene {
   /** Evento aleatório do overworld: moedas, XP, cura, vento a favor ou um presságio. */
   randomEvent() {
     const roll = Math.random();
-    if (roll < 0.2 && this.timeState?.phase === 'day' && this.weather === 'dust') {
+    if (roll < 0.18 && this.timeState?.phase === 'night') {
+      const xp = Phaser.Math.Between(15, 30);
+      this.grantExperience(xp);
+      this.effects.spawnDamage(this.player.x, this.player.y - 30, '🍀', '#6ad86a');
+      this.ui.showMessage(`🍀 Evento: trevo da sorte na noite! +${xp} XP`);
+    } else if (roll < 0.2 && this.timeState?.phase === 'day' && this.weather === 'dust') {
       // Calor do deserto: stamina recupera mais devagar por 30 s (avisado na mensagem).
       this.eventSlowRegenUntil = this.time.now + 30000;
       this.effects.spawnDamage(this.player.x, this.player.y - 30, '🔥', '#ffab6b');

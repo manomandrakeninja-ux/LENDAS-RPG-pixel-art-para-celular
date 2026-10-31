@@ -17,6 +17,9 @@ import { CONSUMABLES, useConsumable } from '../src/data/consumables.js';
 import { DEFAULT_KEYBINDS, KEY_ACTIONS, isBindableCode, isReservedCode, normalizeKeybinds, rebind, actionForCode, loadKeybinds, saveKeybinds, keyLabel, keyCodeFor } from '../src/game/Keybinds.js';
 import { scaleEnemy } from '../src/data/enemyScaling.js';
 import { GEAR_ITEMS, RARITIES } from '../src/data/gear.js';
+import { BuffSystem, BUFF_DEFINITIONS } from '../src/game/BuffSystem.js';
+import { Bestiary } from '../src/game/Bestiary.js';
+import { Achievements, ACHIEVEMENTS } from '../src/data/achievements.js';
 import { PlayerSkills } from '../src/data/skills.js';
 import { migrateSave, createSaveEnvelope, SAVE_VERSION } from '../src/game/save.js';
 
@@ -503,6 +506,60 @@ test('simulação: itens de equipamento sadios — slots válidos, nível/preço
     }
     // Se tem raridade explícita, precisa existir; itens de boss (boss:) dispensam.
     if (item.rarity) assert.ok(RARITIES[item.rarity], `${id} raridade inválida: ${item.rarity}`);
+  }
+});
+
+test('simulação: BuffSystem — aplica, expira com o tempo e sobrevive a save antigo sem o campo', () => {
+  const buffs = new BuffSystem(undefined); // save antigo sem buffs
+  assert.deepEqual(buffs.list(), []);
+  buffs.apply('wellRested', { durationMs: 5000 });
+  assert.equal(buffs.has('wellRested'), true);
+  const fx = buffs.effects; // getter agregado
+  assert.ok((fx.attackPercent ?? 0) > 0, 'buff dá bônus de ataque');
+  buffs.update(6000); // passou de 5 s
+  assert.equal(buffs.has('wellRested'), false, 'buff expira');
+  assert.equal(buffs.effects.attackPercent ?? 0, 0, 'sem buff = sem bônus');
+  // buff desconhecido não quebra
+  assert.equal(buffs.apply('naoExiste', { durationMs: 1000 }), false);
+  assert.equal(buffs.has('naoExiste'), false);
+  // serialize → novo BuffSystem continua de onde parou
+  buffs.apply('wellRested', { durationMs: 60000 });
+  const reloaded = new BuffSystem(buffs.serialize());
+  assert.equal(reloaded.has('wellRested'), true);
+  // Toda definição tem nome e ao menos um efeito
+  for (const [id, def] of Object.entries(BUFF_DEFINITIONS)) {
+    assert.ok(def.name && Object.keys(def.effects ?? {}).length > 0, `buff ${id} mal definido`);
+  }
+});
+
+test('simulação: Bestiary — registra abates, conta progresso e persiste no save', () => {
+  const bestiary = new Bestiary(undefined);
+  assert.equal(bestiary.known('slime'), false);
+  bestiary.recordKill('slime');
+  bestiary.recordKill('slime');
+  bestiary.recordKill('wolf');
+  assert.equal(bestiary.known('slime'), true);
+  assert.equal(bestiary.kills.slime, 2, 'conta 2 abates de slime');
+  const reloaded = new Bestiary(bestiary.serialize());
+  assert.equal(reloaded.kills.slime, 2, 'persiste no save');
+  assert.equal(reloaded.kills.ghost ?? 0, 0);
+  // Todos os tipos de inimigo podem ser registrados no bestiário
+  for (const id of Object.keys(ENEMY_TYPES)) { bestiary.recordKill(id); assert.equal(bestiary.known(id), true, `bestiário cobre ${id}`); }
+});
+
+test('simulação: Achievements — conta stats, completa ao bater a meta e persiste', () => {
+  const ach = new Achievements(undefined);
+  ach.note('kills', 1);
+  const first = ACHIEVEMENTS.find((a) => a.stat === 'kills' && a.goal === 1);
+  const unlocked = ach.check();
+  assert.ok(unlocked.some((u) => u.id === first.id), 'desbloqueou "Matar 1 monstros"');
+  assert.equal(ach.value('kills'), 1);
+  const reloaded = new Achievements(ach.serialize());
+  assert.equal(reloaded.value('kills'), 1, 'persiste');
+  assert.equal(reloaded.unlocked[first.id], true, 'save carregado não perde conquista');
+  // Todas as conquistas têm id, stat, goal, name e title
+  for (const a of ACHIEVEMENTS) {
+    assert.ok(a.id && a.stat && (a.goal === 'all' || a.goal > 0) && a.name && a.title, `conquista mal formada: ${JSON.stringify(a)}`);
   }
 });
 

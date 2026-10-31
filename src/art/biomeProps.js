@@ -858,6 +858,60 @@ function flowerTuft(seed = 402) {
   return finish(p, { outline: 0.3 });
 }
 
+/** Cogumelo azul do brejo. */
+function blueMushroom(seed = 797) {
+  const p = new Painter(10, 10, { transparent: true });
+  p.rect(4, 6, 2, 3, '#c8d8e0');
+  p.sphere(5, 5, 3.4, '#3a5a9a', '#5a7ac0');
+  p.set(4, 4, '#e8f4ff');
+  p.set(6, 3, '#e8f4ff');
+  return finish(p, { outline: 0.35 });
+}
+
+/** Flor de brasa (laranja vivo) nas cinzas. */
+function emberFlower(seed = 809) {
+  const p = new Painter(10, 12, { transparent: true });
+  p.rect(4, 6, 2, 5, '#4a5a3a');
+  for (const [dx, dy] of [[-3, -1], [3, -1], [-2, 2], [2, 2], [0, -4]]) p.set(5 + dx, 5 + dy, '#ff7020');
+  p.set(5, 5, '#ffd050');
+  return finish(p, { outline: 0.3 });
+}
+
+/** Grama alta dourada (duna). */
+function tallGrass(seed = 811) {
+  const p = new Painter(16, 14, { transparent: true });
+  const g = ['#a8a040', '#c8c860'];
+  for (const [bx, h] of [[2, 12], [5, 10], [8, 13], [11, 9], [14, 11]]) {
+    for (let y = 13; y > 13 - h; y -= 2) p.rect(bx, y, 1, 2, shade([g[0], g[1]], 0.5));
+  }
+  p.set(8, 1, '#e0e890');
+  return finish(p, { outline: 0.3 });
+}
+
+/** Âncora quebrada na praia. */
+function brokenAnchor(seed = 821) {
+  const p = new Painter(16, 16, { transparent: true });
+  const iron = ['#5a5e66', '#3a3e46'];
+  p.rect(7, 2, 2, 10, shade([iron[0], iron[1]], 0.5));
+  p.rect(3, 10, 10, 2, iron[0]);
+  p.rect(2, 8, 2, 4, iron[1]);
+  // um braço quebrado
+  p.rect(12, 7, 2, 3, iron[1]);
+  p.set(7, 1, '#8a9098');
+  return finish(p, { outline: 0.35 });
+}
+
+/** Raiz de selva retorcida. */
+function jungleRoot(seed = 827) {
+  const p = new Painter(20, 10, { transparent: true });
+  const bark = ['#4a3a20', '#5e4c30', '#3a2c18'];
+  p.rect(2, 6, 7, 3, shade([bark[0], bark[1]], 0.5));
+  p.rect(9, 4, 5, 3, bark[1]);
+  p.rect(14, 6, 4, 2, bark[2]);
+  p.set(11, 3, bark[0]);
+  return finish(p, { outline: 0.35 });
+}
+
 /** Pedrinha cinza na duna. */
 function smallRock(seed = 761) {
   const p = new Painter(12, 8, { transparent: true });
@@ -1301,6 +1355,15 @@ const PAINTED_ENTRIES = [
   { name: 'dune-wave-1', draw: () => duneWave(783) },
   { name: 'yellow-flower-0', draw: () => yellowFlower(787) },
   { name: 'yellow-flower-1', draw: () => yellowFlower(793) },
+  { name: 'blue-mushroom-0', draw: () => blueMushroom(797) },
+  { name: 'blue-mushroom-1', draw: () => blueMushroom(803) },
+  { name: 'ember-flower-0', draw: () => emberFlower(809) },
+  { name: 'ember-flower-1', draw: () => emberFlower(815) },
+  { name: 'tall-grass-0', draw: () => tallGrass(811) },
+  { name: 'tall-grass-1', draw: () => tallGrass(817) },
+  { name: 'broken-anchor', draw: () => brokenAnchor(821) },
+  { name: 'jungle-root-0', draw: () => jungleRoot(827) },
+  { name: 'jungle-root-1', draw: () => jungleRoot(829) },
   { name: 'shipwreck', draw: shipwreck },
   { name: 'sea-rock', draw: seaRock },
   { name: 'charred-tree', draw: () => deadTree(['#0c0808', '#1a1010', '#2a1a16', '#3a2620', '#4a3228'], true) },
