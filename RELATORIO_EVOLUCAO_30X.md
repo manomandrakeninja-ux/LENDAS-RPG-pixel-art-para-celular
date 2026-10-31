@@ -166,6 +166,10 @@
 - 501–510: props + testes combat/viajantes + 🦋 borboleta · 511–520: props + testes save-v1/spawns + 🍄 cogumelo lunar · 521–530: props + testes skills/sets + 🌵 cacto · 531–540: props + testes baús/estradas + ❄️ nevasca · 541–550: props + testes cavernas/clima + 🐸 sapo da chuva · 551–560: props + testes scaleEnemy/levelInRange + 🔥 brasa viva · 561–570: props + testes inventário/viajantes + 🏺 ânfora · 571–580: props + testes construções/dayNight + 💀 caveira · 581–590: props + testes consumíveis/enemyXp + 💚 fonte de vida · 591–600: props + testes achievements/bestiário + 🌌 aurora + marco 600 (foto 36).
 - Estado no marco 600: 303 arquivos sintaxe OK · suite 49/49 · simulacao 123/123 · atlas 511 objetos · 36 fotos · 45 dicas · 25+ eventos. Notas: 98 / 97 / 98 / 86 / 98 / 74 / 92.
 
+### Ciclos 601–700/1000 ✅ CONCLUÍDOS — marco 700 alcançado
+- 601–610: props lilás + testes resource-nodes/spawn + 🍃 brisa do vale · 611–620: props coral + testes mercado/spawning + 🐚 concha · 621–630: props turquesa + testes coinDrop/baú + 🕸️ teia · 631–640: props verde-água + testes raids/rebirth + 🦂 escorpião · 641–650: props dourado + testes pets/baús + 🦉 coruja · 651–660: props rosa + testes enhance/joias + 🪷 lótus · 661–670: props laranja + testes progressão/aldeões + 🍄 chuva · 671–680: props azul-céu + testes boss/story + ❄️ nevasca · 681–690: **spec-kit estreado** (specs/lote-681-690.md) + props limão + testes sunShadow/harvest + 🌟 estrela-do-mar + **UI splash pelo ui-ux-pro-max** (contraste/fontes) + metodologia-referencias.md · 691–700: spec lote-691-700 + props menta + testes weather/dropScale + 🌺 flor exótica + marco 700 (foto 37).
+- Estado no marco 700: 303 arquivos sintaxe OK · suite 49/49 · simulacao 143/143 · atlas 581 objetos · 37 fotos · 50 dicas · specs por lote em `experimento-30x/specs/`. Notas: 98 / 97 / 98 / 86 / 98 / 74 / 92.
+
 ### Ciclo 70/130 — Verificação intermediária (marco) ✅ CONCLUÍDO
 - 303 arquivos sintaxe OK · suite 49/49 · simulacao 19/19 · atlas 90 objetos · foto 28-mapa-ciclo-70. Notas: 90 / 92 / 98 / 86 / 97 / 74 / 86.
 

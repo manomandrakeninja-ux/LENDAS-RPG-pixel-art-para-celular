@@ -317,6 +317,10 @@
 - Spec `specs/lote-681-690.md` escrita antes do código · 681–685: props verde-limão (brejo/praia/gelo/duna/floresta, atlas 574) · 686: teste sunShadow · 687: teste HARVEST_STRUCTURE_TYPES · 688: evento 🌟 estrela-do-mar na praia à noite (+8–14 moedas) · 689: dica splash · 690: **UI do splash segundo ui-ux-pro-max** (status 12px, versão 10px, dica com fundo/contraste) + `metodologia-referencias.md` documentando os repositórios em uso.
 - Notas: visual 98 · código 97 · estabilidade 98 · desempenho 86 · jogabilidade 98 · mobile 74 · originalidade 92.
 
+### Ciclos 691–700 ✅ (lote, com spec) — MARCO 700
+- Spec `specs/lote-691-700.md` · 691–695: props menta clara (brejo/praia/gelo/duna/floresta, atlas 581) · 696: teste weather (climas/ícones) · 697: teste dropScale · 698: evento 🌺 flor exótica na selva de dia (+10–18 XP) · 699: dica splash · 700: marco (foto 37, 303 sintaxe OK, 143/143, 49/49).
+- Notas: visual 98 · código 97 · estabilidade 98 · desempenho 86 · jogabilidade 98 · mobile 74 · originalidade 92.
+
 ### Ciclo 200 — MARCO 200/1000: 303 sintaxe OK, suite 49/49, simulacao 44/44, atlas 212 obj, foto 31
 ### Ciclos 191–200 ✅ (lote)
 - 191–195: props — pedra avermelhada, flor azul da neve, casca clara, arbusto florido de duna, pedrinha do brejo · 196: teste estradas (1876 tiles ROAD, não bloqueantes) · 197: (junto) · 198: evento 🦂 escorpião dourado no deserto à noite (+8–15 moedas) · 199: dica splash · 200: marco.
