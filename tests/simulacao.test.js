@@ -1687,7 +1687,8 @@ test('simulação: roads — nomes únicos e pontos dentro do mundo', () => {
     assert.ok(!names.has(road.name), `estrada duplicada: ${road.name}`);
     names.add(road.name);
     for (const p of road.points ?? []) {
-      assert.ok(p.x >= 0 && p.x <= WORLD_COLS * TILE && p.y >= 0 && p.y <= OVERWORLD_ROWS * TILE, `ponto da estrada ${road.name} fora do mundo`);
+      const [px, py] = Array.isArray(p) ? p : [p.x, p.y];
+      assert.ok(px >= 0 && px <= WORLD_COLS * TILE && py >= 0 && py <= OVERWORLD_ROWS * TILE, `ponto da estrada ${road.name} fora do mundo`);
     }
     assert.ok((road.points?.length ?? 0) >= 2, `estrada ${road.name} com poucos pontos`);
   }
