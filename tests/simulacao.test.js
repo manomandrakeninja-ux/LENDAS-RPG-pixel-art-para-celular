@@ -2069,10 +2069,11 @@ test('simulação: FARM_CROPS — culturas têm custo, produção e tempo de cre
   const crops = Object.keys(FARM_CROPS);
   assert.ok(crops.length >= 3, 'poucas culturas');
   for (const [id, crop] of Object.entries(FARM_CROPS)) {
-    assert.ok(crop.label, `cultura ${id} sem label`);
-    assert.ok(crop.seed && RESOURCE_TYPES[crop.seed], `cultura ${id} sem semente válida`);
-    assert.ok(crop.yield && RESOURCE_TYPES[crop.yield], `cultura ${id} sem produto válido`);
-    assert.ok((crop.growSeconds ?? 0) > 0, `cultura ${id} cresce instantaneamente?`);
+    assert.ok(crop.name, `cultura ${id} sem nome`);
+    assert.ok(crop.cost && Object.keys(crop.cost).length > 0, `cultura ${id} sem custo`);
+    assert.ok(crop.yield && Object.keys(crop.yield).length > 0, `cultura ${id} sem produção`);
+    for (const res of Object.keys(crop.yield)) assert.ok(RESOURCE_TYPES[res], `cultura ${id} produz recurso inválido: ${res}`);
+    assert.ok((crop.seconds ?? 0) > 0, `cultura ${id} cresce instantaneamente?`);
   }
 });
 
