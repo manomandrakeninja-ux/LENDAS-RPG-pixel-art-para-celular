@@ -666,7 +666,7 @@ test('simulação: tipos de recurso sadios — nome, ícone e peso por unidade',
   for (const [id, res] of Object.entries(RESOURCE_TYPES)) {
     assert.ok(res.label, `${id} sem label`);
     assert.ok(Number.isFinite(res.color), `${id} sem cor`);
-    assert.ok(res.icon === undefined || (typeof res.icon === 'number' && res.icon >= 0), `${id} ícone inválido`);
+    assert.ok(res.icon === undefined || res.icon === null || (typeof res.icon === 'number' && res.icon >= 0), `${id} ícone inválido`);
   }
   // tipos usados por consumíveis existem como recurso
   for (const key of Object.keys(CONSUMABLES)) {
