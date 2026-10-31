@@ -1074,6 +1074,30 @@ test('simulação: economia — addCoins/spendCoins nunca deixa negativo e regis
   assert.equal(e.coins, 30, 'saldo não fica negativo');
 });
 
+test('simulação: escalonamento de inimigos — enemyXp cresce com nível e elite multiplica', () => {
+  const base5 = enemyXp('goblin', false, 5);
+  const base20 = enemyXp('goblin', false, 20);
+  assert.ok(base20 > base5, 'XP deve crescer com o nível');
+  const elite = enemyXp('goblin', true, 5);
+  assert.ok(elite > base5, 'elite dá mais XP');
+  // scaling linear-ish: dobra nível não dobra necessariamente, mas cresce monotonicamente
+  let prev = -1;
+  for (let lvl = 1; lvl <= 50; lvl += 1) {
+    const xp = enemyXp('wolf', false, lvl);
+    assert.ok(xp > prev, `XP não decresce no nível ${lvl}`);
+    prev = xp;
+  }
+});
+
+test('simulação: combate — config de combo/shout/dodge sadia e dentro de limites', () => {
+  assert.ok(COMBAT_CONFIG.combo.length >= 2 && COMBAT_CONFIG.combo.length <= 6, 'combo length desarrazoado');
+  assert.ok(COMBAT_CONFIG.combo.windowMs >= 300 && COMBAT_CONFIG.combo.windowMs <= 3000, 'janela de combo desarrazoada');
+  assert.ok(COMBAT_CONFIG.combo.finisherMultiplier >= 1.2, 'finisher deve multiplicar dano');
+  assert.ok(COMBAT_CONFIG.dodgeInvulnerabilityMs > 0 && COMBAT_CONFIG.dodgeInvulnerabilityMs <= 1000, 'i-frames desarrazoados');
+  assert.ok(COMBAT_CONFIG.shout.cooldownMs >= 1000, 'grito com cooldown muito curto');
+  assert.ok(COMBAT_CONFIG.basicAttackRange > 0 && COMBAT_CONFIG.basicAttackCooldownMs > 0, 'ataque básico mal configurado');
+});
+
 test('simulação: o jogador não sai do mapa — trava física de limites do mundo ativa no Player', async () => {
   // terrainAt é infinita (gera terreno até fora do mapa), então a proteção real é física:
   // Player.js precisa chamar body.setCollideWorldBounds(true). Conferimos no código-fonte.

@@ -858,6 +858,50 @@ function flowerTuft(seed = 402) {
   return finish(p, { outline: 0.3 });
 }
 
+/** Pedrinha rosa de duna. */
+function pinkDunePebble(seed = 1447) {
+  const p = new Painter(10, 7, { transparent: true });
+  p.sphere(5, 4, 3.4, '#e0b0a0', '#f4d0c0');
+  p.set(4, 3, '#ffe8dc');
+  return finish(p, { outline: 0.35 });
+}
+
+/** Flor do brejo azul. */
+function blueSwampFlower(seed = 1451) {
+  const p = new Painter(10, 12, { transparent: true });
+  p.rect(4, 6, 2, 5, '#4a6a34');
+  for (const [dx, dy] of [[-3, -2], [3, -2], [-2, 2], [2, 2], [0, -4]]) p.set(5 + dx, 5 + dy, '#60a8e8');
+  p.set(5, 5, '#f0f8ff');
+  return finish(p, { outline: 0.3 });
+}
+
+/** Pedra de praia verde-clara. */
+function paleGreenStone(seed = 1457) {
+  const p = new Painter(14, 9, { transparent: true });
+  p.sphere(7, 5, 5, '#8aa890', '#aac4b0');
+  p.set(5, 3, '#cfe4d8');
+  return finish(p, { outline: 0.35 });
+}
+
+/** Tronco de cinza (madeira morta). */
+function ashLog(seed = 1461) {
+  const p = new Painter(24, 9, { transparent: true });
+  const wood = ['#4a4248', '#5e565c'];
+  p.rect(2, 3, 20, 4, shade([wood[0], wood[1]], 0.5));
+  p.set(2, 3, '#332e32');
+  p.set(10, 4, '#6e666c');
+  return finish(p, { outline: 0.35 });
+}
+
+/** Flor da floresta roxa clara. */
+function lightPurpleFlower(seed = 1467) {
+  const p = new Painter(10, 12, { transparent: true });
+  p.rect(4, 6, 2, 5, '#4a6a34');
+  for (const [dx, dy] of [[-3, -2], [3, -2], [-2, 2], [2, 2], [0, -4]]) p.set(5 + dx, 5 + dy, '#c8a0f0');
+  p.set(5, 5, '#fff8e0');
+  return finish(p, { outline: 0.3 });
+}
+
 /** Flor da selva amarela. */
 function yellowJungleFlower(seed = 1417) {
   const p = new Painter(10, 12, { transparent: true });
@@ -2322,6 +2366,13 @@ const PAINTED_ENTRIES = [
   { name: 'light-beach-bark', draw: () => lightBeachBark(1431) },
   { name: 'white-ash-flower-0', draw: () => whiteAshFlower(1437) },
   { name: 'white-ash-flower-1', draw: () => whiteAshFlower(1439) },
+  { name: 'pink-dune-pebble', draw: () => pinkDunePebble(1447) },
+  { name: 'blue-swamp-flower-0', draw: () => blueSwampFlower(1451) },
+  { name: 'blue-swamp-flower-1', draw: () => blueSwampFlower(1453) },
+  { name: 'pale-green-stone', draw: () => paleGreenStone(1457) },
+  { name: 'ash-log', draw: () => ashLog(1461) },
+  { name: 'light-purple-flower-0', draw: () => lightPurpleFlower(1467) },
+  { name: 'light-purple-flower-1', draw: () => lightPurpleFlower(1469) },
   { name: 'shipwreck', draw: shipwreck },
   { name: 'sea-rock', draw: seaRock },
   { name: 'charred-tree', draw: () => deadTree(['#0c0808', '#1a1010', '#2a1a16', '#3a2620', '#4a3228'], true) },
