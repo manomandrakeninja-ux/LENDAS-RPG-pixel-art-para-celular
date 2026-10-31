@@ -26,6 +26,8 @@ import { Achievements, ACHIEVEMENTS } from '../src/data/achievements.js';
 import { DAY_NIGHT_CONFIG, DAY_NIGHT_TOTAL_SECONDS } from '../src/data/dayNight.js';
 import { MISSIONS } from '../src/data/campaign.js';
 import { CRAFT_RECIPES } from '../src/data/craftRecipes.js';
+import { RESOURCE_NODES } from '../src/data/resources.js';
+import { SPAWN_ZONES } from '../src/data/biomes.js';
 // Validamos uso cruzado do atlas com regex em TODOS os fontes de src/ (RegionWorld importa Phaser).
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -1808,6 +1810,25 @@ test('simulação: bestiário — serialize preserva kills e known', () => {
   const b2 = new Bestiary();
   b2.deserialize?.(data) ?? Object.assign(b2.kills, data.kills ?? data);
   assert.equal(b2.kills.wolf, 2, 'serialize preserva kills');
+});
+
+test('simulação: RESOURCE_NODES — nós de recurso têm recurso válido e quantidade sadia', () => {
+  const ids = Object.keys(RESOURCE_NODES);
+  assert.ok(ids.length >= 10, 'poucos nós de recurso');
+  for (const [id, node] of Object.entries(RESOURCE_NODES)) {
+    const res = node.resource ?? node.type ?? node.drop;
+    if (res) assert.ok(RESOURCE_TYPES[res], `nó ${id} recurso inválido: ${res}`);
+    if (node.amount !== undefined) assert.ok(node.amount > 0, `nó ${id} quantidade inválida`);
+  }
+});
+
+test('simulação: SPAWN_ZONES — zonas têm bioma válido e raio positivo', () => {
+  const names = Object.keys(SPAWN_ZONES);
+  assert.ok(names.length >= 3, 'poucas zonas de spawn');
+  for (const [name, zone] of Object.entries(SPAWN_ZONES)) {
+    assert.ok(typeof zone === 'object', `zona ${name} inválida`);
+    if (zone.radius !== undefined) assert.ok(zone.radius > 0, `zona ${name} raio inválido`);
+  }
 });
 
 test('simulação: o jogador não sai do mapa — trava física de limites do mundo ativa no Player', async () => {

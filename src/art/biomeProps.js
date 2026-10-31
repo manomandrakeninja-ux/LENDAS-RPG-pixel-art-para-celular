@@ -1123,6 +1123,49 @@ function paleGreenForestFlower(seed = 2367) {
   return finish(p, { outline: 0.3 });
 }
 
+/** Flor lilás clara do brejo. */
+function paleLilacSwampFlower(seed = 2377) {
+  const p = new Painter(10, 12, { transparent: true });
+  p.rect(4, 6, 2, 5, '#4a6a34');
+  for (const [dx, dy] of [[-3, -2], [3, -2], [-2, 2], [2, 2], [0, -4]]) p.set(5 + dx, 5 + dy, '#d8b8f0');
+  p.set(5, 5, '#fbf4ff');
+  return finish(p, { outline: 0.3 });
+}
+
+/** Pedrinha lilás clara de praia. */
+function paleLilacBeachPebble(seed = 2381) {
+  const p = new Painter(10, 7, { transparent: true });
+  p.sphere(5, 4, 3.4, '#c0b0d8', '#dcd0ec');
+  p.set(4, 3, '#f4ecfa');
+  return finish(p, { outline: 0.35 });
+}
+
+/** Gelo lilás claro (neve). */
+function paleLilacIce(seed = 2387) {
+  const p = new Painter(14, 9, { transparent: true });
+  p.sphere(7, 5, 5, '#d0c0e8', '#e8dcf4');
+  p.set(5, 3, '#ffffff');
+  return finish(p, { outline: 0.35 });
+}
+
+/** Tronco lilás de duna (madeira clara tingida). */
+function lilacDuneLog(seed = 2391) {
+  const p = new Painter(26, 10, { transparent: true });
+  const wood = ['#a898b8', '#c0b4d0'];
+  p.rect(2, 4, 22, 4, shade([wood[0], wood[1]], 0.5));
+  p.set(2, 4, '#887aa0'); p.set(23, 7, '#887aa0');
+  return finish(p, { outline: 0.35 });
+}
+
+/** Flor lilás clara da floresta. */
+function paleLilacForestFlower(seed = 2397) {
+  const p = new Painter(10, 12, { transparent: true });
+  p.rect(4, 6, 2, 5, '#4a6a34');
+  for (const [dx, dy] of [[-3, -2], [3, -2], [-2, 2], [2, 2], [0, -4]]) p.set(5 + dx, 5 + dy, '#d8b8f0');
+  p.set(5, 5, '#fbf4ff');
+  return finish(p, { outline: 0.3 });
+}
+
 function seaGreenSwampFlower(seed = 2197) {
   const p = new Painter(10, 12, { transparent: true });
   p.rect(4, 6, 2, 5, '#4a6a34');
@@ -3917,6 +3960,13 @@ const PAINTED_ENTRIES = [
   { name: 'pale-swamp-log', draw: () => paleSwampLog(2361) },
   { name: 'pale-green-forest-flower-0', draw: () => paleGreenForestFlower(2367) },
   { name: 'pale-green-forest-flower-1', draw: () => paleGreenForestFlower(2369) },
+  { name: 'pale-lilac-swamp-flower-0', draw: () => paleLilacSwampFlower(2377) },
+  { name: 'pale-lilac-swamp-flower-1', draw: () => paleLilacSwampFlower(2379) },
+  { name: 'pale-lilac-beach-pebble', draw: () => paleLilacBeachPebble(2381) },
+  { name: 'pale-lilac-ice', draw: () => paleLilacIce(2387) },
+  { name: 'lilac-dune-log', draw: () => lilacDuneLog(2391) },
+  { name: 'pale-lilac-forest-flower-0', draw: () => paleLilacForestFlower(2397) },
+  { name: 'pale-lilac-forest-flower-1', draw: () => paleLilacForestFlower(2399) },
   { name: 'shipwreck', draw: shipwreck },
   { name: 'sea-rock', draw: seaRock },
   { name: 'charred-tree', draw: () => deadTree(['#0c0808', '#1a1010', '#2a1a16', '#3a2620', '#4a3228'], true) },
