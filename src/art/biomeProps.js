@@ -903,6 +903,51 @@ function darkRoundDuneRock(seed = 1647) {
 }
 
 /** Flor do brejo verde-água. */
+/** Flor da duna verde clara. */
+function lightGreenDuneFlower(seed = 2227) {
+  const p = new Painter(10, 12, { transparent: true });
+  p.rect(4, 6, 2, 5, '#9a8a5a');
+  for (const [dx, dy] of [[-3, -2], [3, -2], [-2, 2], [2, 2], [0, -4]]) p.set(5 + dx, 5 + dy, '#a8e080');
+  p.set(5, 5, '#f4fff0');
+  return finish(p, { outline: 0.3 });
+}
+
+/** Pedra de praia verde-água escura. */
+function darkSeaGreenBeachStone(seed = 2231) {
+  const p = new Painter(14, 9, { transparent: true });
+  p.sphere(7, 5, 5, '#5a8a7e', '#78a89c');
+  p.set(5, 3, '#a8d0c4');
+  return finish(p, { outline: 0.35 });
+}
+
+/** Neve com flor verde clara (neve). */
+function lightGreenFloweredSnow(seed = 2237) {
+  const p = new Painter(16, 9, { transparent: true });
+  p.sphere(8, 6, 5.5, '#dceaf6', '#f4faff');
+  p.set(8, 3, '#a8e080');
+  p.set(6, 5, '#a8e080');
+  p.set(10, 5, '#ffffff');
+  return finish(p, { outline: 0.3 });
+}
+
+/** Cogumelo verde-água escuro (brejo). */
+function darkSeaGreenSwampShroom(seed = 2241) {
+  const p = new Painter(10, 10, { transparent: true });
+  p.rect(4, 6, 2, 3, '#d8e4de');
+  p.sphere(5, 5, 3.2, '#3a8a7c', '#58a89a');
+  p.set(4, 4, '#e8f6f2');
+  return finish(p, { outline: 0.35 });
+}
+
+/** Flor de selva verde clara. */
+function lightGreenJungleFlower(seed = 2247) {
+  const p = new Painter(10, 12, { transparent: true });
+  p.rect(4, 6, 2, 5, '#2e5a24');
+  for (const [dx, dy] of [[-3, -2], [3, -2], [-2, 2], [2, 2], [0, -4]]) p.set(5 + dx, 5 + dy, '#a8e080');
+  p.set(5, 5, '#f4fff0');
+  return finish(p, { outline: 0.3 });
+}
+
 function seaGreenSwampFlower(seed = 2197) {
   const p = new Painter(10, 12, { transparent: true });
   p.rect(4, 6, 2, 5, '#4a6a34');
