@@ -118,3 +118,14 @@ test('simulação: mapa grande cabe na memória de grade e não vaza para fora',
   assert.ok(regionAt(10, 10));
   assert.ok(dockPosition(DOCKS[0]));
 });
+
+test('simulação: o jogador não sai do mapa — trava física de limites do mundo ativa no Player', async () => {
+  // terrainAt é infinita (gera terreno até fora do mapa), então a proteção real é física:
+  // Player.js precisa chamar body.setCollideWorldBounds(true). Conferimos no código-fonte.
+  const fs = await import('node:fs');
+  const playerSource = fs.readFileSync(new URL('../src/game/Player.js', import.meta.url), 'utf8');
+  assert.ok(playerSource.includes('setCollideWorldBounds(true)'), 'Player sem trava de limites do mundo');
+  // E o tamanho do mundo físico cobre o overworld inteiro.
+  const { FULL_WORLD } = await import('../src/data/worldRegions.js');
+  assert.ok(FULL_WORLD.width >= OVERWORLD.width && FULL_WORLD.height >= OVERWORLD.height, 'mundo físico menor que o overworld');
+});

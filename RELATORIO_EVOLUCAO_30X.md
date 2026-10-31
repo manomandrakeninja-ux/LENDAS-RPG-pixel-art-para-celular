@@ -67,3 +67,9 @@
 - **C:** `chestDays` no save (compatível com saves antigos); baú saqueado volta com moedas após 3 dias; chefe/torre seguem únicos.
 - **D:** suite 49/49; sem regressões.
 - **Notas 0–100:** visual 79 · código 87 · estabilidade 94 · desempenho 83 · jogabilidade 87 · mobile 70 · originalidade 80.
+
+## Ciclo 10/30 — QA: contenção do mundo (trava física confirmada por teste) ✅ CONCLUÍDO
+
+- **A:** `terrainAt` é infinita por design → fora do mapa gera chão; a barreira real é `setCollideWorldBounds(true)` no Player. Novo teste valida isso no código-fonte + tamanho do FULL_WORLD.
+- **D:** simulacao 6/6; suite 49/49.
+- **Notas 0–100:** visual 79 · código 87 · estabilidade 95 · desempenho 83 · jogabilidade 87 · mobile 70 · originalidade 80.

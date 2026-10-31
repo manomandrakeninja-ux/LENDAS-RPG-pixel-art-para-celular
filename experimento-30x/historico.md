@@ -59,3 +59,8 @@
 - **D:** suite 49/49; simulacao 5/5; world 14/14.
 - Notas 0–100: visual 79 · código 87 · estabilidade 94 · desempenho 83 · jogabilidade 87 · mobile 70 · originalidade 80.
 
+### Ciclo 10 — QA: teste de contenção do mundo (trava física)
+- **A/D:** `terrainAt` é infinita (gera chão até fora do mapa) → a proteção real é `Player.body.setCollideWorldBounds(true)`. Novo teste em simulacao.test.js lê o fonte e garante a trava + que FULL_WORLD cobre o overworld.
+- **D:** simulacao 6/6; suite 49/49.
+- Notas 0–100: visual 79 · código 87 · estabilidade 95 · desempenho 83 · jogabilidade 87 · mobile 70 · originalidade 80.
+

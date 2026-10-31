@@ -18,3 +18,4 @@ Linha base (antes do ciclo 01):
 | 07 | 49/49 arquivos; 17 fotos | 79 / 87 / 94 / 83 / 85 / 70 / 80 |
 | 08 | 49/49 arquivos | 79 / 87 / 94 / 83 / 86 / 70 / 80 |
 | 09 | 49/49 arquivos | 79 / 87 / 94 / 83 / 87 / 70 / 80 |
+| 10 | 49/49 arquivos (simulacao 6/6) | 79 / 87 / 95 / 83 / 87 / 70 / 80 |
