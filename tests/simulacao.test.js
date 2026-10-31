@@ -2013,26 +2013,30 @@ test('simulação: story — capítulos, lore e finais existem e têm texto', ()
   }
 });
 
-test('simulação: sunShadow — sombra muda ao longo do dia e fica em faixa válida', () => {
+test('simulação: sunShadow — sombra do sol tem ângulo/comprimento/alpha válidos e varia com a hora', () => {
   const hours = [0, 6, 9, 12, 15, 18, 23];
   for (const h of hours) {
     const s = sunShadow(h);
-    assert.ok(typeof s === 'number' && s >= -1 && s <= 1, `sunShadow(${h}) fora de [-1,1]: ${s}`);
+    assert.ok(s && typeof s.angle === 'number' && typeof s.length === 'number' && typeof s.alpha === 'number', `sunShadow(${h}) incompleto`);
+    assert.ok(s.length >= 0 && s.length <= 1 && s.alpha >= 0 && s.alpha <= 1, `sunShadow(${h}) fora da faixa: ${JSON.stringify(s)}`);
   }
-  // meio-dia sombra menor (mais curta) que fim de tarde
-  assert.ok(Math.abs(sunShadow(15)) > Math.abs(sunShadow(12)), 'sombra maior longe do meio-dia');
+  // longe do meio-dia a sombra é mais comprida que no meio-dia
+  assert.ok(sunShadow(17).length > sunShadow(12).length, 'sombra maior longe do meio-dia');
 });
 
-test('simulação: HARVEST_STRUCTURE_TYPES — estruturas têm custo e produção sadios', () => {
+test('simulação: HARVEST_STRUCTURE_TYPES — estruturas têm label, recompensa e regrowth sadios', () => {
   const types = Object.keys(HARVEST_STRUCTURE_TYPES);
   assert.ok(types.length >= 3, 'poucas estruturas de coleta');
   for (const [id, def] of Object.entries(HARVEST_STRUCTURE_TYPES)) {
-    assert.ok(def.name, `estrutura ${id} sem nome`);
-    assert.ok(def.produce || def.yield || def.loot, `estrutura ${id} sem produção`);
+    assert.ok(def.label, `estrutura ${id} sem label`);
+    assert.ok(def.rewardType && RESOURCE_TYPES[def.rewardType], `estrutura ${id} rewardType inválido: ${def.rewardType}`);
+    assert.ok(Array.isArray(def.rewardAmount) && def.rewardAmount[1] >= def.rewardAmount[0] && def.rewardAmount[0] > 0, `estrutura ${id} rewardAmount inválido`);
+    assert.ok((def.regrowDays ?? 0) >= 0, `estrutura ${id} regrowDays inválido`);
   }
   assert.ok(HARVEST_STRUCTURE_INTERACTION_RANGE > 0, 'alcance de interação positivo');
   const r = createSeededRandom(123);
-  assert.ok(typeof r() === 'number' && r() >= 0 && r() < 1, 'seeded random determinístico e em [0,1)');
+  const a = r(); const b = r();
+  assert.ok(a >= 0 && a < 1 && b >= 0 && b < 1 && a !== b, 'seeded random em [0,1) e não constante');
 });
 
 test('simulação: o jogador não sai do mapa — trava física de limites do mundo ativa no Player', async () => {
