@@ -23,6 +23,7 @@ import { SKILLS, SKILL_MAX_LEVEL, skillLevelForXp, skillXpForLevel, PlayerSkills
 import { Bestiary } from '../src/game/Bestiary.js';
 import { Achievements, ACHIEVEMENTS } from '../src/data/achievements.js';
 import { DAY_NIGHT_CONFIG, DAY_NIGHT_TOTAL_SECONDS } from '../src/data/dayNight.js';
+import { MISSIONS } from '../src/data/campaign.js';
 // Validamos uso cruzado do atlas com regex em TODOS os fontes de src/ (RegionWorld importa Phaser).
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -1463,7 +1464,7 @@ test('simulação: dayNight — fases progridem dentro do ciclo total e não pul
 });
 
 test('simulação: habilidades (PlayerSkills) — gainXp sobe nível e não passa do máx', () => {
-  const ps = new PlayerSkills();
+  const ps = new PS2();
   for (let i = 0; i < 200; i += 1) ps.gainXp?.('blade', 100) ?? ps.addXp?.('blade', 100);
   const lvl = ps.level?.('blade') ?? ps.getLevel?.('blade') ?? 0;
   assert.ok(lvl >= 1, 'deveria ter subido de nível');
@@ -1519,15 +1520,15 @@ test('simulação: FORGE_SLOT existe e rollGearDrop devolve raridades válidas p
   assert.ok(bossDrops.some((d) => d.rarity === 'legendary'), 'boss garantido deve dropar lendário');
 });
 
-test('simulação: CAMPAIGN — marcos têm id único e alvo válido', () => {
+test('simulação: campanha — missões têm id único e título', () => {
   const ids = new Set();
-  for (const step of CAMPAIGN_STEPS ?? []) {
-    assert.ok(step.id, 'etapa sem id');
-    assert.ok(!ids.has(step.id), `id duplicado: ${step.id}`);
-    ids.add(step.id);
-    assert.ok(step.title, `etapa ${step.id} sem título`);
+  for (const m of MISSIONS) {
+    assert.ok(m.id, 'missão sem id');
+    assert.ok(!ids.has(m.id), `id duplicado: ${m.id}`);
+    ids.add(m.id);
+    assert.ok(m.title || m.name, `missão ${m.id} sem título`);
   }
-  assert.ok(ids.size >= 5, 'poucas etapas de campanha');
+  assert.ok(ids.size >= 5, 'poucas missões de campanha');
 });
 
 test('simulação: o jogador não sai do mapa — trava física de limites do mundo ativa no Player', async () => {

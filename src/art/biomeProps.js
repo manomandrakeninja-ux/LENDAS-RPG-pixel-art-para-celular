@@ -929,8 +929,8 @@ function turquoiseFloweredSnow(seed = 1967) {
   return finish(p, { outline: 0.3 });
 }
 
-/** Cogumelo roxo (floresta). */
-function purpleShroom(seed = 1971) {
+/** Cogumelo violeta (floresta). */
+function violetShroom(seed = 1971) {
   const p = new Painter(10, 10, { transparent: true });
   p.rect(4, 6, 2, 3, '#e0d8e8');
   p.sphere(5, 5, 3.2, '#8a50b0', '#a870c8');
@@ -3241,8 +3241,8 @@ const PAINTED_ENTRIES = [
   { name: 'lilac-beach-flower-1', draw: () => lilacBeachFlower(1959) },
   { name: 'turquoise-dune-stone', draw: () => turquoiseDuneStone(1961) },
   { name: 'turquoise-flowered-snow', draw: () => turquoiseFloweredSnow(1967) },
-  { name: 'purple-shroom-0', draw: () => purpleShroom(1971) },
-  { name: 'purple-shroom-1', draw: () => purpleShroom(1973) },
+  { name: 'violet-shroom-0', draw: () => violetShroom(1971) },
+  { name: 'violet-shroom-1', draw: () => violetShroom(1973) },
   { name: 'coral-ash-flower-0', draw: () => coralAshFlower(1977) },
   { name: 'coral-ash-flower-1', draw: () => coralAshFlower(1979) },
   { name: 'shipwreck', draw: shipwreck },
