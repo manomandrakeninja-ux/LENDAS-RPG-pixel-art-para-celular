@@ -86,7 +86,8 @@ const TIPS = [
   'À noite de céu limpo na praia, uma estrela-do-mar 🌟 pode dar moeditas.',
   'De dia na selva, uma flor exótica 🌺 pode dar bastante XP.',
   'À noite nas terras antigas, um eco de herói 👻 pode render bastante XP.',
-  'À noite de céu limpo no vale, uma estrela cadente 🌠 pode dar XP.'
+  'À noite de céu limpo no vale, uma estrela cadente 🌠 pode dar XP.',
+  'De dia na neve, um lobo das neves 🐺 pode dar um pouco de XP.'
 ];
 
 export function setupSplash() {

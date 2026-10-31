@@ -2114,6 +2114,33 @@ test('simulação: GEAR_SETS — conjuntos têm nome, nível, região e bônus',
   }
 });
 
+test('simulação: MISSIONS — missões de campanha têm id, texto e recompensa', () => {
+  assert.ok(MISSIONS.length >= 5, 'poucas missões');
+  const ids = new Set();
+  for (const m of MISSIONS) {
+    assert.ok(m.id && !ids.has(m.id), `missão sem id ou duplicada: ${m.id}`);
+    ids.add(m.id);
+    assert.ok(m.title || m.text || m.name, `missão ${m.id} sem texto`);
+    assert.ok(m.reward, `missão ${m.id} sem recompensa`);
+  }
+});
+
+test('simulação: CRAFT_RECIPES — receitas têm custo não vazio e produto válido', () => {
+  assert.ok(CRAFT_RECIPES.length >= 5, 'poucas receitas');
+  const ids = new Set();
+  for (const r of CRAFT_RECIPES) {
+    assert.ok(r.id && !ids.has(r.id), `receita sem id ou duplicada: ${r.id}`);
+    ids.add(r.id);
+    assert.ok(r.name, `receita ${r.id} sem nome`);
+    assert.ok(r.cost && Object.keys(r.cost).length > 0, `receita ${r.id} sem custo`);
+    assert.ok(r.yield && Object.keys(r.yield).length > 0, `receita ${r.id} sem produto`);
+    for (const [res, qty] of Object.entries(r.yield)) {
+      assert.ok(qty > 0, `receita ${r.id} quantidade inválida em ${res}`);
+      assert.ok(RESOURCE_TYPES[res] || CONSUMABLES[res] || res === 'xp' || res === 'coins', `receita ${r.id} produz algo inválido: ${res}`);
+    }
+  }
+});
+
 test('simulação: o jogador não sai do mapa — trava física de limites do mundo ativa no Player', async () => {
   // terrainAt é infinita (gera terreno até fora do mapa), então a proteção real é física:
   // Player.js precisa chamar body.setCollideWorldBounds(true). Conferimos no código-fonte.
