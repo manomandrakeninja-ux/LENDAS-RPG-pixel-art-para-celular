@@ -1670,6 +1670,29 @@ test('simulação: GEAR_SETS — cada set tem peças suficientes (2-5) e bônus 
   }
 });
 
+test('simulação: baús (TREASURE_SPOTS) — id único, posição válida, não bloqueantes', () => {
+  const ids = new Set();
+  for (const s of TREASURE_SPOTS) {
+    assert.ok(!ids.has(s.id), `baú id duplicado: ${s.id}`);
+    ids.add(s.id);
+    assert.ok(s.x > 0 && s.x < WORLD_COLS * TILE && s.y > 0 && s.y < OVERWORLD_ROWS * TILE, `baú ${s.id} fora do mapa`);
+    assert.ok(![T.SEA, T.LAVA, T.WALL, T.VOID].includes(terrainAt(s.x, s.y)), `baú ${s.id} em terreno bloqueante`);
+  }
+  assert.ok(ids.size >= 10, 'poucos baús');
+});
+
+test('simulação: roads — nomes únicos e pontos dentro do mundo', () => {
+  const names = new Set();
+  for (const road of ROADS) {
+    assert.ok(!names.has(road.name), `estrada duplicada: ${road.name}`);
+    names.add(road.name);
+    for (const p of road.points ?? []) {
+      assert.ok(p.x >= 0 && p.x <= WORLD_COLS * TILE && p.y >= 0 && p.y <= OVERWORLD_ROWS * TILE, `ponto da estrada ${road.name} fora do mundo`);
+    }
+    assert.ok((road.points?.length ?? 0) >= 2, `estrada ${road.name} com poucos pontos`);
+  }
+});
+
 test('simulação: o jogador não sai do mapa — trava física de limites do mundo ativa no Player', async () => {
   // terrainAt é infinita (gera terreno até fora do mapa), então a proteção real é física:
   // Player.js precisa chamar body.setCollideWorldBounds(true). Conferimos no código-fonte.

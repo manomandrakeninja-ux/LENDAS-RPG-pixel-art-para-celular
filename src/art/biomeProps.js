@@ -902,6 +902,51 @@ function darkRoundDuneRock(seed = 1647) {
   return finish(p, { outline: 0.35 });
 }
 
+/** Flor da praia verde-água. */
+function seaGreenBeachFlower(seed = 2167) {
+  const p = new Painter(10, 12, { transparent: true });
+  p.rect(4, 6, 2, 5, '#8a8a6a');
+  for (const [dx, dy] of [[-3, -2], [3, -2], [-2, 2], [2, 2], [0, -4]]) p.set(5 + dx, 5 + dy, '#6ad8c0');
+  p.set(5, 5, '#f0fffa');
+  return finish(p, { outline: 0.3 });
+}
+
+/** Pedra de duna verde. */
+function greenDuneStone(seed = 2171) {
+  const p = new Painter(14, 9, { transparent: true });
+  p.sphere(7, 5, 5, '#8aa060', '#aac080');
+  p.set(5, 3, '#d8ecc0');
+  return finish(p, { outline: 0.35 });
+}
+
+/** Neve com flor verde-água (neve). */
+function seaGreenFloweredSnow(seed = 2177) {
+  const p = new Painter(16, 9, { transparent: true });
+  p.sphere(8, 6, 5.5, '#dceaf6', '#f4faff');
+  p.set(8, 3, '#6ad8c0');
+  p.set(6, 5, '#6ad8c0');
+  p.set(10, 5, '#ffffff');
+  return finish(p, { outline: 0.3 });
+}
+
+/** Cogumelo verde-água claro (brejo). */
+function seaGreenSwampShroom(seed = 2181) {
+  const p = new Painter(10, 10, { transparent: true });
+  p.rect(4, 6, 2, 3, '#e0ece8');
+  p.sphere(5, 5, 3.2, '#5cb8a8', '#7ed0c0');
+  p.set(4, 4, '#f0faf6');
+  return finish(p, { outline: 0.35 });
+}
+
+/** Flor de selva verde-água. */
+function seaGreenJungleFlower(seed = 2187) {
+  const p = new Painter(10, 12, { transparent: true });
+  p.rect(4, 6, 2, 5, '#2e5a24');
+  for (const [dx, dy] of [[-3, -2], [3, -2], [-2, 2], [2, 2], [0, -4]]) p.set(5 + dx, 5 + dy, '#6ad8c0');
+  p.set(5, 5, '#f0fffa');
+  return finish(p, { outline: 0.3 });
+}
+
 /** Flor da duna verde-água. */
 function seaGreenDuneFlower(seed = 2137) {
   const p = new Painter(10, 12, { transparent: true });
@@ -3555,6 +3600,14 @@ const PAINTED_ENTRIES = [
   { name: 'light-green-shroom-1', draw: () => lightGreenShroom(2153) },
   { name: 'sea-green-ash-flower-0', draw: () => seaGreenAshFlower(2157) },
   { name: 'sea-green-ash-flower-1', draw: () => seaGreenAshFlower(2159) },
+  { name: 'sea-green-beach-flower-0', draw: () => seaGreenBeachFlower(2167) },
+  { name: 'sea-green-beach-flower-1', draw: () => seaGreenBeachFlower(2169) },
+  { name: 'green-dune-stone', draw: () => greenDuneStone(2171) },
+  { name: 'sea-green-flowered-snow', draw: () => seaGreenFloweredSnow(2177) },
+  { name: 'sea-green-swamp-shroom-0', draw: () => seaGreenSwampShroom(2181) },
+  { name: 'sea-green-swamp-shroom-1', draw: () => seaGreenSwampShroom(2183) },
+  { name: 'sea-green-jungle-flower-0', draw: () => seaGreenJungleFlower(2187) },
+  { name: 'sea-green-jungle-flower-1', draw: () => seaGreenJungleFlower(2189) },
   { name: 'shipwreck', draw: shipwreck },
   { name: 'sea-rock', draw: seaRock },
   { name: 'charred-tree', draw: () => deadTree(['#0c0808', '#1a1010', '#2a1a16', '#3a2620', '#4a3228'], true) },
