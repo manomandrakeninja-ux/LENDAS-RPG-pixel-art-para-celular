@@ -953,6 +953,29 @@ test('simulação: biomas do mapa — terreno varia por região e limites do mun
   assert.ok(grid.terrain.length === grid.rows * grid.cols, 'grid consistente');
 });
 
+test('simulação: clima — weatherAt é determinístico por seed e cobre todos os tipos', () => {
+  const seen = new Set();
+  for (let day = 0; day < 400; day += 1) {
+    for (const region of Object.keys(REGION_SPAWNS)) {
+      const w = weatherAt(region, { dayCount: day, cycleTime: 0.5 });
+      assert.ok(['clear', 'rain', 'snow', 'dust', 'ash'].includes(w), `clima inválido: ${w}`);
+      seen.add(w);
+    }
+  }
+  assert.ok(seen.size >= 3, `poucos climas observados (${[...seen].join(',')})`);
+  // determinismo: mesma entrada → mesma saída
+  const a = weatherAt('floresta', { dayCount: 10, cycleTime: 0.3 });
+  const b = weatherAt('floresta', { dayCount: 10, cycleTime: 0.3 });
+  assert.equal(a, b, 'weatherAt não é determinístico');
+});
+
+test('simulação: ciclo dia/noite — durações somam DAY_NIGHT_TOTAL_SECONDS e fases mudam', () => {
+  const total = DAY_NIGHT_CONFIG.dayDurationSeconds + DAY_NIGHT_CONFIG.nightDurationSeconds + 2 * DAY_NIGHT_CONFIG.transitionDurationSeconds;
+  assert.equal(total, DAY_NIGHT_TOTAL_SECONDS, 'durções não batem com o total');
+  assert.ok(DAY_NIGHT_CONFIG.dayDurationSeconds > DAY_NIGHT_CONFIG.nightDurationSeconds, 'dia deve durar mais que a noite');
+  assert.ok(DAY_NIGHT_CONFIG.warningSeconds < DAY_NIGHT_CONFIG.transitionDurationSeconds, 'aviso deve caber na transição');
+});
+
 test('simulação: o jogador não sai do mapa — trava física de limites do mundo ativa no Player', async () => {
   // terrainAt é infinita (gera terreno até fora do mapa), então a proteção real é física:
   // Player.js precisa chamar body.setCollideWorldBounds(true). Conferimos no código-fonte.

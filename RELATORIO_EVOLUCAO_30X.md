@@ -146,6 +146,10 @@
 - 151–160: 5 props + testes cavernas/save + 🍃 folha · 161–170: 5 props + teste spawns/ilhas + ☀️ sol forte · 171–180: 5 props + teste placas/POIs + ⭐ estrelas cadentes · 181–190: 5 props + teste fog/waypoint + 🐸 sapo · 191–200: 5 props + teste estradas no grid + 🦂 escorpião dourado + marco 200 (foto 31).
 - Estado no marco 200: 303 arquivos sintaxe OK · suite 49/49 · simulacao 44/44 · atlas 212 objetos · 31 fotos. Notas: 96 / 95 / 98 / 86 / 97 / 74 / 89.
 
+### Ciclos 201–250/1000 ✅ CONCLUÍDOS — marco 250 alcançado
+- 201–210: props + testes rollGearDrop/hotkeys + 🌊 onda · 211–220: props + testes skills/elite + 🍄 cogumelo · 221–230: props + testes runas/ilhas + ❄️ aurora · 231–240: props + teste atlas↔src (achou órfão `shipwreck`, agora na praia) + 🌺 flor exótica · 241–250: props + testes torres/biomas + 👻 fantasma + marco 250 (foto 32).
+- Estado no marco 250: 303 arquivos sintaxe OK · suite 49/49 · simulacao 53/53 · atlas 251 objetos · 32 fotos. Notas: 97 / 96 / 98 / 86 / 97 / 74 / 89.
+
 ### Ciclo 70/130 — Verificação intermediária (marco) ✅ CONCLUÍDO
 - 303 arquivos sintaxe OK · suite 49/49 · simulacao 19/19 · atlas 90 objetos · foto 28-mapa-ciclo-70. Notas: 90 / 92 / 98 / 86 / 97 / 74 / 86.
 
