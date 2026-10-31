@@ -1988,11 +1988,13 @@ test('simulação: villagers — aldeões têm stats positivos e IDs únicos', (
   assert.ok(VILLAGER_STATS.sight > VILLAGER_STATS.range, 'aldeão enxerga longe');
 });
 
-test('simulação: boss — config tem cooldown, raio e recompensa sadios', () => {
+test('simulação: boss — Golem de Fogo tem vida, dano, padrões e recompensa sadios', () => {
   const c = BOSS_CONFIG;
-  assert.ok(c.cooldownSeconds > 0, 'cooldown positivo');
-  assert.ok((c.playerAggroRadius ?? 0) > 0, 'raio de aggro positivo');
-  assert.ok(c.coins > 0 || (c.rewards && Object.keys(c.rewards).length > 0), 'boss dá recompensa');
+  assert.ok(c.maxHealth >= 1000, 'vida do boss alta');
+  assert.ok(c.damage > 0 && c.patternCooldownMs > 0, 'dano e cooldown positivos');
+  assert.ok(c.detectionRange > c.attackRange, 'detecta de longe, ataca de perto');
+  assert.ok(Array.isArray(c.patterns) && c.patterns.length >= 2, 'boss tem padrões de ataque');
+  assert.ok(c.coinDrop > 0 && c.rareItem, 'boss dá moedas e item raro');
   assert.ok(BOSS_CAMP_DISTANCE > 0, 'distância ao acampamento calculada');
 });
 
