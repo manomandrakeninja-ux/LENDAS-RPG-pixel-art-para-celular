@@ -933,9 +933,12 @@ test('simulação: torres — têm entrada, boss opcional válido e estão em te
     assert.ok(pos.x > 0 && pos.x < WORLD_COLS * TILE && pos.y > 0 && pos.y < OVERWORLD_ROWS * TILE, `${tower.name} fora do mapa`);
     assert.ok(![T.SEA, T.LAVA, T.WALL, T.VOID, T.MURK].includes(terrainAt(pos.x, pos.y)), `${tower.name} em terreno ruim`);
     if (tower.boss) assert.ok(ENEMY_TYPES[tower.boss], `${tower.name} boss inexistente: ${tower.boss}`);
+    assert.ok((tower.monsters ?? []).length > 0, `${tower.name} sem monstros`);
+    for (const m of tower.monsters ?? []) assert.ok(ENEMY_TYPES[m], `${tower.name} monstro inexistente: ${m}`);
   }
-  // pelo menos uma torre tem boss
-  assert.ok(towers.some((t) => t.boss), 'nenhuma torre com boss');
+  // Bosses moram nas cavernas: pelo menos a maioria tem boss válido
+  const withBoss = CAVES.filter((c) => c.boss);
+  assert.ok(withBoss.length >= CAVES.length * 0.8, 'poucas cavernas com boss');
 });
 
 test('simulação: biomas do mapa — terreno varia por região e limites do mundo respeitados', () => {
