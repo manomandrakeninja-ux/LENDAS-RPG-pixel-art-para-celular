@@ -61,3 +61,9 @@
 - **C:** seta verde na borda da tela (graphics na HUD camera) → direção do waypoint fora da visão; some no modo foto/perto.
 - **D:** suite 49/49; simulacao 5/5.
 - **Notas 0–100:** visual 79 · código 87 · estabilidade 94 · desempenho 83 · jogabilidade 86 · mobile 70 · originalidade 80.
+
+## Ciclo 09/30 — Economia: baús de mundo reabastecem em 3 dias ✅ CONCLUÍDO
+
+- **C:** `chestDays` no save (compatível com saves antigos); baú saqueado volta com moedas após 3 dias; chefe/torre seguem únicos.
+- **D:** suite 49/49; sem regressões.
+- **Notas 0–100:** visual 79 · código 87 · estabilidade 94 · desempenho 83 · jogabilidade 87 · mobile 70 · originalidade 80.

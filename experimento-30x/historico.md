@@ -54,3 +54,8 @@
 - **D:** simulacao 5/5; suite 49/49; `node --check` ok.
 - Notas 0–100: visual 79 · código 87 · estabilidade 94 · desempenho 83 · jogabilidade 86 · mobile 70 · originalidade 80.
 
+### Ciclo 09 — Economia/loop: baús de tesouro reabastecem em 3 dias
+- **C:** `chestDays` (novo no save, compat: ausente = 0) registra o dia do saque; baú de mundo saqueado volta a dar moedas (sem equipamento) após 3 dias; baú de chefe continua único. `nearestFeature` deixa baú de mundo interagível mesmo aberto.
+- **D:** suite 49/49; simulacao 5/5; world 14/14.
+- Notas 0–100: visual 79 · código 87 · estabilidade 94 · desempenho 83 · jogabilidade 87 · mobile 70 · originalidade 80.
+

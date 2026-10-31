@@ -69,6 +69,8 @@ export class RegionWorld {
     this.discovered = new Set(Array.isArray(saved?.discovered) ? saved.discovered : ['vale']);
     this.bosses = { ...(saved?.bosses ?? {}) };
     this.chests = new Set(Array.isArray(saved?.chests) ? saved.chests : []);
+    // Dia em que cada baú do mundo foi saqueado (baú reabastece 3 dias depois).
+    this.chestDays = { ...(saved?.chestDays ?? {}) };
     this.travelerGifts = new Set(Array.isArray(saved?.travelerGifts) ? saved.travelerGifts : []);
     this.travelers = [];
     this.grid = buildTerrainGrid();
@@ -369,7 +371,9 @@ export class RegionWorld {
     let best = null;
     let bestDistance = range;
     for (const feature of this.features) {
-      if (feature.type === 'chest' && feature.opened) continue;
+      // Baú de mundo (com spot) continua interagível depois de aberto (reabastece em 3 dias);
+      // baú de chefe/torre abre só uma vez.
+      if (feature.type === 'chest' && feature.opened && !feature.spot) continue;
       const distance = Phaser.Math.Distance.Between(x, y, feature.x, feature.y);
       if (distance < bestDistance) {
         best = feature;
@@ -452,12 +456,31 @@ export class RegionWorld {
     }
   }
 
-  /** Baú escondido no overworld: moedas conforme o nível da região + às vezes 1 equipamento. */
+  /** Baú escondido no overworld: saque único com equipamento; reabastece com moedas 3 dias depois. */
   openWorldChest(feature) {
     const scene = this.scene;
     const region = feature.spot.region;
     const info = REGION_INFO[region];
     const level = info?.levelRange?.[1] ?? 10;
+    const day = scene.timeState?.dayCount ?? 1;
+    const openedDay = this.chestDays[feature.spot.id];
+    if (this.chests.has(feature.spot.id)) {
+      // Já saqueado: só volta a dar loot 3 dias depois (só moedas, sem equipamento).
+      if (openedDay === undefined || day - openedDay < 3) {
+        scene.ui.showMessage('Esse baú já foi saqueado. Os saqueadores voltam em alguns dias...');
+        scene.audio?.playDeny?.();
+        return;
+      }
+      const coins = 10 + Math.round(level * 0.8) + Math.floor(Math.random() * 8);
+      scene.economy?.addCoins?.(coins);
+      this.chestDays[feature.spot.id] = day;
+      feature.sprite.clearTint();
+      scene.effects?.spawnHarvest?.(feature.x, feature.y - 10, 0xffd76b);
+      scene.audio?.playChest?.();
+      scene.ui.showMessage(`Baú reabastecido em ${info?.name ?? region}! +${coins} moedas`);
+      scene.save?.();
+      return;
+    }
     const coins = 25 + Math.round(level * 2.5) + Math.floor(Math.random() * 20);
     scene.economy?.addCoins?.(coins);
     let extra = '';
@@ -473,6 +496,7 @@ export class RegionWorld {
     }
     feature.opened = true;
     this.chests.add(feature.spot.id);
+    this.chestDays[feature.spot.id] = day;
     feature.sprite.setTint(0x777777);
     scene.effects?.spawnHarvest?.(feature.x, feature.y - 10, 0xffd76b);
     scene.audio?.playChest?.();
@@ -1151,6 +1175,7 @@ export class RegionWorld {
       discovered: [...this.discovered],
       bosses: this.bosses,
       chests: [...this.chests],
+      chestDays: this.chestDays,
       travelerGifts: [...this.travelerGifts]
     };
   }
