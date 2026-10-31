@@ -62,6 +62,8 @@ Linha base (antes do ciclo 01):
 | 57–61 | 49/49; simulacao 15/15; atlas 90; 26 fotos | 90 / 92 / 98 / 85 / 96 / 74 / 86 |
 | 62–64 | 49/49; simulacao 18/18 | 90 / 92 / 98 / 85 / 96 / 74 / 86 |
 | 65 | 49/49 arquivos | 90 / 92 / 98 / 86 / 96 / 74 / 86 |
+| 66–69 | 49/49; simulacao 19/19; 27 fotos | 90 / 92 / 98 / 86 / 97 / 74 / 86 |
+| 70 | 303 sintaxe OK; 49/49; simulacao 19/19; atlas 90; 28 fotos | 90 / 92 / 98 / 86 / 97 / 74 / 86 |
 
 ## Início (base) vs fim
 | Eixo | Base | Final |

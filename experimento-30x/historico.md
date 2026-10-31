@@ -69,6 +69,10 @@
 - **D:** suite 49/49.
 - Notas 0–100: visual 79 · código 87 · estabilidade 95 · desempenho 83 · jogabilidade 88 · mobile 70 · originalidade 81.
 
+### Ciclo 70 — Verificação intermediária (marco 70/130): 303 arquivos sintaxe OK, suite 49/49, simulacao 19/19, atlas 90 obj, foto 28
+- **D/F:** tudo verde; nenhum ciclo regrediu testes até aqui.
+- Notas: visual 90 · código 92 · estabilidade 98 · desempenho 86 · jogabilidade 97 · mobile 74 · originalidade 86.
+
 ### Ciclo 69 — Foto 27 (detalhe do gelo com flores de neve) + dica de regeneração no splash
 - **C/H:** TIPS ganhou "Fora de combate, você se cura devagar após 6 s sem levar dano."
 - **D/F:** foto 27; suite 49/49; simulacao 19/19.
