@@ -43,3 +43,9 @@
 - **D:** novo teste de cache em simulacao.test.js (5/5); suite 49/49.
 - Notas 0–100: visual 79 · código 87 · estabilidade 94 · desempenho 83 · jogabilidade 83 · mobile 70 · originalidade 80.
 
+### Ciclo 07 — Game design: dormir em vilarejos (cama na 1ª casa)
+- **C:** cada vilarejo ganha feature `bed` (1ª casa, label "DORMIR ATÉ AMANHECER"); `interact` chama `scene.sleepAtBed(village)`; GameScene ganhou `doSleep(place)` comum (camp e vilarejo) — dormir na vila também cura, avança o dia e salva.
+- **Fotos:** SUPER ATUALIZAÇÃO/16-vilarejos-com-cama.png, 17-mapa-com-porto-pirata.png (7 portos agora).
+- **D:** simulacao 5/5, world 14/14, suite 49/49.
+- Notas 0–100: visual 79 · código 87 · estabilidade 94 · desempenho 83 · jogabilidade 85 · mobile 70 · originalidade 80.
+

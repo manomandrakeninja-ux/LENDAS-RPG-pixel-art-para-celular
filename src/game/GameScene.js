@@ -1501,7 +1501,7 @@ export class GameScene extends Phaser.Scene {
         ['C', 'Acampamento'],
         ['K', 'Ajustes'],
         ['F', 'Descansar (no acampamento)'],
-        ['N', 'Dormir até de manhã (na fogueira/casa)'],
+        ['N', 'Dormir até de manhã (fogueira do acampamento ou cama de vilarejo)'],
         ['G', 'Montar/desmontar'],
         ['H', 'Convocar o cavalo e montar'],
         ['Z', 'GRITO FUS RO DAH! (barra de Fúria cheia)'],
@@ -2572,6 +2572,19 @@ export class GameScene extends Phaser.Scene {
       this.ui.showMessage('Só é possível dormir junto à fogueira ou à casa.');
       return { ok: false, message: 'Só é possível dormir junto à fogueira ou à casa.' };
     }
+    return this.doSleep('acampamento');
+  }
+
+  /** Dormir numa cama de vilarejo (interação da feature 'bed'). Cura e avança para o amanhecer. */
+  sleepAtBed(village) {
+    const place = village?.name ?? 'vilarejo';
+    const result = this.doSleep(place);
+    if (result.ok && village) this.world.discovered?.add?.(`vila:${village.id}`);
+    return result;
+  }
+
+  /** Lógica comum de dormir: valida fase/perigos, pula a noite, cura e salva. */
+  doSleep(place) {
     const phase = this.dayNight.getState().phase;
     if (phase !== 'night' && phase !== 'dawn') {
       this.ui.showMessage('Você só pode pular a noite depois que ela começar.');
@@ -2593,7 +2606,7 @@ export class GameScene extends Phaser.Scene {
     const recoveryMessage = this.recoverAtCamp();
     const extra = this.applyWakeUp();
     this.audio.playDawn();
-    const message = `Você dormiu até amanhecer. Dia ${this.dayNight.dayCount} começou. ${recoveryMessage}${extra}`;
+    const message = `Você dormiu até amanhecer no ${place}. Dia ${this.dayNight.dayCount} começou. ${recoveryMessage}${extra}`;
     this.ui.showMessage(message);
     this.save();
     return { ok: true, message };

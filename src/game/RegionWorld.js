@@ -269,6 +269,11 @@ export class RegionWorld {
       scene.hudCamera?.ignore([npc, npcShadow]);
       this.features.push({ type: 'villager', village, x: village.x, y: village.y + 30, sprite: npc, label: `CONVERSAR • ${village.name}` });
       this.addHint(npc, village.x, village.y - 40, village.name);
+      // Cama na primeira casa do vilarejo: permite dormir até amanhecer fora do acampamento.
+      const [bedDx, bedDy] = village.houses[0];
+      const bedX = village.x + bedDx;
+      const bedY = village.y + bedDy + 18;
+      this.features.push({ type: 'bed', village, x: bedX, y: bedY, label: `DORMIR ATÉ AMANHECER • ${village.name}` });
     });
     // Viajantes que caminham pelas estradas (ida e volta) e conversam/trocam com E.
     const travelerRoads = [ROADS[0], ROADS[2], ROADS[4]].filter(Boolean);
@@ -389,6 +394,7 @@ export class RegionWorld {
     else if (feature.type === 'sign') this.readSign(feature.sign);
     else if (feature.type === 'villager') this.talkToVillager(feature.village);
     else if (feature.type === 'traveler') this.talkToTraveler(feature.traveler);
+    else if (feature.type === 'bed') this.scene.sleepAtBed(feature.village);
     return true;
   }
 
