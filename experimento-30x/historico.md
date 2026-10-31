@@ -69,6 +69,11 @@
 - **D:** suite 49/49.
 - Notas 0–100: visual 79 · código 87 · estabilidade 95 · desempenho 83 · jogabilidade 88 · mobile 70 · originalidade 81.
 
+### Ciclo 28 — Conteúdo: 4º viajante na Estrada do Penhasco (roads 0, 2, 3, 4)
+- **C:** `travelerRoads` ganhou ROADS[3] (Estrada do Penhasco) → 4 viajantes no mundo.
+- **D:** suite 49/49; pontos das estradas validados como andáveis.
+- Notas 0–100: visual 85 · código 89 · estabilidade 97 · desempenho 84 · jogabilidade 92 · mobile 74 · originalidade 84.
+
 ### Ciclo 27 — Consolidação: atlas regenerado + foto 19 + suite completa
 - **D/F:** `generate-world-assets` (3923 ladrilhos, 69 objetos, ~9 s); foto `SUPER ATUALIZAÇÃO/19-mapa-atualizado-ciclo-27`; suite 49/49; 303 arquivos sintaxe OK (ciclo 19).
 - Notas 0–100: visual 85 · código 89 · estabilidade 97 · desempenho 84 · jogabilidade 91 · mobile 74 · originalidade 83.

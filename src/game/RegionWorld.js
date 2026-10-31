@@ -278,7 +278,7 @@ export class RegionWorld {
       this.features.push({ type: 'bed', village, x: bedX, y: bedY, label: `DORMIR ATÉ AMANHECER • ${village.name}` });
     });
     // Viajantes que caminham pelas estradas (ida e volta) e conversam/trocam com E.
-    const travelerRoads = [ROADS[0], ROADS[2], ROADS[4]].filter(Boolean);
+    const travelerRoads = [ROADS[0], ROADS[2], ROADS[3], ROADS[4]].filter(Boolean);
     const travelerLines = [
       'Andei a estrada inteira esta semana. Se vir fumaça, é acampamento bom.',
       'Dizem que tem baú escondido longe das estradas... procure nos cantos do mapa.',

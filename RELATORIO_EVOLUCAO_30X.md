@@ -80,6 +80,12 @@
 - **D:** suite 49/49.
 - **Notas 0–100:** visual 79 · código 87 · estabilidade 95 · desempenho 83 · jogabilidade 88 · mobile 70 · originalidade 81.
 
+## Ciclo 28/30 — Conteúdo: 4º viajante na Estrada do Penhasco ✅ CONCLUÍDO
+
+- **C:** `travelerRoads = [ROADS[0], ROADS[2], ROADS[3], ROADS[4]]` → 4 viajantes (presente diário + lojinha itinerante).
+- **D:** suite 49/49; pontos das estradas confirmados andáveis.
+- **Notas 0–100:** visual 85 · código 89 · estabilidade 97 · desempenho 84 · jogabilidade 92 · mobile 74 · originalidade 84.
+
 ## Ciclo 27/30 — Consolidação: atlas + foto 19 + suite ✅ CONCLUÍDO
 
 - **D/F:** atlas regenerado (3923 ladrilhos / 69 objetos); foto 19-mapa-atualizado-ciclo-27; suite 49/49; 303 arquivos com sintaxe OK.
