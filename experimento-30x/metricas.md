@@ -21,3 +21,4 @@ Linha base (antes do ciclo 01):
 | 10 | 49/49 arquivos (simulacao 6/6) | 79 / 87 / 95 / 83 / 87 / 70 / 80 |
 | 11 | 49/49 arquivos | 79 / 87 / 95 / 83 / 88 / 70 / 81 |
 | 12 | 49/49 arquivos | 79 / 87 / 95 / 83 / 88 / 70 / 81 |
+| 13 | 49/49 arquivos (simulacao 6/6) | 79 / 87 / 95 / 83 / 88 / 70 / 82 |

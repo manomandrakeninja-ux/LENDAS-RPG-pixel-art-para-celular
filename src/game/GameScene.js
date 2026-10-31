@@ -61,7 +61,7 @@ import { GearSystem } from './GearSystem.js';
 import { EquipmentPanel } from './EquipmentPanel.js';
 import { GEAR_ITEMS, RARITIES, blessingPrice, rollGearDrop } from '../data/gear.js';
 import { JEWELS, rollJewelDrop } from '../data/enhance.js';
-import { TILE } from '../data/worldRegions.js';
+import { TILE, roadAt } from '../data/worldRegions.js';
 import { ExperiencePickups } from './ExperiencePickups.js';
 import { LevelUpOverlay } from './LevelUpOverlay.js';
 import { EconomySystem } from './EconomySystem.js';
@@ -1610,6 +1610,18 @@ export class GameScene extends Phaser.Scene {
     } else if (roll < 0.88) {
       this.eventSpeedUntil = this.time.now + 30000;
       this.ui.showMessage('💨 Evento: vento a favor! +25% velocidade por 30 s');
+    } else if (roll < 0.94 && roadAt(this.player.x, this.player.y)) {
+      // Baú abandonado na beira da estrada: moedas e, às vezes, um suprimento.
+      const coins = Phaser.Math.Between(15, 35);
+      this.economy.addCoins(coins);
+      let extra = '';
+      if (Math.random() < 0.4) {
+        const type = Math.random() < 0.5 ? 'potion' : 'food';
+        if (this.inventory.add(type, 1)) extra = ` +1 ${type === 'potion' ? 'poção' : 'comida'}`;
+      }
+      this.audio.playChest();
+      this.effects.spawnHarvest(this.player.x, this.player.y - 16, 0xffd76b);
+      this.ui.showMessage(`🧰 Evento: baú abandonado na estrada! +${coins} moedas${extra}`);
     } else {
       this.ui.showMessage('👀 Evento: você viu algo se mover entre as árvores... foi só o vento.');
     }

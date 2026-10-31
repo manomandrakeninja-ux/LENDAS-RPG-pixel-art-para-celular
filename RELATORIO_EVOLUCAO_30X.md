@@ -80,6 +80,12 @@
 - **D:** suite 49/49.
 - **Notas 0–100:** visual 79 · código 87 · estabilidade 95 · desempenho 83 · jogabilidade 88 · mobile 70 · originalidade 81.
 
+## Ciclo 13/30 — Evento dinâmico: baú abandonado na estrada ✅ CONCLUÍDO
+
+- **C:** nova faixa de `randomEvent` (88–94%): perto de estrada → baú abandonado (+moedas, 40% suprimento).
+- **D:** simulacao 6/6; suite 49/49.
+- **Notas 0–100:** visual 79 · código 87 · estabilidade 95 · desempenho 83 · jogabilidade 88 · mobile 70 · originalidade 82.
+
 ## Ciclo 12/30 — Game feel: +XP flutuante no jogador ✅ CONCLUÍDO
 
 - **C:** texto ciano `+N XP` sobre o player em `grantExperience` (throttle 700 ms).
