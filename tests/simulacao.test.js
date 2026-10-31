@@ -1927,7 +1927,12 @@ test('simulação: monsterChests — baús têm tiers e loot válido', () => {
     assert.ok((cfg.weight ?? cfg.chance ?? 1) >= 0, `tier ${tier} peso inválido`);
   }
   const roll = rollMonsterChest('elite', () => 0.5);
-  assert.ok(roll && (roll.type || roll.id), 'loot de baú elite válido');
+  assert.ok(roll && typeof roll === 'object', 'loot de baú elite é objeto');
+  assert.ok(roll.items && Object.keys(roll.items).length > 0, 'baú elite dropa itens');
+  assert.ok((roll.coins ?? 0) >= 0, 'moedas do baú não negativas');
+  for (const item of Object.keys(roll.items)) {
+    assert.ok(RESOURCE_TYPES[item] || CONSUMABLES[item], `item de baú desconhecido: ${item}`);
+  }
   for (const [id, loot] of Object.entries(CHEST_LOOT)) {
     assert.ok(loot, `loot ${id} vazio`);
   }
