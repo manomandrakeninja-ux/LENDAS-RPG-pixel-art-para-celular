@@ -858,6 +858,54 @@ function flowerTuft(seed = 402) {
   return finish(p, { outline: 0.3 });
 }
 
+/** Cogumelo vermelho grande (floresta). */
+function redCap(seed = 1009) {
+  const p = new Painter(14, 12, { transparent: true });
+  p.rect(6, 7, 2, 4, '#e8dcc8');
+  p.sphere(7, 6, 5, '#a82818', '#d84030');
+  p.set(4, 4, '#f8e8e0'); p.set(9, 3, '#f8e8e0'); p.set(7, 2, '#f8e8e0');
+  return finish(p, { outline: 0.35 });
+}
+
+/** Pedra gravada (deserto). */
+function carvedPebble(seed = 1013) {
+  const p = new Painter(12, 8, { transparent: true });
+  p.sphere(6, 5, 4, '#b09468', '#c8ac7c');
+  p.rect(4, 4, 4, 1, '#7a5c34');
+  p.set(5, 6, '#8a6c42');
+  return finish(p, { outline: 0.35 });
+}
+
+/** Galho flutuando na água parada (lodo). */
+function floatingBranch(seed = 1019) {
+  const p = new Painter(20, 8, { transparent: true });
+  const wood = ['#5a4326', '#6e543a'];
+  p.rect(3, 4, 14, 2, shade([wood[0], wood[1]], 0.5));
+  p.rect(15, 3, 3, 2, wood[1]);
+  p.set(6, 3, '#4a3820');
+  return finish(p, { outline: 0.3 });
+}
+
+/** Galho coberto de neve (neve). */
+function snowBranch(seed = 1021) {
+  const p = new Painter(22, 12, { transparent: true });
+  const wood = ['#4a3a22', '#5e4c2e'];
+  p.rect(2, 6, 16, 3, shade([wood[0], wood[1]], 0.5));
+  p.rect(16, 4, 4, 2, wood[1]);
+  p.rect(2, 5, 16, 1, '#e8f2fc');
+  p.rect(16, 3, 4, 1, '#f4faff');
+  return finish(p, { outline: 0.35 });
+}
+
+/** Concha rosa (praia). */
+function pinkShell(seed = 1031) {
+  const p = new Painter(10, 10, { transparent: true });
+  p.sphere(5, 5, 3.6, '#d88aa8', '#f0b8cc');
+  p.set(5, 5, '#f8dce8');
+  p.set(3, 4, '#c87898');
+  return finish(p, { outline: 0.35 });
+}
+
 /** Pedra de granito (cinzas). */
 function granite(seed = 961) {
   const p = new Painter(16, 10, { transparent: true });
@@ -1582,6 +1630,14 @@ const PAINTED_ENTRIES = [
   { name: 'snow-track-1', draw: () => snowTrack(989) },
   { name: 'tide-rock-0', draw: () => tideRock(991) },
   { name: 'tide-rock-1', draw: () => tideRock(997) },
+  { name: 'red-cap-0', draw: () => redCap(1009) },
+  { name: 'red-cap-1', draw: () => redCap(1011) },
+  { name: 'carved-pebble-0', draw: () => carvedPebble(1013) },
+  { name: 'carved-pebble-1', draw: () => carvedPebble(1015) },
+  { name: 'floating-branch-0', draw: () => floatingBranch(1019) },
+  { name: 'floating-branch-1', draw: () => floatingBranch(1021) },
+  { name: 'snow-branch', draw: () => snowBranch(1031) },
+  { name: 'pink-shell', draw: () => pinkShell(1033) },
   { name: 'shipwreck', draw: shipwreck },
   { name: 'sea-rock', draw: seaRock },
   { name: 'charred-tree', draw: () => deadTree(['#0c0808', '#1a1010', '#2a1a16', '#3a2620', '#4a3228'], true) },

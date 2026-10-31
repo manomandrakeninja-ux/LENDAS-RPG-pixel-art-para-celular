@@ -26,8 +26,9 @@ import { CampfireTravelers, TRAVELER_GOODS, TRAVELER_QUESTS, questById } from '.
 import { RESOURCE_TYPES } from '../src/game/config.js';
 import { BUILDING_DEFS, BUILDING_ORDER } from '../src/data/buildings.js';
 import { WEATHER_ICONS, WEATHER_CONFIG } from '../src/data/weather.js';
+import { SAVE_VERSION, createSaveEnvelope } from '../src/game/save.js';
 import { PlayerSkills } from '../src/data/skills.js';
-import { migrateSave, createSaveEnvelope, SAVE_VERSION } from '../src/game/save.js';
+import { migrateSave } from '../src/game/save.js';
 
 // Alinhado com BLOCKING do jogo: lodo (MURK) é andável, só deixa lento — não entra aqui.
 const NOT_WALKABLE = new Set([T.SEA, T.LAVA, T.WALL, T.VOID]);
@@ -707,6 +708,33 @@ test('simulação: clima — todo clima possível tem ícone e config de severid
       assert.ok(climas.includes(weatherAt(region, { dayCount: day, cycleTime: 0 })), `clima inválido em ${region} dia ${day}`);
     }
   }
+});
+
+test('simulação: cavernas sadias — entrada no mapa, boss e monstros existem em ENEMY_TYPES', () => {
+  assert.ok(CAVES.length >= 10, 'poucas cavernas');
+  for (const cave of CAVES) {
+    assert.ok(cave.id && cave.name, 'caverna sem id/nome');
+    assert.ok(cave.entrance && Number.isFinite(cave.entrance.x) && Number.isFinite(cave.entrance.y), `${cave.id} sem entrada`);
+    assert.ok(cave.entrance.x > 0 && cave.entrance.x < WORLD_COLS * TILE && cave.entrance.y > 0 && cave.entrance.y < OVERWORLD_ROWS * TILE, `${cave.id} entrada fora do mapa`);
+    assert.ok(ENEMY_TYPES[cave.boss], `${cave.id} boss inexistente: ${cave.boss}`);
+    for (const m of cave.monsters ?? []) assert.ok(ENEMY_TYPES[m], `${cave.id} monstro inexistente: ${m}`);
+  }
+  // ids únicos
+  assert.equal(new Set(CAVES.map((c) => c.id)).size, CAVES.length, 'ids de caverna duplicados');
+});
+
+test('simulação: save — envelope v2, migrate de versão futura não quebra e defaults novos existem', () => {
+  assert.equal(SAVE_VERSION, 2, 'versão do save deve continuar 2 (compatibilidade)');
+  const env = createSaveEnvelope({ player: { level: 5 } });
+  assert.equal(env.version, 2);
+  assert.ok(env.savedAt, 'envelope tem savedAt');
+  // versão do futuro cai no padrão sem jogar
+  const future = migrateSave({ version: 999, garbage: true });
+  assert.ok(future && typeof future === 'object', 'migrateSave tolera versão futura');
+  // envelope parcial preenche defaults (runeDay etc.)
+  const migrated = migrateSave(createSaveEnvelope({}));
+  assert.ok(migrated, 'envelope vazio migra');
+  assert.ok(migrated.player && typeof migrated.player === 'object', 'player existe após migrate');
 });
 
 test('simulação: o jogador não sai do mapa — trava física de limites do mundo ativa no Player', async () => {

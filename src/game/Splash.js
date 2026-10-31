@@ -29,7 +29,8 @@ const TIPS = [
   'No vale, de dia, às vezes um coelhinho 🐇 cruza seu caminho e vira comida.',
   'Borboletas 🦋 na floresta e no vale podem te dar um tiquinho de XP.',
   'Perto da água, na praia, um peixe 🐟 pode saltar e virar comida.',
-  'A cada 7 dias a lua cheia 🌕 abençoa a noite com XP extra.'
+  'A cada 7 dias a lua cheia 🌕 abençoa a noite com XP extra.',
+  'De dia, o vento às vezes carrega uma folhinha 🍃 com um pouco de XP.'
 ];
 
 export function setupSplash() {
