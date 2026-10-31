@@ -1115,13 +1115,12 @@ test('simulação: gear sets — cada conjunto tem peças em slots distintos e b
   assert.ok(sets.length >= 5, 'poucos conjuntos de equipamento');
   for (const [key, set] of sets) {
     assert.ok(set.name, `set ${key} sem nome`);
-    const pieces = set.pieces ?? set.items ?? {};
-    const pieceIds = Object.keys(pieces);
+    assert.ok(set.bonus && Object.keys(set.bonus).length > 0, `set ${key} sem bônus de conjunto`);
+    // as peças do set são os itens com tierKey === key
+    const pieceIds = Object.values(GEAR_ITEMS).filter((i) => i.tierKey === key).map((i) => i.id);
     assert.ok(pieceIds.length >= 3, `set ${key} com poucas peças (${pieceIds.length})`);
-    for (const id of pieceIds) assert.ok(GEAR_ITEMS[id], `set ${key} referencia item inexistente: ${id}`);
     const slots = pieceIds.map((id) => GEAR_ITEMS[id].slot);
-    assert.equal(new Set(slots).size, slots.length, `set ${key} com peças no mesmo slot`);
-    assert.ok(set.bonus || set.setBonus || set.bonuses, `set ${key} sem bônus de conjunto`);
+    assert.equal(new Set(slots).size, slots.length, `set ${key} com peças repetindo slot`);
   }
 });
 
