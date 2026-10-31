@@ -1677,7 +1677,13 @@ export class GameScene extends Phaser.Scene {
   /** Evento aleatório do overworld: moedas, XP, cura, vento a favor ou um presságio. */
   randomEvent() {
     const roll = Math.random();
-    if (roll < 0.28) {
+    if (roll < 0.26 && this.timeState?.phase === 'day') {
+      const coins = Phaser.Math.Between(3, 8);
+      this.economy.addCoins(coins);
+      this.audio.playCoin();
+      this.effects.spawnDamage(this.player.x, this.player.y - 30, '🐦', '#bfe8a0');
+      this.ui.showMessage(`🐦 Evento: um passarinho deixou cair uma moedinha... +${coins} moedas!`);
+    } else if (roll < 0.28) {
       const coins = Phaser.Math.Between(8, 24);
       this.economy.addCoins(coins);
       this.audio.playCoin();

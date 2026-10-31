@@ -858,6 +858,54 @@ function flowerTuft(seed = 402) {
   return finish(p, { outline: 0.3 });
 }
 
+/** Poça de lama no brejo. */
+function mudPuddle(seed = 613) {
+  const p = new Painter(22, 10, { transparent: true });
+  p.sphere(11, 6, 8, '#3a2e1a', '#5a4a28');
+  p.sphere(9, 5, 3, '#6a5a34', '#7a6a3e');
+  p.set(11, 4, '#8a7a4a');
+  return finish(p, { outline: 0.3 });
+}
+
+/** Pegada na areia. */
+function footprint(seed = 619) {
+  const p = new Painter(10, 12, { transparent: true });
+  p.sphere(5, 5, 2.6, '#c8a878', '#b89868');
+  p.rect(3, 8, 4, 2, '#b89868');
+  return finish(p, { outline: 0.35 });
+}
+
+/** Cacto florido (rosa no topo). */
+function bloomingCactus(seed = 631) {
+  const p = new Painter(14, 20, { transparent: true });
+  const green = ['#2e6a2e', '#3f8a3a', '#57a850'];
+  p.rect(6, 4, 3, 14, shade([green[0], green[2]], 0.5));
+  p.rect(2, 8, 4, 2, green[1]);
+  p.rect(9, 6, 3, 2, green[1]);
+  p.set(7, 3, '#f060a0');
+  p.set(6, 3, '#ff88c0');
+  p.set(8, 3, '#e04088');
+  return finish(p, { outline: 0.35 });
+}
+
+/** Brasa brilhante nas cinzas (pontinho quente). */
+function emberGlow(seed = 599) {
+  const p = new Painter(10, 8, { transparent: true });
+  p.sphere(5, 5, 2.6, '#7a2010', '#ff8030');
+  p.set(5, 5, '#ffd080');
+  p.set(4, 4, '#ffb050');
+  return finish(p, { outline: 0.3 });
+}
+
+/** Montinho de neve fofa no chão gelado. */
+function snowMound(seed = 587) {
+  const p = new Painter(20, 10, { transparent: true });
+  p.sphere(10, 7, 6, '#cfe0f0', '#f4faff');
+  p.sphere(7, 8, 3, '#c0d4e8', '#e8f2fc');
+  p.set(10, 4, '#ffffff');
+  return finish(p, { outline: 0.3 });
+}
+
 /** Conchinha na areia da praia (detalhe pequeno). */
 function shell(seed = 577) {
   const p = new Painter(10, 8, { transparent: true });
@@ -1057,6 +1105,15 @@ const PAINTED_ENTRIES = [
   { name: 'frozen-log', draw: () => fallenLog(true) },
   { name: 'shell-0', draw: () => shell(577) },
   { name: 'shell-1', draw: () => shell(583) },
+  { name: 'snow-mound-0', draw: () => snowMound(587) },
+  { name: 'snow-mound-1', draw: () => snowMound(593) },
+  { name: 'ember-0', draw: () => emberGlow(599) },
+  { name: 'ember-1', draw: () => emberGlow(607) },
+  { name: 'mud-puddle-0', draw: () => mudPuddle(613) },
+  { name: 'mud-puddle-1', draw: () => mudPuddle(617) },
+  { name: 'footprint-0', draw: () => footprint(619) },
+  { name: 'footprint-1', draw: () => footprint(623) },
+  { name: 'blooming-cactus', draw: () => bloomingCactus(631) },
   { name: 'shipwreck', draw: shipwreck },
   { name: 'sea-rock', draw: seaRock },
   { name: 'charred-tree', draw: () => deadTree(['#0c0808', '#1a1010', '#2a1a16', '#3a2620', '#4a3228'], true) },

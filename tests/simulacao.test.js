@@ -400,6 +400,21 @@ test('simulação: keybinds — rebind aceita tecla válida, rejeita reservada/d
   assert.equal(saveKeybinds(binds, null), true, 'save sem storage não quebra');
 });
 
+test('simulação: 90 dias de clima — todos os tipos aparecem em alguma região e o clima é determinístico por (região, dia)', () => {
+  const seen = new Set();
+  for (const region of Object.keys(REGION_INFO)) {
+    if (region === 'mar' || region === 'caverna') continue;
+    for (let day = 1; day <= 90; day += 1) {
+      const w = weatherAt(region, { dayCount: day, cycleTime: 12 });
+      assert.ok(['clear', 'rain', 'snow', 'dust', 'ash'].includes(w), `clima inválido ${w} em ${region} dia ${day}`);
+      seen.add(w);
+      // Determinístico: mesma entrada → mesma saída.
+      assert.equal(weatherAt(region, { dayCount: day, cycleTime: 12 }), w);
+    }
+  }
+  assert.deepEqual([...seen].sort(), ['ash', 'clear', 'dust', 'rain', 'snow'], 'todos os climas aparecem em 90 dias');
+});
+
 test('simulação: o jogador não sai do mapa — trava física de limites do mundo ativa no Player', async () => {
   // terrainAt é infinita (gera terreno até fora do mapa), então a proteção real é física:
   // Player.js precisa chamar body.setCollideWorldBounds(true). Conferimos no código-fonte.
