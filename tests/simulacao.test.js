@@ -1515,9 +1515,14 @@ test('simulação: FORGE_SLOT existe e rollGearDrop devolve raridades válidas p
     assert.ok(GEAR_ITEMS[d.id], `drop com item inexistente: ${d.id}`);
     if (d.rarity) assert.ok(RARITIES[d.rarity], `raridade inválida: ${d.rarity}`);
   }
-  // boss garantido dropa lendário
-  const bossDrops = rollGearDrop({ region: 'brasa', level: 40, elite: false, boss: true, guaranteed: true }, Math.random);
-  assert.ok(bossDrops.some((d) => d.rarity === 'legendary'), 'boss garantido deve dropar lendário');
+  // boss dropa 2 itens; com random baixo (<0.6) inclui lendário de boss
+  const bossId = Object.values(GEAR_ITEMS).find((i) => i.boss)?.boss;
+  if (bossId) {
+    let seq = 0; const fakeRandom = () => (seq++ === 0 ? 0.1 : 0.9);
+    const bossDrops = rollGearDrop({ region: 'brasa', level: 40, boss: bossId }, fakeRandom);
+    assert.equal(bossDrops.length, 2, 'boss dropa 2 itens');
+    assert.ok(bossDrops.some((d) => d.rarity === 'legendary' && GEAR_ITEMS[d.id].boss === bossId), 'boss dropa lendário com random baixo');
+  }
 });
 
 test('simulação: campanha — missões têm id único e título', () => {
