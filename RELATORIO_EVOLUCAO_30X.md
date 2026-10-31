@@ -80,6 +80,12 @@
 - **D:** suite 49/49.
 - **Notas 0–100:** visual 79 · código 87 · estabilidade 95 · desempenho 83 · jogabilidade 88 · mobile 70 · originalidade 81.
 
+## Ciclo 20/30 — UX: dicas rotativas no splash ✅ CONCLUÍDO
+
+- **C:** 14 dicas (teclas novas do experimento incluídas) girando a cada 4 s durante o carregamento.
+- **D:** suite 49/49.
+- **Notas 0–100:** visual 83 · código 88 · estabilidade 95 · desempenho 83 · jogabilidade 90 · mobile 72 · originalidade 83.
+
 ## Ciclo 19/30 — Auditoria: sintaxe geral + imports ✅ CONCLUÍDO
 
 - **D:** `node --check` em 303 arquivos: 0 falhas. Imports novos desta sessão confirmados em uso (verificação manual; detector automático descartado por falso-positivo). Suite 49/49.

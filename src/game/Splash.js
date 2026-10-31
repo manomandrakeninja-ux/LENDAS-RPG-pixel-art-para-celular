@@ -5,6 +5,24 @@
 
 const MIN_VISIBLE_MS = 1400;
 
+// Dicas exibidas no splash enquanto carrega (uma a cada 4 s).
+const TIPS = [
+  'M: mapa do mundo — Shift+clique marca um waypoint com seta verde na tela.',
+  'Estradas de terra batida dejan 30% mais rápidas; o lodo deixa 38% mais lento.',
+  'Placas de estrada (🪧) dizem para onde fica o destino e a quantos metros.',
+  'Viajantes nas estradas dão 1 presente por dia; depois vendem poções e comida.',
+  'Nos vilarejos dá para conversar, comprar na lojinha e dormir na cama até amanhecer.',
+  'Baús escondidos no mundo dão moedas e às vezes equipamento — reabastecem em 3 dias.',
+  'Z com a barra de Fúria cheia: FUS RO DAH! empurra e causa dano em área.',
+  'Y volta ao acampamento de graça (60 s de cooldown, fora de combate).',
+  'R pega tudo que estiver perto de uma vez. N dorme na fogueira ou na cama de um vilarejo.',
+  'Regiões com nível muito acima do seu são perigosas (⚠️) — e têm recompensas melhores.',
+  'Ilhas só se alcançam de barco: viaje entre portos (tarifa de 15 moedas).',
+  'Na mochila (B) dá para fixar itens com ★ para deixá-los sempre no topo.',
+  '? (Shift+/) abre a lista completa de teclas. P esconde a HUD para tirar foto.',
+  'A tocha ilumina a noite ao seu redor; cristais e braseiros também brilham no escuro.'
+];
+
 export function setupSplash() {
   const root = document.getElementById('splash');
   if (!root) return;
@@ -27,6 +45,18 @@ export function setupSplash() {
     fill.style.width = `${Math.round(10 + Math.min(1, Math.max(0, value)) * 90)}%`;
   };
   setProgress(0);
+
+  // Dica rotativa no splash.
+  const tip = document.getElementById('splash-tip');
+  if (tip) {
+    let tipIndex = Math.floor(Math.random() * TIPS.length);
+    tip.textContent = `💡 ${TIPS[tipIndex]}`;
+    const tipTimer = window.setInterval(() => {
+      if (!state.active) { window.clearInterval(tipTimer); return; }
+      tipIndex = (tipIndex + 1) % TIPS.length;
+      tip.textContent = `💡 ${TIPS[tipIndex]}`;
+    }, 4000);
+  }
 
   const start = () => {
     if (!ready || !state.active) return;

@@ -117,6 +117,15 @@
   cursor: pointer;
 }
 
+.splash__tip {
+  margin: 6px 0 0;
+  max-width: 520px;
+  color: #d8c49a;
+  font: 8px/1.6 var(--pixel-font);
+  text-shadow: 1px 1px 0 #000;
+  min-height: 13px;
+}
+
 .backpack-filters button.is-active {
   border-color: var(--gold);
   background: rgba(90, 60, 20, 0.9);
