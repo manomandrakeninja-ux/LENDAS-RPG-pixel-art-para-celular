@@ -241,6 +241,10 @@
 - 501–505: props — flor coral clara de duna, pedra verde clara de praia, neve florida coral, cogumelo verde-água do brejo, arbusto florido de duna (atlas 443) · 506: teste COMBAT_CONFIG · 507: teste viajantes (bens/quests) · 508: evento 🦋 borboleta dourada na selva de dia (+8–14 XP) · 509: dica splash · 510: verificação parcial.
 - Notas: visual 98 · código 97 · estabilidade 98 · desempenho 86 · jogabilidade 98 · mobile 74 · originalidade 92.
 
+### Ciclos 511–520 ✅ (lote)
+- 511–515: props — flor verde do brejo, pedrinha lilás clara de praia, gelo verde, tronco enlameado de brejo, flor verde clara da floresta (atlas 450) · 516: teste save envelope v2 + migração v1 · 517: teste spawns dia/noite por região · 518: evento 🍄 cogumelo lunar na floresta à noite (+10–16 XP) · 519: dica splash · 520: verificação parcial.
+- Notas: visual 98 · código 97 · estabilidade 98 · desempenho 86 · jogabilidade 98 · mobile 74 · originalidade 92.
+
 ### Ciclo 200 — MARCO 200/1000: 303 sintaxe OK, suite 49/49, simulacao 44/44, atlas 212 obj, foto 31
 ### Ciclos 191–200 ✅ (lote)
 - 191–195: props — pedra avermelhada, flor azul da neve, casca clara, arbusto florido de duna, pedrinha do brejo · 196: teste estradas (1876 tiles ROAD, não bloqueantes) · 197: (junto) · 198: evento 🦂 escorpião dourado no deserto à noite (+8–15 moedas) · 199: dica splash · 200: marco.

@@ -1649,6 +1649,26 @@ test('simulação: spawn por região — dia e noite têm inimigos válidos', ()
   }
 });
 
+test('simulação: SKILLS — xp para nível é monotônico e cobre o máx', () => {
+  let prev = -1;
+  for (let lvl = 1; lvl <= SKILL_MAX_LEVEL; lvl += 1) {
+    const xp = skillXpForLevel(lvl);
+    assert.ok(xp > prev, `xp do nível ${lvl} deve crescer`);
+    prev = xp;
+    assert.equal(skillLevelForXp(xp), lvl, `skillLevelForXp(${xp}) = ${lvl}`);
+  }
+  assert.ok(Object.keys(SKILLS).length >= 4, 'poucas habilidades');
+});
+
+test('simulação: GEAR_SETS — cada set tem peças suficientes (2-5) e bônus válidos', () => {
+  for (const [key, set] of Object.entries(GEAR_SETS)) {
+    assert.ok(set.name, `set ${key} sem nome`);
+    const pieces = Object.values(GEAR_ITEMS).filter((i) => i.tierKey === key);
+    assert.ok(pieces.length >= 2 && pieces.length <= 5, `set ${key} com ${pieces.length} peças (esperado 2-5)`);
+    assert.ok(set.bonus && Object.keys(set.bonus).length >= 1, `set ${key} sem bônus`);
+  }
+});
+
 test('simulação: o jogador não sai do mapa — trava física de limites do mundo ativa no Player', async () => {
   // terrainAt é infinita (gera terreno até fora do mapa), então a proteção real é física:
   // Player.js precisa chamar body.setCollideWorldBounds(true). Conferimos no código-fonte.
