@@ -1491,7 +1491,8 @@ test('simulação: RESOURCE_TYPES tem label+cor+ícone para todos os recursos', 
   for (const [id, r] of Object.entries(RESOURCE_TYPES)) {
     assert.ok(r.label && typeof r.label === 'string', `recurso ${id} sem label`);
     assert.ok(typeof r.color === 'number' && r.color >= 0 && r.color <= 0xffffff, `recurso ${id} cor inválida`);
-    assert.ok(typeof r.icon === 'number' && r.icon >= 0, `recurso ${id} sem ícone (número do atlas)`);
+    // icon é índice no atlas (número) ou null para recursos especiais (fish, crystal, etc.)
+    assert.ok(r.icon === null || (typeof r.icon === 'number' && r.icon >= 0), `recurso ${id} ícone inválido`);
   }
 });
 
