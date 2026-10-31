@@ -1316,6 +1316,39 @@ test('simulação: TILE sadio para gameplay (48 px invariante)', () => {
   assert.equal(OVERWORLD_ROWS, 300, 'OVERWORLD_ROWS=300 invariante');
 });
 
+test('simulação: oásis — têm água por perto, não bloqueantes e dentro do mapa', () => {
+  assert.ok(OASES.length >= 3, 'poucas oásis');
+  for (const o of OASES) {
+    assert.ok(o.x > 0 && o.x < WORLD_COLS * TILE && o.y > 0 && o.y < OVERWORLD_ROWS * TILE, `oásis ${o.name ?? ''} fora do mapa`);
+    assert.ok(![T.SEA, T.LAVA, T.WALL, T.VOID].includes(terrainAt(o.x, o.y)), 'oásis em terreno bloqueante');
+    // ao redor deve haver água (mar) a até ~5 tiles
+    let nearWater = false;
+    for (let dx = -5; dx <= 5 && !nearWater; dx += 1) {
+      for (let dy = -5; dy <= 5 && !nearWater; dy += 1) {
+        if (terrainAt(o.x + dx * TILE, o.y + dy * TILE) === T.SEA) nearWater = true;
+      }
+    }
+    assert.ok(nearWater, `oásis longe demais da água (${o.x},${o.y})`);
+  }
+});
+
+test('simulação: portos (DOCKS) — posição válida, não bloqueante, preço não negativo', () => {
+  assert.ok(DOCKS.length >= 5, 'poucos portos');
+  for (const d of DOCKS) {
+    assert.ok(d.name && d.region, 'porto sem nome/região');
+    assert.ok(d.x > 0 && d.x < WORLD_COLS * TILE, 'porto fora do mapa (x)');
+    assert.ok((d.price ?? 0) >= 0, `porto ${d.name} preço negativo`);
+    // porto fica perto do mar
+    let nearSea = false;
+    for (let dx = -4; dx <= 4 && !nearSea; dx += 1) {
+      for (let dy = -4; dy <= 4 && !nearSea; dy += 1) {
+        if (terrainAt(d.x + dx * TILE, (d.boatY ?? d.y ?? 0) + dy * TILE) === T.SEA) nearSea = true;
+      }
+    }
+    assert.ok(nearSea, `porto ${d.name} longe do mar`);
+  }
+});
+
 test('simulação: o jogador não sai do mapa — trava física de limites do mundo ativa no Player', async () => {
   // terrainAt é infinita (gera terreno até fora do mapa), então a proteção real é física:
   // Player.js precisa chamar body.setCollideWorldBounds(true). Conferimos no código-fonte.

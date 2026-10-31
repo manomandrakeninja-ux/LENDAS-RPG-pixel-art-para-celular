@@ -1682,7 +1682,12 @@ export class GameScene extends Phaser.Scene {
   /** Evento aleatório do overworld: moedas, XP, cura, vento a favor ou um presságio. */
   randomEvent() {
     const roll = Math.random();
-    if (roll < 0.0005 && this.timeState?.phase === 'day' && this.regionWorld?.currentRegion?.() === 'brejo') {
+    if (roll < 0.0004 && this.timeState?.phase === 'night' && this.regionWorld?.currentRegion?.() === 'brasa') {
+      const xp = Phaser.Math.Between(15, 25);
+      this.grantExperience(xp);
+      this.effects.spawnDamage(this.player.x, this.player.y - 30, '🌋', '#ff7040');
+      this.ui.showMessage(`🌋 Evento: erupção distante na ilha de Brasa! +${xp} XP`);
+    } else if (roll < 0.0005 && this.timeState?.phase === 'day' && this.regionWorld?.currentRegion?.() === 'brejo') {
       const coins = Phaser.Math.Between(5, 10);
       this.economy.addCoins(coins);
       this.audio.playCoin();
