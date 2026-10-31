@@ -24,6 +24,7 @@ import { Bestiary } from '../src/game/Bestiary.js';
 import { Achievements, ACHIEVEMENTS } from '../src/data/achievements.js';
 import { DAY_NIGHT_CONFIG, DAY_NIGHT_TOTAL_SECONDS } from '../src/data/dayNight.js';
 import { MISSIONS } from '../src/data/campaign.js';
+import { CRAFT_RECIPES } from '../src/data/craftRecipes.js';
 // Validamos uso cruzado do atlas com regex em TODOS os fontes de src/ (RegionWorld importa Phaser).
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -1534,6 +1535,32 @@ test('simulação: campanha — missões têm id único e título', () => {
     assert.ok(m.title || m.name, `missão ${m.id} sem título`);
   }
   assert.ok(ids.size >= 5, 'poucas missões de campanha');
+});
+
+test('simulação: keybinds — normalizeKeybinds preenche padrão e rebind troca ação', () => {
+  const kb = normalizeKeybinds(null);
+  for (const action of KEY_ACTIONS) {
+    assert.ok(kb[action] && typeof kb[action] === 'string', `ação ${action} sem tecla padrão`);
+    assert.ok(isBindableCode(kb[action]), `tecla padrão inválida: ${kb[action]}`);
+  }
+  const rebound = rebind(normalizeKeybinds(null), 'attack', 'KeyX');
+  assert.equal(actionForCode(rebound, 'KeyX'), 'attack', 'rebind refletido em actionForCode');
+  assert.ok(!isReservedCode('KeyX'), 'KeyX não deve ser reservada');
+});
+
+test('simulação: CRAFT_RECIPES — ingredientes e resultado são recursos/itens válidos', () => {
+  assert.ok(CRAFT_RECIPES.length >= 10, 'poucas receitas');
+  for (const r of CRAFT_RECIPES) {
+    assert.ok(r.id && r.name, 'receita sem id/nome');
+    for (const [res, amt] of Object.entries(r.cost ?? {})) {
+      assert.ok(RESOURCE_TYPES[res] || CONSUMABLES[res], `receita ${r.id} custo inválido: ${res}`);
+      assert.ok(amt > 0, `receita ${r.id} quantidade inválida`);
+    }
+    for (const [res, amt] of Object.entries(r.yield ?? {})) {
+      assert.ok(RESOURCE_TYPES[res] || CONSUMABLES[res], `receita ${r.id} resultado inválido: ${res}`);
+      assert.ok(amt > 0, `receita ${r.id} resultado quantidade inválida`);
+    }
+  }
 });
 
 test('simulação: o jogador não sai do mapa — trava física de limites do mundo ativa no Player', async () => {
