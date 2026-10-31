@@ -22,12 +22,17 @@ import { SKILLS, SKILL_MAX_LEVEL, skillLevelForXp, skillXpForLevel, PlayerSkills
 import { Bestiary } from '../src/game/Bestiary.js';
 import { Achievements, ACHIEVEMENTS } from '../src/data/achievements.js';
 import { DAY_NIGHT_CONFIG, DAY_NIGHT_TOTAL_SECONDS } from '../src/data/dayNight.js';
+// Espelho das tabelas PROPS de RegionWorld (que importa Phaser): validamos uso cruzado com regex no fonte.
+import { readFileSync } from 'node:fs';
+const regionWorldSrc = readFileSync(new URL('../src/game/RegionWorld.js', import.meta.url), 'utf8');
+const PROPS_FOR_TEST = { __src: regionWorldSrc };
 import { Inventory } from '../src/game/Inventory.js';
 import { CampfireTravelers, TRAVELER_GOODS, TRAVELER_QUESTS, questById } from '../src/data/travelers.js';
 import { RESOURCE_TYPES } from '../src/game/config.js';
 import { BUILDING_DEFS, BUILDING_ORDER } from '../src/data/buildings.js';
 import { WEATHER_ICONS, WEATHER_CONFIG } from '../src/data/weather.js';
 import { SAVE_VERSION, createSaveEnvelope } from '../src/game/save.js';
+import { BIOME_PROP_ENTRIES } from '../src/art/biomeProps.js';
 import { PlayerSkills } from '../src/data/skills.js';
 import { migrateSave } from '../src/game/save.js';
 
@@ -880,6 +885,22 @@ test('simulação: ilhas esmeralda/brasa são alcançáveis por porto e têm doc
   for (const dock of islandDocks) {
     assert.ok(['esmeralda', 'brasa'].includes(dock.region), `dock ${dock.name} região errada`);
     assert.ok(dock.island === dock.region, `dock ${dock.name} sem vínculo island=${dock.region}`);
+  }
+});
+
+test('simulação: atlas de props — nomes únicos, draw não vazio, todos usados em algum bioma', () => {
+  const entries = BIOME_PROP_ENTRIES;
+  const names = entries.map((e) => e.name);
+  assert.equal(new Set(names).size, names.length, 'nomes de props duplicados no atlas');
+  assert.ok(names.length > 200, `atlas pequeno demais (${names.length})`);
+  for (const e of entries) {
+    assert.ok(e.draw && typeof e.draw === 'function', `${e.name} sem draw`);
+    const tex = e.draw();
+    assert.ok(tex && tex.width > 0 && tex.height > 0, `${e.name} draw vazio`);
+  }
+  // todo prop do atlas aparece no fonte do RegionWorld (tabela PROPS ou geração MURK)
+  for (const name of names) {
+    assert.ok(regionWorldSrc.includes(`'${name}'`), `prop ${name} definido mas não usado em RegionWorld`);
   }
 });
 

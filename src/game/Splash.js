@@ -37,7 +37,8 @@ const TIPS = [
   'À noite no deserto, um escorpião dourado 🦂 pode deixar moeditas para trás.',
   'Na beira do mar, a onda 🌊 às vezes molha seus pés e dá um pouco de XP.',
   'À noite na floresta, cogumelos mágicos 🍄 podem brilhar com XP.',
-  'No gelo, à noite, a aurora boreal ❄️ pode presentear com moedas.'
+  'No gelo, à noite, a aurora boreal ❄️ pode presentear com moedas.',
+  'Na selva, de dia, flores exóticas 🌺 podem dar um pouco de XP.'
 ];
 
 export function setupSplash() {
