@@ -80,6 +80,11 @@
 - **D:** suite 49/49.
 - **Notas 0–100:** visual 79 · código 87 · estabilidade 95 · desempenho 83 · jogabilidade 88 · mobile 70 · originalidade 81.
 
+## Ciclo 27/30 — Consolidação: atlas + foto 19 + suite ✅ CONCLUÍDO
+
+- **D/F:** atlas regenerado (3923 ladrilhos / 69 objetos); foto 19-mapa-atualizado-ciclo-27; suite 49/49; 303 arquivos com sintaxe OK.
+- **Notas 0–100:** visual 85 · código 89 · estabilidade 97 · desempenho 84 · jogabilidade 91 · mobile 74 · originalidade 83.
+
 ## Ciclo 26/30 — QoL: pausa automática ao ocultar a aba ✅ CONCLUÍDO
 
 - **C:** aba oculta → save + pausa física (se nada pausou) + aviso; ao voltar, tecla retoma. Evita morrer com a tela escondida.
