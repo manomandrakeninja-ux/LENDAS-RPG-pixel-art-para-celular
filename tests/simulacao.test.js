@@ -22,7 +22,8 @@ import { Bestiary } from '../src/game/Bestiary.js';
 import { Achievements, ACHIEVEMENTS } from '../src/data/achievements.js';
 import { DAY_NIGHT_CONFIG, DAY_NIGHT_TOTAL_SECONDS } from '../src/data/dayNight.js';
 import { Inventory } from '../src/game/Inventory.js';
-import { CampfireTravelers, TRAVELER_GOODS, TRAVELER_QUESTS } from '../src/data/travelers.js';
+import { CampfireTravelers, TRAVELER_GOODS, TRAVELER_QUESTS, questById } from '../src/data/travelers.js';
+import { RESOURCE_TYPES } from '../src/game/config.js';
 import { PlayerSkills } from '../src/data/skills.js';
 import { migrateSave, createSaveEnvelope, SAVE_VERSION } from '../src/game/save.js';
 
@@ -629,6 +630,49 @@ test('simulação: viajantes da fogueira — bens/missões sadios, visita e pres
   // aceitar missão só uma vez
   assert.equal(travelers.acceptQuest(), true);
   assert.equal(travelers.acceptQuest(), false, 'só uma missão ativa por vez');
+});
+
+test('simulação: fluxo de missão de viajante — recordKill avança, questReady na meta, claim paga recompensa', () => {
+  const travelers = new CampfireTravelers({});
+  travelers.refresh(100, 99);
+  assert.equal(travelers.acceptQuest(), true);
+  const quest = questById(travelers.activeQuest.id);
+  assert.ok((quest.count ?? Object.keys(quest.items ?? {}).length) > 0, 'missão tem meta');
+  const sources = { inventory: { items: { herbs: 0 } }, storage: {} };
+  if (quest.kind === 'kill') {
+    assert.equal(travelers.questReady(sources), false);
+    for (let i = 0; i < quest.count; i += 1) assert.equal(travelers.recordKill(quest.enemy ?? 'slime'), true);
+    assert.equal(travelers.recordKill('outro'), false, 'abate de outro tipo não conta');
+    assert.equal(travelers.questReady(sources), true, 'pronta para entregar');
+    const reward = travelers.claim(sources, () => true);
+    assert.ok(reward && reward.coins >= 0, 'claim devolve recompensa');
+    assert.equal(travelers.activeQuest, null, 'missão entregue some');
+  } else {
+    // entrega: precisa ter itens suficientes
+    const need = quest.items;
+    const poor = { inventory: { items: {} }, storage: {} };
+    assert.equal(travelers.questReady(poor), false, 'sem itens não está pronta');
+    const rich = { inventory: { items: Object.fromEntries(Object.keys(need).map((k) => [k, need[k]])) }, storage: {} };
+    assert.equal(travelers.questReady(rich), true, 'com itens está pronta');
+    let paid = null;
+    const reward = travelers.claim(rich, (items) => { paid = items; return true; });
+    assert.ok(reward && paid, 'claim de entrega cobra itens e paga recompensa');
+  }
+});
+
+test('simulação: tipos de recurso sadios — nome, ícone e peso por unidade', () => {
+  const types = Object.keys(RESOURCE_TYPES);
+  assert.ok(types.length >= 10, 'poucos tipos de recurso');
+  for (const [id, res] of Object.entries(RESOURCE_TYPES)) {
+    assert.ok(res.label, `${id} sem label`);
+    assert.ok(Number.isFinite(res.color), `${id} sem cor`);
+    assert.ok(typeof res.icon === 'number' && res.icon >= 0, `${id} ícone inválido`);
+  }
+  // tipos usados por consumíveis existem como recurso
+  for (const key of Object.keys(CONSUMABLES)) {
+    const gives = CONSUMABLES[key].gives ?? key;
+    assert.ok(RESOURCE_TYPES[gives] || ['health', 'stamina', 'buff'].includes(gives), `consumível ${key} dá recurso inexistente: ${gives}`);
+  }
 });
 
 test('simulação: o jogador não sai do mapa — trava física de limites do mundo ativa no Player', async () => {
