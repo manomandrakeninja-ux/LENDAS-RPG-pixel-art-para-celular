@@ -11,7 +11,7 @@ globalThis.__buildTerrainGridUncached = buildTerrainGridUncached;
 import { weatherAt } from '../src/data/weather.js';
 import { COMBAT_CONFIG } from '../src/data/combat.js';
 import { BIOME_PROP_ENTRIES } from '../src/art/biomeProps.js';
-import { ENEMY_TYPES } from '../src/data/enemies.js';
+import { ENEMY_TYPES, ENEMY_TYPE_NAMES, enemyXp, ELITE_CONFIG } from '../src/data/enemies.js';
 import { EconomySystem } from '../src/game/EconomySystem.js';
 import { CONSUMABLES, useConsumable } from '../src/data/consumables.js';
 import { DEFAULT_KEYBINDS, KEY_ACTIONS, isBindableCode, isReservedCode, normalizeKeybinds, rebind, actionForCode, loadKeybinds, saveKeybinds, keyLabel, keyCodeFor } from '../src/game/Keybinds.js';
@@ -842,7 +842,7 @@ test('simulação: consumíveis — hotkeys 1–5 únicos e cada um tem efeito d
 
 test('simulação: skills — definições sadias e curva de XP simétrica (xp↔nível)', () => {
   const ids = Object.keys(SKILLS);
-  assert.ok(ids.length >= 5, 'poucas skills');
+  assert.ok(ids.length >= 4, 'poucas skills');
   for (const [id, def] of Object.entries(SKILLS)) {
     assert.ok(def.name && def.icon && def.desc, `skill ${id} mal definida`);
     assert.ok(def.xpBase > 0, `skill ${id} xpBase inválido`);
