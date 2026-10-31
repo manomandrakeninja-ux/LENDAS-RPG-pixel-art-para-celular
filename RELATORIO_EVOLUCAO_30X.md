@@ -113,6 +113,12 @@
 - `docs/mapa-400x300.md` atualizado com os ciclos 31–35; foto 21 (vilarejo + pedra rúnica). Suite 49/49.
 - Notas: 87 / 90 / 97 / 84 / 95 / 74 / 86.
 
+### Ciclo 37/130 — Teste: save antigo migra sem erros ✅ CONCLUÍDO
+- save.test.js 10/10 (campos novos com default); suite 49/49. Notas: 87 / 90 / 98 / 84 / 95 / 74 / 86.
+
+### Ciclo 38/130 — Arte: flor de neve no bioma gelo ✅ CONCLUÍDO
+- 2 props novos (`snow-flower-0/1`), atlas 71 objetos, foto 22. Suite 49/49. Notas: 88 / 90 / 98 / 84 / 95 / 74 / 86.
+
 ### Ciclo 35/130 — Pedra rúnica 💠 nos vilarejos (+50% XP até amanhecer) ✅ CONCLUÍDO
 - Feature 'rune' com sprite `ruin-pillar` + hint em cada vilarejo; `touchRuneStone()`; buff ×1.5 no XP do dia; persistido em `runeDay` (compatível com saves antigos). Suite 49/49; simulacao 8/8; atlas regerado.
 - Notas: 87 / 90 / 97 / 84 / 95 / 74 / 86.

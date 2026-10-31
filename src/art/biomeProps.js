@@ -858,6 +858,51 @@ function flowerTuft(seed = 402) {
   return finish(p, { outline: 0.3 });
 }
 
+/** Flor vulcânica (laranja/vermelho) nas cinzas quentes. */
+function ashFlower(seed = 483) {
+  const p = new Painter(14, 11, { transparent: true });
+  const petals = ['#f07830', '#e04020', '#f4a040'];
+  for (let flower = 0; flower < 2; flower += 1) {
+    const fx = 4 + flower * 6 + (hash(flower, seed, 5) - 0.5) * 2;
+    const fy = 3 + hash(flower, seed, 6) * 3;
+    const color = petals[Math.floor(hash(flower, seed, 7) * petals.length) % petals.length];
+    for (let t = 0; t <= 1; t += 0.2) p.set(fx, fy + 6 * t, shade(['#3a2620', '#4a3228'], 0.5));
+    for (const [ox, oy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) p.set(fx + ox, fy + oy, color);
+    p.set(fx, fy, '#ffe08a');
+  }
+  return finish(p, { outline: 0.3 });
+}
+
+/** Flor do brejo (lilás) na lama rasa. */
+function swampFlower(seed = 467) {
+  const p = new Painter(14, 11, { transparent: true });
+  const petals = ['#c8a8e8', '#b48ad8', '#d8c8f0'];
+  for (let flower = 0; flower < 2; flower += 1) {
+    const fx = 4 + flower * 6 + (hash(flower, seed, 5) - 0.5) * 2;
+    const fy = 3 + hash(flower, seed, 6) * 3;
+    const color = petals[Math.floor(hash(flower, seed, 7) * petals.length) % petals.length];
+    for (let t = 0; t <= 1; t += 0.2) p.set(fx, fy + 6 * t, shade(['#2a4a1a', '#3a5e24'], 0.5));
+    for (const [ox, oy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) p.set(fx + ox, fy + oy, color);
+    p.set(fx, fy, '#e8d8ff');
+  }
+  return finish(p, { outline: 0.3 });
+}
+
+/** Flor do deserto (amarela/rosa) na areia. */
+function duneFlower(seed = 451) {
+  const p = new Painter(14, 11, { transparent: true });
+  const petals = ['#f4d03f', '#f0a0c8', '#f4e6a0'];
+  for (let flower = 0; flower < 2; flower += 1) {
+    const fx = 4 + flower * 6 + (hash(flower, seed, 5) - 0.5) * 2;
+    const fy = 3 + hash(flower, seed, 6) * 3;
+    const color = petals[Math.floor(hash(flower, seed, 7) * petals.length) % petals.length];
+    for (let t = 0; t <= 1; t += 0.2) p.set(fx, fy + 6 * t, shade(['#6a8a3a', '#7a9a4a'], 0.5));
+    for (const [ox, oy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) p.set(fx + ox, fy + oy, color);
+    p.set(fx, fy, '#fff4b0');
+  }
+  return finish(p, { outline: 0.3 });
+}
+
 /** Flor de neve (branca/azul) no chão gelado. */
 function snowFlower(seed = 433) {
   const p = new Painter(14, 11, { transparent: true });
@@ -909,6 +954,12 @@ const PAINTED_ENTRIES = [
   { name: 'flower-tuft-1', draw: () => flowerTuft(419) },
   { name: 'snow-flower-0', draw: () => snowFlower(433) },
   { name: 'snow-flower-1', draw: () => snowFlower(441) },
+  { name: 'dune-flower-0', draw: () => duneFlower(451) },
+  { name: 'dune-flower-1', draw: () => duneFlower(459) },
+  { name: 'swamp-flower-0', draw: () => swampFlower(467) },
+  { name: 'swamp-flower-1', draw: () => swampFlower(475) },
+  { name: 'ash-flower-0', draw: () => ashFlower(483) },
+  { name: 'ash-flower-1', draw: () => ashFlower(491) },
   { name: 'shipwreck', draw: shipwreck },
   { name: 'sea-rock', draw: seaRock },
   { name: 'charred-tree', draw: () => deadTree(['#0c0808', '#1a1010', '#2a1a16', '#3a2620', '#4a3228'], true) },

@@ -69,6 +69,26 @@
 - **D:** suite 49/49.
 - Notas 0–100: visual 79 · código 87 · estabilidade 95 · desempenho 83 · jogabilidade 88 · mobile 70 · originalidade 81.
 
+### Ciclo 41 — Arte: flor vulcânica 🔥🌸 no bioma de cinzas (atlas 75→77)
+- **C:** `ashFlower` (laranja/vermelho) nos props do T.ASH.
+- **D:** atlas regerado (77 objetos); suite 49/49.
+- Notas: visual 89 · código 90 · estabilidade 98 · desempenho 84 · jogabilidade 95 · mobile 74 · originalidade 86.
+
+### Ciclo 40 — Arte: flor do brejo lilás no pântano (atlas 73→75) + foto 23
+- **C:** `swampFlower` nos props do T.SWAMP.
+- **D:** atlas regerado; suite 49/49; foto 23-detalhe-brejo.
+- Notas: visual 89 · código 90 · estabilidade 98 · desempenho 84 · jogabilidade 95 · mobile 74 · originalidade 86.
+
+### Ciclo 39 — Arte: flor do deserto nas dunas/areia (atlas 71→73)
+- **C:** `duneFlower` nos props T.SAND e T.DUNE.
+- **D:** atlas regerado; suite 49/49.
+- Notas: visual 88 · código 90 · estabilidade 98 · desempenho 84 · jogabilidade 95 · mobile 74 · originalidade 86.
+
+### Ciclo 38 — Arte: flor de neve ❄️🌸 nos biomas gelados (2 props novos, atlas 65→71 no total) + foto 22
+- **C:** `snowFlower` (pétalas branca/azul) nos props do T.SNOW; atlas regerado (71 objetos).
+- **D:** suite 49/49.
+- Notas: visual 88 · código 90 · estabilidade 98 · desempenho 84 · jogabilidade 95 · mobile 74 · originalidade 86.
+
 ### Ciclo 37 — Teste: save antigo (pré-experimento) migra sem erro e ganha defaults (runeDay etc.)
 - **D:** novo teste em save.test.js (10/10). Suite 49/49.
 - Notas: visual 87 · código 90 · estabilidade 98 · desempenho 84 · jogabilidade 95 · mobile 74 · originalidade 86.
