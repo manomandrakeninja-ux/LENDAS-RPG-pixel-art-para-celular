@@ -133,6 +133,10 @@
 - 50–51: clima do novo dia no amanhecer (dormir + natural, sem duplicar) · 52: teste cavernas/torres vs ENEMY_TYPES · 53: saldo 🪙 no título da loja · 54: teste de economia · 55: rastro fantasma na esquiva · 56: teste de consumíveis · 57: tronco congelado (atlas 88) · 58: teste de performance do grid (fria 82 ms, cache ~0 ms) · 59: XP do baú escalável (+2/nível da região) · 60: teste de portos na costa + foto 26 · 61: conchas na praia (atlas 90) · 62: teste de vilarejos · 63: teste dos 50 inimigos · 64: teste da curva de skills · 65: `__lendasPerf()` (avg/FPS/p95).
 - Estado: suite 49/49, simulacao 18/18, atlas 90 objetos, 26 fotos. Notas: 90 / 92 / 98 / 86 / 96 / 74 / 86.
 
+### Ciclos 71–100/1000 ✅ CONCLUÍDOS (lote) — marco 100 alcançado
+- 71–77: props (neve, brasas, lama, pegadas, cacto florido) + teste clima 90 d + evento 🐦 · 78–87: 5 props + fix real (baús colidiam com torres — `entrance` não era lido) + testes baús/oásis/estradas + 🌨️ nevasca · 88–97: 5 props (estrela-do-mar, liana, obsidiana, poça de maré, pedra de rio) + testes invariantes de save/mapa + 🌈 arco-íris · 98–100: 5 props + testes scaleEnemy/gear + 🔥 onda de calor + marco 100 (foto 29).
+- Estado no marco 100: 303 arquivos sintaxe OK · suite 49/49 · simulacao 27/27 · atlas 129 objetos · 29 fotos. Notas: 92 / 93 / 98 / 86 / 97 / 74 / 87.
+
 ### Ciclo 70/130 — Verificação intermediária (marco) ✅ CONCLUÍDO
 - 303 arquivos sintaxe OK · suite 49/49 · simulacao 19/19 · atlas 90 objetos · foto 28-mapa-ciclo-70. Notas: 90 / 92 / 98 / 86 / 97 / 74 / 86.
 
