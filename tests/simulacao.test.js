@@ -897,9 +897,11 @@ test('simulação: atlas de props — nomes únicos, draw não vazio, todos usad
     const tex = e.draw();
     assert.ok(tex && tex.width > 0 && tex.height > 0, `${e.name} draw vazio`);
   }
-  // todo prop do atlas aparece no fonte do RegionWorld (tabela PROPS ou geração MURK)
+  // Todo prop do atlas aparece no fonte do RegionWorld — exceto reserva intencional
+  // (T.VALLEY é um prado limpo por design: valley-flower fica no atlas para eventos futuros).
+  const RESERVED = /^valley-flower-/;
   for (const name of names) {
-    assert.ok(regionWorldSrc.includes(`'${name}'`), `prop ${name} definido mas não usado em RegionWorld`);
+    assert.ok(RESERVED.test(name) || regionWorldSrc.includes(`'${name}'`), `prop ${name} definido mas não usado em RegionWorld`);
   }
 });
 
