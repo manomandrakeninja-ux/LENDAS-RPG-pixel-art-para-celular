@@ -14,6 +14,7 @@ import { BIOME_PROP_ENTRIES } from '../src/art/biomeProps.js';
 import { ENEMY_TYPES } from '../src/data/enemies.js';
 import { EconomySystem } from '../src/game/EconomySystem.js';
 import { CONSUMABLES, useConsumable } from '../src/data/consumables.js';
+import { DEFAULT_KEYBINDS, KEY_ACTIONS, isBindableCode, isReservedCode, normalizeKeybinds, rebind, actionForCode, loadKeybinds, saveKeybinds, keyLabel, keyCodeFor } from '../src/game/Keybinds.js';
 import { PlayerSkills } from '../src/data/skills.js';
 import { migrateSave, createSaveEnvelope, SAVE_VERSION } from '../src/game/save.js';
 
@@ -362,6 +363,41 @@ test('simulação: curva de nível das skills — nível 2 aos 200 XP, monotôni
   // Skill inexistente não quebra.
   assert.equal(skills.level('inexistente'), 0);
   skills.addXp('inexistente', 100);
+});
+
+test('simulação: keybinds — rebind aceita tecla válida, rejeita reservada/duplicada/inválida', () => {
+  // Padrões sadios e distintos.
+  const binds = normalizeKeybinds({});
+  assert.deepEqual(binds, DEFAULT_KEYBINDS);
+  assert.equal(new Set(KEY_ACTIONS.map((a) => binds[a])).size, KEY_ACTIONS.length, 'padrões sem colisão');
+  // Aceita letra livre.
+  const ok = rebind(binds, 'attack', 'KeyH');
+  assert.equal(ok.ok, true);
+  assert.equal(ok.binds.attack, 'KeyH');
+  // Rejeita reservada (W é movimento), inválida e duplicada.
+  assert.equal(rebind(binds, 'attack', 'KeyW').ok, false, 'W é reservada');
+  assert.equal(rebind(binds, 'attack', 'KeyQ').ok, false, 'Q já é special');
+  assert.equal(rebind(binds, 'attack', 'F13').ok, false, 'F13 não é bindável');
+  assert.equal(rebind(binds, 'acao-x', 'KeyH').ok, false, 'ação desconhecida');
+  // normalize descarta inválido e volta ao padrão naquela ação.
+  const norm = normalizeKeybinds({ attack: 'KeyW', dodge: 'Space' });
+  assert.equal(norm.attack, DEFAULT_KEYBINDS.attack);
+  assert.equal(norm.dodge, 'Space');
+  // normalize com colisão total volta tudo ao padrão.
+  assert.deepEqual(normalizeKeybinds({ attack: 'KeyJ', special: 'KeyJ' }), DEFAULT_KEYBINDS);
+  // Helpers de UI.
+  assert.equal(isBindableCode('KeyZ'), true);
+  assert.equal(isBindableCode('Space'), true);
+  assert.equal(isBindableCode('ArrowUp'), false);
+  assert.equal(isReservedCode('KeyM'), true, 'M é mapa');
+  assert.equal(keyLabel('KeyJ'), 'J');
+  assert.equal(keyLabel('Space'), 'ESPAÇO');
+  assert.equal(keyCodeFor('KeyJ'), 74);
+  assert.equal(actionForCode(binds, 'KeyJ'), 'attack');
+  assert.equal(actionForCode(binds, 'KeyX'), null);
+  // Sem localStorage (node) cai no padrão e save não quebra.
+  assert.deepEqual(loadKeybinds(null), DEFAULT_KEYBINDS);
+  assert.equal(saveKeybinds(binds, null), true, 'save sem storage não quebra');
 });
 
 test('simulação: o jogador não sai do mapa — trava física de limites do mundo ativa no Player', async () => {

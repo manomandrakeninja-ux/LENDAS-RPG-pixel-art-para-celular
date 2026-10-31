@@ -236,6 +236,8 @@ export class Player extends Phaser.GameObjects.Container {
   }
 
   damage(amount, source = null, options = {}) {
+    // Marca o último dano sofrido (usado pela regeneração fora de combate na cena).
+    if (this.scene?.time) this.scene.lastPlayerDamageAt = this.scene.time.now;
     if (this.invulnerable > 0) return false;
     this.addShoutCharge(COMBAT_CONFIG.shout.chargePerDamageTaken);
     const fireFactor = options.fire ? 1 - this.fireResistance : 1;

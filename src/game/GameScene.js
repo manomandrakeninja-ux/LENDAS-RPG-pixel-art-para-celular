@@ -768,6 +768,19 @@ export class GameScene extends Phaser.Scene {
     // Ring buffer de ms/frame (máx 120) para o medidor __lendasPerf.
     this.frameTimes.push(delta);
     if (this.frameTimes.length > 120) this.frameTimes.shift();
+    // Regeneração leve fora de combate: após 6 s sem levar dano, +0.6% da vida máx por segundo.
+    if (!this.gameOver && this.player.health > 0 && this.player.health < this.player.maxHealth) {
+      const lastHit = this.lastPlayerDamageAt ?? -Infinity;
+      if (time - lastHit > 6000) {
+        const before = this.player.health;
+        this.player.health = Math.min(this.player.maxHealth, this.player.health + (this.player.maxHealth * 0.006 * delta) / 1000);
+        // Efeito visual espaçado (a cada ~2 s) para feedback.
+        if (this.player.health - before > 0 && (this.lastRegenFxAt ?? 0) + 2000 < time) {
+          this.lastRegenFxAt = time;
+          this.effects.spawnHeal?.(this.player.x, this.player.y - 20);
+        }
+      }
+    }
     this.graphics?.update(delta);
     this.lan?.update(delta);
     if (this.gameOver) {
