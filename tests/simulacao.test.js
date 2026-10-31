@@ -2029,7 +2029,8 @@ test('simulação: HARVEST_STRUCTURE_TYPES — estruturas têm label, recompensa
   assert.ok(types.length >= 3, 'poucas estruturas de coleta');
   for (const [id, def] of Object.entries(HARVEST_STRUCTURE_TYPES)) {
     assert.ok(def.label, `estrutura ${id} sem label`);
-    assert.ok(def.rewardType && RESOURCE_TYPES[def.rewardType], `estrutura ${id} rewardType inválido: ${def.rewardType}`);
+    if (def.rewardType) assert.ok(RESOURCE_TYPES[def.rewardType], `estrutura ${id} rewardType inválido: ${def.rewardType}`);
+    assert.ok(def.rewardType || def.coins || def.loot, `estrutura ${id} sem nenhuma recompensa`);
     assert.ok(Array.isArray(def.rewardAmount) && def.rewardAmount[1] >= def.rewardAmount[0] && def.rewardAmount[0] > 0, `estrutura ${id} rewardAmount inválido`);
     assert.ok((def.regrowDays ?? 0) >= 0, `estrutura ${id} regrowDays inválido`);
   }
