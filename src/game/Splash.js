@@ -71,7 +71,8 @@ const TIPS = [
   'Na nevasca do gelo, à noite, a neve mágica ❄️ rende bastante XP.',
   'Na chuva do brejo, de dia, um sapo 🐸 pode dar um pouco de XP.',
   'Na ilha de Brasa, à noite com cinzas, uma brasa viva 🔥 rende bastante XP.',
-  'De dia no sol das terras antigas, uma ânfora 🏺 pode dar moeditas.'
+  'De dia no sol das terras antigas, uma ânfora 🏺 pode dar moeditas.',
+  'À noite nas cinzas, uma caveira sussurrante 💀 pode render bastante XP.'
 ];
 
 export function setupSplash() {

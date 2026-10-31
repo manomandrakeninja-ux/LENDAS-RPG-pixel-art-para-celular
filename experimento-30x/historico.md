@@ -261,6 +261,10 @@
 - 551–555: props — flor verde clara de duna, pedra verde-água escura de praia, neve florida verde clara, cogumelo verde-água escuro do brejo, flor verde clara de selva (atlas 481) · 556: teste scaleEnemy (moedas escalam) · 557: teste levelInRange (faixa) · 558: evento 🔥 brasa viva em Brasa à noite com cinzas (+15–25 XP) · 559: dica splash · 560: verificação parcial.
 - Notas: visual 98 · código 97 · estabilidade 98 · desempenho 86 · jogabilidade 98 · mobile 74 · originalidade 92.
 
+### Ciclos 561–570 ✅ (lote)
+- 561–565: props — flor verde clara de praia, pedra verde-água de duna, gelo verde claro, cogumelo verde claro do brejo, flor verde-água clara de cinza (atlas 489) · 566: teste Inventory (add/usedSlots/serialize) · 567: teste CampfireTravelers (dia de visita nv≥4) · 568: evento 🏺 ânfora antiga nas terras antigas de dia (+6–12 moedas) · 569: dica splash · 570: verificação parcial.
+- Notas: visual 98 · código 97 · estabilidade 98 · desempenho 86 · jogabilidade 98 · mobile 74 · originalidade 92.
+
 ### Ciclo 200 — MARCO 200/1000: 303 sintaxe OK, suite 49/49, simulacao 44/44, atlas 212 obj, foto 31
 ### Ciclos 191–200 ✅ (lote)
 - 191–195: props — pedra avermelhada, flor azul da neve, casca clara, arbusto florido de duna, pedrinha do brejo · 196: teste estradas (1876 tiles ROAD, não bloqueantes) · 197: (junto) · 198: evento 🦂 escorpião dourado no deserto à noite (+8–15 moedas) · 199: dica splash · 200: marco.

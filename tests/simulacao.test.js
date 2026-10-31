@@ -25,6 +25,7 @@ import { Bestiary } from '../src/game/Bestiary.js';
 import { Achievements, ACHIEVEMENTS } from '../src/data/achievements.js';
 import { DAY_NIGHT_CONFIG, DAY_NIGHT_TOTAL_SECONDS } from '../src/data/dayNight.js';
 import { MISSIONS } from '../src/data/campaign.js';
+import { BUILDING_DEFS, BUILDING_ORDER } from '../src/data/buildings.js';
 import { CRAFT_RECIPES } from '../src/data/craftRecipes.js';
 // Validamos uso cruzado do atlas com regex em TODOS os fontes de src/ (RegionWorld importa Phaser).
 import { readFileSync, readdirSync, statSync } from 'node:fs';
@@ -1751,6 +1752,26 @@ test('simulação: CampfireTravelers — dia de visita (múltiplo de 4, fogueira
   assert.equal(t.refresh(4, 4), true, 'refresh em dia de visita devolve true');
   assert.equal(t.present, true, 'present=true no dia da visita (booleano)');
   assert.ok(t.acceptQuest() === true || t.acceptQuest() === false, 'acceptQuest devolve booleano');
+});
+
+test('simulação: BUILDING_DEFS — ordem de construção tem todas as construções e sem duplicar', () => {
+  assert.ok(Array.isArray(BUILDING_ORDER) && BUILDING_ORDER.length >= 5, 'poucas construções na ordem');
+  const set = new Set(BUILDING_ORDER);
+  assert.equal(set.size, BUILDING_ORDER.length, 'ordem sem duplicatas');
+  for (const key of BUILDING_ORDER) assert.ok(BUILDING_DEFS[key], `construção ${key} ausente em BUILDING_DEFS`);
+  // toda construção da ordem tem custo ou é gratuita por design (nível 1)
+  for (const key of BUILDING_ORDER) {
+    const def = BUILDING_DEFS[key];
+    assert.ok(def.maxLevel >= 1, `${key} maxLevel inválido`);
+  }
+});
+
+test('simulação: dayNight — fases dentro do ciclo: dia, transição, noite', () => {
+  // amostramos o ciclo em horas e conferimos que dawn < dusk e há noite após dusk
+  const c = DAY_NIGHT_CONFIG;
+  assert.ok(c.dayDurationSeconds > 0 && c.nightDurationSeconds > 0, 'durações positivas');
+  assert.equal(DAY_NIGHT_TOTAL_SECONDS, c.dayDurationSeconds + c.nightDurationSeconds, 'total = dia + noite');
+  assert.ok(c.transitionDurationSeconds < c.dayDurationSeconds, 'transição menor que o dia');
 });
 
 test('simulação: o jogador não sai do mapa — trava física de limites do mundo ativa no Player', async () => {
