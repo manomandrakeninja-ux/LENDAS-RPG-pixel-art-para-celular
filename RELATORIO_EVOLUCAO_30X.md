@@ -34,3 +34,10 @@
 - **C:** sombra ellipse sob moradores de vilarejos e viajantes (acompanha no update).
 - **D:** suite 48/48. Limitação: verificação visual não é possível no sandbox (sem Chrome) — auditado só por código.
 - **Notas 0–100:** visual 79 · código 86 · estabilidade 92 · desempenho 80 · jogabilidade 83 · mobile 70 · originalidade 80.
+
+## Ciclo 05/30 — Testador automático: simulacao.test.js + POI inalcançável ✅ CONCLUÍDO
+
+- **A/C/D:** `tests/simulacao.test.js` (4 testes puros, sem Phaser): BFS de alcançabilidade do acampamento até cavernas/torres/vilarejos/baús (a pé ou de barco por ilha), 30 dias de clima, XP/skills + roundtrip de save, integridade da grade 400×300+subterrâneo.
+- **Bug real achado e corrigido:** Gruta dos Piratas em ilha longe de porto → novo DOCK `ancoradouro-piratas` + entrada da gruta movida para 404 px do porto.
+- **D:** simulacao 4/4; suite 49/49 arquivos. Sem regressões.
+- **Notas 0–100:** visual 79 · código 87 · estabilidade 94 · desempenho 80 · jogabilidade 83 · mobile 70 · originalidade 80.

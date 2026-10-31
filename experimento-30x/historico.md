@@ -31,3 +31,9 @@
 - **D:** suite 48/48; `node --check` ok. Sem teste visual (sandbox sem browser) — registrado como limitação.
 - Notas 0–100: visual 79 · código 86 · estabilidade 92 · desempenho 80 · jogabilidade 83 · mobile 70 · originalidade 80.
 
+### Ciclo 05 — Testador automático: simulação de dia + bug de POI inalcançável
+- **C/D:** novo `tests/simulacao.test.js` (4 testes): BFS do acampamento até todos os POIs (a pé ou de barco), 30 dias de clima por região, dia de combate/XP com roundtrip de save, grade do mapa.
+- **BUG REAL CORRIGIDO:** a Gruta dos Piratas ficava numa ilha a 2105 px do porto mais próximo → inalcançável. Adicionado 7º porto "Ancoradouro dos Piratas" (ilha esmeralda) e movida a entrada da gruta para 404 px dele.
+- Suite: 49/49 arquivos passando (antes 48).
+- Notas 0–100: visual 79 · código 87 · estabilidade 94 · desempenho 80 · jogabilidade 83 · mobile 70 · originalidade 80.
+

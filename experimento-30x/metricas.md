@@ -13,3 +13,4 @@ Linha base (antes do ciclo 01):
 | 02 | 48/48 arquivos; save 9/9 | 78 / 86 / 92 / 80 / 82 / 70 / 80 |
 | 03 | 48/48 arquivos | 78 / 86 / 92 / 80 / 83 / 70 / 80 |
 | 04 | 48/48 arquivos | 79 / 86 / 92 / 80 / 83 / 70 / 80 |
+| 05 | 49/49 arquivos (novo simulacao.test.js 4/4) | 79 / 87 / 94 / 80 / 83 / 70 / 80 |

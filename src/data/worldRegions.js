@@ -196,7 +196,7 @@ export const CAVES = Object.freeze([
     monsters: ['mummy', 'scorpion', 'snake'], boss: 'pharaoh'
   },
   {
-    id: 'gruta-piratas', name: 'Gruta dos Piratas', region: 'esmeralda', entrance: { x: W(0.206), y: H(0.859) }, floors: 2, theme: 'sea',
+    id: 'gruta-piratas', name: 'Gruta dos Piratas', region: 'esmeralda', entrance: { x: 4020, y: 11080 }, floors: 2, theme: 'sea', // perto do Ancoradouro dos Piratas (ilha esmeralda)
     monsters: ['crab', 'pirate', 'bat'], boss: 'ghostCaptain'
   },
   {
@@ -375,6 +375,7 @@ export const DOCKS = Object.freeze([
   { id: 'porto-brejo', name: 'Porto do Brejo', region: 'brejo', x: W(0.12), price: 0 },
   { id: 'porto-areia', name: 'Porto das Dunas', region: 'areia', x: W(0.872), price: 0 },
   { id: 'porto-esmeralda', name: 'Porto Esmeralda', region: 'esmeralda', x: W(0.264), island: 'esmeralda', price: 0 },
+  { id: 'ancoradouro-piratas', name: 'Ancoradouro dos Piratas', region: 'esmeralda', x: W(0.206), island: 'esmeralda', price: 0 }, // perto da Gruta dos Piratas
   { id: 'porto-brasa', name: 'Porto de Brasa', region: 'brasa', x: W(0.731), island: 'brasa', price: 0 },
   // Portos novos do mapa grande (na costa: x<W(0.16) = brejo, W(0.16)..W(0.63) = antiga).
   { id: 'porto-austral', name: 'Porto Austral', region: 'brejo', x: W(0.12), price: 0 },
