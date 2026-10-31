@@ -69,6 +69,24 @@
 - **D:** suite 49/49.
 - Notas 0–100: visual 79 · código 87 · estabilidade 95 · desempenho 83 · jogabilidade 88 · mobile 70 · originalidade 81.
 
+### Ciclo 45 — Arte: flor tropical rosa na selva (atlas 77→79) + foto 24
+- **C:** `jungleFlower` nos props do T.JUNGLE.
+- **D:** atlas regerado (79 objetos); suite 49/49; simulacao 10/10; foto 24.
+- Notas: visual 90 · código 91 · estabilidade 98 · desempenho 84 · jogabilidade 96 · mobile 74 · originalidade 86.
+
+### Ciclo 44 — Teste: props do atlas (nomes únicos, draw não vazio, flores novas presentes) — simulacao 10/10
+- **D:** novo teste em simulacao (9/9). Suite 49/49.
+- Notas: visual 89 · código 91 · estabilidade 98 · desempenho 84 · jogabilidade 95 · mobile 74 · originalidade 86.
+
+### Ciclo 43 — Teste: sanidade do COMBAT_CONFIG (alcance, cooldown, combo, shout)
+- **D:** simulacao 9/9; suite 49/49.
+- Notas: visual 89 · código 91 · estabilidade 98 · desempenho 84 · jogabilidade 95 · mobile 74 · originalidade 86.
+
+### Ciclo 42 — Game feel: grito FUS RO DAH dá recoo leve no jogador (oposto ao olhar)
+- **C:** `setVelocity` -140 na direção contrária do facing após o shout.
+- **D:** suite 49/49.
+- Notas: visual 89 · código 90 · estabilidade 98 · desempenho 84 · jogabilidade 96 · mobile 74 · originalidade 86.
+
 ### Ciclo 41 — Arte: flor vulcânica 🔥🌸 no bioma de cinzas (atlas 75→77)
 - **C:** `ashFlower` (laranja/vermelho) nos props do T.ASH.
 - **D:** atlas regerado (77 objetos); suite 49/49.

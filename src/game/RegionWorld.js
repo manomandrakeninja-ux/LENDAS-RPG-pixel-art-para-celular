@@ -39,7 +39,7 @@ const PROPS = {
   [T.SAND]: { density: 0.07, list: [['cactus', 2, [12, 7]], ['cactus-small', 2, [10, 6]], ['desert-rock', 1, [40, 12]], ['skull', 0.7], ['dry-bush', 2], ['ruin-pillar', 0.3, [18, 8]], ['ruin-pillar-broken', 0.4, [18, 8]], ['grass-tuft-0', 1.5], ['dune-flower-0', 0.7], ['dune-flower-1', 0.7]] },
   [T.DUNE]: { density: 0.03, list: [['dry-bush', 1], ['skull', 0.4], ['cactus-small', 0.5, [10, 6]], ['grass-tuft-1', 1], ['dune-flower-0', 0.5], ['dune-flower-1', 0.5]] },
   [T.BEACH]: { density: 0.06, list: [['palm-0', 1.5, [8, 6]], ['palm-1', 1.5, [8, 6]], ['sea-rock', 1, [28, 10]], ['big-flower', 0.3], ['flower-tuft-0', 1.5], ['grass-tuft-0', 2]] },
-  [T.JUNGLE]: { density: 0.17, list: [['palm-0', 1.5, [8, 6]], ['palm-1', 1.5, [8, 6]], ['tropical-bush', 3], ['big-flower', 2], ['sea-rock', 0.4, [28, 10]], ['grass-tuft-0', 3], ['grass-tuft-1', 3], ['flower-tuft-1', 2]] },
+  [T.JUNGLE]: { density: 0.17, list: [['palm-0', 1.5, [8, 6]], ['palm-1', 1.5, [8, 6]], ['tropical-bush', 3], ['big-flower', 2], ['sea-rock', 0.4, [28, 10]], ['grass-tuft-0', 3], ['grass-tuft-1', 3], ['flower-tuft-1', 2], ['jungle-flower-0', 0.8], ['jungle-flower-1', 0.8]] },
   [T.ASH]: { density: 0.11, list: [['charred-tree', 2, [10, 7]], ['obsidian', 2, [28, 12]], ['lava-vent', 1], ['fire-crystal', 0.8, [14, 8]], ['ash-bush', 2], ['grass-tuft-1', 0.8], ['ash-flower-0', 0.5], ['ash-flower-1', 0.5]] }
 };
 const NODE_DENSITY = 0.011;

@@ -1251,6 +1251,9 @@ export class GameScene extends Phaser.Scene {
     this.cameras.main.shake(shout ? COMBAT_CONFIG.screenShake.shout.duration : 420, COMBAT_CONFIG.screenShake.shout.intensity, true);
     this.hitstop(90);
     this.audio.playSpecial?.() ?? this.audio.playHit?.();
+    // Recuo leve do grito: empurra o jogador na direção oposta ao olhar (game feel).
+    const facing = player.facing ?? { x: 0, y: 1 };
+    player.body?.setVelocity(player.body.velocity.x - facing.x * 140, player.body.velocity.y - facing.y * 140);
     const targets = this.enemies.filter((enemy) => enemy.active &&
       Phaser.Math.Distance.Between(enemy.x, enemy.y, player.x, player.y) < shout.range);
     if (this.boss && !this.boss.dead &&

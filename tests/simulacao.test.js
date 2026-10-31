@@ -8,6 +8,8 @@ import {
   buildTerrainGrid, dockPosition, pointOnRoad, regionAt, terrainAt, TERRAIN_NODES, VALLEY_EXTRA_SPAWNS
 } from '../src/data/worldRegions.js';
 import { weatherAt } from '../src/data/weather.js';
+import { COMBAT_CONFIG } from '../src/data/combat.js';
+import { BIOME_PROP_ENTRIES } from '../src/art/biomeProps.js';
 import { PlayerSkills } from '../src/data/skills.js';
 import { migrateSave, createSaveEnvelope, SAVE_VERSION } from '../src/game/save.js';
 
@@ -160,6 +162,35 @@ test('simulação: placas de estrada válidas e estradas andáveis', () => {
       const terrain = terrainAt(p.x, p.y);
       assert.ok(!NOT_WALKABLE.has(terrain), `estrada ${road.name} passa por terreno bloqueante ${terrain} em t=${t.toFixed(1)}`);
     }
+  }
+});
+
+test('simulação: configs de combate são sadias (alcance, cooldown, shout, combo)', () => {
+  assert.ok(COMBAT_CONFIG.basicAttackRange > 0 && COMBAT_CONFIG.basicAttackRange <= 200, 'alcance corpo a corpo desarrazoado');
+  assert.ok(COMBAT_CONFIG.basicAttackCooldownMs >= 150 && COMBAT_CONFIG.basicAttackCooldownMs <= 1500, 'cooldown de ataque desarrazoado');
+  assert.ok(Number.isInteger(COMBAT_CONFIG.combo.length) && COMBAT_CONFIG.combo.length >= 2, 'combo precisa de 2+ golpes');
+  assert.ok(COMBAT_CONFIG.combo.finisherMultiplier > 1, 'finisher deve dar mais dano');
+  assert.ok(COMBAT_CONFIG.shout.chargePerHit > 0 && COMBAT_CONFIG.shout.chargePerFinisher >= COMBAT_CONFIG.shout.chargePerHit, 'shout deve carregar com hits');
+  // A carga máxima do shout é 100 (verificada no código do Player/GameScene); aqui conferimos que dá pra encher em ~25 hits.
+  assert.ok(COMBAT_CONFIG.shout.chargePerHit * 25 >= 100, 'shout demoraria demais para carregar');
+  assert.ok(COMBAT_CONFIG.shout.damageMultiplier > 1 && COMBAT_CONFIG.shout.flatDamage > 0, 'shout deve causar dano extra');
+  assert.ok(COMBAT_CONFIG.shout.range > COMBAT_CONFIG.basicAttackRange, 'shout deve ter alcance maior que o golpe');
+  assert.ok(COMBAT_CONFIG.shout.cooldownMs >= 3000, 'shout precisa de cooldown longo');
+});
+
+test('simulação: props de bioma — nomes únicos e draw() gera pixels não vazios', () => {
+  const names = new Set();
+  assert.ok(BIOME_PROP_ENTRIES.length >= 60, 'atlas de props deveria ter dezenas de objetos');
+  for (const entry of BIOME_PROP_ENTRIES) {
+    assert.ok(!names.has(entry.name), `prop duplicado: ${entry.name}`);
+    names.add(entry.name);
+    const art = entry.draw();
+    const data = art?.data ?? art;
+    assert.ok(data && (data.data?.length ?? data.length ?? 0) > 0, `prop ${entry.name} gerou vazio`);
+  }
+  // As flores novas dos ciclos 38-41 devem existir.
+  for (const name of ['snow-flower-0', 'dune-flower-0', 'swamp-flower-0', 'ash-flower-0']) {
+    assert.ok(names.has(name), `prop ${name} faltando no atlas`);
   }
 });
 
