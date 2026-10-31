@@ -1430,6 +1430,29 @@ test('simulação: regions do subterrâneo — cavernas têm tema válido e prof
   assert.ok(usedThemes.size >= 3, `poucos temas de caverna (${[...usedThemes].join(',')})`);
 });
 
+test('simulação: recursos abundantes — RESOURCE_TYPES cobre drops comuns de inimigos', () => {
+  // enemies têm drops com tipos que existem em RESOURCE_TYPES (ou coins/xp implícitos)
+  for (const [id, def] of Object.entries(ENEMY_TYPES)) {
+    for (const drop of def.drops ?? []) {
+      if (drop.type) assert.ok(RESOURCE_TYPES[drop.type], `inimigo ${id} dropa recurso inexistente: ${drop.type}`);
+      if (drop.chance !== undefined) assert.ok(drop.chance > 0 && drop.chance <= 1, `inimigo ${id} chance inválida`);
+    }
+  }
+});
+
+test('simulação: GEAR_ITEMS — stats são números não negativos e nível sadio', () => {
+  for (const [id, item] of Object.entries(GEAR_ITEMS)) {
+    assert.ok(item.id === id || item.id, `item ${id} sem id`);
+    assert.ok(GEAR_SLOTS.includes(item.slot), `item ${id} slot inválido: ${item.slot}`);
+    assert.ok((item.level ?? 0) >= 1, `item ${id} nível inválido`);
+    for (const [stat, val] of Object.entries(item)) {
+      if (['attack', 'defense', 'health', 'speedPercent'].includes(stat)) {
+        assert.ok(typeof val === 'number' && val >= 0, `item ${id} stat ${stat} inválido: ${val}`);
+      }
+    }
+  }
+});
+
 test('simulação: o jogador não sai do mapa — trava física de limites do mundo ativa no Player', async () => {
   // terrainAt é infinita (gera terreno até fora do mapa), então a proteção real é física:
   // Player.js precisa chamar body.setCollideWorldBounds(true). Conferimos no código-fonte.

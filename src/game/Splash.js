@@ -56,7 +56,8 @@ const TIPS = [
   'Na ilha de Brasa, à noite, uma erupção distante 🌋 rende bastante XP.',
   'Nas terras antigas, de dia e sol aberto 🏛️, as ruínas podem dar XP.',
   'De dia na praia, um caranguejo dourado 🦀 pode deixar moeditas.',
-  'À noite no vale, uma coruja 🦉 pode aparecer com um pouco de XP.'
+  'À noite no vale, uma coruja 🦉 pode aparecer com um pouco de XP.',
+  'Na ilha Esmeralda, de dia, uma orquídea rara 🌿 pode dar XP.'
 ];
 
 export function setupSplash() {

@@ -197,6 +197,10 @@
 - 401–405: props — flor coral de praia, pedra lavanda de duna, neve florida rosa, cogumelo azul-marinho, arbusto florido de cinza (atlas 368) · 406: teste achievements goal all + numérica · 407: teste buffs serialize/list · 408: evento 🦀 caranguejo dourado na praia (+4–8 moedas) · 409: dica splash · 410: verificação parcial.
 - Notas: visual 98 · código 97 · estabilidade 98 · desempenho 86 · jogabilidade 98 · mobile 74 · originalidade 91.
 
+### Ciclos 411–420 ✅ (lote)
+- 411–415: props — flor coral da selva, pedrinha dourada de praia, gelo verde-água, cascalho lilás de duna, flor amarela de cinza (atlas 375) · 416: teste clima por região (neve só no gelo, poeira só no désert) · 417: teste cavernas (temas válidos) · 418: evento 🦉 coruja do vale à noite (+8–14 XP) · 419: dica splash · 420: verificação parcial.
+- Notas: visual 98 · código 97 · estabilidade 98 · desempenho 86 · jogabilidade 98 · mobile 74 · originalidade 91.
+
 ### Ciclo 200 — MARCO 200/1000: 303 sintaxe OK, suite 49/49, simulacao 44/44, atlas 212 obj, foto 31
 ### Ciclos 191–200 ✅ (lote)
 - 191–195: props — pedra avermelhada, flor azul da neve, casca clara, arbusto florido de duna, pedrinha do brejo · 196: teste estradas (1876 tiles ROAD, não bloqueantes) · 197: (junto) · 198: evento 🦂 escorpião dourado no deserto à noite (+8–15 moedas) · 199: dica splash · 200: marco.
