@@ -728,9 +728,8 @@ test('simulação: save — envelope v2, migrate de versão futura não quebra e
   const env = createSaveEnvelope({ player: { level: 5 } });
   assert.equal(env.version, 2);
   assert.ok(env.savedAt, 'envelope tem savedAt');
-  // versão do futuro cai no padrão sem jogar
-  const future = migrateSave({ version: 999, garbage: true });
-  assert.ok(future && typeof future === 'object', 'migrateSave tolera versão futura');
+  // versão do futuro é rejeitada com erro controlado (não quebra o jogo silenciosamente)
+  assert.throws(() => migrateSave({ version: 999, garbage: true }), /mais recente/, 'versão futura deve ser rejeitada com mensagem clara');
   // envelope parcial preenche defaults (runeDay etc.)
   const migrated = migrateSave(createSaveEnvelope({}));
   assert.ok(migrated, 'envelope vazio migra');
