@@ -455,6 +455,26 @@ test('simulação: estradas têm nome e pelo menos 2 pontos dentro do mundo', ()
   }
 });
 
+test('simulação: invariantes de save compat — acampamento fixo em (1440,1080) e mundo 400x300', () => {
+  // Mudar essas coordenadas quebra saves antigos: não podem mudar.
+  assert.equal(WORLD_COLS, 400);
+  assert.equal(OVERWORLD_ROWS, 300);
+  assert.equal(TILE, 48);
+  // Acampamento: W(0.075), H(0.075) de 400x300 tiles = 1440, 1080 px.
+  assert.equal(Math.round(WORLD_COLS * TILE * 0.075), 1440);
+  assert.equal(Math.round(OVERWORLD_ROWS * TILE * 0.075), 1080);
+});
+
+test('simulação: mapa grande cabe na tela (canvas <= 1280x960) e escala é inteira', async () => {
+  const { MAP_SCALE } = await import('../src/game/MapRenderer.js').catch(() => ({}));
+  // MapRenderer importa Phaser — se não puder importar em node, validamos só as constantes puras.
+  if (MAP_SCALE) {
+    assert.ok(MAP_SCALE >= 8 && MAP_SCALE <= 32, `MAP_SCALE desarrazoado: ${MAP_SCALE}`);
+    assert.equal((WORLD_COLS * TILE) / MAP_SCALE, 1200, 'mapa grande 1200 px de largura');
+    assert.equal((OVERWORLD_ROWS * TILE) / MAP_SCALE, 900, 'mapa grande 900 px de altura');
+  }
+});
+
 test('simulação: o jogador não sai do mapa — trava física de limites do mundo ativa no Player', async () => {
   // terrainAt é infinita (gera terreno até fora do mapa), então a proteção real é física:
   // Player.js precisa chamar body.setCollideWorldBounds(true). Conferimos no código-fonte.

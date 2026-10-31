@@ -74,6 +74,11 @@
 - Estado: atlas 99 objetos; suite 49/49; simulacao 20/20.
 - Notas: visual 91 · código 92 · estabilidade 98 · desempenho 86 · jogabilidade 97 · mobile 74 · originalidade 87.
 
+### Ciclos 78–97 ✅ (lote)
+- 78–82: props novos — cogumelos, arbusto de frutas, fragmento de gelo, ondulação de areia, raiz retorcida · 83: teste baús (achou bug real: torres não eram blockers na geração → corrigido) · 84: teste oásis · 85: evento 🌨️ nevasca no gelo à noite (-20% vel 20 s) · 86–87: 2 dicas no splash + teste estradas · 88–92: props — estrela-do-mar, liana, obsidiana, poça de maré, pedra de rio · 93: teste invariantes de save (camp 1440,1080; mundo 400×300; TILE 48) · 94: teste mapa grande 1200×900 · 95: evento 🌈 arco-íris após chuva (lastRainAt 90 s) · 96: dica splash · 97: verificação parcial.
+- Estado: atlas 119 objetos; suite 49/49; simulacao 25/25; world 14/14.
+- Notas: visual 92 · código 93 · estabilidade 98 · desempenho 86 · jogabilidade 97 · mobile 74 · originalidade 87.
+
 ### Ciclo 70 — Verificação intermediária (marco 70/130): 303 arquivos sintaxe OK, suite 49/49, simulacao 19/19, atlas 90 obj, foto 28
 - **D/F:** tudo verde; nenhum ciclo regrediu testes até aqui.
 - Notas: visual 90 · código 92 · estabilidade 98 · desempenho 86 · jogabilidade 97 · mobile 74 · originalidade 86.

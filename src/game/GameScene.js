@@ -805,6 +805,9 @@ export class GameScene extends Phaser.Scene {
     // Clima segue a região atual do mapa grande (neve no gelo, poeira no deserto, cinzas em brasa).
     this.weather = weatherAt(this.regionWorld.currentRegion(), this.timeState);
     this.isRaining = this.weather === 'rain' || this.weather === 'snow';
+    // Marca "choveu antes" por 90 s depois que a chuva passa (evento arco-íris usa isso).
+    if (this.isRaining) this.lastRainAt = this.time.now;
+    this.lastWeatherWasRain = this.time.now - (this.lastRainAt ?? -Infinity) < 90000;
     this.updateWaypointArrow();
     // Marca de morte some quando o jogador chega perto do local.
     if (this.deathMarker && Phaser.Math.Distance.Between(this.player.x, this.player.y, this.deathMarker.x, this.deathMarker.y) < 160) {
@@ -1678,7 +1681,11 @@ export class GameScene extends Phaser.Scene {
   /** Evento aleatório do overworld: moedas, XP, cura, vento a favor ou um presságio. */
   randomEvent() {
     const roll = Math.random();
-    if (roll < 0.26 && this.timeState?.phase === 'day') {
+    if (roll < 0.22 && this.timeState?.phase === 'day' && this.lastWeatherWasRain) {
+      // Arco-íris depois da chuva: presentinho visual + mensagem.
+      this.effects.spawnDamage(this.player.x, this.player.y - 34, '🌈', '#ff9ad8');
+      this.ui.showMessage('🌈 Evento: um arco-íris abriu no céu depois da chuva!');
+    } else if (roll < 0.26 && this.timeState?.phase === 'day') {
       const coins = Phaser.Math.Between(3, 8);
       this.economy.addCoins(coins);
       this.audio.playCoin();

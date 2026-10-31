@@ -23,7 +23,8 @@ const TIPS = [
   'A tocha ilumina a noite ao seu redor; cristais e braseiros também brilham no escuro.',
   'Fora de combate você se cura devagar: 6 s sem levar dano e a vida volta aos poucos.',
   'No gelo, à noite, pode cair uma nevasca: você anda 20% mais lento por 20 s.',
-  'Baús escondidos reabastecem com moedas a cada 3 dias — volte sempre.'
+  'Baús escondidos reabastecem com moedas a cada 3 dias — volte sempre.',
+  'Depois da chuva às vezes aparece um arco-íris 🌈 no céu.'
 ];
 
 export function setupSplash() {

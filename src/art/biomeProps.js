@@ -858,6 +858,58 @@ function flowerTuft(seed = 402) {
   return finish(p, { outline: 0.3 });
 }
 
+/** Estrela-do-mar na areia. */
+function starfish(seed = 701) {
+  const p = new Painter(14, 12, { transparent: true });
+  const c = '#e8905a';
+  p.rect(6, 5, 3, 3, c);
+  p.rect(3, 4, 3, 2, c); p.rect(9, 4, 3, 2, c);
+  p.rect(5, 1, 2, 3, c); p.rect(5, 8, 2, 3, c);
+  p.set(7, 6, '#f4b888');
+  return finish(p, { outline: 0.35 });
+}
+
+/** Liana pendurada (selva). */
+function vine(seed = 709) {
+  const p = new Painter(10, 22, { transparent: true });
+  const leaf = ['#2e6024', '#3f8a3a'];
+  for (let y = 0; y < 20; y += 2) {
+    const x = 5 + Math.sin(y * 0.5 + seed) * 2;
+    p.rect(x, y, 2, 2, shade([leaf[0], leaf[1]], 0.5));
+  }
+  p.rect(3, 8, 2, 2, leaf[1]);
+  p.rect(6, 14, 2, 2, leaf[1]);
+  return finish(p, { outline: 0.35 });
+}
+
+/** Fragmento de obsidiana (cinzas). */
+function obsidianShard(seed = 719) {
+  const p = new Painter(10, 14, { transparent: true });
+  const ob = ['#1a1020', '#2e2040', '#0c0810'];
+  for (let y = 12; y >= 2; y -= 2) {
+    const w = 1 + (12 - y) * 0.45;
+    p.rect(5 - w / 2, y, w, 2, shade([ob[0], ob[1]], 0.5));
+  }
+  p.set(5, 2, '#5a4a8a');
+  return finish(p, { outline: 0.35 });
+}
+
+/** Poça rasa na areia da praia. */
+function tidePuddle(seed = 727) {
+  const p = new Painter(20, 8, { transparent: true });
+  p.sphere(10, 5, 7, '#8ab8d0', '#b8dcef');
+  p.set(8, 4, '#e8f6ff');
+  return finish(p, { outline: 0.3 });
+}
+
+/** Pedra lisa de rio (brejo). */
+function riverStone(seed = 733) {
+  const p = new Painter(16, 10, { transparent: true });
+  p.sphere(8, 6, 5.5, '#6a7068', '#8a9088');
+  p.set(6, 4, '#a8b0a4');
+  return finish(p, { outline: 0.35 });
+}
+
 /** Aglomerado de cogumelos pequenos. */
 function mushroomCluster(seed = 641) {
   const p = new Painter(18, 12, { transparent: true });
@@ -1178,6 +1230,16 @@ const PAINTED_ENTRIES = [
   { name: 'sand-ripple-1', draw: () => sandRipple(677) },
   { name: 'twisted-root-0', draw: () => twistedRoot(683) },
   { name: 'twisted-root-1', draw: () => twistedRoot(691) },
+  { name: 'starfish-0', draw: () => starfish(701) },
+  { name: 'starfish-1', draw: () => starfish(705) },
+  { name: 'vine-0', draw: () => vine(709) },
+  { name: 'vine-1', draw: () => vine(719) },
+  { name: 'obsidian-shard-0', draw: () => obsidianShard(727) },
+  { name: 'obsidian-shard-1', draw: () => obsidianShard(733) },
+  { name: 'tide-puddle-0', draw: () => tidePuddle(739) },
+  { name: 'tide-puddle-1', draw: () => tidePuddle(743) },
+  { name: 'river-stone-0', draw: () => riverStone(751) },
+  { name: 'river-stone-1', draw: () => riverStone(757) },
   { name: 'shipwreck', draw: shipwreck },
   { name: 'sea-rock', draw: seaRock },
   { name: 'charred-tree', draw: () => deadTree(['#0c0808', '#1a1010', '#2a1a16', '#3a2620', '#4a3228'], true) },

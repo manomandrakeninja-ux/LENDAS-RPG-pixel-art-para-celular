@@ -570,7 +570,7 @@ function treasureSpots() {
   const spots = [];
   const blockers = [
     ...CAVES.map((cave) => ({ x: cave.entrance.x, y: cave.entrance.y })),
-    ...Object.values(TOWERS).map((tower) => ({ x: tower.x, y: tower.y })),
+    ...Object.values(TOWERS).map((tower) => tower.entrance ?? { x: tower.x, y: tower.y }),
     ...DOCKS.map((dock) => ({ x: dock.x, y: dockPosition(dock).y })),
     ...VILLAGES.flatMap((village) => [{ x: village.x, y: village.y }, ...village.houses.map(([dx, dy]) => ({ x: village.x + dx, y: village.y + dy }))]),
     { x: W(0.075), y: H(0.075) } // acampamento
