@@ -1034,15 +1034,15 @@ test('simulação: bestiário — registra kills, conhece inimigos e serializa',
 
 test('simulação: buffs — apply com opções, effects agregam, expira por tempo/dia', () => {
   const buffs = new BuffSystem();
-  assert.ok(buffs.apply('attackBoost', { durationMs: 1000 }), 'apply retorna true');
-  assert.ok(buffs.has('attackBoost'), 'buff ativo');
+  assert.ok(buffs.apply('dailyAttack', { durationMs: 1000 }), 'apply retorna true');
+  assert.ok(buffs.has('dailyAttack'), 'buff ativo');
   assert.ok(buffs.effects.attack > 0 || buffs.effects.attackPercent > 0, 'buff deve dar bonus de ataque');
   buffs.update(2000, 1);
-  assert.equal(buffs.has('attackBoost'), false, 'buff expirou por tempo');
+  assert.equal(buffs.has('dailyAttack'), false, 'buff expirou por tempo');
   // buff por dia
-  buffs.apply('nightOwl', { untilDay: 5 });
+  buffs.apply('warmth', { untilDay: 5 });
   buffs.update(0, 6);
-  assert.equal(buffs.has('nightOwl'), false, 'buff expirou por dia');
+  assert.equal(buffs.has('warmth'), false, 'buff expirou por dia');
   const data = buffs.serialize();
   assert.ok(Array.isArray(data), 'serialize devolve lista');
 });
