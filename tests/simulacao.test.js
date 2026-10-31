@@ -1282,6 +1282,23 @@ test('simulação: waypoints — clamp dentro do mundo e id único por waypoint'
   assert.deepEqual(clampWaypoint(500, 500), [500, 500], 'ponto interno intacto');
 });
 
+test('simulação: bestiário cobre todos os inimigos com nome e tier', () => {
+  for (const [id, def] of Object.entries(ENEMY_TYPES)) {
+    assert.ok(def.name, `inimigo ${id} sem nome`);
+    assert.ok(def.tier >= 1 && def.tier <= 10, `inimigo ${id} tier inválido: ${def.tier}`);
+    assert.ok(def.health > 0 && def.damage > 0, `inimigo ${id} sem stats`);
+    assert.ok(ENEMY_TYPE_NAMES[id], `inimigo ${id} sem nome de exibição`);
+  }
+});
+
+test('simulação: consumíveis — useConsumable com inventário fake funciona ou falha com motivo', () => {
+  const inv = { items: { potion: 2 }, remove: (t, n) => { inv.items[t] -= n; return true; } };
+  const r1 = useConsumable('potion', { inventory: inv, player: { health: 10, maxHealth: 100 }, buffs: new BuffSystem(), economy: new EconomySystem() });
+  assert.ok(r1.ok, `poção deve funcionar: ${r1.reason ?? ''}`);
+  const r2 = useConsumable('potionGreat', { inventory: { items: {} }, player: { health: 1, maxHealth: 100 }, buffs: new BuffSystem(), economy: new EconomySystem() });
+  assert.ok(!r2.ok && r2.reason, 'sem item deve falhar com motivo');
+});
+
 test('simulação: o jogador não sai do mapa — trava física de limites do mundo ativa no Player', async () => {
   // terrainAt é infinita (gera terreno até fora do mapa), então a proteção real é física:
   // Player.js precisa chamar body.setCollideWorldBounds(true). Conferimos no código-fonte.

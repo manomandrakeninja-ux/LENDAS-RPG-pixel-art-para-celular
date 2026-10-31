@@ -902,6 +902,51 @@ function darkRoundDuneRock(seed = 1647) {
   return finish(p, { outline: 0.35 });
 }
 
+/** Flor da floresta azul. */
+function blueForestFlower(seed = 1657) {
+  const p = new Painter(10, 12, { transparent: true });
+  p.rect(4, 6, 2, 5, '#4a6a34');
+  for (const [dx, dy] of [[-3, -2], [3, -2], [-2, 2], [2, 2], [0, -4]]) p.set(5 + dx, 5 + dy, '#60a8f0');
+  p.set(5, 5, '#eaf4ff');
+  return finish(p, { outline: 0.3 });
+}
+
+/** Cascalho de neve. */
+function snowGravel(seed = 1661) {
+  const p = new Painter(18, 8, { transparent: true });
+  for (const [gx, gy] of [[3, 4], [7, 3], [11, 5], [14, 3], [5, 6]]) {
+    p.sphere(gx, gy, 1.6, '#b8c8d8', '#dceaf6');
+  }
+  return finish(p, { outline: 0.3 });
+}
+
+/** Concha grande (praia). */
+function bigShell(seed = 1667) {
+  const p = new Painter(14, 10, { transparent: true });
+  p.sphere(7, 6, 5, '#e8d8c0', '#f8efe0');
+  for (let i = 0; i < 4; i += 1) p.rect(4 + i, 3, 1, 4, '#d0b89a');
+  p.set(7, 7, '#c8a880');
+  return finish(p, { outline: 0.35 });
+}
+
+/** Arbusto seco de cinza. */
+function dryAshBush(seed = 1671) {
+  const p = new Painter(16, 10, { transparent: true });
+  const c = ['#6e666e', '#8a828a'];
+  for (const [bx, h] of [[4, 8], [8, 6], [12, 7]]) {
+    for (let y = 9; y > 9 - h; y -= 2) p.rect(bx, y, 1, 2, shade([c[0], c[1]], 0.5));
+  }
+  return finish(p, { outline: 0.35 });
+}
+
+/** Pedrinha de selva escura. */
+function darkJunglePebble(seed = 1677) {
+  const p = new Painter(10, 7, { transparent: true });
+  p.sphere(5, 4, 3.4, '#2e4020', '#42582e');
+  p.set(4, 3, '#5a7440');
+  return finish(p, { outline: 0.35 });
+}
+
 /** Flor do brejo dourada. */
 function goldSwampFlower(seed = 1597) {
   const p = new Painter(10, 12, { transparent: true });
@@ -2677,6 +2722,13 @@ const PAINTED_ENTRIES = [
   { name: 'orange-shroom-0', draw: () => orangeShroom(1641) },
   { name: 'orange-shroom-1', draw: () => orangeShroom(1643) },
   { name: 'dark-round-dune-rock', draw: () => darkRoundDuneRock(1647) },
+  { name: 'blue-forest-flower-0', draw: () => blueForestFlower(1657) },
+  { name: 'blue-forest-flower-1', draw: () => blueForestFlower(1659) },
+  { name: 'snow-gravel', draw: () => snowGravel(1661) },
+  { name: 'big-shell', draw: () => bigShell(1667) },
+  { name: 'dry-ash-bush-0', draw: () => dryAshBush(1671) },
+  { name: 'dry-ash-bush-1', draw: () => dryAshBush(1673) },
+  { name: 'dark-jungle-pebble', draw: () => darkJunglePebble(1677) },
   { name: 'shipwreck', draw: shipwreck },
   { name: 'sea-rock', draw: seaRock },
   { name: 'charred-tree', draw: () => deadTree(['#0c0808', '#1a1010', '#2a1a16', '#3a2620', '#4a3228'], true) },

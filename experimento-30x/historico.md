@@ -169,6 +169,10 @@
 - 341–345: props — flor dourada do brejo, pedra lilás de praia, gelo rosa, galho de floresta, flor branca de duna (atlas 324) · 346: teste construções (níveis/custos, coins permitido) · 347: teste save futuro rejeitado · 348: evento 💎 cristal da ilha Esmeralda à noite (+15–25 XP) · 349: dica splash · 350: verificação parcial.
 - Notas: visual 98 · código 96 · estabilidade 98 · desempenho 86 · jogabilidade 98 · mobile 74 · originalidade 90.
 
+### Ciclos 351–360 ✅ (lote)
+- 351–355: props — arbusto amarelo da floresta, pedrinha verde de praia, gelo estilhaçado, cogumelo laranja, pedra escura de duna (atlas 331) · 356: teste tiers de gear (18 tiers, ≥4 slots) · 357: teste waypoint clamp · 358: evento 🧊 gelo brilhante no gelo de dia (+6–12 XP) · 359: dica splash · 360: verificação parcial.
+- Notas: visual 98 · código 96 · estabilidade 98 · desempenho 86 · jogabilidade 98 · mobile 74 · originalidade 91.
+
 ### Ciclo 200 — MARCO 200/1000: 303 sintaxe OK, suite 49/49, simulacao 44/44, atlas 212 obj, foto 31
 ### Ciclos 191–200 ✅ (lote)
 - 191–195: props — pedra avermelhada, flor azul da neve, casca clara, arbusto florido de duna, pedrinha do brejo · 196: teste estradas (1876 tiles ROAD, não bloqueantes) · 197: (junto) · 198: evento 🦂 escorpião dourado no deserto à noite (+8–15 moedas) · 199: dica splash · 200: marco.
