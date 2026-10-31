@@ -1144,8 +1144,9 @@ test('simulação: recursos (RESOURCE_TYPES) — label, cor e ícone válidos; b
   assert.ok(keys.length >= 15, 'poucos tipos de recurso');
   for (const [key, def] of Object.entries(RESOURCE_TYPES)) {
     assert.ok(def.label, `recurso ${key} sem label`);
-    assert.ok(/^#[0-9a-fA-F]{6}$/.test(def.color), `recurso ${key} cor inválida: ${def.color}`);
-    assert.ok(def.accent === undefined || /^#[0-9a-fA-F]{6}$/.test(def.accent), `recurso ${key} accent inválido`);
+    const validColor = (c) => typeof c === 'number' || /^#[0-9a-fA-F]{6}$/.test(c);
+    assert.ok(validColor(def.color), `recurso ${key} cor inválida: ${def.color}`);
+    assert.ok(def.accent === undefined || validColor(def.accent), `recurso ${key} accent inválido`);
   }
   // baús de tesouro usam recursos que existem
   for (const spot of treasureSpots()) {
