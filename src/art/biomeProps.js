@@ -858,6 +858,57 @@ function flowerTuft(seed = 402) {
   return finish(p, { outline: 0.3 });
 }
 
+/** Pedrinha cinza na duna. */
+function smallRock(seed = 761) {
+  const p = new Painter(12, 8, { transparent: true });
+  p.sphere(6, 5, 4, '#8a8578', '#a8a498');
+  p.set(4, 3, '#c0bcae');
+  return finish(p, { outline: 0.35 });
+}
+
+/** Lírio aquático grande (lodo). */
+function bigWaterLily(seed = 769) {
+  const p = new Painter(22, 14, { transparent: true });
+  p.sphere(11, 8, 8, '#3f7a3a', '#57a050');
+  p.sphere(11, 7, 5, '#4f8a44', '#6ab060');
+  p.set(8, 5, '#ff88d0');
+  p.set(9, 4, '#ffb0e0');
+  p.set(11, 6, '#f060b0');
+  p.set(13, 5, '#ff88d0');
+  return finish(p, { outline: 0.3 });
+}
+
+/** Espeto de gelo no chão (neve). */
+function iceSpike(seed = 773) {
+  const p = new Painter(8, 14, { transparent: true });
+  const ice = ['#cfe8ff', '#a8d0f0', '#e8f4ff'];
+  for (let y = 12; y >= 1; y -= 2) {
+    const w = 1 + (12 - y) * 0.35;
+    p.rect(4 - w / 2, y, w, 2, shade([ice[0], ice[2]], 0.5));
+  }
+  p.set(4, 1, '#ffffff');
+  return finish(p, { outline: 0.35 });
+}
+
+/** Segunda ondulação de duna. */
+function duneWave(seed = 779) {
+  const p = new Painter(26, 10, { transparent: true });
+  p.rect(2, 4, 22, 2, '#e0c898');
+  p.rect(5, 6, 16, 2, '#d0b888');
+  p.set(8, 4, '#f0e0b0');
+  p.set(16, 6, '#c8a878');
+  return finish(p, { outline: 0.3 });
+}
+
+/** Florzinha amarela (floresta). */
+function yellowFlower(seed = 787) {
+  const p = new Painter(10, 12, { transparent: true });
+  p.rect(4, 6, 2, 5, '#3f7a2e');
+  for (const [dx, dy] of [[-3, -2], [3, -2], [-3, 2], [3, 2], [0, -4]]) p.set(5 + dx, 5 + dy, '#f4c030');
+  p.set(5, 5, '#a06018');
+  return finish(p, { outline: 0.3 });
+}
+
 /** Estrela-do-mar na areia. */
 function starfish(seed = 701) {
   const p = new Painter(14, 12, { transparent: true });
@@ -1240,6 +1291,16 @@ const PAINTED_ENTRIES = [
   { name: 'tide-puddle-1', draw: () => tidePuddle(743) },
   { name: 'river-stone-0', draw: () => riverStone(751) },
   { name: 'river-stone-1', draw: () => riverStone(757) },
+  { name: 'small-rock-0', draw: () => smallRock(761) },
+  { name: 'small-rock-1', draw: () => smallRock(767) },
+  { name: 'big-water-lily-0', draw: () => bigWaterLily(769) },
+  { name: 'big-water-lily-1', draw: () => bigWaterLily(771) },
+  { name: 'ice-spike-0', draw: () => iceSpike(773) },
+  { name: 'ice-spike-1', draw: () => iceSpike(775) },
+  { name: 'dune-wave-0', draw: () => duneWave(779) },
+  { name: 'dune-wave-1', draw: () => duneWave(783) },
+  { name: 'yellow-flower-0', draw: () => yellowFlower(787) },
+  { name: 'yellow-flower-1', draw: () => yellowFlower(793) },
   { name: 'shipwreck', draw: shipwreck },
   { name: 'sea-rock', draw: seaRock },
   { name: 'charred-tree', draw: () => deadTree(['#0c0808', '#1a1010', '#2a1a16', '#3a2620', '#4a3228'], true) },

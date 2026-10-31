@@ -151,7 +151,9 @@ export class Player extends Phaser.GameObjects.Container {
     this.invulnerable = Math.max(0, this.invulnerable - delta);
     this.torchTimer = Math.max(0, this.torchTimer - delta);
     this.knockbackTimer = Math.max(0, this.knockbackTimer - delta);
-    this.stamina = Math.min(100, this.stamina + 13 * seconds);
+    // Evento "onda de calor" (calor do deserto): regeneração de stamina pela metade por 30 s.
+    const regenFactor = this.scene.eventSlowRegenUntil && this.scene.time.now < this.scene.eventSlowRegenUntil ? 0.5 : 1;
+    this.stamina = Math.min(100, this.stamina + 13 * regenFactor * seconds);
 
     let x = Number(keys.left.isDown || keys.a.isDown || cursors.left.isDown) * -1 +
       Number(keys.right.isDown || keys.d.isDown || cursors.right.isDown);

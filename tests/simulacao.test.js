@@ -15,6 +15,8 @@ import { ENEMY_TYPES } from '../src/data/enemies.js';
 import { EconomySystem } from '../src/game/EconomySystem.js';
 import { CONSUMABLES, useConsumable } from '../src/data/consumables.js';
 import { DEFAULT_KEYBINDS, KEY_ACTIONS, isBindableCode, isReservedCode, normalizeKeybinds, rebind, actionForCode, loadKeybinds, saveKeybinds, keyLabel, keyCodeFor } from '../src/game/Keybinds.js';
+import { scaleEnemy } from '../src/data/enemyScaling.js';
+import { GEAR_ITEMS, RARITIES } from '../src/data/gear.js';
 import { PlayerSkills } from '../src/data/skills.js';
 import { migrateSave, createSaveEnvelope, SAVE_VERSION } from '../src/game/save.js';
 
@@ -472,6 +474,35 @@ test('simulação: mapa grande cabe na tela (canvas <= 1280x960) e escala é int
     assert.ok(MAP_SCALE >= 8 && MAP_SCALE <= 32, `MAP_SCALE desarrazoado: ${MAP_SCALE}`);
     assert.equal((WORLD_COLS * TILE) / MAP_SCALE, 1200, 'mapa grande 1200 px de largura');
     assert.equal((OVERWORLD_ROWS * TILE) / MAP_SCALE, 900, 'mapa grande 900 px de altura');
+  }
+});
+
+test('simulação: scaleEnemy cresce monotonicamente com o nível e não zera atributos', () => {
+  for (const [id, def] of Object.entries(ENEMY_TYPES)) {
+    const lv1 = scaleEnemy(def, 1);
+    const lv20 = scaleEnemy(def, 20);
+    assert.ok(lv20.health >= lv1.health, `${id}: vida não cresce com nível`);
+    assert.ok(lv20.damage >= lv1.damage, `${id}: dano não cresce`);
+    assert.ok(lv20.xp >= lv1.xp, `${id}: xp não cresce`);
+    assert.ok(lv20.health > 0 && lv20.damage > 0, `${id}: atributos zerados`);
+  }
+});
+
+test('simulação: itens de equipamento sadios — slots válidos, nível/preço não negativos, stats numéricos', () => {
+  const slots = new Set(['weapon', 'helmet', 'chest', 'legs', 'boots', 'shield', 'amulet', 'ring']);
+  const ids = Object.keys(GEAR_ITEMS);
+  assert.ok(ids.length >= 100, 'poucos itens de equipamento');
+  const statKeys = ['attack', 'defense', 'health', 'speedPercent', 'critChance', 'lifeSteal'];
+  for (const [id, item] of Object.entries(GEAR_ITEMS)) {
+    assert.ok(item.name, `${id} sem nome`);
+    assert.ok(slots.has(item.slot), `${id} slot inválido: ${item.slot}`);
+    assert.ok((item.level ?? 1) >= 1, `${id} nível inválido`);
+    assert.ok((item.price ?? 0) >= 0, `${id} preço negativo`);
+    for (const key of statKeys) {
+      if (item[key] !== undefined) assert.ok(item[key] >= 0, `${id}.${key} negativo`);
+    }
+    // Se tem raridade explícita, precisa existir; itens de boss (boss:) dispensam.
+    if (item.rarity) assert.ok(RARITIES[item.rarity], `${id} raridade inválida: ${item.rarity}`);
   }
 });
 

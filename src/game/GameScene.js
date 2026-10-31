@@ -194,6 +194,7 @@ export class GameScene extends Phaser.Scene {
     // Eventos aleatórios do overworld (a cada ~1-2 min: moedas, XP, cura, vento a favor...).
     this.eventSpeedUntil = 0;
     this.eventSlowUntil = 0;
+    this.eventSlowRegenUntil = 0;
     this.randomEventMs = Phaser.Math.Between(45000, 90000);
     // Medidor de desempenho leve (ring buffer dos últimos 120 frames) — legível no console via window.__lendasPerf.
     this.frameTimes = [];
@@ -1681,7 +1682,12 @@ export class GameScene extends Phaser.Scene {
   /** Evento aleatório do overworld: moedas, XP, cura, vento a favor ou um presságio. */
   randomEvent() {
     const roll = Math.random();
-    if (roll < 0.22 && this.timeState?.phase === 'day' && this.lastWeatherWasRain) {
+    if (roll < 0.2 && this.timeState?.phase === 'day' && this.weather === 'dust') {
+      // Calor do deserto: stamina recupera mais devagar por 30 s (avisado na mensagem).
+      this.eventSlowRegenUntil = this.time.now + 30000;
+      this.effects.spawnDamage(this.player.x, this.player.y - 30, '🔥', '#ffab6b');
+      this.ui.showMessage('🔥 Evento: onda de calor no deserto! regeneração de stamina -50% por 30 s');
+    } else if (roll < 0.22 && this.timeState?.phase === 'day' && this.lastWeatherWasRain) {
       // Arco-íris depois da chuva: presentinho visual + mensagem.
       this.effects.spawnDamage(this.player.x, this.player.y - 34, '🌈', '#ff9ad8');
       this.ui.showMessage('🌈 Evento: um arco-íris abriu no céu depois da chuva!');
