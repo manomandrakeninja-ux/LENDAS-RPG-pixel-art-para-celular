@@ -867,7 +867,7 @@ function pebbles(seed = 563) {
     const sy = 2 + hash(i, seed, 2) * 4;
     const r = 1.2 + hash(i, seed, 3) * 1.2;
     const c = stones[Math.floor(hash(i, seed, 4) * stones.length) % stones.length];
-    p.sphere(sx, sy, r, shade([c], 0.7), c);
+    p.sphere(sx, sy, r, shade([c, '#ffffff'], 0.72), c);
   }
   return finish(p, { outline: 0.35 });
 }

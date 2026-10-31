@@ -61,7 +61,7 @@ import { GearSystem } from './GearSystem.js';
 import { EquipmentPanel } from './EquipmentPanel.js';
 import { GEAR_ITEMS, RARITIES, blessingPrice, rollGearDrop } from '../data/gear.js';
 import { JEWELS, rollJewelDrop } from '../data/enhance.js';
-import { REGION_INFO, TILE, roadAt } from '../data/worldRegions.js';
+import { OVERWORLD_ROWS, REGION_INFO, TILE, WORLD_COLS, roadAt } from '../data/worldRegions.js';
 import { ExperiencePickups } from './ExperiencePickups.js';
 import { LevelUpOverlay } from './LevelUpOverlay.js';
 import { EconomySystem } from './EconomySystem.js';
@@ -1685,7 +1685,11 @@ export class GameScene extends Phaser.Scene {
 
   /** Marca/limpa o waypoint personalizado (Shift+clique no mapa grande). */
   setWaypoint(point) {
-    this.waypoint = point ? { x: Math.round(point.x), y: Math.round(point.y) } : null;
+    // Limita o waypoint aos limites do mundo (o mapa grande pode mostrar bordas além).
+    this.waypoint = point ? {
+      x: Math.max(0, Math.min(WORLD_COLS * TILE, Math.round(point.x))),
+      y: Math.max(0, Math.min(OVERWORLD_ROWS * TILE, Math.round(point.y)))
+    } : null;
     this.ui.showMessage(point ? `Waypoint marcado (${Math.round(point.x / 48 * 10)} m, ${Math.round(point.y / 48 * 10)} m) — seta verde no minimapa. Shift+clique de novo no mapa limpa.` : 'Waypoint removido.');
     this.save?.();
   }
