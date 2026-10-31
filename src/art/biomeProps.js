@@ -858,6 +858,21 @@ function flowerTuft(seed = 402) {
   return finish(p, { outline: 0.3 });
 }
 
+/** Flor de neve (branca/azul) no chão gelado. */
+function snowFlower(seed = 433) {
+  const p = new Painter(14, 11, { transparent: true });
+  const petals = ['#eaf4ff', '#cfe4ff', '#ffffff'];
+  for (let flower = 0; flower < 2; flower += 1) {
+    const fx = 4 + flower * 6 + (hash(flower, seed, 5) - 0.5) * 2;
+    const fy = 3 + hash(flower, seed, 6) * 3;
+    const color = petals[Math.floor(hash(flower, seed, 7) * petals.length) % petals.length];
+    for (let t = 0; t <= 1; t += 0.2) p.set(fx, fy + 6 * t, shade(['#4a6a8a', '#5a7a9a'], 0.5));
+    for (const [ox, oy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) p.set(fx + ox, fy + oy, color);
+    p.set(fx, fy, '#cfe8ff');
+  }
+  return finish(p, { outline: 0.3 });
+}
+
 const PAINTED_ENTRIES = [
   { name: 'ancient-oak-0', draw: () => ancientOak(0) },
   { name: 'ancient-oak-1', draw: () => ancientOak(1) },
@@ -892,6 +907,8 @@ const PAINTED_ENTRIES = [
   { name: 'grass-tuft-1', draw: () => grassTuft(417) },
   { name: 'flower-tuft-0', draw: () => flowerTuft(402) },
   { name: 'flower-tuft-1', draw: () => flowerTuft(419) },
+  { name: 'snow-flower-0', draw: () => snowFlower(433) },
+  { name: 'snow-flower-1', draw: () => snowFlower(441) },
   { name: 'shipwreck', draw: shipwreck },
   { name: 'sea-rock', draw: seaRock },
   { name: 'charred-tree', draw: () => deadTree(['#0c0808', '#1a1010', '#2a1a16', '#3a2620', '#4a3228'], true) },

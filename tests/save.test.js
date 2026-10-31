@@ -126,6 +126,19 @@ test('waypoint personalizado sobrevive às migrações de save (v1 e v2)', () =>
   assert.equal(migrateV1ToV2({ version: 1 }).waypoint, null);
 });
 
+test('save antigo (pré-experimento) migra sem erros e ganha defaults dos campos novos', () => {
+  // Um save v2 antigo, sem runeDay/chestDays/travelerGifts etc., deve ser aceito intacto.
+  const old = migrateSave({ version: SAVE_VERSION, player: { health: 50, maxHealth: 100, attack: 10, defense: 2 }, time: { dayCount: 3, cycleTime: 5 } });
+  assert.equal(old.player.health, 50);
+  assert.equal(old.waypoint, null);
+  assert.ok(typeof old === 'object' && old.version === SAVE_VERSION);
+  // Envelope JSON completo (com campos novos ausentes) passa no roundtrip sem quebrar.
+  const env = createSaveEnvelope(migrateSave({ version: SAVE_VERSION, runeDay: 4 }));
+  const back = migrateSave(JSON.parse(JSON.stringify(env)));
+  assert.equal(back.runeDay ?? 0, 4);
+  assert.equal(migrateSave({ version: SAVE_VERSION }).runeDay ?? 0, 0);
+});
+
 test('roundtrip v2: save completo (skills, waypoint, regiões, viajantes) sobrevive a migrateSave', () => {
   const full = migrateSave({
     version: SAVE_VERSION,

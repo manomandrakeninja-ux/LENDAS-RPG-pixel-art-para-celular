@@ -69,6 +69,14 @@
 - **D:** suite 49/49.
 - Notas 0–100: visual 79 · código 87 · estabilidade 95 · desempenho 83 · jogabilidade 88 · mobile 70 · originalidade 81.
 
+### Ciclo 37 — Teste: save antigo (pré-experimento) migra sem erro e ganha defaults (runeDay etc.)
+- **D:** novo teste em save.test.js (10/10). Suite 49/49.
+- Notas: visual 87 · código 90 · estabilidade 98 · desempenho 84 · jogabilidade 95 · mobile 74 · originalidade 86.
+
+### Ciclo 36 — Documentação: docs/mapa-400x300.md atualizado com ciclos 31–35 + foto 21 (vilarejo com pedra rúnica)
+- **H:** seção do experimento estendida; foto renomeada .png. Sem mudança de código → suite 49/49 mantida.
+- Notas: visual 87 · código 90 · estabilidade 97 · desempenho 84 · jogabilidade 95 · mobile 74 · originalidade 86.
+
 ### Ciclo 35 — Conteúdo: pedra rúnica 💠 na praça de cada vilarejo (+50% XP até amanhecer, 1x/dia, salva em runeDay)
 - **C:** feature 'rune' com sprite ruin-pillar + hint; `touchRuneStone` no GameScene; buff ×1.5 no grantExperience; save/load com fallback.
 - **D:** atlas regerado; suite 49/49; simulacao 8/8.
