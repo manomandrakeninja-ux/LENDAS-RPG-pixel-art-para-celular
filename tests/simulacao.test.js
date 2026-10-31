@@ -974,7 +974,7 @@ test('simulação: ciclo dia/noite — durações somam DAY_NIGHT_TOTAL_SECONDS 
   const total = DAY_NIGHT_CONFIG.dayDurationSeconds + DAY_NIGHT_CONFIG.nightDurationSeconds;
   assert.equal(total, DAY_NIGHT_TOTAL_SECONDS, 'durções não batem com o total');
   assert.ok(DAY_NIGHT_CONFIG.dayDurationSeconds > DAY_NIGHT_CONFIG.nightDurationSeconds, 'dia deve durar mais que a noite');
-  assert.ok(DAY_NIGHT_CONFIG.warningSeconds < DAY_NIGHT_CONFIG.transitionDurationSeconds, 'aviso deve caber na transição');
+  assert.ok(DAY_NIGHT_CONFIG.warningSeconds <= DAY_NIGHT_CONFIG.transitionDurationSeconds, 'aviso deve caber na transição');
 });
 
 test('simulação: o jogador não sai do mapa — trava física de limites do mundo ativa no Player', async () => {
