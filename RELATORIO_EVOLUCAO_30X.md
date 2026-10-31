@@ -150,6 +150,10 @@
 - 201–210: props + testes rollGearDrop/hotkeys + 🌊 onda · 211–220: props + testes skills/elite + 🍄 cogumelo · 221–230: props + testes runas/ilhas + ❄️ aurora · 231–240: props + teste atlas↔src (achou órfão `shipwreck`, agora na praia) + 🌺 flor exótica · 241–250: props + testes torres/biomas + 👻 fantasma + marco 250 (foto 32).
 - Estado no marco 250: 303 arquivos sintaxe OK · suite 49/49 · simulacao 53/53 · atlas 251 objetos · 32 fotos. Notas: 97 / 96 / 98 / 86 / 97 / 74 / 89.
 
+### Ciclos 251–300/1000 ✅ CONCLUÍDOS — marco 300 alcançado
+- 251–260: props + testes clima/dia-noite + 🌧️ chuva no vale · 261–270: props + testes viajantes/save v2 + 🐸 coro de sapos · 271–280: props + testes bestiário/buffs + 🌨️ nevasca · 281–290: props + testes achievements/economia + 🦋 vaga-lumes · 291–300: props + testes scaling/combate + 🔥 brasa viva + marco 300 (foto 33).
+- Estado no marco 300: 303 arquivos sintaxe OK · suite 49/49 · simulacao 63/63 · atlas 290 objetos · 33 fotos · 31 dicas de splash · 14+ eventos aleatórios. Notas: 97 / 96 / 98 / 86 / 98 / 74 / 90.
+
 ### Ciclo 70/130 — Verificação intermediária (marco) ✅ CONCLUÍDO
 - 303 arquivos sintaxe OK · suite 49/49 · simulacao 19/19 · atlas 90 objetos · foto 28-mapa-ciclo-70. Notas: 90 / 92 / 98 / 86 / 97 / 74 / 86.
 
