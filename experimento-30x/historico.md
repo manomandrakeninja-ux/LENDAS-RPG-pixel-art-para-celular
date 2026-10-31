@@ -229,6 +229,10 @@
 - 481–485: props — flor turquesa de duna, pedra lilás-escura de praia, neve florida lilás, cogumelo turquesa, flor lilás da floresta (atlas 427) · 486: teste vilas (casas/diálogos) · 487: teste road signs (POI válido) · 488: evento 🍄 cogumelo raro na chuva da floresta (+10–16 XP) · 489: dica splash · 490: verificação parcial.
 - Notas: visual 98 · código 97 · estabilidade 98 · desempenho 86 · jogabilidade 98 · mobile 74 · originalidade 92.
 
+### Ciclos 491–500 ✅ (lote) — MARCO 500
+- 491–495: props — flor verde de praia, pedra lilás de duna, gelo verde-água claro, cogumelo lilás, flor verde de cinza (atlas 435) · 496: teste torres (entrada/monstros/região) · 497: teste ELITE_CONFIG · 498: evento 👻 eco de herói nas terras antigas à noite (+15–25 XP) · 499: dica splash · 500: marco (foto 35, 303 sintaxe OK, 103/103, 49/49).
+- Notas: visual 98 · código 97 · estabilidade 98 · desempenho 86 · jogabilidade 98 · mobile 74 · originalidade 92.
+
 ### Ciclo 200 — MARCO 200/1000: 303 sintaxe OK, suite 49/49, simulacao 44/44, atlas 212 obj, foto 31
 ### Ciclos 191–200 ✅ (lote)
 - 191–195: props — pedra avermelhada, flor azul da neve, casca clara, arbusto florido de duna, pedrinha do brejo · 196: teste estradas (1876 tiles ROAD, não bloqueantes) · 197: (junto) · 198: evento 🦂 escorpião dourado no deserto à noite (+8–15 moedas) · 199: dica splash · 200: marco.

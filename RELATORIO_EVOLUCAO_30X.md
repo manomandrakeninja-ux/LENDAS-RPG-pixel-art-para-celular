@@ -158,6 +158,10 @@
 - 301–310: props + testes gear sets/forja + 🍃 vento · 311–320: props + testes recursos/inventário + 🌙 chuva morna · 321–330: props + testes vilas/cavernas + 🐚 concha · 331–340: props + testes baús/keybinds + 👺 espírito · 341–350: props + testes construções/save-futuro + 💎 esmeralda · 351–360: props + testes tiers/waypoint + 🧊 gelo · 361–370: props + testes bestiário/consumíveis + 🌵 cacto · 371–380: props + testes minimapa/invariantes + 🪷 lírio · 381–390: props + testes oásis/portos + 🌋 erupção · 391–400: props + testes regiões/grid + 🏛️ ruínas + marco 400 (foto 34).
 - Estado no marco 400: 303 arquivos sintaxe OK · suite 49/49 · simulacao 83/83 · atlas 360 objetos · 34 fotos · 35 dicas · 18+ eventos. Notas: 98 / 97 / 98 / 86 / 98 / 74 / 91.
 
+### Ciclos 401–500/1000 ✅ CONCLUÍDOS — marco 500 alcançado
+- 401–410: props + testes achievements/buffs + 🦀 caranguejo · 411–420: props + testes clima/cavernas + 🦉 coruja · 421–430: props + testes drops/gear + 🌿 orquídea · 431–440: props + testes dayNight/skills + 🌠 estrela · 441–450: props + testes economia/bestiário + 🐝 abelha · 451–460: props + testes recursos/hotkeys + 🐸 sapo · 461–470: props + testes forja/campanha + 🐺 lobo · 471–480: props + testes keybinds/receitas + 🐚 concha · 481–490: props + testes vilas/sinais + 🍄 cogumelo · 491–500: props + testes torres/elites + 👻 eco + marco 500 (foto 35).
+- Estado no marco 500: 303 arquivos sintaxe OK · suite 49/49 · simulacao 103/103 · atlas 435 objetos · 35 fotos · 40 dicas · 20+ eventos. Notas: 98 / 97 / 98 / 86 / 98 / 74 / 92.
+
 ### Ciclo 70/130 — Verificação intermediária (marco) ✅ CONCLUÍDO
 - 303 arquivos sintaxe OK · suite 49/49 · simulacao 19/19 · atlas 90 objetos · foto 28-mapa-ciclo-70. Notas: 90 / 92 / 98 / 86 / 97 / 74 / 86.
 
