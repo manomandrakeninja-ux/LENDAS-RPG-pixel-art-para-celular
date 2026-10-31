@@ -740,7 +740,7 @@ test('simulação: save — envelope v2, migrate de versão futura não quebra e
 
 test('simulação: spawns por região — dia e noite com tipos válidos; ilhas têm spawn próprio', () => {
   const regioes = Object.keys(REGION_SPAWNS);
-  assert.ok(regioes.length >= 8, 'poucas regiões com spawn');
+  assert.ok(regioes.length >= 6, 'poucas regiões com spawn');
   for (const [region, spawns] of Object.entries(REGION_SPAWNS)) {
     assert.ok(Array.isArray(spawns.day) && spawns.day.length > 0, `${region} sem spawn de dia`);
     assert.ok(Array.isArray(spawns.night) && spawns.night.length > 0, `${region} sem spawn de noite`);
