@@ -970,7 +970,8 @@ test('simulação: clima — weatherAt é determinístico por seed e cobre todos
 });
 
 test('simulação: ciclo dia/noite — durações somam DAY_NIGHT_TOTAL_SECONDS e fases mudam', () => {
-  const total = DAY_NIGHT_CONFIG.dayDurationSeconds + DAY_NIGHT_CONFIG.nightDurationSeconds + 2 * DAY_NIGHT_CONFIG.transitionDurationSeconds;
+  // O total do ciclo = dia + noite (as transições acontecem dentro desses blocos).
+  const total = DAY_NIGHT_CONFIG.dayDurationSeconds + DAY_NIGHT_CONFIG.nightDurationSeconds;
   assert.equal(total, DAY_NIGHT_TOTAL_SECONDS, 'durções não batem com o total');
   assert.ok(DAY_NIGHT_CONFIG.dayDurationSeconds > DAY_NIGHT_CONFIG.nightDurationSeconds, 'dia deve durar mais que a noite');
   assert.ok(DAY_NIGHT_CONFIG.warningSeconds < DAY_NIGHT_CONFIG.transitionDurationSeconds, 'aviso deve caber na transição');
