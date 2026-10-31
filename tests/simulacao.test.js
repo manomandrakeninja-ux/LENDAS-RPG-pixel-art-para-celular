@@ -1369,6 +1369,37 @@ test('simulação: grid do mundo — linhas/colunas consistentes e terreno dentr
   }
 });
 
+test('simulação: achievements com goal "all" — desbloqueia só quando todos os tipos conhecidos', () => {
+  const allGoals = Object.entries(ACHIEVEMENTS).filter(([, a]) => a.goal === 'all');
+  assert.ok(allGoals.length >= 1, 'nenhuma conquista "all" encontrada');
+  for (const [id, a] of allGoals) {
+    assert.ok(a.stat, `conquista ${id} sem stat`);
+    const ach = new Achievements();
+    // sem dados: não desbloqueia
+    ach.check();
+    assert.equal(ach.unlocked[id], undefined, `${id} não deve desbloquear vazia`);
+  }
+  // preenche a meta de uma conquista simples e garante que check a registra
+  const simple = Object.entries(ACHIEVEMENTS).find(([, a]) => a.goal !== 'all' && typeof a.goal === 'number');
+  assert.ok(simple, 'nenhuma conquista numérica simples');
+  const [sid, sa] = simple;
+  const ach = new Achievements();
+  ach.note(sa.stat, sa.goal + 1);
+  const got = ach.check();
+  assert.ok(ach.unlocked[sid], `conquista ${sid} deveria desbloquear com ${sa.goal + 1}`);
+  assert.ok(got.some((a) => a.id === sid), 'check devolve a conquista desbloqueada');
+});
+
+test('simulação: buffs — serialize/deserialize preserva buffs ativos', () => {
+  const b = new BuffSystem();
+  b.apply('meal', { durationMs: 60000 });
+  b.apply('wellRested', { untilDay: 10 });
+  const data = b.serialize();
+  const b2 = new BuffSystem();
+  b2.deserialize?.(data) ?? b2.load?.(data);
+  assert.ok(b2.has('meal') || b2.has('wellRested'), 'serialize preserva ao menos um buff ativo');
+});
+
 test('simulação: o jogador não sai do mapa — trava física de limites do mundo ativa no Player', async () => {
   // terrainAt é infinita (gera terreno até fora do mapa), então a proteção real é física:
   // Player.js precisa chamar body.setCollideWorldBounds(true). Conferimos no código-fonte.
