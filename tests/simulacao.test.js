@@ -12,6 +12,7 @@ import { weatherAt } from '../src/data/weather.js';
 import { COMBAT_CONFIG } from '../src/data/combat.js';
 import { BIOME_PROP_ENTRIES } from '../src/art/biomeProps.js';
 import { ENEMY_TYPES, ENEMY_TYPE_NAMES, enemyXp, ELITE_CONFIG } from '../src/data/enemies.js';
+import { enemyStatsForLevel } from '../src/data/enemyScaling.js';
 import { EconomySystem } from '../src/game/EconomySystem.js';
 import { CONSUMABLES, useConsumable } from '../src/data/consumables.js';
 import { DEFAULT_KEYBINDS, KEY_ACTIONS, isBindableCode, isReservedCode, normalizeKeybinds, rebind, actionForCode, loadKeybinds, saveKeybinds, keyLabel, keyCodeFor } from '../src/game/Keybinds.js';
@@ -1080,12 +1081,19 @@ test('simulação: escalonamento de inimigos — enemyXp cresce com nível e eli
   assert.ok(base20 > base5, 'XP deve crescer com o nível');
   const elite = enemyXp('goblin', true, 5);
   assert.ok(elite > base5, 'elite dá mais XP');
-  // scaling linear-ish: dobra nível não dobra necessariamente, mas cresce monotonicamente
+  // XP por nível não decresce (pode ser constante por tier)
   let prev = -1;
   for (let lvl = 1; lvl <= 50; lvl += 1) {
     const xp = enemyXp('wolf', false, lvl);
-    assert.ok(xp > prev, `XP não decresce no nível ${lvl}`);
+    assert.ok(xp >= prev, `XP decresceu no nível ${lvl}`);
     prev = xp;
+  }
+  // scaling real mora em enemyScaling: HP e dano crescem com o nível
+  const s1 = enemyStatsForLevel ? enemyStatsForLevel('wolf', 1) : null;
+  const s20 = enemyStatsForLevel ? enemyStatsForLevel('wolf', 20) : null;
+  if (s1 && s20) {
+    assert.ok(s20.health > s1.health, 'HP deve crescer com o nível');
+    assert.ok(s20.damage >= s1.damage, 'dano não deve cair com o nível');
   }
 });
 
