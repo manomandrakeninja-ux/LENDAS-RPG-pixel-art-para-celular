@@ -4,14 +4,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  CAVES, DOCKS, OVERWORLD, REGION_INFO, REGION_SPAWNS, T, TOWERS, TREASURE_SPOTS, VILLAGES, WORLD_COLS, OVERWORLD_ROWS, TILE,
-  buildTerrainGrid, dockPosition, regionAt, terrainAt, TERRAIN_NODES, VALLEY_EXTRA_SPAWNS
+  CAVES, DOCKS, OVERWORLD, REGION_INFO, REGION_SPAWNS, ROADS, ROAD_SIGNS, T, TOWERS, TREASURE_SPOTS, VILLAGES, WORLD_COLS, OVERWORLD_ROWS, TILE,
+  buildTerrainGrid, dockPosition, pointOnRoad, regionAt, terrainAt, TERRAIN_NODES, VALLEY_EXTRA_SPAWNS
 } from '../src/data/worldRegions.js';
 import { weatherAt } from '../src/data/weather.js';
 import { PlayerSkills } from '../src/data/skills.js';
 import { migrateSave, createSaveEnvelope, SAVE_VERSION } from '../src/game/save.js';
 
-const NOT_WALKABLE = new Set([T.SEA, T.LAVA, T.WALL, T.VOID, T.MURK]);
+// Alinhado com BLOCKING do jogo: lodo (MURK) é andável, só deixa lento — não entra aqui.
+const NOT_WALKABLE = new Set([T.SEA, T.LAVA, T.WALL, T.VOID]);
 
 function walkable(grid, col, row) {
   if (col < 0 || row < 0 || col >= grid.cols || row >= grid.rows) return false;
@@ -140,6 +141,25 @@ test('simulação: conteúdo por bioma — todo terreno de overworld aparece no 
       ? [...VALLEY_EXTRA_SPAWNS.day, ...VALLEY_EXTRA_SPAWNS.night]
       : [...(REGION_SPAWNS[key]?.day ?? []), ...(REGION_SPAWNS[key]?.night ?? [])];
     assert.ok(spawns.length > 0, `região ${key} sem monstros para spawn`);
+  }
+});
+
+test('simulação: placas de estrada válidas e estradas andáveis', () => {
+  // Toda placa tem label não vazio e POI dentro do mundo; toda placa fica em chão não bloqueante.
+  assert.ok(ROAD_SIGNS.length > 50, 'deveria haver dezenas de placas');
+  for (const sign of ROAD_SIGNS) {
+    assert.ok(typeof sign.label === 'string' && sign.label.length > 0, 'placa sem label');
+    assert.ok(sign.poi && Number.isFinite(sign.poi.x) && Number.isFinite(sign.poi.y), 'placa sem POI');
+    assert.ok(sign.poi.x >= 0 && sign.poi.x <= WORLD_COLS * TILE && sign.poi.y >= 0 && sign.poi.y <= OVERWORLD_ROWS * TILE, 'POI fora do mundo');
+    assert.ok(!NOT_WALKABLE.has(terrainAt(sign.x, sign.y)), `placa em terreno bloqueante (${terrainAt(sign.x, sign.y)})`);
+  }
+  // Amostra de pontos ao longo de cada estrada deve ser andável.
+  for (const road of ROADS) {
+    for (let t = 0; t <= 1; t += 0.1) {
+      const p = pointOnRoad(road, t);
+      const terrain = terrainAt(p.x, p.y);
+      assert.ok(!NOT_WALKABLE.has(terrain), `estrada ${road.name} passa por terreno bloqueante ${terrain} em t=${t.toFixed(1)}`);
+    }
   }
 });
 

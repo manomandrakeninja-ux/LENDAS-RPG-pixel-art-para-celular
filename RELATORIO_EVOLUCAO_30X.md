@@ -102,6 +102,13 @@
 - 217 placas, 12 destinos distintos, 4 vilarejos apontados. Suite 49/49; world 14/14; simulacao 7/7.
 - Notas: 86 / 89 / 97 / 84 / 93 / 74 / 85.
 
+### Ciclo 33/130 — Evento ☄️ cometa à noite ✅ CONCLUÍDO
+- +20–45 moedas e +XP; float azul. Suite 49/49. Notas: 86 / 89 / 97 / 84 / 94 / 74 / 85.
+
+### Ciclo 34/130 — Teste de placas/estradas (achou bug real) ✅ CONCLUÍDO
+- 5 placas eram geradas em cima do lodo (MURK) → geração agora tenta lado oposto/centro. Teste também alinhado ao BLOCKING real (lodo é andável/lento). Simulacao 8/8; suite 49/49.
+- Notas: 86 / 90 / 97 / 84 / 94 / 74 / 85.
+
 ## Evolução das notas (0–100)
 
 | Eixo | Início (base) | Fim (ciclo 30) | Principiante mudança |

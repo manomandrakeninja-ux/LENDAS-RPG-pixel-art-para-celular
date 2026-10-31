@@ -1652,6 +1652,14 @@ export class GameScene extends Phaser.Scene {
     } else if (roll < 0.88) {
       this.eventSpeedUntil = this.time.now + 30000;
       this.ui.showMessage('💨 Evento: vento a favor! +25% velocidade por 30 s');
+    } else if (roll < 0.94 && this.timeState?.phase === 'night') {
+      // Cometa à noite: moedas + um pouco de XP (efeito visual leve).
+      const coins = Phaser.Math.Between(20, 45);
+      this.economy.addCoins(coins);
+      this.grantExperience(Phaser.Math.Between(10, 25), true);
+      this.audio.playCoin();
+      this.effects.spawnDamage(this.player.x, this.player.y - 34, '☄️', '#9ad8ff');
+      this.ui.showMessage(`☄️ Evento: um cometa cruzou o céu noturno! +${coins} moedas e boa sorte (+XP)`);
     } else if (roll < 0.94 && roadAt(this.player.x, this.player.y)) {
       // Baú abandonado na beira da estrada: moedas e, às vezes, um suprimento.
       const coins = Phaser.Math.Between(15, 35);

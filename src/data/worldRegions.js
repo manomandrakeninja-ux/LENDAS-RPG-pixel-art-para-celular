@@ -475,11 +475,16 @@ function roadSigns() {
       for (let s = 1; s <= steps; s += 1) {
         const t = s / steps;
         const side = s % 2 === 0 ? 1 : -1;
-        const x = Math.round(ax + (bx - ax) * t + nx * 34 * side);
-        const y = Math.round(ay + (by - ay) * t + ny * 34 * side);
-        // Só coloca a placa se o ponto for chão firme.
-        const terrain = terrainAt(x, y);
-        if (BLOCKING.has(terrain)) continue;
+        // Tenta o lado Calculado; se cair em terreno bloqueante, tenta o lado oposto e depois o centro da estrada.
+        let placed = null;
+        for (const [ox, oy] of [[nx * 34 * side, ny * 34 * side], [nx * 34 * -side, ny * 34 * -side], [0, 0]]) {
+          const x = Math.round(ax + (bx - ax) * t + ox);
+          const y = Math.round(ay + (by - ay) * t + oy);
+          if (!BLOCKING.has(terrainAt(x, y))) { placed = { x, y }; break; }
+        }
+        if (!placed) continue;
+        const x = placed.x;
+        const y = placed.y;
         // A placa aponta o POI (caverna/torre/porto/vilarejo) mais próximo DELA; se nenhum perto, o POI do fim da estrada.
         let near = null;
         let nearBest = Infinity;

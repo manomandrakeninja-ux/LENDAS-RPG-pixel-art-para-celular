@@ -69,6 +69,16 @@
 - **D:** suite 49/49.
 - Notas 0–100: visual 79 · código 87 · estabilidade 95 · desempenho 83 · jogabilidade 88 · mobile 70 · originalidade 81.
 
+### Ciclo 34 — Teste novo: placas válidas + estradas andáveis (achou e corrigiu 5 placas no lodo + alinhado NOT_WALKABLE com BLOCKING real)
+- **D:** novo teste em simulacao (8/8). Corrigiu geração de placas (tenta lado oposto/centro) e o próprio teste (MURK é lodo andável, não bloqueante).
+- **D:** suite 49/49.
+- Notas: visual 86 · código 90 · estabilidade 97 · desempenho 84 · jogabilidade 94 · mobile 74 · originalidade 85.
+
+### Ciclo 33 — Evento aleatório novo: ☄️ cometa à noite (+20-45 moedas e +XP)
+- **C:** branch 0.88–0.94 noturno em `randomEvent` (cometa: moedas + XP + float ☄️ azul).
+- **D:** suite 49/49.
+- Notas: visual 86 · código 89 · estabilidade 97 · desempenho 84 · jogabilidade 94 · mobile 74 · originalidade 85.
+
 ### Ciclo 32 — Placas de estrada apontam o POI mais próximo (agora incluem os 4 vilarejos)
 - **C:** `roadSigns()` escolhe por placa o POI (caverna/torre/porto/vilarejo) a ≤1400 px; `ROAD_SIGNS` movido após VILLAGES. Resultado: 217 placas, 12 destinos, 4 vilarejos apontados.
 - **D:** world 14/14, simulacao 7/7, suite 49/49.
