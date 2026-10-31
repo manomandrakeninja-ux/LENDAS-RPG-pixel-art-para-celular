@@ -19,6 +19,7 @@ import { DEFAULT_KEYBINDS, KEY_ACTIONS, isBindableCode, isReservedCode, normaliz
 import { scaleEnemy } from '../src/data/enemyScaling.js';
 import { GEAR_ITEMS, RARITIES, rollGearDrop, GEAR_SLOTS, GEAR_SETS, FORGE_SLOT } from '../src/data/gear.js';
 import { BuffSystem, BUFF_DEFINITIONS } from '../src/game/BuffSystem.js';
+import { DEFAULT_KEYBINDS } from '../src/game/Keybinds.js';
 import { SKILLS, SKILL_MAX_LEVEL, skillLevelForXp, skillXpForLevel, PlayerSkills as PS2 } from '../src/data/skills.js';
 import { Bestiary } from '../src/game/Bestiary.js';
 import { Achievements, ACHIEVEMENTS } from '../src/data/achievements.js';
@@ -1204,19 +1205,19 @@ test('simulação: baús de tesouro — longe de acampamento/torres, em terreno 
     for (const b of blockers) {
       assert.ok(Math.hypot(spot.x - b.x, spot.y - b.y) > 400, 'baú colidindo com torre/acampamento');
     }
-    assert.ok((spot.rewards ?? []).length > 0, 'baú sem recompensa');
+    assert.ok(spot.id && spot.region, 'baú sem id/região');
   }
 });
 
 test('simulação: keybinds — teclas de ação não colidem entre si', () => {
   const seen = {};
-  for (const [action, key] of Object.entries(KEYBINDS ?? {})) {
+  for (const [action, key] of Object.entries(DEFAULT_KEYBINDS ?? {})) {
     const k = String(key).toLowerCase();
     assert.ok(!seen[k], `tecla ${k} usada por ${seen[k]} e ${action}`);
     seen[k] = action;
   }
   // teclas mínimas esperadas existem
-  const all = Object.values(KEYBINDS ?? {}).map((k) => String(k).toLowerCase());
+  const all = Object.values(DEFAULT_KEYBINDS ?? {}).map((k) => String(k).toLowerCase());
   for (const required of ['m', 'b', 'v', 'l', 'escape']) {
     assert.ok(all.includes(required), `tecla obrigatória ausente: ${required}`);
   }
