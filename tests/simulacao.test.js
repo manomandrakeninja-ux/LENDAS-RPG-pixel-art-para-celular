@@ -1788,6 +1788,28 @@ test('simulação: enemyXp — tier alto dá mais xp que tier baixo', () => {
   assert.ok(high > low, `xp elite alto (${high}) deve superar tier 1 (${low})`);
 });
 
+test('simulação: achievements — serialize/deserialize preserva desbloqueadas', () => {
+  const a = new Achievements();
+  a.note('kills', 9999);
+  a.check();
+  const unlockedBefore = Object.keys(a.unlocked).length;
+  assert.ok(unlockedBefore >= 1, 'algo deveria ter desbloqueado com 9999 kills');
+  const data = a.serialize();
+  const b = new Achievements();
+  b.deserialize?.(data) ?? Object.assign(b.unlocked, data.unlocked ?? data);
+  assert.equal(Object.keys(b.unlocked).length, unlockedBefore, 'serialize preserva desbloqueadas');
+});
+
+test('simulação: bestiário — serialize preserva kills e known', () => {
+  const b = new Bestiary();
+  b.recordKill('wolf'); b.recordKill('wolf'); b.recordKill('boar');
+  assert.equal(b.kills.wolf, 2, 'kills acumulam');
+  const data = b.serialize();
+  const b2 = new Bestiary();
+  b2.deserialize?.(data) ?? Object.assign(b2.kills, data.kills ?? data);
+  assert.equal(b2.kills.wolf, 2, 'serialize preserva kills');
+});
+
 test('simulação: o jogador não sai do mapa — trava física de limites do mundo ativa no Player', async () => {
   // terrainAt é infinita (gera terreno até fora do mapa), então a proteção real é física:
   // Player.js precisa chamar body.setCollideWorldBounds(true). Conferimos no código-fonte.

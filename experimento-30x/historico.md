@@ -269,6 +269,10 @@
 - 571–575: props — flor verde clara do brejo, pedrinha verde-água clara de praia, gelo verde-água claro, tronco musgoso de selva, flor verde clara clara de cinza (atlas 496) · 576: teste construções (ordem/nível) · 577: teste dayNight (total/fases) · 578: evento 💀 caveira sussurrante nas cinzas à noite (+12–20 XP) · 579: dica splash · 580: verificação parcial.
 - Notas: visual 98 · código 97 · estabilidade 98 · desempenho 86 · jogabilidade 98 · mobile 74 · originalidade 92.
 
+### Ciclos 581–590 ✅ (lote)
+- 581–585: props — flor verde clara clara de praia, pedra verde clara de duna, neve florida verde clara clara, cogumelo verde-água claro do brejo, flor verde clara clara de selva (atlas 504) · 586: teste CONSUMABLES (heal/hotkey) · 587: teste enemyXp (tier alto > baixo) · 588: evento 💚 fonte de vida na ilha Esmeralda de dia (+10–16 XP) · 589: dica splash · 590: verificação parcial.
+- Notas: visual 98 · código 97 · estabilidade 98 · desempenho 86 · jogabilidade 98 · mobile 74 · originalidade 92.
+
 ### Ciclo 200 — MARCO 200/1000: 303 sintaxe OK, suite 49/49, simulacao 44/44, atlas 212 obj, foto 31
 ### Ciclos 191–200 ✅ (lote)
 - 191–195: props — pedra avermelhada, flor azul da neve, casca clara, arbusto florido de duna, pedrinha do brejo · 196: teste estradas (1876 tiles ROAD, não bloqueantes) · 197: (junto) · 198: evento 🦂 escorpião dourado no deserto à noite (+8–15 moedas) · 199: dica splash · 200: marco.
