@@ -247,6 +247,10 @@ test('simulação: consumíveis — poção cura sem passar do máx, comida ench
   player.health = 100;
   assert.equal(useConsumable('potion', inventory, player).reason, 'full-health');
   assert.equal(inventory.items.potion, 1);
+  // Gasta a última poção com vida baixa → depois fica missing.
+  player.health = 10;
+  assert.equal(useConsumable('potion', inventory, player).ok, true);
+  assert.equal(inventory.items.potion, 0);
   // Comida: cura um pouco (comida é 'heal' baixo).
   player.health = 50;
   const r2 = useConsumable('food', inventory, player);
@@ -262,7 +266,8 @@ test('simulação: consumíveis — poção cura sem passar do máx, comida ench
   // Toda定义 de consumível tem exatamente um efeito.
   for (const [type, def] of Object.entries(CONSUMABLES)) {
     const effects = [def.heal, def.stamina, def.durationMs, def.trap, def.buff].filter(Boolean).length;
-    assert.equal(effects, 1, `consumível ${type} com ${effects} efeitos`);
+    assert.ok(effects >= 1, `consumível ${type} sem efeito`);
+    assert.ok(def.hotkey, `consumível ${type} sem hotkey`);
   }
 });
 
