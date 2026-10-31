@@ -44,7 +44,8 @@ const TIPS = [
   'À noite no brejo, o coro dos sapos 🐸 rende um pouco de XP.',
   'De dia com neve 🌨️ no gelo, a nevasca pode dar um pouco de XP.',
   'À noite na selva, os vaga-lumes 🦋 podem deixar moeditas.',
-  'De dia nas cinzas, uma brasa viva 🔥 pode pular em você com XP.'
+  'De dia nas cinzas, uma brasa viva 🔥 pode pular em você com XP.',
+  'O vento 🍃 forte no vale, de dia, às vezes traz um pouco de XP.'
 ];
 
 export function setupSplash() {

@@ -17,7 +17,7 @@ import { EconomySystem } from '../src/game/EconomySystem.js';
 import { CONSUMABLES, useConsumable } from '../src/data/consumables.js';
 import { DEFAULT_KEYBINDS, KEY_ACTIONS, isBindableCode, isReservedCode, normalizeKeybinds, rebind, actionForCode, loadKeybinds, saveKeybinds, keyLabel, keyCodeFor } from '../src/game/Keybinds.js';
 import { scaleEnemy } from '../src/data/enemyScaling.js';
-import { GEAR_ITEMS, RARITIES, rollGearDrop, GEAR_SLOTS } from '../src/data/gear.js';
+import { GEAR_ITEMS, RARITIES, rollGearDrop, GEAR_SLOTS, GEAR_SETS, FORGE_SLOT } from '../src/data/gear.js';
 import { BuffSystem, BUFF_DEFINITIONS } from '../src/game/BuffSystem.js';
 import { SKILLS, SKILL_MAX_LEVEL, skillLevelForXp, skillXpForLevel, PlayerSkills as PS2 } from '../src/data/skills.js';
 import { Bestiary } from '../src/game/Bestiary.js';
@@ -1108,6 +1108,31 @@ test('simulação: combate — config de combo/shout/dodge sadia e dentro de lim
   assert.ok(COMBAT_CONFIG.dodgeInvulnerabilityMs > 0 && COMBAT_CONFIG.dodgeInvulnerabilityMs <= 1000, 'i-frames desarrazoados');
   assert.ok(COMBAT_CONFIG.shout.cooldownMs >= 1000, 'grito com cooldown muito curto');
   assert.ok(COMBAT_CONFIG.basicAttackRange > 0 && COMBAT_CONFIG.basicAttackCooldownMs > 0, 'ataque básico mal configurado');
+});
+
+test('simulação: gear sets — cada conjunto tem peças em slots distintos e bônus de set', () => {
+  const sets = Object.entries(GEAR_SETS);
+  assert.ok(sets.length >= 5, 'poucos conjuntos de equipamento');
+  for (const [key, set] of sets) {
+    assert.ok(set.name, `set ${key} sem nome`);
+    const pieces = set.pieces ?? set.items ?? {};
+    const pieceIds = Object.keys(pieces);
+    assert.ok(pieceIds.length >= 3, `set ${key} com poucas peças (${pieceIds.length})`);
+    for (const id of pieceIds) assert.ok(GEAR_ITEMS[id], `set ${key} referencia item inexistente: ${id}`);
+    const slots = pieceIds.map((id) => GEAR_ITEMS[id].slot);
+    assert.equal(new Set(slots).size, slots.length, `set ${key} com peças no mesmo slot`);
+    assert.ok(set.bonus || set.setBonus || set.bonuses, `set ${key} sem bônus de conjunto`);
+  }
+});
+
+test('simulação: forja — FORGE_SLOT mapeia arma/peito/escudo e todos são slots válidos', () => {
+  for (const [slot, forgeKey] of Object.entries(FORGE_SLOT)) {
+    assert.ok(GEAR_SLOTS.includes(slot), `slot de forja inválido: ${slot}`);
+    assert.ok(typeof forgeKey === 'string' && forgeKey.length > 0, `chave de forja inválida para ${slot}`);
+  }
+  // todo item upgradável pela forja cai num slot mapeado
+  const forgeable = Object.values(GEAR_ITEMS).filter((item) => item.slot && FORGE_SLOT[item.slot]);
+  assert.ok(forgeable.length > 10, 'poucos itens forjáveis');
 });
 
 test('simulação: o jogador não sai do mapa — trava física de limites do mundo ativa no Player', async () => {

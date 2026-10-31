@@ -858,6 +858,50 @@ function flowerTuft(seed = 402) {
   return finish(p, { outline: 0.3 });
 }
 
+/** Flor laranja do brejo. */
+function orangeSwampFlower(seed = 1477) {
+  const p = new Painter(10, 12, { transparent: true });
+  p.rect(4, 6, 2, 5, '#4a6a34');
+  for (const [dx, dy] of [[-3, -2], [3, -2], [-2, 2], [2, 2], [0, -4]]) p.set(5 + dx, 5 + dy, '#ff9040');
+  p.set(5, 5, '#fff0c0');
+  return finish(p, { outline: 0.3 });
+}
+
+/** Pedra escura de duna. */
+function darkDuneStone(seed = 1481) {
+  const p = new Painter(14, 9, { transparent: true });
+  p.sphere(7, 5, 5, '#8a744a', '#a8905e');
+  p.set(5, 3, '#c8b088');
+  return finish(p, { outline: 0.35 });
+}
+
+/** Neve com flor branca. */
+function floweredSnow(seed = 1487) {
+  const p = new Painter(16, 9, { transparent: true });
+  p.sphere(8, 6, 5.5, '#dceaf6', '#f4faff');
+  p.set(8, 4, '#ffffff');
+  p.set(6, 3, '#f8f0ff');
+  p.set(10, 5, '#f8f0ff');
+  return finish(p, { outline: 0.3 });
+}
+
+/** Casca de cinza (madeira queimada). */
+function ashBark(seed = 1491) {
+  const p = new Painter(14, 8, { transparent: true });
+  p.rect(2, 3, 10, 3, '#3a3238');
+  p.set(3, 2, '#544a50');
+  p.set(8, 4, '#241f22');
+  return finish(p, { outline: 0.35 });
+}
+
+/** Pedra rosa de praia. */
+function roseBeachStone(seed = 1497) {
+  const p = new Painter(14, 9, { transparent: true });
+  p.sphere(7, 5, 5, '#c08a90', '#d8a8b0');
+  p.set(5, 3, '#f0c8d0');
+  return finish(p, { outline: 0.35 });
+}
+
 /** Pedrinha rosa de duna. */
 function pinkDunePebble(seed = 1447) {
   const p = new Painter(10, 7, { transparent: true });
@@ -2373,6 +2417,12 @@ const PAINTED_ENTRIES = [
   { name: 'ash-log', draw: () => ashLog(1461) },
   { name: 'light-purple-flower-0', draw: () => lightPurpleFlower(1467) },
   { name: 'light-purple-flower-1', draw: () => lightPurpleFlower(1469) },
+  { name: 'orange-swamp-flower-0', draw: () => orangeSwampFlower(1477) },
+  { name: 'orange-swamp-flower-1', draw: () => orangeSwampFlower(1479) },
+  { name: 'dark-dune-stone', draw: () => darkDuneStone(1481) },
+  { name: 'flowered-snow', draw: () => floweredSnow(1487) },
+  { name: 'ash-bark', draw: () => ashBark(1491) },
+  { name: 'rose-beach-stone', draw: () => roseBeachStone(1497) },
   { name: 'shipwreck', draw: shipwreck },
   { name: 'sea-rock', draw: seaRock },
   { name: 'charred-tree', draw: () => deadTree(['#0c0808', '#1a1010', '#2a1a16', '#3a2620', '#4a3228'], true) },

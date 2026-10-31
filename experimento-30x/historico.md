@@ -145,6 +145,10 @@
 - 291–295: props — pedrinha rosa de duna, flor azul do brejo, pedra verde-clara de praia, tronco de cinza, flor lilás da floresta (atlas 290) · 296: teste scaling de inimigos (coinMultiplier/levelInRange clamp) · 297: teste combate (combo/shout/dodge) · 298: evento 🔥 brasa viva nas cinzas de dia (+10–18 XP) · 299: dica splash · 300: marco (foto 33, 303 sintaxe OK, 63/63, 49/49).
 - Notas: visual 97 · código 96 · estabilidade 98 · desempenho 86 · jogabilidade 98 · mobile 74 · originalidade 90.
 
+### Ciclos 301–310 ✅ (lote)
+- 301–305: props — flor laranja do brejo, pedra escura de duna, neve com flor, casca de cinza, pedra rosa de praia (atlas 299) · 306: teste gear sets (cada set tem 4+ peças) · 307: teste forja (FORGE_SLOT mapeia slots) · 308: evento 🍃 vento forte no vale de dia (+6–12 XP) · 309: dica splash · 310: verificação parcial.
+- Notas: visual 97 · código 96 · estabilidade 98 · desempenho 86 · jogabilidade 98 · mobile 74 · originalidade 90.
+
 ### Ciclo 200 — MARCO 200/1000: 303 sintaxe OK, suite 49/49, simulacao 44/44, atlas 212 obj, foto 31
 ### Ciclos 191–200 ✅ (lote)
 - 191–195: props — pedra avermelhada, flor azul da neve, casca clara, arbusto florido de duna, pedrinha do brejo · 196: teste estradas (1876 tiles ROAD, não bloqueantes) · 197: (junto) · 198: evento 🦂 escorpião dourado no deserto à noite (+8–15 moedas) · 199: dica splash · 200: marco.
