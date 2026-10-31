@@ -858,6 +858,49 @@ function flowerTuft(seed = 402) {
   return finish(p, { outline: 0.3 });
 }
 
+/** Flor da floresta laranja clara. */
+function peachForestFlower(seed = 1507) {
+  const p = new Painter(10, 12, { transparent: true });
+  p.rect(4, 6, 2, 5, '#4a6a34');
+  for (const [dx, dy] of [[-3, -2], [3, -2], [-2, 2], [2, 2], [0, -4]]) p.set(5 + dx, 5 + dy, '#ffc090');
+  p.set(5, 5, '#a04818');
+  return finish(p, { outline: 0.3 });
+}
+
+/** Pedrinha de praia branca. */
+function whiteBeachPebble(seed = 1511) {
+  const p = new Painter(10, 7, { transparent: true });
+  p.sphere(5, 4, 3.4, '#e8e4dc', '#ffffff');
+  p.set(4, 3, '#ffffff');
+  return finish(p, { outline: 0.35 });
+}
+
+/** Gelo azul claro plano (neve). */
+function paleBlueIce(seed = 1517) {
+  const p = new Painter(16, 8, { transparent: true });
+  p.sphere(8, 5, 5, '#cfe4f8', '#eef6ff');
+  p.set(6, 3, '#ffffff');
+  return finish(p, { outline: 0.3 });
+}
+
+/** Cascalho de floresta. */
+function forestGravel(seed = 1521) {
+  const p = new Painter(18, 8, { transparent: true });
+  for (const [gx, gy] of [[3, 4], [7, 3], [11, 5], [14, 3], [5, 6]]) {
+    p.sphere(gx, gy, 1.6, '#6e7a6e', '#8a968a');
+  }
+  return finish(p, { outline: 0.3 });
+}
+
+/** Flor do deserto vermelha. */
+function redDuneFlower(seed = 1527) {
+  const p = new Painter(10, 12, { transparent: true });
+  p.rect(4, 6, 2, 5, '#9a8a5a');
+  for (const [dx, dy] of [[-3, -2], [3, -2], [-2, 2], [2, 2], [0, -4]]) p.set(5 + dx, 5 + dy, '#e84838');
+  p.set(5, 5, '#ffe8a0');
+  return finish(p, { outline: 0.3 });
+}
+
 /** Flor laranja do brejo. */
 function orangeSwampFlower(seed = 1477) {
   const p = new Painter(10, 12, { transparent: true });
@@ -2423,6 +2466,13 @@ const PAINTED_ENTRIES = [
   { name: 'flowered-snow', draw: () => floweredSnow(1487) },
   { name: 'ash-bark', draw: () => ashBark(1491) },
   { name: 'rose-beach-stone', draw: () => roseBeachStone(1497) },
+  { name: 'peach-forest-flower-0', draw: () => peachForestFlower(1507) },
+  { name: 'peach-forest-flower-1', draw: () => peachForestFlower(1509) },
+  { name: 'white-beach-pebble', draw: () => whiteBeachPebble(1511) },
+  { name: 'pale-blue-ice', draw: () => paleBlueIce(1517) },
+  { name: 'forest-gravel', draw: () => forestGravel(1521) },
+  { name: 'red-dune-flower-0', draw: () => redDuneFlower(1527) },
+  { name: 'red-dune-flower-1', draw: () => redDuneFlower(1529) },
   { name: 'shipwreck', draw: shipwreck },
   { name: 'sea-rock', draw: seaRock },
   { name: 'charred-tree', draw: () => deadTree(['#0c0808', '#1a1010', '#2a1a16', '#3a2620', '#4a3228'], true) },

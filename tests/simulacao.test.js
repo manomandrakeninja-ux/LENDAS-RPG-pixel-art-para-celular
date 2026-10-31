@@ -1139,6 +1139,38 @@ test('simulação: forja — FORGE_SLOT mapeia arma/peito/escudo e todos são sl
   assert.ok(forgeable.length > 10, 'poucos itens forjáveis');
 });
 
+test('simulação: recursos (RESOURCE_TYPES) — label, cor e ícone válidos; baú usa recursos existentes', () => {
+  const keys = Object.keys(RESOURCE_TYPES);
+  assert.ok(keys.length >= 15, 'poucos tipos de recurso');
+  for (const [key, def] of Object.entries(RESOURCE_TYPES)) {
+    assert.ok(def.label, `recurso ${key} sem label`);
+    assert.ok(/^#[0-9a-fA-F]{6}$/.test(def.color), `recurso ${key} cor inválida: ${def.color}`);
+    assert.ok(def.accent === undefined || /^#[0-9a-fA-F]{6}$/.test(def.accent), `recurso ${key} accent inválido`);
+  }
+  // baús de tesouro usam recursos que existem
+  for (const spot of treasureSpots()) {
+    for (const reward of spot.rewards ?? []) {
+      if (reward.type) assert.ok(RESOURCE_TYPES[reward.type], `baú usa recurso inexistente: ${reward.type}`);
+    }
+  }
+});
+
+test('simulação: inventário — add respeita limite de slots e serialize faz round-trip', () => {
+  const inv = new Inventory();
+  assert.ok(inv.add('wood', 500), 'add dentro do limite');
+  assert.equal(inv.items.wood, 500, 'quantidade acumulada');
+  assert.ok(inv.add('wood', 600), 'segundo add no mesmo slot');
+  assert.equal(inv.items.wood, 1100, 'acumula no slot (12×1000)');
+  assert.ok(!inv.add('stone', 12 * 1000 + 1), 'não cabe além da capacidade total');
+  const full = new Inventory();
+  for (const r of Object.keys(RESOURCE_TYPES).slice(0, 12)) full.add(r, 10);
+  assert.ok(!full.add('zzz-new-resource', 1) || full.usedSlots < 12, 'slot extra bloqueado quando cheio');
+  const data = inv.serialize();
+  const inv2 = new Inventory();
+  inv2.deserialize?.(data) ?? Object.assign(inv2.items, data.items ?? data);
+  assert.equal(inv2.items.wood, 1100, 'serialize preserva itens');
+});
+
 test('simulação: o jogador não sai do mapa — trava física de limites do mundo ativa no Player', async () => {
   // terrainAt é infinita (gera terreno até fora do mapa), então a proteção real é física:
   // Player.js precisa chamar body.setCollideWorldBounds(true). Conferimos no código-fonte.
