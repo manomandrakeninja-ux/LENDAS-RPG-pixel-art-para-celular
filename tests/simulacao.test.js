@@ -915,9 +915,11 @@ test('simulação: atlas de props — nomes únicos, draw não vazio, todos usad
   const RESERVED = /^valley-flower-/;
   for (const name of names) {
     // Props de MURK são montados com template (`lily-${n}`): vale o prefixo sem o dígito final.
-    // Aceita nome exato com aspas, prefixo de template (`lily-${n}`) ou substring (region-cave-earth).
-    const prefix = name.replace(/-[0-9]$/, '');
-    const used = regionWorldSrc.includes(name) || regionWorldSrc.includes(`\`${prefix}-`);
+    // Aceita substring (region-cave-earth), template por dígito (`lily-${n}`) ou por tema (`stalagmite-${theme}`).
+    const base = name.slice(0, name.lastIndexOf('-'));
+    const used = regionWorldSrc.includes(name)
+      || regionWorldSrc.includes(`\`${base}-`)
+      || regionWorldSrc.includes(`\`${base}\``);
     assert.ok(RESERVED.test(name) || used, `prop ${name} definido mas não usado fora do atlas`);
   }
 });
