@@ -11,6 +11,8 @@ import { weatherAt } from '../src/data/weather.js';
 import { COMBAT_CONFIG } from '../src/data/combat.js';
 import { BIOME_PROP_ENTRIES } from '../src/art/biomeProps.js';
 import { ENEMY_TYPES } from '../src/data/enemies.js';
+import { EconomySystem } from '../src/game/EconomySystem.js';
+import { CONSUMABLES, useConsumable } from '../src/data/consumables.js';
 import { PlayerSkills } from '../src/data/skills.js';
 import { migrateSave, createSaveEnvelope, SAVE_VERSION } from '../src/game/save.js';
 
@@ -208,6 +210,58 @@ test('simulação: toda caverna/torre referencia monstros e boss válidos (ENEMY
     // boss é opcional (algumas torres são só de Recursos), mas se declarado precisa existir.
     if (tower.boss) assert.ok(ENEMY_TYPES[tower.boss], `torre ${tower.name} com boss inexistente: ${tower.boss}`);
     assert.ok(REGION_INFO[tower.region], `torre ${tower.name} em região inexistente: ${tower.region}`);
+  }
+});
+
+test('simulação: economia nunca fica negativa e o hook onGain dispara só com ganho real', () => {
+  const eco = new EconomySystem({ coins: 100 });
+  let gained = 0;
+  eco.onGain = (n) => { gained += n; };
+  assert.equal(eco.spendCoins(150), false, 'não pode gastar mais do que tem');
+  assert.equal(eco.coins, 100);
+  assert.equal(eco.spendCoins(40), true);
+  assert.equal(eco.coins, 60);
+  assert.equal(eco.addCoins(25), 25);
+  assert.equal(eco.coins, 85);
+  assert.equal(gained, 25);
+  eco.addCoins(-50); // valor negativo vira 0 e não dispara hook
+  assert.equal(eco.coins, 85);
+  assert.equal(gained, 25);
+  assert.equal(new EconomySystem({ coins: -10 }).coins, 0, 'save negativo vira 0');
+  assert.equal(new EconomySystem({}).coins, 0);
+});
+
+test('simulação: consumíveis — poção cura sem passar do máx, comida enche stamina, tocha dura', () => {
+  const inventory = { items: { potion: 2, food: 1, torch: 1 }, remove({ potion, food, torch } = {}) {
+    if (potion) this.items.potion -= potion;
+    if (food) this.items.food -= food;
+    if (torch) this.items.torch -= torch;
+  } };
+  const player = { level: 10, health: 40, maxHealth: 100, stamina: 20, torchTimer: 0 };
+  // Poção: cura e gasta 1.
+  const r1 = useConsumable('potion', inventory, player);
+  assert.equal(r1.ok, true);
+  assert.ok(player.health > 40 && player.health <= 100);
+  assert.equal(inventory.items.potion, 1);
+  // Vida cheia não consome.
+  player.health = 100;
+  assert.equal(useConsumable('potion', inventory, player).reason, 'full-health');
+  assert.equal(inventory.items.potion, 1);
+  // Comida: stamina até 100.
+  const r2 = useConsumable('food', inventory, player);
+  assert.equal(r2.ok, true);
+  assert.ok(player.stamina > 20 && player.stamina <= 100);
+  // Tocha: define torchTimer.
+  const r3 = useConsumable('torch', inventory, player);
+  assert.equal(r3.ok, true);
+  assert.ok(player.torchTimer > 0);
+  // Sem item → missing; tipo inválido → not-consumable.
+  assert.equal(useConsumable('potion', inventory, player).reason, 'missing');
+  assert.equal(useConsumable('espada', inventory, player).reason, 'not-consumable');
+  // Toda定义 de consumível tem exatamente um efeito.
+  for (const [type, def] of Object.entries(CONSUMABLES)) {
+    const effects = [def.heal, def.stamina, def.durationMs, def.trap, def.buff].filter(Boolean).length;
+    assert.equal(effects, 1, `consumível ${type} com ${effects} efeitos`);
   }
 });
 

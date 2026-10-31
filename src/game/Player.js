@@ -219,6 +219,9 @@ export class Player extends Phaser.GameObjects.Container {
     this.dodgeTimer = COMBAT_CONFIG.dodgeDurationMs;
     this.dodgeX = this.facing.x * COMBAT_CONFIG.dodgeSpeed;
     this.dodgeY = this.facing.y * COMBAT_CONFIG.dodgeSpeed;
+    // Rastro visual da esquiva (2 fantasmas defasados).
+    this.scene.effects?.spawnDodgeGhost?.(this.x, this.y);
+    this.scene.time.delayedCall(90, () => this.scene.effects?.spawnDodgeGhost?.(this.x, this.y));
     this.knockbackTimer = 0;
     this.body.setVelocity(this.dodgeX, this.dodgeY);
     this.scene.effects?.spawnDust(this.x, this.y + 8, 6, 0xb0ad82);

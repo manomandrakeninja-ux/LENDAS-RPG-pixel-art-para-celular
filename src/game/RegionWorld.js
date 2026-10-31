@@ -448,6 +448,7 @@ export class RegionWorld {
       return;
     }
     const coins = scene.economy?.coins ?? 0;
+    const titleWithCoins = `${title} (🪙 ${coins})`;
     const offers = [
       { label: 'POÇÃO DE VIDA • 15 moedas', price: 15, type: 'potion' },
       { label: 'COMIDA • 8 moedas', price: 8, type: 'food' },
@@ -467,7 +468,7 @@ export class RegionWorld {
       }
     }));
     offers.push({ label: 'SÓ CONVERSAR', action: () => scene.ui.showMessage(title) });
-    ui.dialogue(speaker, title, offers);
+    ui.dialogue(speaker, titleWithCoins, offers);
   }
 
   /** Baú escondido no overworld: saque único com equipamento; reabastece com moedas 3 dias depois. */

@@ -175,6 +175,22 @@ export class PixelEffects {
     }
   }
 
+  /** Rastro fantasma da esquiva: brilho azul-claro que desaparece rápido. */
+  spawnDodgeGhost(x, y) {
+    const ghost = this.scene.add.ellipse(x, y - 8, 26, 34, 0xbfe8ff, 0.35)
+      .setDepth(OVERLAY_DEPTH + 4100)
+      .setBlendMode(Phaser.BlendModes.ADD);
+    this.scene.hudCamera?.ignore(ghost);
+    this.scene.tweens.add({
+      targets: ghost,
+      scaleX: 1.25,
+      scaleY: 1.1,
+      alpha: 0,
+      duration: 240,
+      onComplete: () => ghost.destroy()
+    });
+  }
+
   spawnSlash(x, y, angle, size = 1) {
     const slash = this.scene.add.sprite(x, y, 'vfx', 'slash-0')
       .setOrigin(0.5)
