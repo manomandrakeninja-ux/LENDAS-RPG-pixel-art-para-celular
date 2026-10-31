@@ -69,6 +69,12 @@
 - **D:** suite 49/49.
 - Notas 0–100: visual 79 · código 87 · estabilidade 95 · desempenho 83 · jogabilidade 88 · mobile 70 · originalidade 81.
 
+### Ciclo 14 — Arte: tufos de grama e flores nos biomas (4 props novos)
+- **C:** `grassTuft()` e `flowerTuft()` (2 variantes cada) em biomeProps.js; adicionados às tabelas PROPS dos 8 biomas (densidade maior nos férteis). Atlas regenerado: 69 objetos (antes 65).
+- **Foto:** SUPER ATUALIZAÇÃO/18-detalhe-flores-grama.
+- **D:** suite 49/49; generate-world-assets ok (~9 s).
+- Notas 0–100: visual 81 · código 87 · estabilidade 95 · desempenho 83 · jogabilidade 88 · mobile 70 · originalidade 82.
+
 ### Ciclo 13 — Evento dinâmico: baú abandonado na estrada
 - **C:** `randomEvent` ganhou faixa 88–94%: se o jogador está perto de estrada (`roadAt`), acha um baú abandonado (+15–35 moedas e 40% chance de poção/comida); fora da estrada cai no flavor normal.
 - **D:** simulacao 6/6; suite 49/49.

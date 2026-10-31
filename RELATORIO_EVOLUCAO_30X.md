@@ -80,6 +80,12 @@
 - **D:** suite 49/49.
 - **Notas 0–100:** visual 79 · código 87 · estabilidade 95 · desempenho 83 · jogabilidade 88 · mobile 70 · originalidade 81.
 
+## Ciclo 14/30 — Arte: tufos de grama/flores nos 8 biomas ✅ CONCLUÍDO
+
+- **C:** 4 props novos (`grass-tuft-0/1`, `flower-tuft-0/1`) no atlas (65→69 objetos) distribuídos pelas tabelas PROPS.
+- **Foto:** 18-detalhe-flores-grama. **D:** generate ok; suite 49/49.
+- **Notas 0–100:** visual 81 · código 87 · estabilidade 95 · desempenho 83 · jogabilidade 88 · mobile 70 · originalidade 82.
+
 ## Ciclo 13/30 — Evento dinâmico: baú abandonado na estrada ✅ CONCLUÍDO
 
 - **C:** nova faixa de `randomEvent` (88–94%): perto de estrada → baú abandonado (+moedas, 40% suprimento).
