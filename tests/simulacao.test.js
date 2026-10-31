@@ -1585,6 +1585,26 @@ test('simulação: road signs — apontam para POI dentro do mundo', () => {
   }
 });
 
+test('simulação: torres — têm entrada, monstros e ficam em região válida', () => {
+  assert.ok(TOWERS.length >= 9, 'poucas torres');
+  const regionKeys = new Set(Object.keys(REGION_INFO));
+  for (const t of TOWERS) {
+    assert.ok(t.entrance && typeof t.entrance.x === 'number', `torre ${t.name} sem entrada`);
+    assert.ok(t.entrance.x > 0 && t.entrance.x < WORLD_COLS * TILE && t.entrance.y > 0 && t.entrance.y < OVERWORLD_ROWS * TILE, `${t.name} entrada fora do mapa`);
+    assert.ok(Array.isArray(t.monsters) && t.monsters.length >= 1, `${t.name} sem monstros`);
+    for (const m of t.monsters) assert.ok(ENEMY_TYPES[m], `torre ${t.name} monstro inválido: ${m}`);
+    assert.ok(regionKeys.has(t.region), `torre ${t.name} região inválida: ${t.region}`);
+  }
+});
+
+test('simulação: ELITE_CONFIG — multiplicadores sadios e aura definida', () => {
+  assert.ok(ELITE_CONFIG.healthMultiplier > 1, 'elite deve ter mais vida');
+  assert.ok(ELITE_CONFIG.damageMultiplier > 1, 'elite deve dar mais dano');
+  assert.ok(typeof ELITE_CONFIG.auraColor === 'string', 'elite sem aura');
+  assert.ok(ELITE_CONFIG.chance && typeof ELITE_CONFIG.chance.day === 'number' && typeof ELITE_CONFIG.chance.night === 'number', 'chance elite incompleta');
+  assert.ok(ELITE_CONFIG.chance.day > 0 && ELITE_CONFIG.chance.night > 0, 'elite nunca aparece?');
+});
+
 test('simulação: o jogador não sai do mapa — trava física de limites do mundo ativa no Player', async () => {
   // terrainAt é infinita (gera terreno até fora do mapa), então a proteção real é física:
   // Player.js precisa chamar body.setCollideWorldBounds(true). Conferimos no código-fonte.
