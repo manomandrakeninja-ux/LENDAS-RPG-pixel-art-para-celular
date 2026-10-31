@@ -29,6 +29,17 @@ npm run dev          # abre em http://127.0.0.1:5173/
 
 Se o celular não abrir o endereço, o Firewall do Windows pode estar bloqueando o Node.js: permita o acesso em **redes privadas** quando o Windows perguntar.
 
+## Multijogador LAN (jogar com outras pessoas na mesma rede)
+
+Sem internet e sem instalar nada (o servidor usa WebSocket puro do próprio Node):
+
+1. No dispositivo que vai **hospedar**: `npm run lan` (ou abra `LENDAS-LAN.bat`). O console mostra os endereços, ex.: `ws://192.168.0.15:8787`.
+2. No jogo do hospedeiro (e de cada participante): abra o painel **🌐** (canto superior direito, ao lado da engrenagem), coloque seu **nome** e o **endereço do servidor** (`ws://IP_DO_HOSPEDEIRO:8787`) → **CONECTAR**. O painel mostra o seu próprio IP na rede.
+3. Cada jogador aparece no mundo dos outros com um avatar colorido e o **nome embaixo**; a posição acompanha o movimento em tempo real (10 Hz).
+
+Também dá para auto-conectar pela URL: `http://192.168.0.15:5173/?lan=ws://192.168.0.15:8787&lanName=Alice`.
+Teste automatizado: `npm run test:runtime:lan` (abre duas páginas e confere se cada uma vê a outra).
+
 ## Protótipo e sistemas
 
 Protótipo de RPG top-down em pixel art feito com Phaser 3. A **Fase 1** adiciona ciclo de dia/noite, sono, espécies diurnas e noturnas, elites, recursos lunares, zona segura, drops, mochila de morte e save versionado. O **Sistema 1** acrescenta estruturas coletáveis pelo mundo, com recompensas, regeneração por dias, baús únicos e cogumelos noturnos. O **Sistema 2** implementa os menus de Fazenda, Ferraria, Casa/Armazém e Mercado, além de mineração, veios de ferro, picaretas e uma mina com inimigos fortes. O **Sistema 3** transforma a mochila em uma grade real de 12 slots e adiciona o armazenamento rápido ao entrar no acampamento. A expansão atual acrescenta **mapa fullscreen com neblina**, **progressão por XP**, **economia de moedas** e um **chefe de bioma com três padrões de ataque**.
@@ -310,7 +321,7 @@ Os testes de runtime abrem o Chrome escondido e salvam capturas de tela em `.tmp
 
 ### Adicionar biomas
 
-Em `World.js`, use as coordenadas do mundo para selecionar o bioma e desenhar seus tiles e detalhes. Mantenha cada bioma em uma função ou módulo dedicado, com paleta e tabelas próprias de recursos/inimigos; ajuste `WORLD.width` e `WORLD.height` em `config.js` para ampliar o mapa. Use `revealAround` para manter a neblina ligada à exploração.
+Em `World.js`, use as coordenadas do mundo para selecionar o bioma e desenhar seus tiles e detalhes. Mantenha cada bioma em uma função ou módulo dedicado, com paleta e tabelas próprias de recursos/inimigos. Para ampliar o mapa, mude `WORLD_COLS`/`OVERWORLD_ROWS` em `src/data/worldRegions.js` — POIs, ilhas e fronteiras usam frações do mundo (`W(f)`/`H(f)`) e escalam sozinhos; depois rode `node scripts/generate-world-assets.js` para regenerar a folha de terrenos (veja [docs/mapa-400x300.md](docs/mapa-400x300.md)). Use `revealAround` para manter a neblina ligada à exploração.
 
 ### Adicionar inimigos
 

@@ -203,7 +203,7 @@
 
 .item-info__footer button {
   width: 100%;
-  min-height: 44px;
+  min-height: 48px;
   border: 2px solid var(--gold-dark);
   border-radius: 9px;
   background: linear-gradient(#ffd977, var(--gold-2));
@@ -304,8 +304,8 @@
   right: calc(var(--minimap-width, 180px) + max(8px, env(safe-area-inset-right)));
   display: grid;
   place-items: center;
-  width: 44px;
-  height: 44px;
+  width: 48px;
+  height: 48px;
   padding: 0;
   border: 2px solid var(--parchment-edge);
   border-radius: 10px;
@@ -327,8 +327,8 @@
 }
 
 body.is-phone .settings-button {
-  width: 40px;
-  height: 40px;
+  width: 48px;
+  height: 48px;
 }
 
 .settings-panel__row + .settings-panel__row {

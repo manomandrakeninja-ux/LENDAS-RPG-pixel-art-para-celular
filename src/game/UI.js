@@ -8,6 +8,7 @@ import { MAP_SCALE, MapRenderer } from './MapRenderer.js';
 import { HOTKEY_ITEMS } from '../data/consumables.js';
 import { quantizePixels } from '../art/palette.js';
 import { OVERLAY_DEPTH } from './depths.js';
+import { REGION_INFO } from '../data/worldRegions.js';
 
 const TEXT_STYLE = {
   fontFamily: 'Press Start 2P',
@@ -215,6 +216,22 @@ export class GameUI {
     }).setScrollFactor(0);
     this.hint.setDepth(OVERLAY_DEPTH + 5000);
     this.layoutHint();
+
+    // Bússola do objetivo rastreado: seta no topo da tela apontando para a missão ativa.
+    this.compass = this.scene.add.graphics().setScrollFactor(0).setDepth(OVERLAY_DEPTH + 5002);
+    this.compassText = this.text(0, 0, '', {
+      fontSize: '7px', color: '#ffd76b', stroke: '#0b0a10', strokeThickness: 3
+    }).setOrigin(0.5).setScrollFactor(0);
+    this.compassText.setDepth(OVERLAY_DEPTH + 5003);
+    this.fixed.push(this.compass, this.compassText);
+
+    // Barra de Fúria do Grito (Z): fica fina logo abaixo do HUD.
+    this.shoutBar = this.scene.add.graphics().setScrollFactor(0).setDepth(OVERLAY_DEPTH + 5002);
+    this.shoutLabel = this.text(0, 0, '', {
+      fontSize: '7px', color: '#c99ad8', stroke: '#0b0a10', strokeThickness: 3
+    }).setOrigin(0.5).setScrollFactor(0);
+    this.shoutLabel.setDepth(OVERLAY_DEPTH + 5003);
+    this.fixed.push(this.shoutBar, this.shoutLabel);
 
     this.mapX = width - this.metrics.mapSize / 2 - 12;
     this.mapY = 91;
@@ -459,7 +476,7 @@ export class GameUI {
 
     this.warning.setVisible(Boolean(time.warningActive));
     if (time.warningActive) {
-      this.warning.setText(`A NOITE CHEGA EM ${time.secondsUntilNight ?? 0}s  •  F no acampamento para dormir`);
+      this.warning.setText(`A NOITE CHEGA EM ${time.secondsUntilNight ?? 0}s  •  N no acampamento para dormir`);
     }
 
     // Missões primeiro; depois cavernas, escadas, portos e baús do mundo grande.
@@ -507,7 +524,9 @@ export class GameUI {
           : 'ATACAR';
 
     this.statusLabel.setText(this.statusText(time));
-    this.updateRain();
+    this.updateCompass(player);
+    this.updateShoutBar();
+    this.updateRain(this.scene.weather);
     this.minimapTimer -= this.scene.game.loop.delta;
     if (this.minimapTimer <= 0) {
       this.minimapTimer = 120;
@@ -515,27 +534,91 @@ export class GameUI {
     }
   }
 
+  /** Bússola: seta no topo da tela apontando para o objetivo da missão rastreada, com distância. */
+  updateCompass(player) {
+    const target = this.scene.campaign?.trackedTarget?.();
+    const g = this.compass;
+    g.clear();
+    if (!target || !player || !player.x) {
+      this.compassText.setText('');
+      return;
+    }
+    const { width } = this.scene.scale;
+    const cx = width / 2;
+    const cy = this.metrics.hudTop + this.metrics.hudHeight + 36;
+    const dx = target.x - player.x;
+    const dy = target.y - player.y;
+    const dist = Math.hypot(dx, dy);
+    const angle = Math.atan2(dy, dx);
+    g.fillStyle(0x14161e, 0.85);
+    g.fillCircle(cx, cy, 14);
+    g.lineStyle(2, 0xc9a76b, 1);
+    g.strokeCircle(cx, cy, 14);
+    g.fillStyle(0xffd76b, 1);
+    g.beginPath();
+    g.moveTo(cx + Math.cos(angle) * 10, cy + Math.sin(angle) * 10);
+    g.lineTo(cx + Math.cos(angle + 2.6) * 7, cy + Math.sin(angle + 2.6) * 7);
+    g.lineTo(cx + Math.cos(angle - 2.6) * 7, cy + Math.sin(angle - 2.6) * 7);
+    g.closePath();
+    g.fillPath();
+    const meters = Math.max(0, Math.round((dist / WORLD.tileSize) * 10));
+    this.compassText.setText(`${(target.name ?? 'OBJETIVO').toUpperCase()} • ${meters} m`);
+    this.compassText.setPosition(cx, cy + 24);
+  }
+
+  /** Barra de Fúria (Grito, tecla Z): abaixo do HUD; dourada e piscando quando pronta. */
+  updateShoutBar() {
+    const g = this.shoutBar;
+    g.clear();
+    const charge = this.scene.player?.shoutCharge ?? 0;
+    const cooldown = this.scene.player?.shoutCooldown ?? 0;
+    const { width } = this.scene.scale;
+    const w = Math.min(140, this.metrics.hudWidth);
+    const x = width / 2 - w / 2;
+    const y = this.metrics.hudTop + this.metrics.hudHeight + 4;
+    const ready = charge >= 100 && cooldown <= 0;
+    g.fillStyle(0x14161e, 0.85);
+    g.fillRect(x, y, w, 6);
+    g.fillStyle(ready ? 0xffd76b : 0xb13f8f, 1);
+    g.fillRect(x, y, w * Math.min(1, charge / 100), 6);
+    g.lineStyle(1, ready ? 0xffd76b : 0x6b4a8a, 1);
+    g.strokeRect(x + 0.5, y + 0.5, w - 1, 5);
+    this.shoutLabel.setText(ready ? 'Z • GRITO PRONTO!' : `FÚRIA ${Math.floor(charge)}%`);
+    this.shoutLabel.setPosition(width / 2, y + 13);
+    this.shoutLabel.setColor(ready ? '#ffd76b' : '#c99ad8');
+  }
+
   /** Modo gráfico: quantidade de gotas de chuva. */
   setGraphics(profile) {
     this.rainLimit = profile.rainDrops ?? this.rainDrops.length;
   }
 
-  updateRain() {
+  /** Clima na tela: chuva, neve (gelo), poeira (deserto) ou cinzas (brasa), conforme a região. */
+  updateRain(kind = this.scene.weather ?? 'rain') {
     this.rain.clear();
-    if (!this.scene.isRaining || this.buildingMenuOpen) return;
+    const styles = {
+      rain: { color: 0xa9d4ff, alpha: 0.45, drift: 0.25, speedMul: 1 },
+      snow: { color: 0xffffff, alpha: 0.75, drift: 0.1, speedMul: 0.32 },
+      dust: { color: 0xe8cf8a, alpha: 0.35, drift: -0.7, speedMul: 0.22 },
+      ash: { color: 0x8a8a8a, alpha: 0.4, drift: 0.3, speedMul: 0.28 }
+    };
+    const style = styles[kind] ?? styles.rain;
+    const active = kind !== 'clear' && (this.scene.isRaining || kind === 'dust' || kind === 'ash');
+    if (!active || this.buildingMenuOpen) return;
     const { width, height } = this.scene.scale;
-    this.rain.lineStyle(1, 0xa9d4ff, 0.45);
+    this.rain.lineStyle(1, style.color, style.alpha);
     const count = Math.min(this.rainDrops.length, this.rainLimit ?? this.rainDrops.length);
     for (let index = 0; index < count; index += 1) {
       const drop = this.rainDrops[index];
-      drop.y += drop.speed;
-      drop.x -= drop.speed * 0.25;
+      drop.y += drop.speed * style.speedMul;
+      drop.x -= drop.speed * style.drift;
       if (drop.y > height) {
         drop.y = -drop.length;
         drop.x = Math.random() * (width + 80);
       }
       if (drop.x < -10) drop.x = width + Math.random() * 40;
-      this.rain.lineBetween(drop.x, drop.y, drop.x - drop.length * 0.25, drop.y + drop.length);
+      if (drop.x > width + 10) drop.x = -Math.random() * 40;
+      this.rain.lineBetween(drop.x, drop.y, drop.x + drop.length * style.drift, drop.y + drop.length);
     }
   }
 
@@ -543,7 +626,8 @@ export class GameUI {
     const parts = [];
     const raid = this.scene.raid;
     if (raid?.statusText) parts.push(raid.statusText);
-    if (this.scene.isRaining) parts.push('CHUVA');
+    const weather = this.scene.weather;
+    if (weather && weather !== 'clear') parts.push({ rain: 'CHUVA', snow: 'NEVE', dust: 'POEIRA', ash: 'CINZAS' }[weather] ?? weather.toUpperCase());
     // Os buffs agora aparecem como ícones no painel de efeitos (EffectsPanel).
     return parts.join(' • ');
   }
@@ -670,6 +754,39 @@ export class GameUI {
     const quest = renderer.drawQuestSites(context, toX, toY, { size: 4 });
     if (quest.length > 0) kinds.push('quest');
 
+    // POIs do mundo grande já explorados: caverna (▲ roxo), torre (▲ bege), porto (retângulo azul),
+    // baú fechado (quadrado dourado) e vilarejo (quadrado verde).
+    const regionWorld = this.scene.regionWorld;
+    if (regionWorld) {
+      for (const feature of regionWorld.features) {
+        if (feature.type === 'sign' || feature.type === 'up' || feature.type === 'down') continue;
+        if (!renderer.isExplored(feature.x, feature.y)) continue;
+        const fx = toX(feature.x);
+        const fy = toY(feature.y);
+        if (!inside(fx, fy, 2)) continue;
+        let color = null;
+        if (feature.type === 'cave') color = feature.cave?.tower ? '#d8c8a0' : '#c86bff';
+        else if (feature.type === 'dock') color = '#7ec8ff';
+        else if (feature.type === 'chest') color = feature.opened ? null : '#e0b040';
+        else if (feature.type === 'villager') color = '#8affc0';
+        if (!color) continue;
+        context.fillStyle = color;
+        if (feature.type === 'cave') {
+          context.beginPath();
+          context.moveTo(fx, fy - 4);
+          context.lineTo(fx + 4, fy + 3);
+          context.lineTo(fx - 4, fy + 3);
+          context.closePath();
+          context.fill();
+        } else if (feature.type === 'dock') {
+          context.fillRect(fx - 3, fy - 1, 6, 3);
+        } else {
+          context.fillRect(Math.round(fx) - 2, Math.round(fy) - 2, 4, 4);
+        }
+        kinds.push(feature.type);
+      }
+    }
+
     // Setas na borda: acampamento (laranja) e alvo da missão rastreada (dourado).
     const edgeArrow = (x, y, color) => {
       const cx = size / 2;
@@ -703,6 +820,24 @@ export class GameUI {
       edgeArrow(toX(target.x), toY(target.y), '#ffd76b');
       kinds.push('quest-arrow');
     }
+    // Waypoint personalizado (Shift+clique no mapa): X verde dentro da área, seta verde na borda.
+    const waypoint = this.scene.waypoint;
+    if (waypoint) {
+      const wx = toX(waypoint.x);
+      const wy = toY(waypoint.y);
+      if (inside(wx, wy)) {
+        context.strokeStyle = '#5aff8a';
+        context.lineWidth = 2;
+        context.beginPath();
+        context.moveTo(wx - 4, wy - 4); context.lineTo(wx + 4, wy + 4);
+        context.moveTo(wx + 4, wy - 4); context.lineTo(wx - 4, wy + 4);
+        context.stroke();
+        kinds.push('waypoint');
+      } else {
+        edgeArrow(wx, wy, '#5aff8a');
+        kinds.push('waypoint-arrow');
+      }
+    }
 
     renderer.drawPlayer(context, size / 2, size / 2, 5);
     // Vinheta e borda interna.
@@ -718,6 +853,17 @@ export class GameUI {
     context.font = '8px "Press Start 2P", monospace';
     context.textAlign = 'center';
     context.fillText('N', size / 2, 11);
+    // Nome da região atual embaixo do minimapa (ajuda a saber onde se está no mapa grande).
+    const regionKey = this.scene.regionWorld?.currentRegion?.();
+    const regionName = regionKey ? REGION_INFO[regionKey]?.name?.toUpperCase() : '';
+    if (regionName) {
+      context.font = '7px "Press Start 2P", monospace';
+      context.lineWidth = 3;
+      context.strokeStyle = 'rgba(10,6,4,0.85)';
+      context.strokeText(regionName, size / 2, size - 6);
+      context.fillStyle = REGION_INFO[regionKey]?.color ?? '#ffe08a';
+      context.fillText(regionName, size / 2, size - 6);
+    }
     context.restore();
     this.minimapTexture.refresh();
     this.minimapStats = { rendered: true, kinds, size, span, playerAtCenter: true };

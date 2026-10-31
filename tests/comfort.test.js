@@ -76,7 +76,7 @@ test('region card lists level range, monsters, caves and docks', () => {
   assert.equal(forest.levels, '12-30');
   assert.ok(forest.monsters.includes('Goblin'));
   assert.ok(forest.caves.includes('Toca dos Orcs'));
-  assert.deepEqual(regionCard('brejo').docks, ['Porto do Brejo']);
+  assert.deepEqual(regionCard('brejo').docks.sort(), ['Porto Austral', 'Porto do Brejo']);
   assert.ok(regionCard('vale').monsters.length > 0);
   assert.equal(regionCard('mar'), null);
   assert.equal(regionCardAt(1440, 1080).region, 'vale');

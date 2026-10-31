@@ -6,7 +6,9 @@ import { paintParchment, paintClouds, drawTreeSymbol } from './mapParchment.js';
 
 // Desenha o terreno do mundo (uma vez) e a névoa de exploração, numa escala de
 // 1 pixel do mapa = MAP_SCALE pixels do mundo. Minimapa e mapa grande recortam daqui.
-export const MAP_SCALE = 6;
+// Escala dinâmica: o canvas do mapa fica com ~1200 px de largura independente do tamanho do mundo
+// (economia de RAM no celular — antes eram ~1600 px × 3 canvases ≈ 40 MB).
+export const MAP_SCALE = Math.max(4, Math.ceil(FULL_WORLD.width / 1200));
 // Inclui a faixa das cavernas (abaixo do mar) para o minimapa funcionar lá dentro.
 const MAP_WIDTH = Math.ceil(FULL_WORLD.width / MAP_SCALE);
 const MAP_HEIGHT = Math.ceil(FULL_WORLD.height / MAP_SCALE);

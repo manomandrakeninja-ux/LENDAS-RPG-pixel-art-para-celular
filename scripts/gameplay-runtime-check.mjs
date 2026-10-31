@@ -15,9 +15,9 @@ if (!chrome) throw new Error('Chrome não encontrado para o smoke test.');
 
 const port = 9347;
 const capturesDir = path.join(root, '.tmp', 'capturas');
-const userDataDir = path.join(root, '.tmp', 'gameplay-chrome-profile');
+const userDataDir = path.join(root, '.tmp', 'gameplay-chrome-profile-' + process.pid + '-' + Date.now());
 const screenshotPath = path.join(capturesDir, 'gameplay-runtime-check.png');
-fs.rmSync(userDataDir, { recursive: true, force: true });
+try { fs.rmSync(userDataDir, { recursive: true, force: true }); } catch {}
 fs.mkdirSync(userDataDir, { recursive: true });
 fs.mkdirSync(capturesDir, { recursive: true });
 
@@ -80,12 +80,28 @@ try {
     pending.set(id, { resolve, reject });
     socket.send(JSON.stringify({ id, method, params }));
   });
-  const evaluate = async (expression) => {
-    const response = await send('Runtime.evaluate', { expression, awaitPromise: true, returnByValue: true });
+  const evaluateOnce = async (expression) => {
+    const response = await send('Runtime.evaluate', {
+      expression,
+      awaitPromise: true,
+      returnByValue: true
+    });
     if (response.exceptionDetails) {
       throw new Error(response.exceptionDetails.exception?.description ?? response.exceptionDetails.text);
     }
     return response.result.value;
+  };
+  // Se a pagina navegar no meio da chamada o contexto morre e a pergunta se perde: tenta de novo.
+  const evaluate = async (expression) => {
+    for (let attempt = 1; ; attempt += 1) {
+      try {
+        return await evaluateOnce(expression);
+      } catch (error) {
+        const navigated = /Execution context was destroyed|Cannot find context|Inspected target navigated/.test(error.message);
+        if (!navigated || attempt >= 5) throw error;
+        await delay(500);
+      }
+    }
   };
   const pressKey = async (key, code, keyCode) => {
     await send('Input.dispatchKeyEvent', { type: 'keyDown', key, code, windowsVirtualKeyCode: keyCode });

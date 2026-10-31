@@ -653,6 +653,41 @@ function signpost() {
   return finish(p, { outline: 0.55 });
 }
 
+/** Casinha de vilarejo: paredes de tábuas claras, telhado escuro, porta e janela. */
+function villageHouse() {
+  const p = new Painter(48, 42, { transparent: true });
+  const walls = ['#8a6f4d', '#a8895f', '#c4a276', '#e0c49a'];
+  const roof = ['#4a2c1c', '#6a4028', '#8a5636', '#a86a42'];
+  // Paredes.
+  p.rect(6, 18, 36, 22, walls[1]);
+  for (let y = 18; y < 40; y += 1) {
+    for (let x = 6; x < 42; x += 1) {
+      if ((y % 5 === 0)) p.set(x, y, walls[0]);
+      else if (fbm(x / 3, y / 9, 331, 2) > 0.62) p.set(x, y, shade(walls, 0.75));
+    }
+  }
+  // Telhado (triângulo com beiral).
+  for (let y = 2; y <= 20; y += 1) {
+    const half = (20 - y) * 0.95 + 4;
+    for (let x = Math.floor(24 - half); x <= Math.ceil(24 + half); x += 1) {
+      const t = (x - (24 - half)) / Math.max(1, half * 2);
+      p.set(x, y, shade(roof, 0.35 + t * 0.4 + (y % 3 === 0 ? 0.12 : 0)));
+    }
+  }
+  p.rect(2, 19, 44, 3, roof[0]); // beiral
+  // Chaminé.
+  p.rect(34, 4, 5, 9, '#7a5a4a');
+  p.rect(33, 3, 7, 2, '#5a4038');
+  // Porta e janela.
+  p.rect(20, 28, 9, 12, '#5a3a22');
+  p.set(27, 34, '#e0b040');
+  p.rect(9, 24, 7, 7, '#2a3a4a');
+  p.set(12, 27, '#8ac8e8');
+  p.rect(32, 24, 7, 7, '#2a3a4a');
+  p.set(35, 27, '#8ac8e8');
+  return finish(p, { outline: 0.5 });
+}
+
 function bossChest() {
   const p = new Painter(42, 34, { transparent: true });
   p.rect(4, 12, 34, 20, '#6a3a1e');
@@ -835,6 +870,7 @@ const PAINTED_ENTRIES = [
   { name: 'pier', draw: pier },
   { name: 'boat', draw: boat },
   { name: 'signpost', draw: signpost },
+  { name: 'village-house', draw: villageHouse },
   { name: 'boss-chest', draw: bossChest },
   { name: 'bones', draw: bones },
   { name: 'node-iron', draw: () => oreNode(['#f0e8e0', '#c8a088'], 311) },

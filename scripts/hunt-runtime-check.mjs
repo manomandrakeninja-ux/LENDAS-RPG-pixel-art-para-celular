@@ -71,6 +71,14 @@ await runInChrome({ name: 'hunt', port: 9394, width: 1280, height: 800 }, async 
   const shooter = await inScene(async (scene) => {
     scene.player.setPosition(3950, 2850);
     scene.player.health = scene.player.maxHealth = 99999;
+    // o turnin do passo 1 pode deixar level-up pendente (e volta no reload do passo 3),
+    // o que pausa a UI e trava os inimigos neste passo — limpa tudo antes de medir a IA
+    scene.progression.pendingLevels = [];
+    scene.progression.pendingPerks = [];
+    scene.levelUpOverlay.hide();
+    scene.campaign.ui.closeChapter();
+    scene.campaign.ui.closeDialogue();
+    scene.campaign.ui.closeReward?.();
     let shots = 0;
     const fire = scene.enemyProjectiles.fire.bind(scene.enemyProjectiles);
     scene.enemyProjectiles.fire = (...args) => { shots += 1; return fire(...args); };
@@ -79,6 +87,13 @@ await runInChrome({ name: 'hunt', port: 9394, width: 1280, height: 800 }, async 
     let sawHold = false; let maxSteps = 0;
     for (let i = 0; i < 80; i += 1) {
       await new Promise((resolve) => setTimeout(resolve, 100));
+      // teleportar o herói pode disparar diálogo de capítulo/level-up no meio do teste: limpa a cada passo
+      scene.progression.pendingLevels = [];
+      scene.progression.pendingPerks = [];
+      scene.levelUpOverlay.hide();
+      scene.campaign.ui.closeChapter();
+      scene.campaign.ui.closeDialogue();
+      scene.campaign.ui.closeReward?.();
       maxSteps = Math.max(maxSteps, witch.retreatSteps);
       if (witch.holdMs > 0) sawHold = true;
       // O herói persegue a bruxa: cada aproximação faz ela recuar um passo; no 2º ela fica parada.

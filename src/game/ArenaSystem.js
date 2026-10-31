@@ -62,6 +62,7 @@ export class ArenaSystem {
     this.bosses = [];
     const reward = this.state.clear();
     scene.ui?.showMessage(`Onda ${this.state.wave} vencida! Recorde: ${this.state.record}`);
+    scene.achievements?.checkAchievements(); // conquistas de arena (recorde)
     if (reward) {
       scene.economy?.addCoins(reward.coins);
       scene.grantExperience?.(reward.xp, false);

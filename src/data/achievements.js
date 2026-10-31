@@ -12,12 +12,19 @@ const defs = [
   ...T('maxEnhance', [5, 10], (n) => `Peça no +${n}`, ['Reforçador', 'Forja Perfeita']),
   ...T('sets', [1, 3, 6, 12, 18], (n) => `Reunir ${n} conjunto${n > 1 ? 's' : ''} completo${n > 1 ? 's' : ''}`, ['Bem Equipado', 'Colecionador', 'Armeiro', 'Mestre dos Conjuntos', 'Arsenal Completo']),
   ...T('bestiary', [5, 15, 30, 'all'], (n) => (n === 'all' ? 'Completar o Bestiário' : `Registrar ${n} espécies`), ['Curioso', 'Naturalista', 'Estudioso', 'Sábio do Bestiário']),
-  ...T('dailies', [1, 7, 30], (n) => `Concluir ${n} missão${n > 1 ? 'ões' : ''} diária${n > 1 ? 's' : ''}`, ['Dedicado', 'Constante', 'Incansável'])
+  ...T('dailies', [1, 7, 30], (n) => `Concluir ${n} ${n > 1 ? 'missões diárias' : 'missão diária'}`, ['Dedicado', 'Constante', 'Incansável']),
+  // Novas (rodada 7): exploração, risco, defesa, arena, renascimento e LAN — só aviso/título, sem item.
+  ...T('regions', [2, 4, 7, 9], (n) => `Descobrir ${n} ${n > 1 ? 'regiões' : 'região'} do mundo`, ['Explorador', 'Cartógrafo', 'Desbravador', 'Senhor de Todas as Terras']),
+  ...T('deaths', [1, 10, 50, 200], (n) => `Morrer ${n} vez${n > 1 ? 'es' : ''}`, ['Primeira Queda', 'Volta por Cima', 'Fênix', 'Imortal? Quase']),
+  ...T('raids', [1, 3, 10], (n) => `Repelir ${n} ataque${n > 1 ? 's' : ''} ao acampamento`, ['Defensor do Vale', 'Guardião das Muralhas', 'Muralha Inabalável']),
+  ...T('arena', [5, 10, 25, 50], (n) => `Chegar à onda ${n} da arena`, ['Gladiador', 'Desafiante', 'Campeão da Arena', 'Lenda da Arena']),
+  ...T('rebirths', [1, 3, 5, 10], (n) => `Renascer ${n} vez${n > 1 ? 'es' : ''}`, ['Renascido', 'Imortal', 'Alma Antiga', 'Eterno']),
+  ...T('friends', [1, 3, 8], (n) => `Jogar em LAN com ${n} amigo${n > 1 ? 's' : ''} ao mesmo tempo`, ['Não Tão Sozinho', 'Dupla Dinâmica', 'Excursão Completa'])
 ].map((a, i) => Object.freeze({ ...a, id: `ach${i + 1}` }));
 
 export const ACHIEVEMENTS = Object.freeze(defs);
 export const ACHIEVEMENT_BY_ID = Object.freeze(Object.fromEntries(ACHIEVEMENTS.map((a) => [a.id, a])));
-export const STAT_IDS = Object.freeze(['kills', 'bosses', 'coins', 'gathered', 'enhances', 'maxEnhance', 'dailies']);
+export const STAT_IDS = Object.freeze(['kills', 'bosses', 'coins', 'gathered', 'enhances', 'maxEnhance', 'dailies', 'deaths', 'raids']);
 
 /** Meta numérica de uma conquista ('all' vira o total do bestiário). */
 export function goalOf(achievement, ctx = {}) {
@@ -86,11 +93,15 @@ export class Achievements {
     return done;
   }
 
-  /** Valor atual de um contador, juntando o que é calculado na hora (nível, conjuntos, bestiário). */
+  /** Valor atual de um contador, juntando o que é calculado na hora (nível, conjuntos, bestiário...). */
   value(stat, ctx = {}) {
     if (stat === 'level') return ctx.level ?? 1;
     if (stat === 'sets') return ctx.sets ?? 0;
     if (stat === 'bestiary') return ctx.bestiary ?? 0;
+    if (stat === 'regions') return ctx.regions ?? 1;
+    if (stat === 'arena') return ctx.arena ?? 0;
+    if (stat === 'rebirths') return ctx.rebirths ?? 0;
+    if (stat === 'friends') return ctx.friends ?? 0;
     return this.stats[stat] ?? 0;
   }
 

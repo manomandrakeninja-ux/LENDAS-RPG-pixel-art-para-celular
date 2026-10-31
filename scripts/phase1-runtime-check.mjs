@@ -13,9 +13,9 @@ if (!chrome) throw new Error('Chrome não encontrado para o smoke test.');
 
 const port = 9331;
 const capturesDir = path.join(root, '.tmp', 'capturas');
-const userDataDir = path.join(root, '.tmp', 'phase1-chrome-profile');
+const userDataDir = path.join(root, '.tmp', 'phase1-chrome-profile-' + process.pid + '-' + Date.now());
 const screenshotPath = path.join(capturesDir, 'phase1-runtime-check.png');
-fs.rmSync(userDataDir, { recursive: true, force: true });
+try { fs.rmSync(userDataDir, { recursive: true, force: true }); } catch {}
 fs.mkdirSync(userDataDir, { recursive: true });
 fs.mkdirSync(capturesDir, { recursive: true });
 
@@ -81,14 +81,28 @@ try {
     pending.set(id, { resolve, reject });
     socket.send(JSON.stringify({ id, method, params }));
   });
-  const evaluate = async (expression) => {
+  const evaluateOnce = async (expression) => {
     const response = await send('Runtime.evaluate', {
       expression,
       awaitPromise: true,
       returnByValue: true
     });
-    if (response.exceptionDetails) throw new Error(response.exceptionDetails.text);
+    if (response.exceptionDetails) {
+      throw new Error(response.exceptionDetails.exception?.description ?? response.exceptionDetails.text);
+    }
     return response.result.value;
+  };
+  // Se a pagina navegar no meio da chamada o contexto morre e a pergunta se perde: tenta de novo.
+  const evaluate = async (expression) => {
+    for (let attempt = 1; ; attempt += 1) {
+      try {
+        return await evaluateOnce(expression);
+      } catch (error) {
+        const navigated = /Execution context was destroyed|Cannot find context|Inspected target navigated/.test(error.message);
+        if (!navigated || attempt >= 5) throw error;
+        await delay(500);
+      }
+    }
   };
 
   await send('Runtime.enable');
@@ -381,5 +395,5 @@ try {
   if (socket?.readyState === WebSocket.OPEN) socket.close();
   browser.kill();
   await delay(200);
-  fs.rmSync(userDataDir, { recursive: true, force: true });
+  try { fs.rmSync(userDataDir, { recursive: true, force: true }); } catch {}
 }

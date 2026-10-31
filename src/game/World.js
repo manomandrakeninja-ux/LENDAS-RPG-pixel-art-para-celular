@@ -182,6 +182,21 @@ export class World {
     return cells;
   }
 
+  /** Neblina de exploração salva como pares [col,row] — compacto e sem strings. */
+  serializeFog() {
+    return this.getRevealedCells().map((cell) => [cell.column, cell.row]);
+  }
+
+  restoreFog(saved) {
+    if (!Array.isArray(saved)) return;
+    for (const entry of saved) {
+      if (Array.isArray(entry) && Number.isFinite(entry[0]) && Number.isFinite(entry[1])) {
+        this.revealedCells.add(`${entry[0]},${entry[1]}`);
+      }
+    }
+    this.lastRevealKey = '';
+  }
+
   nearbyResource(x, y, range = 58) {
     let closest = null;
     let distance = range;
@@ -194,6 +209,13 @@ export class World {
       }
     }
     return closest;
+  }
+
+  /** Todos os recursos visíveis num raio, do mais perto ao mais longe (loot rápido com R). */
+  nearbyResources(x, y, range = 100) {
+    return [...this.resources, ...this.nightResources]
+      .filter((resource) => resource.node.visible && Phaser.Math.Distance.Between(x, y, resource.x, resource.y) <= range)
+      .sort((a, b) => Phaser.Math.Distance.Between(x, y, a.x, a.y) - Phaser.Math.Distance.Between(x, y, b.x, b.y));
   }
 
   harvest(resource) {

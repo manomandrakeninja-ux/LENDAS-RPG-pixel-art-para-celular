@@ -27,7 +27,8 @@ const RAMP = {
   [T.DUNE]: ['#5d2c28', '#8a4836', '#ad7954', '#cba36f', '#e69c69', '#f6ca9f'],
   [T.BEACH]: ['#ad7954', '#cba36f', '#f6ca9f', '#f9e6cf', '#ffffff', '#ffffff'],
   [T.ASH]: ['#0e071b', '#1c121c', '#272727', '#2d2e25', '#3d3d3d', '#5d5d5d'],
-  [T.CAVE]: ['#1c121c', '#272727', '#3d3d3d', '#5d5d5d', '#775c5b', '#918275']
+  [T.CAVE]: ['#1c121c', '#272727', '#3d3d3d', '#5d5d5d', '#775c5b', '#918275'],
+  [T.ROAD]: ['#391f21', '#5d2c28', '#8a4836', '#ad7954', '#cba36f', '#e69c69']
 };
 const DIRT = ['#391f21', '#5d2c28', '#8a4836', '#ad7954', '#cba36f', '#e69c69', '#f6ca9f'];
 const STONE = ['#272727', '#3d3d3d', '#5d5d5d', '#858585', '#b4b4b4'];
@@ -302,7 +303,8 @@ function softGround(canvas, kind, field, seed) {
     [T.SNOW]: [[0.5, r[3]], [2, r[4]]],
     [T.SAND]: [[0.5, r[2]], [2, r[3]]],
     [T.DUNE]: [[0.5, r[2]], [2, r[3]]],
-    [T.BEACH]: [[0.5, r[2]], [2, r[3]]]
+    [T.BEACH]: [[0.5, r[2]], [2, r[3]]],
+    [T.ROAD]: [[0.5, r[2]], [2, r[3]]]
   }[kind];
   for (let y = 0; y < S; y += 1) {
     for (let x = 0; x < S; x += 1) {
@@ -387,6 +389,12 @@ function base(canvas, kind, variant) {
         canvas.pixel(x + 2, y, '#424c6e');
       }, 10);
     }
+    return;
+  }
+  if (kind === T.ROAD) {
+    // Estrada de terra batida: chão liso de terra com seixos espalhados.
+    softGround(canvas, kind, calmOf(kind, variant), s);
+    scatterInner(s + 5, 2 + core, (x, y, i) => pebble(canvas, x, y, i % 2, STONE, ramp[1]), 9);
     return;
   }
   if (kind === T.SNOW || kind === T.SAND || kind === T.DUNE || kind === T.BEACH) {

@@ -8,13 +8,14 @@ import { COMBAT_CONFIG } from '../data/combat.js';
 import { DAY_NIGHT_CONFIG } from '../data/dayNight.js';
 import { HARVEST_STRUCTURE_TYPES } from '../data/harvestStructures.js';
 import { LEVEL_CHOICES, PERK_EFFECTS, PERKS, PlayerProgression } from '../data/progression.js';
+import { PlayerSkills, SKILLS } from '../data/skills.js';
 import { enemyXp } from '../data/enemies.js';
 import { chestCoins, rollCoinDrop } from '../data/economy.js';
 import { BOSS_CONFIG } from '../data/boss.js';
 import { CONSUMABLES, HOTKEY_ITEMS, POTION_COOLDOWN_MS, itemForHotkey, useConsumable } from '../data/consumables.js';
 import { ENCHANTMENTS, FARM_CROPS } from '../data/buildingSystems.js';
 import { BUILDING_DEFS, CAMP_COMPLETION_MESSAGE, DUNGEON_CONFIG } from '../data/buildings.js';
-import { isRaining } from '../data/weather.js';
+import { isRaining, weatherAt } from '../data/weather.js';
 import { CampfireTravelers, TRAVELER_GOODS } from '../data/travelers.js';
 import { INVENTORY_CONFIG, WORLD, RESOURCE_TYPES } from './config.js';
 import { AudioManager } from './Audio.js';
@@ -37,7 +38,9 @@ import { World } from './World.js';
 import { GraphicsManager } from './GraphicsManager.js';
 import { WorldMapOverlay } from './WorldMapOverlay.js';
 import { RegionWorld } from './RegionWorld.js';
+import { EnvDragon } from './EnvDragon.js';
 import { Bestiary } from './Bestiary.js';
+import { LanSync } from './LanSync.js';
 import { HuntSystem } from './HuntSystem.js';
 import { HuntUI } from './HuntUI.js';
 import { InvasionDirector } from './InvasionDirector.js';
@@ -131,6 +134,7 @@ export class GameScene extends Phaser.Scene {
     this.traps = [];
     this.obstacles = new Obstacles(this);
     this.regionWorld = new RegionWorld(this, saved?.regions);
+    this.envDragon = new EnvDragon(this);
     this.bestiary = new Bestiary(saved?.bestiary);
     // Caçadas do Mestre de Caça (saves antigos não têm o campo: começam sem caçada).
     this.hunts = new HuntSystem(saved?.hunts);
@@ -138,6 +142,7 @@ export class GameScene extends Phaser.Scene {
     this.xpBoost = new XpBoost(saved?.xpBoost);
     this.heroGender = normalizeGender(saved?.hero?.gender);
     this.world = new World(this);
+    this.world.restoreFog(saved?.fog);
     this.world.create();
     this.camp = new Camp(this, saved?.camp);
     // Equipamento vestido (elmo, peitoral, anel...): cobre a peça da Forja do mesmo espaço.
@@ -146,6 +151,7 @@ export class GameScene extends Phaser.Scene {
     this.raid = new RaidDirector(this, saved?.raid);
     const inventoryOverflow = this.inventory.takeMigrationOverflow();
     this.progression = new PlayerProgression(saved?.progression);
+    this.skills = new PlayerSkills(saved?.skills);
     this.economy = new EconomySystem(saved?.economy);
     this.player = new Player(this, WORLD.camp.x, WORLD.camp.y + 85, saved?.player, this.progression);
     this.player.setGender(this.heroGender);
@@ -166,7 +172,19 @@ export class GameScene extends Phaser.Scene {
       ownedAccessories: () => this.camp.equipment.accessories
     });
     this.travelers.refresh(this.timeState.dayCount, this.camp.levels.campfire);
-    this.isRaining = isRaining(this.timeState);
+    this.weather = weatherAt(this.regionWorld.currentRegion(), this.timeState);
+    this.isRaining = this.weather === 'rain' || this.weather === 'snow';
+    // Waypoint personalizado: marcado com Shift+clique no mapa (M) e salvo.
+    this.waypoint = saved?.waypoint && Number.isFinite(saved.waypoint.x) && Number.isFinite(saved.waypoint.y)
+      ? { x: saved.waypoint.x, y: saved.waypoint.y }
+      : null;
+    // Eventos aleatórios do overworld (a cada ~1-2 min: moedas, XP, cura, vento a favor...).
+    this.eventSpeedUntil = 0;
+    this.randomEventMs = Phaser.Math.Between(45000, 90000);
+    // Auto-save periódico (a cada 3 min) com aviso discreto no canto.
+    this.autoSaveMs = 180000;
+    // Y: voltar ao acampamento de graça (cooldown de 60 s, fora de combate/caverna).
+    this.lastRecallAt = 0;
     this.harvestStructures = new HarvestStructures(this, {
       saved: saved?.harvestStructures ?? [],
       dayCount: this.timeState.dayCount
@@ -259,7 +277,7 @@ export class GameScene extends Phaser.Scene {
       camp: 'C', map: 'M', rest: 'F', sleep: 'R', escape: 'ESC'
     });
     this.cursors = this.input.keyboard.createCursorKeys();
-    this.input.keyboard.on('keydown', () => this.audio.unlock());
+    this.input.keyboard.on('keydown', () => { this.audio.unlock(); this.audio.startAmbience(); });
     this.input.keyboard.on('keydown-L', () => {
       if (this.campaign?.ui?.isOpen || !this.overlayBlocked()) this.toggleJournal();
     });
@@ -293,7 +311,19 @@ export class GameScene extends Phaser.Scene {
     this.input.keyboard.on('keydown-F', () => this.restAtCamp());
     this.input.keyboard.on('keydown-T', () => { if (this.achievements.isOpen || !this.overlayBlocked()) this.achievements.toggle(); });
     this.input.keyboard.on('keydown-G', () => { if (!this.overlayBlocked()) this.companions.action('mount'); });
-    this.input.keyboard.on('keydown-R', () => this.sleepAtCamp());
+    // H convoca o cavalo de onde ele ficou e monta (atalho para quem desmontou longe).
+    this.input.keyboard.on('keydown-H', () => { if (!this.overlayBlocked()) this.companions.summonMount(); });
+    // P: modo foto (esconde toda a HUD para tirar print; P de novo volta).
+    this.photoMode = false;
+    this.input.keyboard.on('keydown-P', () => { if (this.photoMode || !this.overlayBlocked()) this.togglePhotoMode(); });
+    // R: loot rápido — coleta de uma vez todos os recursos simples perto.
+    this.input.keyboard.on('keydown-R', () => { if (!this.overlayBlocked()) this.collectAllNearby(); });
+    // N: dormir até de manhã (só perto da fogueira do acampamento).
+    this.input.keyboard.on('keydown-N', () => this.sleepAtCamp());
+    // Y: recall gratuito para o acampamento (cooldown 60 s; não em caverna nem em combate).
+    this.input.keyboard.on('keydown-Y', () => this.recallCamp());
+    // Grito (Fus Ro Dah): ultimate na tecla Z, carregado pela barra de Fúria (dano causado/recebido).
+    this.input.keyboard.on('keydown-Z', () => this.shout());
     // Ataque, especial, esquiva, interagir e poção: teclas configuráveis (Ajustes → Teclas).
     this.applyKeybinds(loadKeybinds());
     this.input.keyboard.on('keydown', (event) => {
@@ -320,6 +350,7 @@ export class GameScene extends Phaser.Scene {
     this.handleCanvasPointerDown = (event) => {
       if (event.button !== 0) return;
       this.audio.unlock();
+      this.audio.startAmbience();
       const rect = this.game.canvas.getBoundingClientRect();
       const x = (event.clientX - rect.left) * (this.scale.width / rect.width);
       const y = (event.clientY - rect.top) * (this.scale.height / rect.height);
@@ -374,6 +405,7 @@ export class GameScene extends Phaser.Scene {
     this.events.once('shutdown', () => {
       this.game.canvas.removeEventListener('pointerdown', this.handleCanvasPointerDown);
       this.gameOverButton.removeEventListener('click', this.handleGameOverRestart);
+      this.lan?.disconnect();
       this.touch?.destroy();
       this.worldMap?.destroy();
       this.bestiaryPanel?.destroy();
@@ -397,8 +429,14 @@ export class GameScene extends Phaser.Scene {
     if (!saved && shouldAskHero()) this.heroChoice = new HeroChoice(this);
     this.saveTimer = this.time.addEvent({ delay: 60000, loop: true, callback: () => this.save() });
     this.lastPhase = this.timeState.phase;
+    // Boot com save noturno: sem isso a troca de fase nunca ocorre e o modo noturno da música não liga.
+    this.audio.setNight(this.timeState.phase === 'night' || this.timeState.phase === 'dusk');
     this.warningTriggered = false;
     this.isRespawning = false;
+    // Multijogador LAN (desligado por padrão; liga no painel 🌐 ou via ?lan=ws://... na URL).
+    this.lan = new LanSync(this);
+    this.lan.attach();
+
     // Atrás da tela de início o mundo fica parado; ele volta quando o jogador começa.
     window.dispatchEvent(new CustomEvent('lendas:ready', { detail: this }));
     if (window.__lendasSplash?.active) this.scene.pause();
@@ -677,6 +715,7 @@ export class GameScene extends Phaser.Scene {
 
   updateFrame(_time, delta) {
     this.graphics?.update(delta);
+    this.lan?.update(delta);
     if (this.gameOver) {
       this.player.body.setVelocity(0, 0);
       for (const enemy of this.enemies) enemy.body?.setVelocity(0, 0);
@@ -695,7 +734,28 @@ export class GameScene extends Phaser.Scene {
       } else if (!this.hitstopActive) this.physics.world.resume();
     }
     if (!paused) this.timeState = this.updateDayNight(delta);
-    this.isRaining = isRaining(this.timeState);
+    // Clima segue a região atual do mapa grande (neve no gelo, poeira no deserto, cinzas em brasa).
+    this.weather = weatherAt(this.regionWorld.currentRegion(), this.timeState);
+    this.isRaining = this.weather === 'rain' || this.weather === 'snow';
+    // Eventos aleatórios só no overworld (não dentro de caverna/torre, nem pausado).
+    if (!paused && !this.regionWorld?.underground && !this.overlayBlocked()) {
+      this.randomEventMs -= delta;
+      if (this.randomEventMs <= 0) {
+        this.randomEventMs = Phaser.Math.Between(70000, 140000);
+        this.randomEvent();
+      }
+    }
+    // Ambiente sonoro segue a região e o dia/noite (vento + pássaros/grilos).
+    this.audio.setAmbience(this.regionWorld.currentRegion(), this.timeState.isNight);
+    // Auto-save a cada 3 minutos (só no overworld, sem pausa/menu aberto).
+    if (!paused && !this.regionWorld?.underground && !this.overlayBlocked()) {
+      this.autoSaveMs -= delta;
+      if (this.autoSaveMs <= 0) {
+        this.autoSaveMs = 180000;
+        this.save();
+        this.ui.showMessage('💾 Progresso salvo automaticamente');
+      }
+    }
     if (!paused) {
       if (this.buffs.update(delta, this.timeState.dayCount)) this.player.recalculateEquipment(this.camp.equipment);
       this.updateFarm(delta);
@@ -727,6 +787,7 @@ export class GameScene extends Phaser.Scene {
       this.updateBuildingLabels();
       this.villagers?.update(delta);
       this.regionWorld.update(delta);
+      this.envDragon?.update(delta);
       this.shadows?.update(delta, this.timeState);
       this.updateLegendAura();
       this.updateEnemyStatus(delta);
@@ -828,6 +889,8 @@ export class GameScene extends Phaser.Scene {
         this.audio.playDawn();
         this.ui.showMessage(`Amanheceu. Dia ${state.dayCount} começou.`);
       }
+      // A trilha da região continua, mas à noite/crepúsculo desce 2 semitons e abaixa o volume.
+      this.audio.setNight(state.phase === 'night' || state.phase === 'dusk');
       this.lastPhase = state.phase;
     }
     return state;
@@ -971,6 +1034,8 @@ export class GameScene extends Phaser.Scene {
       : 1;
     let perkMultiplier = this.progression.damageMultiplier(this.player.health / Math.max(1, this.player.maxHealth));
     if (Math.random() < (this.player.jewelCrit ?? 0)) perkMultiplier *= 2;
+    // Skill Lâmina: +2% de dano corpo a corpo por nível treinado.
+    perkMultiplier *= this.skills?.bladeDamageMultiplier?.() ?? 1;
     const attack = Math.round(this.player.attack * multiplier * perkMultiplier) + (this.player.jewelPoison ?? 0);
     const angle = swingAngle;
     if (this.bossIsProtected(target)) {
@@ -981,6 +1046,8 @@ export class GameScene extends Phaser.Scene {
     this.effects.spawnSwingTrail(this.player.x, this.player.y, angle, finisher, this.player.animator?.weaponLook);
     this.effects.spawnSlash(target.x, target.y - 10, angle, finisher ? 2 : 1);
     const killed = target.hit(attack, angle);
+    this.player.addShoutCharge(finisher ? COMBAT_CONFIG.shout.chargePerFinisher : COMBAT_CONFIG.shout.chargePerHit);
+    this.grantSkillXp('blade', finisher ? 9 : 6);
     if (thrown) {
       const broken = this.gear.rollThrownBreak();
       if (broken) this.afterGearChange({ ok: true, message: `${broken.name} quebrou!` });
@@ -1038,7 +1105,9 @@ export class GameScene extends Phaser.Scene {
       onComplete: () => {
         arrow.destroy();
         if (!target.active || target.dead) return;
-        const damage = Math.max(1, Math.round(this.player.attack * 0.7));
+        // Skill Arco: +2% de dano de flecha por nível treinado.
+        const damage = Math.max(1, Math.round(this.player.attack * 0.7 * (this.skills?.archeryDamageMultiplier?.() ?? 1)));
+        this.grantSkillXp('archery', 6);
         this.damageEnemy(target, damage, { weapon: true });
       }
     });
@@ -1067,10 +1136,12 @@ export class GameScene extends Phaser.Scene {
 
   specialAttack() {
     if (this.player.specialCooldown > 0 ||
+        (this.player.paralyzedMs ?? 0) > 0 ||
         this.player.stamina < COMBAT_CONFIG.specialStaminaCost ||
         this.progression?.hasPendingChoice || this.worldMap?.isOpen || this.ui.campOpen || this.buildingMenu?.isOpen || this.isUiPaused()) return;
     this.player.specialCooldown = 4800;
     this.player.stamina -= COMBAT_CONFIG.specialStaminaCost;
+    this.player.addShoutCharge(COMBAT_CONFIG.shout.chargePerSpecial);
     this.player.showAttack();
     this.effects.spawnSpecial(this.player.x, this.player.y - 4);
     const targets = this.enemies.filter((enemy) => enemy.active &&
@@ -1097,6 +1168,45 @@ export class GameScene extends Phaser.Scene {
       true
     );
     this.ui.showMessage(targets.length ? 'Golpe especial!' : 'Golpe especial — sem alvo por perto.');
+  }
+
+  /** Grito (Z): consome a Fúria cheia (100) e causa dano em área + empurrão forte. */
+  shout() {
+    const player = this.player;
+    if (!player) return;
+    if (player.shoutCooldown > 0 || (player.paralyzedMs ?? 0) > 0 || player.shoutCharge < 100 ||
+        this.progression?.hasPendingChoice || this.worldMap?.isOpen || this.ui.campOpen ||
+        this.buildingMenu?.isOpen || this.isUiPaused() || this.gameOver) {
+      if (player.shoutCooldown <= 0 && player.shoutCharge < 100) {
+        this.ui.showMessage(`Fúria carregando: ${Math.floor(player.shoutCharge)}% (acerte ou leve dano)`);
+      }
+      return;
+    }
+    const shout = COMBAT_CONFIG.shout;
+    player.shoutCharge = 0;
+    player.shoutCooldown = shout.cooldownMs;
+    player.showAttack();
+    this.effects.spawnShout(player.x, player.y, shout.range);
+    this.cameras.main.shake(shout ? COMBAT_CONFIG.screenShake.shout.duration : 420, COMBAT_CONFIG.screenShake.shout.intensity, true);
+    this.hitstop(90);
+    this.audio.playSpecial?.() ?? this.audio.playHit?.();
+    const targets = this.enemies.filter((enemy) => enemy.active &&
+      Phaser.Math.Distance.Between(enemy.x, enemy.y, player.x, player.y) < shout.range);
+    if (this.boss && !this.boss.dead &&
+        Phaser.Math.Distance.Between(this.boss.x, this.boss.y, player.x, player.y) < shout.range &&
+        !this.bossIsProtected(this.boss)) {
+      targets.push(this.boss);
+    }
+    targets.forEach((enemy) => {
+      const angle = Phaser.Math.Angle.Between(player.x, player.y, enemy.x, enemy.y);
+      enemy.applyKnockback?.(angle, shout.knockback);
+      const damage = Math.min(enemy.health, Math.round(player.attack * shout.damageMultiplier + shout.flatDamage));
+      this.effects.spawnSlash(enemy.x, enemy.y - 10, angle, 2);
+      const killed = enemy.hit(Math.round(player.attack * shout.damageMultiplier + shout.flatDamage), angle);
+      this.effects.spawnDamage(enemy.x, enemy.y - 18, damage, '#e0a0ff');
+      if (killed) this.defeatEnemy(enemy);
+    });
+    this.showEpic?.('FUS RO DAH!', targets.length ? `${targets.length} ${targets.length === 1 ? 'inimigo empurrado' : 'inimigos empurrados'}!` : 'A onda de choque varre a área.', 1800);
   }
 
   /** Aplica as teclas de ação (esquiva usa uma tecla do Phaser; as outras vêm do evento keydown). */
@@ -1284,6 +1394,7 @@ export class GameScene extends Phaser.Scene {
     this.save();
     const message = `Você renasceu! Renascimentos: ${result.rebirths} (+${result.rebirths * 5}% de dano, vida e XP).`;
     this.ui.showMessage(message);
+    this.achievements?.checkAchievements(); // conquistas de renascimento
     return { ok: true, message };
   }
 
@@ -1306,6 +1417,121 @@ export class GameScene extends Phaser.Scene {
 
   invasionStatus() {
     return this.invasion?.statusText ?? '';
+  }
+
+  /** XP de skill por uso; avisa quando sobe de nível. */
+  /** Tecla R: coleta todos os recursos coletáveis perto de uma vez (máx. 8, sem picareta). */
+  collectAllNearby() {
+    if (this.mining || this.overlayBlocked() || this.campaign?.ui?.isOpen) return;
+    if (this.campaign?.interact()) return;
+    if (this.regionWorld?.interact()) return;
+    const list = this.world.nearbyResources(this.player.x, this.player.y, 110)
+      .filter((resource) => !resource.definition?.requiresPickaxe);
+    if (!list.length) return;
+    let got = 0;
+    const gained = {};
+    for (const resource of list.slice(0, 8)) {
+      const amount = resource.amount ?? Phaser.Math.Between(2, 4);
+      if (!this.inventory.add(resource.type, amount)) break;
+      gained[resource.type] = (gained[resource.type] ?? 0) + amount;
+      this.effects.spawnHarvest(resource.x, resource.y - 8, RESOURCE_TYPES[resource.type]?.accent ?? 0x9ed36e);
+      this.campaign?.onGathered?.({ [resource.type]: amount });
+      this.world.harvest(resource);
+      got += 1;
+    }
+    if (got) {
+      this.audio.playCollect();
+      const parts = Object.entries(gained).map(([type, amount]) => `${amount} ${RESOURCE_TYPES[type]?.label.toLowerCase() ?? type}`);
+      this.ui.showMessage(`🧺 Loot rápido: ${parts.join(', ')}!`);
+      this.save();
+    }
+  }
+
+  /** Modo foto: esconde a câmera de HUD (Phaser) e os painéis DOM, dejando só o mundo. */
+  togglePhotoMode() {
+    this.photoMode = !this.photoMode;
+    this.hudCamera?.setVisible(!this.photoMode);
+    for (const el of document.querySelectorAll('#game > *')) {
+      if (el.tagName === 'CANVAS') continue;
+      if (this.photoMode) {
+        if (el.dataset.prevDisplay === undefined) el.dataset.prevDisplay = el.style.display;
+        el.style.display = 'none';
+      } else if (el.dataset.prevDisplay !== undefined) {
+        el.style.display = el.dataset.prevDisplay;
+        delete el.dataset.prevDisplay;
+      }
+    }
+    if (this.photoMode) this.ui.showMessage('📷 Modo foto ativado — aperte P para voltar');
+  }
+
+  /** Tecla Y: volta ao acampamento de graça (60 s de cooldown; bloqueado em caverna/luta/ataque). */
+  recallCamp() {
+    if (this.overlayBlocked()) return;
+    if (this.regionWorld?.underground) {
+      this.ui.showMessage('Dentro de caverna não dá para voltar — ache a escada de saída.');
+      return;
+    }
+    const now = this.time.now;
+    const remaining = 60000 - (now - this.lastRecallAt);
+    if (remaining > 0) {
+      this.ui.showMessage(`O recall recarrega em ${Math.ceil(remaining / 1000)} s.`);
+      return;
+    }
+    const inCombat = (this.enemies ?? []).some((enemy) => enemy.active
+      && Phaser.Math.Distance.Between(enemy.x, enemy.y, this.player.x, this.player.y) < 420);
+    if (inCombat) {
+      this.ui.showMessage('Não dá para voltar ao acampamento no meio da luta!');
+      return;
+    }
+    if (this.raid?.active || this.raid?.warning) {
+      this.ui.showMessage('O acampamento está sob ataque agora!');
+      return;
+    }
+    this.lastRecallAt = now;
+    this.regionWorld?.fastTravelTo({ type: 'camp', name: 'Acampamento', cost: 0 });
+  }
+
+  /** Evento aleatório do overworld: moedas, XP, cura, vento a favor ou um presságio. */
+  randomEvent() {
+    const roll = Math.random();
+    if (roll < 0.28) {
+      const coins = Phaser.Math.Between(8, 24);
+      this.economy.addCoins(coins);
+      this.audio.playCoin();
+      this.ui.showMessage(`🪙 Evento: um baúzinho tombou de um galho... +${coins} moedas!`);
+    } else if (roll < 0.52) {
+      const xp = Phaser.Math.Between(15, 40);
+      this.grantExperience(xp, true);
+      this.ui.showMessage(`✨ Evento: uma pedra runica brilhou perto de você! +${xp} XP`);
+    } else if (roll < 0.72 && this.player.health < this.player.maxHealth) {
+      const amount = Math.round(this.player.maxHealth * 0.3);
+      this.player.heal(amount);
+      this.effects.spawnHeal?.(this.player.x, this.player.y - 20) ?? this.effects.spawnHarvest(this.player.x, this.player.y - 20, 0x7ad84a);
+      this.ui.showMessage(`🌿 Evento: você achou ervas medicinais! +${amount} vida`);
+    } else if (roll < 0.88) {
+      this.eventSpeedUntil = this.time.now + 30000;
+      this.ui.showMessage('💨 Evento: vento a favor! +25% velocidade por 30 s');
+    } else {
+      this.ui.showMessage('👀 Evento: você viu algo se mover entre as árvores... foi só o vento.');
+    }
+    this.save?.();
+  }
+
+  /** Marca/limpa o waypoint personalizado (Shift+clique no mapa grande). */
+  setWaypoint(point) {
+    this.waypoint = point ? { x: Math.round(point.x), y: Math.round(point.y) } : null;
+    this.ui.showMessage(point ? `Waypoint marcado (${Math.round(point.x / 48 * 10)} m, ${Math.round(point.y / 48 * 10)} m) — seta verde no minimapa. Shift+clique de novo no mapa limpa.` : 'Waypoint removido.');
+    this.save?.();
+  }
+
+  grantSkillXp(skill, amount) {
+    const levels = this.skills?.addXp(skill, amount) ?? 0;
+    if (levels > 0 && SKILLS[skill]) {
+      const level = this.skills.level(skill);
+      this.ui.showMessage(`${SKILLS[skill].icon} ${SKILLS[skill].name} subiu para o nível ${level}!`);
+      this.audio.playCollect?.();
+      this.save?.();
+    }
   }
 
   grantExperience(amount, announce = true) {
@@ -1456,6 +1682,7 @@ export class GameScene extends Phaser.Scene {
   respawn() {
     this.isRespawning = true;
     this.arena?.end('Você caiu na arena. Fim da tentativa.');
+    this.achievements?.note('deaths'); // conquista de mortes (só aviso/título)
     const day = this.timeState.dayCount;
     const camp = this.camp;
     const raidActive = Boolean(this.raid?.active);
@@ -1654,7 +1881,7 @@ export class GameScene extends Phaser.Scene {
         ? 0xe2b64d
         : RESOURCE_TYPES[reward.type]?.accent ?? 0x9ed36e;
       this.effects.spawnHarvest(structure.x, structure.y - 8, accent);
-      this.audio.playCollect();
+      if (reward.loot) this.audio.playChest(); else this.audio.playCollect();
       const label = definition.label.toLowerCase();
       this.ui.showMessage(Object.keys(leftover).length > 0
         ? INVENTORY_CONFIG.fullMessage
@@ -2012,7 +2239,7 @@ export class GameScene extends Phaser.Scene {
         }
         this.campaign?.emit({ type: 'craft', target: arg });
         this.effects.spawnHarvest(this.player.x, this.player.y - 10, 0xf2c45c);
-        this.audio.playCollect();
+        this.audio.playCraft();
         const gained = [formatGain(items), ...extras].filter(Boolean).join(', ');
         result = { ok: true, message: `${recipe.name}: ${gained}.` };
       }
@@ -2411,6 +2638,7 @@ export class GameScene extends Phaser.Scene {
         baseAttack: this.player.baseAttack, baseDefense: this.player.baseDefense
       },
       progression: this.progression.serialize(),
+      skills: this.skills.serialize(),
       economy: this.economy.serialize(),
       boss: this.boss ? this.boss.serialize() : { defeated: true, health: 0 },
       camp: this.camp.serialize(),
@@ -2426,6 +2654,8 @@ export class GameScene extends Phaser.Scene {
       },
       deathBackpacks: this.deathBackpacks.serialize(),
       harvestStructures: this.harvestStructures.serialize(),
+      fog: this.world.serializeFog(),
+      waypoint: this.waypoint ? { ...this.waypoint } : null,
       regions: this.regionWorld?.serialize(),
       bestiary: this.bestiary?.serialize(),
       gear: this.gear?.serialize(),

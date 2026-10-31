@@ -76,19 +76,23 @@ export class Enemy extends Phaser.GameObjects.Container {
     if (visual.animation && scene.anims.exists(visual.animation)) this.sprite.play(visual.animation);
     this.walkAnimation = visual.animation;
     // Chefes: olhos, gemas e chamas brilham por cima da noite (camada aditiva que segue o quadro).
-    if (this.definition.boss && this.sprite.texture.getSourceImage()?.getContext) {
-      this.glowSprite = scene.add.sprite(x, y, ensureEmissiveTexture(scene, texture), frame)
+    // Comuns também (Fase 21 r3): 2-4 pontos com halo curto; a camada só aparece com a noite.
+    if (this.sprite.texture.getSourceImage()?.getContext) {
+      this.glowSprite = scene.add.sprite(x, y, ensureEmissiveTexture(scene, texture, { boss: Boolean(this.definition.boss) }), frame)
         .setOrigin(0.5, 0.82)
         .setBlendMode(Phaser.BlendModes.ADD)
         .setDepth(OVERLAY_DEPTH + 4001);
       scene.hudCamera?.ignore(this.glowSprite);
       this.syncGlow = () => {
         if (!this.active || !this.sprite) return;
+        // De dia o halo some; à noite (ou na caverna) acende com pulsação lenta.
+        const night = Math.max(scene.camp?.lightLevel ?? 0, scene.regionWorld?.underground ? 0.72 : 0);
         const frameName = this.sprite.frame.name;
         if (this.glowSprite.frame.name !== frameName) this.glowSprite.setFrame(frameName);
         this.glowSprite.setPosition(this.x + this.sprite.x, this.y + this.sprite.y)
           .setFlipX(this.sprite.flipX).setScale(this.sprite.scaleX, this.sprite.scaleY)
-          .setVisible(this.visible && this.sprite.visible).setAlpha(this.alpha);
+          .setVisible(this.visible && this.sprite.visible && night > 0.02)
+          .setAlpha(this.alpha * night * (0.82 + 0.18 * Math.sin(scene.time.now / 520 + this.x * 0.01)));
       };
       scene.events.on('postupdate', this.syncGlow);
       this.once('destroy', () => {

@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { emissiveMask } from '../art/emissive.js';
+import { commonEmissiveMask, emissiveHalo, emissiveMask } from '../art/emissive.js';
 import { ENEMY_TYPES } from '../data/enemies.js';
 import { PixelCanvas, darken, lighten, ramp } from '../art/pixel.js';
 import { MONSTER_SIZES, drawMonsterFrame, hasMonsterArt, monsterAttackFrame, monsterFrameCount } from '../art/monsters.js';
@@ -465,21 +465,23 @@ function ensureCanvasTexture(scene, kind, elite) {
   return { textureKey, animationKey, size, attackFrame: attack === null ? null : 'frame-attack' };
 }
 
-/** Camada dos pontos que brilham sozinhos de um chefe (src/art/emissive.js), com os mesmos quadros. */
-export function ensureEmissiveTexture(scene, textureKey) {
-  const key = `${textureKey}-emissive`;
+/**
+ * Camada dos pontos que brilham sozinhos (src/art/emissive.js), com os mesmos quadros: olhos, gemas e
+ * núcleos com halo de `radius` px (chefes 8, comuns 4) para lerem à noite.
+ */
+export function ensureEmissiveTexture(scene, textureKey, { boss = true } = {}) {
+  const key = `${textureKey}-emissive${boss ? '' : '-common'}`;
   if (scene.textures.exists(key)) return key;
   const source = scene.textures.get(textureKey);
   const image = source.getSourceImage();
   const width = image.width;
   const height = image.height;
   const pixels = image.getContext('2d').getImageData(0, 0, width, height);
-  const data = pixels.data;
   const frameWidth = source.get(source.getFrameNames()[0])?.cutWidth ?? width;
-  const keep = emissiveMask(data, width, height, { frameWidth });
-  for (let k = 0; k < keep.length; k += 1) if (!keep[k]) data[k * 4 + 3] = 0;
+  const keep = boss ? emissiveMask(pixels.data, width, height, { frameWidth, limit: 10 }) : commonEmissiveMask(pixels.data, width, height, { frameWidth });
+  const halo = emissiveHalo(pixels.data, width, height, keep, { frameWidth, radius: boss ? 8 : 4.5 });
   const texture = scene.textures.createCanvas(key, width, height);
-  texture.getContext().putImageData(pixels, 0, 0);
+  texture.getContext().putImageData(new ImageData(halo, width, height), 0, 0);
   texture.setFilter(Phaser.Textures.FilterMode.NEAREST);
   for (const name of source.getFrameNames()) {
     const frame = source.get(name);

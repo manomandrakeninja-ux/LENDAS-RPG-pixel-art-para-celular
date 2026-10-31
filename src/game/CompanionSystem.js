@@ -4,7 +4,7 @@ import {
   HORSE_DIRS, HORSE_FRAMES, HORSE_GALLOP, HORSE_GROUND, HORSE_H, HORSE_IDLE, HORSE_LAYERS, HORSE_START, HORSE_STOP, HORSE_W,
   horseFrameName, horseHits, horseSeat, horseSheetPixels
 } from '../art/mountHorse.js';
-import { Companions, PETS, petAbility } from '../data/companions.js';
+import { Companions, PETS, petAbility, mountUnlocked, MOUNT_LEVEL } from '../data/companions.js';
 import { quantizePixels } from '../art/palette.js';
 import { riderLegs } from '../art/riderLegs.js';
 import { ensureNpcAnims, hasNpcSheet, npcOriginY, npcSheetKey } from './npcArt.js';
@@ -161,6 +161,39 @@ export class CompanionSystem {
     return result;
   }
 
+  /** Tecla H: convoca a montaria de onde ela ficou parada e monta nela. */
+  summonMount() {
+    const scene = this.scene;
+    const state = this.state;
+    const level = scene.progression.level;
+    if (state.mounted) {
+      scene.ui?.showMessage('Você já está montado (G desmonta).');
+      return { ok: true, message: '' };
+    }
+    if (!mountUnlocked(level)) {
+      scene.ui?.showMessage(`A montaria é liberada no nível ${MOUNT_LEVEL}.`);
+      return { ok: false, message: '' };
+    }
+    const spot = this.horseSpot;
+    const far = spot && Phaser.Math.Distance.Between(scene.player.x, scene.player.y, spot.x, spot.y) > 320;
+    const result = state.toggleMount(level);
+    if (result.ok) {
+      if (far) {
+        scene.effects?.spawnHarvest?.(scene.player.x, scene.player.y + 10, 0xcbb890);
+        scene.audio?.playStep?.();
+        scene.ui?.showMessage('🐴 O cavalo vem correndo de longe e você monta! (+35% velocidade)');
+      } else {
+        scene.ui?.showMessage(result.message);
+      }
+      this.horseSpot = null;
+      this.sync();
+      scene.save?.();
+    } else {
+      scene.ui?.showMessage(result.message);
+    }
+    return result;
+  }
+
   /** Chefe derrotado: talvez cai um ovo. */
   onBossDefeated() {
     if (this.state.rollEgg()) {
@@ -298,6 +331,8 @@ export class CompanionSystem {
     const scene = this.scene;
     const player = scene.player;
     if (!player) return;
+    // Desmontado: o cavalo fica parado onde você desmontou (H convoca de volta).
+    if (!this.state.mounted) this.horseSpot = { x: player.x, y: player.y };
     if (this.mountSprite) {
       const moved = Math.hypot(player.x - (this.lastPx ?? player.x), player.y - (this.lastPy ?? player.y)) > 0.3;
       this.lastPx = player.x;

@@ -23,8 +23,10 @@ export function check(condition, message) {
 export async function runInChrome({ name, port, width = 960, height = 640, mobile = false, query = '' }, body) {
   const chrome = chromeCandidates.find((candidate) => candidate && fs.existsSync(candidate));
   if (!chrome) throw new Error('Chrome não encontrado para o teste de navegador.');
-  const userDataDir = path.join(root, '.tmp', `${name}-chrome-profile`);
-  fs.rmSync(userDataDir, { recursive: true, force: true });
+  // Sufixo único por execução: o rmSync falhava com EPERM quando um Chrome zumbi de outra sessão
+  // segurava o lock do diretório de perfil antigo.
+  const userDataDir = path.join(root, '.tmp', `${name}-chrome-profile-${process.pid}-${Date.now()}`);
+  try { fs.rmSync(userDataDir, { recursive: true, force: true }); } catch {}
   fs.mkdirSync(userDataDir, { recursive: true });
   fs.mkdirSync(capturesDir, { recursive: true });
   const browser = spawn(chrome, [
@@ -78,24 +80,20 @@ export async function runInChrome({ name, port, width = 960, height = 640, mobil
       pending.set(id, { resolve, reject });
       socket.send(JSON.stringify({ id, method, params }));
     });
-    const evaluate = async (expression) => {
+    const evaluateOnce = async (expression) => {
       const response = await send('Runtime.evaluate', { expression, awaitPromise: true, returnByValue: true });
       if (response.exceptionDetails) {
         throw new Error(response.exceptionDetails.exception?.description ?? response.exceptionDetails.text);
       }
       return response.result.value;
     };
-    /** Roda `fn(scene)` dentro da página; `fn` é serializada, então não pode usar variáveis de fora. */
-    const inScene = (fn, ...args) => evaluate(`(async () => {
-      const scene = window.__LENDAS__.scene.getScene('GameScene');
-      return (${fn.toString()})(scene, ...${JSON.stringify(args)});
-    })()`);
     // O Chrome lista a página antes de terminar a primeira navegação (e o reload também troca o
-    // documento). Se a página trocar no meio da espera, a pergunta se perde: espera e pergunta de novo.
-    const evaluateAcrossNavigation = async (expression) => {
+    // documento). Se a página trocar no meio da chamada, o contexto morre e a pergunta se perde:
+    // tenta de novo em vez de falhar o teste (antes só waitForScene fazia isso).
+    const evaluate = async (expression) => {
       for (let attempt = 1; ; attempt += 1) {
         try {
-          return await evaluate(expression);
+          return await evaluateOnce(expression);
         } catch (error) {
           const navigated = /Execution context was destroyed|Cannot find context|Inspected target navigated/.test(error.message);
           if (!navigated || attempt >= 5) throw error;
@@ -103,6 +101,13 @@ export async function runInChrome({ name, port, width = 960, height = 640, mobil
         }
       }
     };
+    /** Roda `fn(scene)` dentro da página; `fn` é serializada, então não pode usar variáveis de fora. */
+    const inScene = (fn, ...args) => evaluate(`(async () => {
+      const scene = window.__LENDAS__.scene.getScene('GameScene');
+      return (${fn.toString()})(scene, ...${JSON.stringify(args)});
+    })()`);
+    // Alias histórico: evaluate já sobrevive a navegações (ver acima).
+    const evaluateAcrossNavigation = evaluate;
     const waitForScene = async () => {
       await evaluateAcrossNavigation(`new Promise((resolve, reject) => {
         const started = Date.now();

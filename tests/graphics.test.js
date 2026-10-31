@@ -30,6 +30,14 @@ test('sugestão automática usa núcleos, memória e fps medido', () => {
   assert.equal(suggestGraphicsMode({}), 'high');
 });
 
+test('tela pequena (celular) pesa na sugestão mesmo com hardware bom', () => {
+  // Sem a tela, 50 fps em 8 núcleos daria "high"; com tela de 390 px cai para "balanced".
+  assert.equal(suggestGraphicsMode({ cores: 8, memory: 8, fps: 50 }), 'high');
+  assert.equal(suggestGraphicsMode({ cores: 8, memory: 8, fps: 50, screen: 390 }), 'balanced');
+  assert.equal(suggestGraphicsMode({ cores: 8, memory: 8, fps: 60, screen: 390 }), 'high');
+  assert.equal(suggestGraphicsMode({ cores: 8, memory: 8, fps: 60, screen: 1080 }), 'high');
+});
+
 test('frameStats dá fps médio e p95', () => {
   const stats = frameStats(Array(100).fill(20));
   assert.ok(Math.abs(stats.fps - 50) < 0.001);

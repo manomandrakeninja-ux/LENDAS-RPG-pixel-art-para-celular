@@ -32,13 +32,16 @@ export function migrateV1ToV2(data = {}) {
     },
     player: data.player ?? { health: 100, maxHealth: 100, attack: 12, defense: 0 },
     progression: data.progression ?? {},
+    skills: (data.skills && typeof data.skills === 'object') ? data.skills : {},
     economy: data.economy ?? {},
     boss: data.boss ?? {},
     camp: data.camp ?? { levels: {}, questKills: 0, questClaimed: false, crafted: {}, storage: {} },
     farm: data.farm ?? { plots: [], animals: {} },
     market: data.market ?? { day: 1, offers: [] },
     deathBackpacks: Array.isArray(data.deathBackpacks) ? data.deathBackpacks : [],
-    harvestStructures: Array.isArray(data.harvestStructures) ? data.harvestStructures : []
+    harvestStructures: Array.isArray(data.harvestStructures) ? data.harvestStructures : [],
+    fog: Array.isArray(data.fog) ? data.fog : [],
+    waypoint: (data.waypoint && Number.isFinite(data.waypoint.x) && Number.isFinite(data.waypoint.y)) ? { x: data.waypoint.x, y: data.waypoint.y } : null
   };
 }
 
@@ -68,6 +71,7 @@ export function migrateSave(data = {}) {
         items: data.inventory?.items ?? {}
       },
       progression: data.progression ?? {},
+      skills: (data.skills && typeof data.skills === 'object') ? data.skills : {},
       economy: data.economy ?? {},
       boss: data.boss ?? {},
       camp: {
@@ -79,7 +83,9 @@ export function migrateSave(data = {}) {
       farm: data.farm ?? { plots: [], animals: {} },
       market: data.market ?? { day: 1, offers: [] },
       deathBackpacks: Array.isArray(data.deathBackpacks) ? data.deathBackpacks : [],
-      harvestStructures: Array.isArray(data.harvestStructures) ? data.harvestStructures : []
+      harvestStructures: Array.isArray(data.harvestStructures) ? data.harvestStructures : [],
+      fog: Array.isArray(data.fog) ? data.fog : [],
+      waypoint: (data.waypoint && Number.isFinite(data.waypoint.x) && Number.isFinite(data.waypoint.y)) ? { x: data.waypoint.x, y: data.waypoint.y } : null
     };
   }
   return migrateV1ToV2(data);
@@ -174,13 +180,24 @@ export function savePreRaidSnapshot() {
   }
 }
 
-/** Volta ao save de antes do ataque. Sem cópia, mantém o save atual. */
+/** Volta ao save de antes do ataque. Sem cópia, mantém o save atual.
+ *  Ao recomeçar após a derrota no ataque, o acampamento volta reparado (durability 100):
+ *  isso é a regra de jogo (os prédios são reconstruídos) e também elimina a corrida entre
+ *  o restore e novos danos durante o scene.restart. */
 export function restorePreRaidSnapshot() {
   if (!storageAvailable()) return false;
   const snapshot = localStorage.getItem(SAVE_KEY_PRE_RAID);
   if (snapshot === null) return false;
   try {
-    localStorage.setItem(SAVE_KEY_V2, snapshot);
+    const parsed = JSON.parse(snapshot);
+    if (parsed && typeof parsed === 'object') {
+      const durability = {};
+      for (const key of Object.keys(parsed.camp?.durability ?? {})) durability[key] = 100;
+      parsed.camp = { ...(parsed.camp ?? {}), durability };
+      localStorage.setItem(SAVE_KEY_V2, JSON.stringify(parsed));
+    } else {
+      localStorage.setItem(SAVE_KEY_V2, snapshot);
+    }
     return true;
   } catch {
     return false;

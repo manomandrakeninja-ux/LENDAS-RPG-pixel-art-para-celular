@@ -238,6 +238,35 @@ export class PixelEffects {
     this.dustEmitter.emitParticleAt(x, y + 4, 5);
   }
 
+  /** Grito (Z): anel roxo expansivo até o alcance + clarão violeta no centro. */
+  spawnShout(x, y, radius = 300) {
+    const scene = this.scene;
+    const graphics = scene.add.graphics().setDepth(OVERLAY_DEPTH + 4195);
+    scene.hudCamera?.ignore(graphics);
+    let r = 24;
+    const step = () => {
+      r += (radius - 24) / 18;
+      const alpha = Math.max(0, 1 - r / radius);
+      graphics.clear();
+      graphics.lineStyle(Math.max(1, 8 * alpha), 0xc86bff, alpha);
+      graphics.beginPath();
+      graphics.arc(x, y, r, 0, Math.PI * 2);
+      graphics.stroke();
+      graphics.fillStyle(0x8a2be2, alpha * 0.22);
+      graphics.fillCircle(x, y, r);
+      if (r < radius) scene.time.delayedCall(16, step);
+      else graphics.destroy();
+    };
+    step();
+    const flash = scene.add.image(x, y - 6, 'vfx', 'ring-1')
+      .setDepth(OVERLAY_DEPTH + 4196)
+      .setScale(0.8)
+      .setTint(0xc86bff)
+      .setBlendMode(Phaser.BlendModes.ADD);
+    scene.hudCamera?.ignore(flash);
+    scene.tweens.add({ targets: flash, scale: 3.2, alpha: 0, duration: 380, ease: 'Quad.easeOut', onComplete: () => flash.destroy() });
+  }
+
   /** Especial: onda de choque de 3 tons que corre até o alcance, clarão no centro e faíscas para fora. */
   spawnSpecial(x, y) {
     const scene = this.scene;
@@ -386,5 +415,11 @@ export class PixelEffects {
     this.dustEmitter.setParticleTint(0x9ed47a);
     this.dustEmitter.emitParticleAt(x, y, 8);
     this.spawnHit(x, y, 0xa9e28a, 5);
+  }
+
+  /** Poeira do passo ao andar/correr (montado levanta mais). */
+  spawnStepDust(x, y, mounted = false) {
+    this.dustEmitter.setParticleTint(mounted ? 0xd8c8a8 : 0xcbb89a);
+    this.dustEmitter.emitParticleAt(x + Phaser.Math.Between(-4, 4), y, mounted ? 3 : 2);
   }
 }

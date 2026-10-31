@@ -105,7 +105,14 @@ await runInChrome({ name: 'content', port: 9392, width: 1100, height: 700 }, asy
     waves.push(info);
     // Mapa e minimapa marcam os invasores.
     if (wave === 0) {
-      await inScene((scene) => { const first = scene.invasion.invaders[0]; first.body.reset(scene.player.x + 120, scene.player.y); scene.ui.renderMinimap(); scene.worldMap.open(); scene.worldMap.render(); return true; });
+      await inScene(async (scene) => {
+        // espera até haver invasor (a onda pode demorar um instante para nascer)
+        for (let i = 0; i < 40 && scene.invasion.invaders.length === 0; i += 1) await new Promise((r) => setTimeout(r, 50));
+        const first = scene.invasion.invaders[0];
+        if (first) first.body.reset(scene.player.x + 120, scene.player.y);
+        scene.ui.renderMinimap(); scene.worldMap.open(); scene.worldMap.render();
+        return scene.invasion.invaders.length;
+      });
       const marks = await inScene((scene) => ({ kinds: scene.ui.minimapStats.kinds, map: scene.worldMap.lastMarkerCounts }));
       check(marks.kinds.includes('invader') && marks.kinds.includes('invasion') && marks.map.invasion >= 2, `Marcas da invasão: ${JSON.stringify(marks)}`);
       await capture('content-invasao.png');
@@ -135,23 +142,25 @@ await runInChrome({ name: 'content', port: 9392, width: 1100, height: 700 }, asy
   });
   check(finished.active === null && finished.completed === 1, `Invasão deveria terminar: ${JSON.stringify(finished)}`);
 
-  // 15. Torres: entrada no mapa, andares mais fortes, baú no topo.
+  // 15. Torres: entrada no mapa, andares mais fortes, baú no topo (número/coords lidos do próprio mapa — não depende do tamanho).
   const tower = await inScene((scene) => {
     scene.settingsPanel.close();
     const features = scene.regionWorld.features.filter((feature) => feature.type === 'cave' && feature.cave.tower);
+    const first = features[0];
     scene.worldMap.open();
-    const card = scene.worldMap.showRegionAt(4500, 3100);
+    const card = first ? scene.worldMap.showRegionAt(first.x, first.y) : null;
     const text = scene.worldMap.card.textContent;
     scene.worldMap.close();
-    return { towers: features.length, names: features.map((f) => f.cave.name), card: card?.towers, text };
+    return { towers: features.length, names: features.map((f) => f.cave.name), first: first ? { x: first.x, y: first.y, name: first.cave.name, id: first.cave.id } : null, card: card?.towers, text };
   });
-  check(tower.towers === 6 && tower.card?.includes('Torre do Carvalho') && /Torre/.test(tower.text), `Torres no mapa: ${JSON.stringify(tower)}`);
+  check(tower.towers >= 6 && tower.first && (tower.card?.length ?? 0) >= 1 && /Torre/.test(tower.text) && tower.names.some((n) => /Torre/.test(n)), `Torres no mapa: ${JSON.stringify(tower)}`);
+  const towerId = tower.first.id; // primeira torre do mapa servido (independente de qual seja)
   const levels = [];
   for (let floor = 0; floor < 3; floor += 1) {
-    await inScene((scene, floorIndex) => {
-      scene.regionWorld.enterCave('torre-antiga', floorIndex);
+    await inScene((scene, [caveId, floorIndex]) => {
+      scene.regionWorld.enterCave(caveId, floorIndex);
       return true;
-    }, floor);
+    }, [towerId, floor]);
     await delay(1400);
     levels.push(await inScene((scene) => {
       const list = scene.regionWorld.caveEnemies.filter((enemy) => enemy.active);
@@ -159,15 +168,15 @@ await runInChrome({ name: 'content', port: 9392, width: 1100, height: 700 }, asy
     }));
   }
   check(levels.every((entry) => entry.count > 0) && levels[1].max >= levels[0].max && levels[2].max > levels[0].max, `Andares mais fortes: ${JSON.stringify(levels)}`);
-  const chest = await inScene((scene) => {
-    const feature = scene.regionWorld.features.find((entry) => entry.type === 'chest' && entry.cave.id === 'torre-antiga');
+  const chest = await inScene((scene, caveId) => {
+    const feature = scene.regionWorld.features.find((entry) => entry.type === 'chest' && entry.cave?.id === caveId);
     if (!feature) return { found: false };
     const coins = scene.economy.coins;
     const gearBefore = scene.gear.loose.length;
     scene.regionWorld.openBossChest(feature);
     return { found: true, gear: scene.gear.loose.length - gearBefore, coins: scene.economy.coins - coins, opened: feature.opened, saved: scene.regionWorld.serialize().chests };
-  });
-  check(chest.found && chest.gear >= 1 && chest.coins > 0 && chest.opened && chest.saved.includes('torre-antiga'), `Baú do topo: ${JSON.stringify(chest)}`);
+  }, towerId);
+  check(chest.found && chest.gear >= 1 && chest.coins > 0 && chest.opened && chest.saved.includes(towerId), `Baú do topo: ${JSON.stringify(chest)}`);
   await capture('content-torre.png');
   await inScene((scene) => { scene.regionWorld.leaveCave(true); return true; });
 

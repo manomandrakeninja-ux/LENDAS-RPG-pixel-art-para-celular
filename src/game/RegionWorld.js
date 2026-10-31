@@ -1,8 +1,10 @@
 import Phaser from 'phaser';
 import {
-  BLOCKING, BOAT_FARE, DUNGEONS, CAVES_BY_ID, CAVE_NODES, DOCKS, FULL_WORLD, NODE_REGROW_DAYS, OASES, OVERWORLD,
-  REGION_INFO, REGION_NODES, ROOM_COLS, T, TERRAIN_NODES, TILE, buildTerrainGrid, dungeonLevelRange, dockPosition, regionAt, roomAt
+  BLOCKING, BOAT_FARE, DUNGEONS, CAVES_BY_ID, CAVE_NODES, DOCKS, FAST_TRAVEL_COST, FULL_WORLD, NODE_REGROW_DAYS, OASES, OVERWORLD,
+  REGION_INFO, REGION_NODES, ROADS, ROAD_SIGNS, ROOM_COLS, T, TERRAIN_NODES, TILE, TREASURE_SPOTS, VILLAGES, buildTerrainGrid, dungeonLevelRange, dockPosition, pointOnRoad, regionAt, roadAt, roomAt
 } from '../data/worldRegions.js';
+import { VILLAGERS } from '../data/villagers.js';
+import { drawVillager } from '../art/person.js';
 import { UNDER_SUBTILES, layoutTiles, underName } from '../data/terrainLayout.js';
 import { hash } from '../art/pixel.js';
 import { ENEMY_TYPES } from '../data/enemies.js';
@@ -67,6 +69,8 @@ export class RegionWorld {
     this.discovered = new Set(Array.isArray(saved?.discovered) ? saved.discovered : ['vale']);
     this.bosses = { ...(saved?.bosses ?? {}) };
     this.chests = new Set(Array.isArray(saved?.chests) ? saved.chests : []);
+    this.travelerGifts = new Set(Array.isArray(saved?.travelerGifts) ? saved.travelerGifts : []);
+    this.travelers = [];
     this.grid = buildTerrainGrid();
     this.layout = layoutTiles(this.grid, WORLD.camp);
     this.rooms = new Map(this.grid.rooms.map((room) => [`${room.cave}:${room.floor}`, room]));
@@ -234,6 +238,82 @@ export class RegionWorld {
       this.addHint(captain, position.x - 30, position.y - (painted ? 64 : 40), dock.name);
       scene.hudCamera?.ignore([pier, boat, captain]);
     }
+    // Placas de sinalização ao longo das estradas (indicam o destino e a distância).
+    for (const sign of ROAD_SIGNS) {
+      if (!scene.textures.exists('biome')) continue;
+      const sprite = scene.add.image(sign.x, sign.y, 'biome', 'signpost').setOrigin(0.5, 0.9).setDepth(sign.y);
+      scene.hudCamera?.ignore(sprite);
+      this.features.push({ type: 'sign', sign, x: sign.x, y: sign.y + 4, sprite, label: `LER PLACA • ${sign.label}` });
+      this.addHint(sprite, sign.x, sign.y - Math.round(sprite.displayHeight * 0.9) - 10, sign.label);
+    }
+    // Moradores dos vilarejos nomeados: ficam parados perto das casas e conversam com E.
+    VILLAGES.forEach((village, index) => {
+      const def = VILLAGERS[index % VILLAGERS.length];
+      for (const frame of [0, 1]) {
+        const key = `villager-${village.id}-${frame}`;
+        if (!scene.textures.exists(key)) {
+          const pixels = drawVillager(def.palette, def.prop, frame);
+          const texture = scene.textures.createCanvas(key, pixels.width, pixels.height);
+          texture.getContext().putImageData(new ImageData(pixels.data, pixels.width, pixels.height), 0, 0);
+          texture.setFilter(Phaser.Textures.FilterMode.NEAREST);
+          texture.refresh();
+        }
+      }
+      const animKey = `villager-${village.id}-idle`;
+      if (!scene.anims.exists(animKey)) {
+        scene.anims.create({ key: animKey, frames: [{ key: `villager-${village.id}-0` }, { key: `villager-${village.id}-1` }], frameRate: 2, repeat: -1 });
+      }
+      const npc = scene.add.sprite(village.x, village.y + 30, `villager-${village.id}-0`).setOrigin(0.5, 0.86).setDepth(village.y + 30);
+      npc.play(animKey);
+      scene.hudCamera?.ignore(npc);
+      this.features.push({ type: 'villager', village, x: village.x, y: village.y + 30, sprite: npc, label: `CONVERSAR • ${village.name}` });
+      this.addHint(npc, village.x, village.y - 40, village.name);
+    });
+    // Viajantes que caminham pelas estradas (ida e volta) e conversam/trocam com E.
+    const travelerRoads = [ROADS[0], ROADS[2], ROADS[4]].filter(Boolean);
+    const travelerLines = [
+      'Andei a estrada inteira esta semana. Se vir fumaça, é acampamento bom.',
+      'Dizem que tem baú escondido longe das estradas... procure nos cantos do mapa.',
+      'Cuidado à noite: as criaturas do brejo e do deserto ficam ousadas.',
+      'Compro peles e minério! Pago em moedas na hora.'
+    ];
+    this.travelers = travelerRoads.map((road, index) => {
+      const id = `viajante-${index}`;
+      const def = VILLAGERS[(index + 2) % VILLAGERS.length];
+      for (const frame of [0, 1]) {
+        const key = `villager-${id}-${frame}`;
+        if (!scene.textures.exists(key)) {
+          const pixels = drawVillager(def.palette, def.prop, frame);
+          const texture = scene.textures.createCanvas(key, pixels.width, pixels.height);
+          texture.getContext().putImageData(new ImageData(pixels.data, pixels.width, pixels.height), 0, 0);
+          texture.setFilter(Phaser.Textures.FilterMode.NEAREST);
+          texture.refresh();
+        }
+      }
+      const animKey = `villager-${id}-walk`;
+      if (!scene.anims.exists(animKey)) {
+        scene.anims.create({ key: animKey, frames: [{ key: `villager-${id}-0` }, { key: `villager-${id}-1` }], frameRate: 5, repeat: -1 });
+      }
+      const start = pointOnRoad(road, 0.2 + index * 0.3);
+      const sprite = scene.add.sprite(start.x, start.y, `villager-${id}-0`).setOrigin(0.5, 0.86).setDepth(start.y).play(animKey);
+      scene.hudCamera?.ignore(sprite);
+      const traveler = { id, road, t: 0.2 + index * 0.3, dir: index % 2 === 0 ? 1 : -1, speed: 24 + index * 4, sprite, lines: travelerLines };
+      this.features.push({ type: 'traveler', traveler, get x() { return traveler.sprite.x; }, get y() { return traveler.sprite.y; }, sprite, label: 'CONVERSAR • VIAJANTE' });
+      this.addHint(sprite, start.x, start.y - 40, 'Viajante');
+      return traveler;
+    });
+    // Baús de tesouro escondidos no overworld (longe do acampamento e dos POIs).
+    for (const spot of TREASURE_SPOTS) {
+      const sprite = scene.add.image(spot.x, spot.y, 'biome', 'boss-chest').setOrigin(0.5, 0.85).setScale(1.1).setDepth(spot.y);
+      scene.hudCamera?.ignore(sprite);
+      const feature = { type: 'chest', spot, x: spot.x, y: spot.y, sprite, label: 'ABRIR BAÚ' };
+      if (this.chests.has(spot.id)) {
+        feature.opened = true;
+        sprite.setTint(0x777777);
+      }
+      this.features.push(feature);
+      this.addHint(sprite, spot.x, spot.y - 34, 'Baú');
+    }
     // Escadas e baús das salas das cavernas.
     for (const room of this.grid.rooms) {
       const cave = CAVES_BY_ID[room.cave];
@@ -303,8 +383,122 @@ export class RegionWorld {
       if (feature.room.floor === 0) this.leaveCave();
       else this.enterCave(feature.cave.id, feature.room.floor - 1, { fromBelow: true });
     } else if (feature.type === 'dock') this.openBoat(feature.dock);
-    else if (feature.type === 'chest') this.openBossChest(feature);
+    else if (feature.type === 'chest') feature.spot ? this.openWorldChest(feature) : this.openBossChest(feature);
+    else if (feature.type === 'sign') this.readSign(feature.sign);
+    else if (feature.type === 'villager') this.talkToVillager(feature.village);
+    else if (feature.type === 'traveler') this.talkToTraveler(feature.traveler);
     return true;
+  }
+
+  /** Viajante na estrada: 1 presente grátis por dia; depois abre a lojinha itinerante. */
+  talkToTraveler(traveler) {
+    const scene = this.scene;
+    const line = traveler.lines[Math.floor(Math.random() * traveler.lines.length)];
+    const day = scene.timeState?.dayCount ?? 1;
+    const giftKey = `${traveler.id}:${day}`;
+    if (!this.travelerGifts.has(giftKey)) {
+      this.travelerGifts.add(giftKey);
+      if (Math.random() < 0.5) {
+        const coins = Phaser.Math.Between(5, 12);
+        scene.economy?.addCoins?.(coins);
+        scene.ui.showMessage(`🧳 Viajante: "${line}" Toma ${coins} moedas pela conversa!`);
+        scene.audio?.playCoin?.();
+      } else {
+        const type = ['wood', 'stone', 'herb', 'fiber'][Math.floor(Math.random() * 4)];
+        const amount = Phaser.Math.Between(2, 4);
+        if (scene.inventory?.add(type, amount)) {
+          scene.ui.showMessage(`🧳 Viajante: "${line}" Toma ${amount} ${type}!`);
+          scene.audio?.playCollect?.();
+        } else scene.ui.showMessage(`🧳 Viajante: "${line}"`);
+      }
+      scene.save?.();
+      return;
+    }
+    // Lojinha itinerante: poção, comida e tocha por moedas.
+    const ui = scene.campaign?.ui;
+    if (ui?.dialogue) {
+      const coins = scene.economy?.coins ?? 0;
+      const offers = [
+        { label: 'POÇÃO DE VIDA • 15 moedas', price: 15, type: 'potion' },
+        { label: 'COMIDA • 8 moedas', price: 8, type: 'food' },
+        { label: 'TOCHA • 5 moedas', price: 5, type: 'torch' }
+      ].map((offer) => ({
+        label: offer.label,
+        primary: true,
+        disabled: coins < offer.price,
+        action: () => {
+          if (scene.economy?.spendCoins?.(offer.price) && scene.inventory?.add(offer.type, 1)) {
+            scene.ui.showMessage(`🧳 Comprou ${offer.type} do viajante!`);
+            scene.audio?.playCoin?.();
+            scene.save?.();
+          } else {
+            scene.ui.showMessage('Mochila cheia ou sem moedas!');
+          }
+        }
+      }));
+      offers.push({ label: 'SÓ CONVERSAR', action: () => scene.ui.showMessage(`🧳 Viajante: "${line}"`) });
+      ui.dialogue('viajante', `"${line}" — O que vai ser, forasteiro?`, offers);
+    } else {
+      scene.ui.showMessage(`🧳 Viajante: "${line}"`);
+      scene.audio?.playPick?.();
+    }
+  }
+
+  /** Baú escondido no overworld: moedas conforme o nível da região + às vezes 1 equipamento. */
+  openWorldChest(feature) {
+    const scene = this.scene;
+    const region = feature.spot.region;
+    const info = REGION_INFO[region];
+    const level = info?.levelRange?.[1] ?? 10;
+    const coins = 25 + Math.round(level * 2.5) + Math.floor(Math.random() * 20);
+    scene.economy?.addCoins?.(coins);
+    let extra = '';
+    if (Math.random() < 0.35) {
+      const drops = rollGearDrop({ region, level, boss: `world:${feature.spot.id}` });
+      for (const drop of drops.slice(0, 1)) {
+        const item = scene.gear?.add(drop.id, drop.rarity);
+        if (item) {
+          extra = ` • ${RARITIES[drop.rarity].name}: ${GEAR_ITEMS[drop.id].name}`;
+          window.dispatchEvent(new CustomEvent('lendas:gear'));
+        }
+      }
+    }
+    feature.opened = true;
+    this.chests.add(feature.spot.id);
+    feature.sprite.setTint(0x777777);
+    scene.effects?.spawnHarvest?.(feature.x, feature.y - 10, 0xffd76b);
+    scene.audio?.playChest?.();
+    scene.ui.showMessage(`Baú escondido em ${info?.name ?? region}! +${coins} moedas${extra}`);
+    scene.grantExperience?.(10, true);
+    scene.save?.();
+  }
+
+  /** Fala com o morador de um vilarejo: linha aleatória + a região entra nas Descobertas. */
+  talkToVillager(village) {
+    const scene = this.scene;
+    const line = village.lines[Math.floor(Math.random() * village.lines.length)];
+    scene.ui.showMessage(`🧑 ${village.name}: ${line}`);
+    scene.audio?.playPick?.();
+    if (!this.discovered.has(`vila:${village.id}`)) {
+      this.discovered.add(`vila:${village.id}`);
+      scene.campaign?.ui?.toast?.(`Descoberto: ${village.name}`, 'gold');
+      scene.grantExperience?.(15, true);
+      scene.save?.();
+    }
+  }
+
+  /** Placa de estrada: diz para onde fica o destino e a quantos metros. */
+  readSign(sign) {
+    const scene = this.scene;
+    const player = scene.player;
+    const poi = sign.poi ?? { x: sign.x, y: sign.y, name: sign.label };
+    const dx = poi.x - player.x;
+    const dy = poi.y - player.y;
+    const meters = Math.max(0, Math.round((Math.hypot(dx, dy) / TILE) * 10));
+    const angle = Math.atan2(dy, dx);
+    const compass = ['L', 'SE', 'S', 'SO', 'O', 'NO', 'N', 'NE'][Math.round(angle / (Math.PI / 4)) + 4 & 7];
+    scene.ui.showMessage(`🪧 Placa: ${poi.name} fica a ${meters} m para ${compass}.`);
+    scene.audio?.playPick?.();
   }
 
   // ---------- Barco ----------
@@ -338,6 +532,47 @@ export class RegionWorld {
       scene.ui.showMessage(`Você desembarcou no ${dock.name}.`);
       scene.audio?.playCollect?.();
     });
+  }
+
+  /**
+   * Viagem rápida pelo mapa (M): teleporta até um local já descoberto.
+   * target: { type: 'camp' } ou { type: 'feature', feature } (caverna/torre/porto).
+   * O acampamento é grátis; os demais custam FAST_TRAVEL_COST moedas.
+   */
+  fastTravelTo(target) {
+    const scene = this.scene;
+    const player = scene.player;
+    let dest;
+    let name;
+    if (target.type === 'camp') {
+      dest = { x: WORLD.camp.x, y: WORLD.camp.y + 85 };
+      name = 'Acampamento';
+    } else {
+      const feature = target.feature;
+      if (feature.type === 'dock') {
+        const position = dockPosition(feature.dock);
+        dest = { x: position.x, y: position.y - 20 };
+        name = feature.dock.name;
+      } else {
+        dest = { x: feature.cave.entrance.x, y: feature.cave.entrance.y + 46 };
+        name = feature.cave.name;
+      }
+    }
+    if (player && Math.hypot(player.x - dest.x, player.y - dest.y) < 160) {
+      scene.ui.showMessage('Você já está perto desse lugar.');
+      return false;
+    }
+    const cost = target.type === 'camp' ? 0 : FAST_TRAVEL_COST;
+    if (cost > 0 && !scene.economy?.spendCoins?.(cost)) {
+      scene.ui.showMessage(`Viagem rápida para ${name} custa ${cost} moedas e você não tem.`);
+      return false;
+    }
+    this.teleport(dest.x, dest.y, () => {
+      scene.ui.showMessage(cost > 0 ? `Viajou até ${name} (−${cost} moedas).` : `Voltou ao ${name}.`);
+      scene.audio?.playCollect?.();
+      scene.save?.();
+    });
+    return true;
   }
 
   teleport(x, y, onArrive = null, bounds = null) {
@@ -535,7 +770,7 @@ export class RegionWorld {
   }
 
   placeBossChest(cave, room) {
-    if (this.features.some((feature) => feature.type === 'chest' && feature.cave.id === cave.id)) return;
+    if (this.features.some((feature) => feature.type === 'chest' && feature.cave?.id === cave.id)) return;
     const exit = this.roomPoint(room, room.plan.exit);
     const x = exit.x + TILE;
     const y = exit.y;
@@ -661,6 +896,19 @@ export class RegionWorld {
         }
       }
     }
+    // Casas dos vilarejos nomeados (sólidas): entram no bloco onde ficam.
+    const chunkLeft = cx * CHUNK * TILE;
+    const chunkTop = cy * CHUNK * TILE;
+    const chunkRight = chunkLeft + CHUNK * TILE;
+    const chunkBottom = chunkTop + CHUNK * TILE;
+    for (const village of VILLAGES) {
+      for (const [dx, dy] of village.houses) {
+        const x = village.x + dx;
+        const y = village.y + dy;
+        if (x < chunkLeft - 60 || x > chunkRight + 60 || y < chunkTop - 60 || y > chunkBottom + 60) continue;
+        props.push({ frame: 'village-house', x, y, solid: [36, 14] });
+      }
+    }
     // As transições entre regiões são franjas na camada de cima do chão (buildTilemap).
     return { props, nodes };
   }
@@ -780,8 +1028,19 @@ export class RegionWorld {
         if (!this.discovered.has(key)) {
           this.discovered.add(key);
           this.scene.showEpic?.(info.name.toUpperCase(), `${info.banner} Nível sugerido: ${info.levels}.`, 4200);
+          this.scene.achievements?.checkAchievements(); // conquistas de região descoberta
+          // Descoberta vale XP e entra na aba "Descobertas" do diário (L).
+          this.scene.grantExperience?.(30, true);
+          this.scene.campaign?.ui?.refresh?.();
           this.scene.save?.();
         } else this.scene.ui.showMessage(`— ${info.name} —`);
+        // Aviso de região perigosa: nível sugerido muito acima do nível do jogador.
+        const playerLevel = this.scene.progression?.level ?? 1;
+        const minLevel = info.levelRange?.[0] ?? 0;
+        if (minLevel >= playerLevel + 6) {
+          this.scene.showEpic?.('⚠️ REGIÃO PERIGOSA', `${info.name}: nível sugerido ${info.levels}, você é nível ${playerLevel}. Cuidado!`, 4200);
+          this.scene.audio?.playRoar?.();
+        }
       }
     }
     const hazard = REGION_INFO[key]?.hazard;
@@ -822,23 +1081,27 @@ export class RegionWorld {
     const lights = [];
     const visible = (x, y) => x > view.x - 120 && x < view.right + 120 && y > view.y - 120 && y < view.bottom + 120;
     for (const feature of this.features) {
-      if (feature.type !== 'cave' && feature.type !== 'dock' && visible(feature.x, feature.y)) lights.push({ x: feature.x, y: feature.y, radius: 70, kind: feature.type === 'chest' ? 'lamp' : null });
+      if (feature.type === 'dock' || !visible(feature.x, feature.y)) continue;
+      // Entrada de caverna: braseiro na boca (halo quente que guia o jogador à noite).
+      if (feature.type === 'cave') lights.push({ x: feature.x, y: feature.y - 6, radius: 84, kind: 'torch' });
+      else lights.push({ x: feature.x, y: feature.y, radius: 70, kind: feature.type === 'chest' ? 'lamp' : null });
     }
     for (const chunk of this.chunks.values()) {
       if (!chunk.active) continue;
       for (const prop of chunk.plan.props) {
         if (!GLOWING_PROPS.has(prop.frame) && !prop.frame.startsWith('stalagmite')) continue;
         if (!visible(prop.x, prop.y)) continue;
-        lights.push({ x: prop.x, y: prop.y - 10, radius: prop.frame.startsWith('stalagmite') ? 34 : 58, kind: PROP_LIGHT_KIND[prop.frame] ?? null });
+        lights.push({ x: prop.x, y: prop.y - 10, radius: prop.frame.startsWith('stalagmite') ? 34 : prop.frame === 'ice-crystal' || prop.frame === 'cave-crystal' ? 74 : 58, kind: PROP_LIGHT_KIND[prop.frame] ?? null });
       }
     }
-    return lights.slice(0, 18);
+    return lights.slice(0, 24);
   }
 
-  /** Lodo deixa mais lento; gelo e o resto, velocidade normal. */
+  /** Lodo deixa mais lento; estrada de terra batida deixa 30% mais rápido. */
   speedFactorAt(x, y) {
     const terrain = this.terrainAtPoint(x, y);
-    return terrain === T.MURK ? 0.62 : 1;
+    const mud = terrain === T.MURK ? 0.62 : 1;
+    return mud * (roadAt(x, y) ? 1.3 : 1);
   }
 
   update(delta) {
@@ -855,7 +1118,22 @@ export class RegionWorld {
       this.updateHints();
     }
     this.updateRegion(delta);
+    this.updateTravelers(delta);
     this.updateBossFight(delta);
+  }
+
+  /** Viajantes andam pelas estradas de ida e volta, mudando de direção nas pontas. */
+  updateTravelers(delta) {
+    if (!this.travelers?.length) return;
+    const seconds = delta / 1000;
+    for (const traveler of this.travelers) {
+      if (!traveler.sprite?.active) continue;
+      traveler.t += traveler.dir * (traveler.speed * seconds) / 2400;
+      if (traveler.t >= 1) { traveler.t = 1; traveler.dir = -1; }
+      if (traveler.t <= 0) { traveler.t = 0; traveler.dir = 1; }
+      const point = pointOnRoad(traveler.road, traveler.t);
+      traveler.sprite.setPosition(point.x, point.y).setDepth(point.y);
+    }
   }
 
   serialize() {
@@ -863,7 +1141,8 @@ export class RegionWorld {
       harvested: this.harvested,
       discovered: [...this.discovered],
       bosses: this.bosses,
-      chests: [...this.chests]
+      chests: [...this.chests],
+      travelerGifts: [...this.travelerGifts]
     };
   }
 }

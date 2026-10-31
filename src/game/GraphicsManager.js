@@ -66,9 +66,13 @@ export class GraphicsManager {
   apply() {
     const settings = this.settings;
     const scene = this.scene;
-    const profile = graphicsProfile(settings.graphics);
+    // Primeiro boot em tela pequena (celular): já começa no Equilibrado em vez de esperar
+    // a medição dos primeiros segundos no modo Alto.
+    const smallScreen = Math.min(window.innerWidth || 0, window.innerHeight || 0) <= 420;
+    const mode = (!settings.graphicsChosen && smallScreen && settings.graphics === 'high') ? 'balanced' : settings.graphics;
+    const profile = graphicsProfile(mode);
     scene.gfx = profile;
-    scene.graphicsMode = settings.graphics;
+    scene.graphicsMode = mode;
     if (scene.scale.__lendasFactor !== profile.renderScale) {
       scene.scale.__lendasFactor = profile.renderScale;
       if (scene.scale.refresh) scene.scale.refresh();
@@ -119,7 +123,8 @@ export class GraphicsManager {
     const mode = suggestGraphicsMode({
       cores: navigator.hardwareConcurrency ?? null,
       memory: navigator.deviceMemory ?? null,
-      fps: this.settings.fpsCap30 ? null : fps
+      fps: this.settings.fpsCap30 ? null : fps,
+      screen: Math.min(window.innerWidth || 0, window.innerHeight || 0) || null
     });
     this.suggestion = mode;
     const panel = this.scene.settingsPanel;

@@ -61,10 +61,12 @@ export function graphicsProfile(mode) {
  * (navigator.deviceMemory, em GB, só no Chrome) e fps médio medido nos primeiros segundos.
  * Qualquer dado ausente (null/undefined) é ignorado.
  */
-export function suggestGraphicsMode({ cores = null, memory = null, fps = null } = {}) {
+export function suggestGraphicsMode({ cores = null, memory = null, fps = null, screen = null } = {}) {
   let hardware = 0; // quanto maior, mais fraco o aparelho
   if (Number.isFinite(cores)) hardware += cores <= 4 ? 2 : cores <= 6 ? 1 : 0;
   if (Number.isFinite(memory)) hardware += memory <= 2 ? 2 : memory <= 4 ? 1 : 0;
+  // Tela pequena (celular em pé) pesa no preenchimento de pixels: conta como hardware mais fraco.
+  if (Number.isFinite(screen)) hardware += screen <= 420 ? 1 : 0;
   const measured = Number.isFinite(fps) && fps > 0;
   // Rodando liso (>= 57 fps) o aparelho aguenta o visual completo, a não ser que seja bem fraco no papel.
   if (measured && fps >= 57) return hardware >= 4 ? 'balanced' : 'high';

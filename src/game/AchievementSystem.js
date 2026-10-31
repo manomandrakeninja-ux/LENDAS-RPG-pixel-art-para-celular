@@ -31,7 +31,14 @@ export class AchievementSystem {
   open() { this.root.hidden = false; this.render(); }
   close() { this.root.hidden = true; }
   toggle() { if (this.isOpen) this.close(); else this.open(); }
-  destroy() { this.root.remove(); this.titleText?.destroy(); }
+  destroy() {
+    this.toastQueue = [];
+    this.toastActive = false;
+    this.toastEl?.remove();
+    this.toastEl = null;
+    this.root.remove();
+    this.titleText?.destroy();
+  }
 
   context() {
     const scene = this.scene;
@@ -40,7 +47,11 @@ export class AchievementSystem {
       level: scene.progression?.level ?? 1,
       sets: completedSets(ids, GEAR_ITEMS),
       bestiary: scene.bestiary?.progress.known ?? 0,
-      bestiaryTotal: scene.bestiary?.progress.total ?? 1
+      bestiaryTotal: scene.bestiary?.progress.total ?? 1,
+      regions: scene.regionWorld?.discovered?.size ?? 1,
+      arena: scene.arena?.record ?? 0,
+      rebirths: scene.progression?.rebirths ?? 0,
+      friends: scene.lan?.seenNames?.size ?? 0
     };
   }
 
@@ -80,10 +91,46 @@ export class AchievementSystem {
     const fresh = this.state.check(this.context());
     for (const a of fresh) {
       this.scene.ui?.showMessage(`Conquista: ${a.name} (título "${a.title}")`);
+      this.showToast(a); // aviso estilo Steam: sobe no canto da tela (só aviso, sem recompensa de item)
       if (!this.state.title) { this.state.title = a.id; this.syncTitle(); }
     }
     if (fresh.length) { this.scene.save?.(); if (this.isOpen) this.render(); }
     return fresh;
+  }
+
+  /** Fila de toasts de conquista: no máximo um visível por vez, um de cada vez. */
+  showToast(achievement) {
+    (this.toastQueue ??= []).push(achievement);
+    this.pumpToasts();
+  }
+
+  pumpToasts() {
+    if (this.toastActive || !this.toastQueue?.length) return;
+    this.toastActive = true;
+    const achievement = this.toastQueue.shift();
+    const el = document.createElement('div');
+    el.className = 'achievement-toast';
+    el.setAttribute('role', 'status');
+    el.innerHTML = `<span class="achievement-toast__icon">🏆</span>
+      <span class="achievement-toast__text"><b>CONQUISTA DESBLOQUEADA</b><i>${escapeHtml(achievement.title)}</i><small>${escapeHtml(achievement.name)}</small></span>`;
+    el.addEventListener('click', () => this.open());
+    (document.getElementById('game') ?? document.body).appendChild(el);
+    this.toastEl = el;
+    // entra "subindo" no canto inferior direito
+    requestAnimationFrame(() => el.classList.add('is-visible'));
+    this.scene.audio?.playAchievement?.();
+    const dismiss = () => {
+      el.classList.remove('is-visible');
+      el.classList.add('is-leaving');
+      setTimeout(() => {
+        el.remove();
+        if (this.toastEl === el) this.toastEl = null;
+        this.toastActive = false;
+        this.pumpToasts();
+      }, 400);
+    };
+    el.addEventListener('click', dismiss, { once: true });
+    setTimeout(dismiss, 4800);
   }
 
   syncTitle() {

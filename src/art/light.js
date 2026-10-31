@@ -24,8 +24,8 @@ export const KIND = {
   lamp: { glow: 0.52, flicker: 0.05 },
   forge: { glow: 0.5, flicker: 0.05 },
   lava: { glow: 0.38, flicker: 0.04 },
-  crystal: { glow: 0.34, flicker: 0.02 },
-  ice: { glow: 0.3, flicker: 0.02 },
+  crystal: { glow: 0.44, flicker: 0.02 },
+  ice: { glow: 0.44, flicker: 0.02 },
   shroom: { glow: 0.32, flicker: 0.03 }
 };
 

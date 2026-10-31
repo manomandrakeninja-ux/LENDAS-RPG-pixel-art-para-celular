@@ -437,6 +437,50 @@
   color: #e3cfa5;
 }
 
+.quest-discovery {
+  border-radius: 6px;
+  padding: 8px 10px;
+  background: rgba(20, 16, 14, 0.35);
+}
+
+.quest-discovery h4 {
+  margin: 0 0 4px;
+}
+
+.quest-poi-list {
+  margin: 0;
+  padding-left: 18px;
+  line-height: 1.9;
+  color: #f4e6c6;
+}
+
+.quest-skill {
+  display: grid;
+  gap: 4px;
+}
+
+.quest-skill__name {
+  color: #f4e6c6;
+}
+
+.quest-skill__bar {
+  height: 8px;
+  border: 1px solid #6b4a2a;
+  border-radius: 4px;
+  background: rgba(20, 16, 14, 0.6);
+  overflow: hidden;
+}
+
+.quest-skill__bar i {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #8a5fd0, #c86bff);
+}
+
+.quest-skill small {
+  color: #cbb489;
+}
+
 .quest-seals,
 .quest-npcs {
   display: flex;
@@ -708,7 +752,7 @@ body.is-phone .quest-tracker h3 {
 .quest-chapter__text button {
   align-self: flex-end;
   margin-top: auto;
-  min-height: 44px;
+  min-height: 48px;
   padding: 12px 20px;
   border: 2px solid var(--gold-dark);
   border-radius: 9px;

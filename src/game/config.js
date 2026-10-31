@@ -1,3 +1,5 @@
+import { OVERWORLD } from '../data/worldRegions.js';
+
 export const INVENTORY_CONFIG = Object.freeze({
   maxSlots: 12,
   unitsPerSlot: 1000,
@@ -5,11 +7,11 @@ export const INVENTORY_CONFIG = Object.freeze({
   fullMessage: 'Mochila cheia! Volte ao acampamento'
 });
 
-// Mundo grande (Vale + regiões novas + mar e ilhas). O Vale original continua em
-// 0..2880 x 0..2160; as salas das cavernas ficam abaixo, fora do mapa visível.
+// Mundo grande 400x300 ladrilhos (Vale + regiões + mar e ilhas). O Vale original
+// continua em 0..2880 x 0..2160 no canto noroeste; as salas das cavernas ficam abaixo.
 export const WORLD = {
-  width: 7200,
-  height: 5376,
+  width: OVERWORLD.width,
+  height: OVERWORLD.height,
   tileSize: 48,
   camp: { x: 1440, y: 1080 },
   valley: { width: 2880, height: 2160 }

@@ -1,0 +1,134 @@
+/* Multijogador LAN: botão 🌐 ao lado da engrenagem e painel de conexão. */
+
+.lan-button {
+  position: absolute;
+  z-index: 7;
+  top: 10px;
+  right: calc(var(--minimap-width, 180px) + max(60px, env(safe-area-inset-right)));
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  border: 2px solid var(--parchment-edge);
+  border-radius: 10px;
+  background: linear-gradient(#3d4a5c, #232c38);
+  box-shadow: 0 3px 0 var(--wood-900);
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.lan-button:hover,
+.lan-button:focus-visible {
+  filter: brightness(1.2);
+  outline: none;
+}
+
+.lan-button:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 var(--wood-900);
+}
+
+.lan-button.is-online {
+  background: linear-gradient(#2f6b3a, #1d4426);
+}
+
+.lan-panel {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  background: rgba(10, 8, 6, 0.55);
+  padding: 16px;
+}
+
+.lan-panel[hidden] {
+  display: none;
+}
+
+.lan-panel__body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.lan-panel__globe {
+  font-size: 28px;
+}
+
+.lan-panel__hint {
+  font-family: var(--body-font);
+  font-size: 13px;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.lan-panel__hint code {
+  font-size: 12px;
+  background: rgba(0, 0, 0, 0.25);
+  padding: 1px 4px;
+  border-radius: 4px;
+}
+
+.lan-panel__row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-family: var(--body-font);
+  font-size: 13px;
+}
+
+.lan-panel__row input {
+  min-height: 48px;
+  padding: 8px 10px;
+  border: 2px solid var(--parchment-edge);
+  border-radius: 8px;
+  background: #1d1712;
+  color: #f2e7d5;
+  font-family: var(--body-font);
+  font-size: 15px;
+}
+
+.lan-panel__ip {
+  font-family: var(--body-font);
+  font-size: 12px;
+  margin: 0;
+  color: #cbb894;
+}
+
+.lan-panel__actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.lan-panel__actions button {
+  min-height: 48px;
+  min-width: 48px;
+  flex: 1;
+}
+
+.lan-panel__status {
+  font-family: var(--body-font);
+  font-size: 12px;
+  margin: 0;
+  color: #9fdc9f;
+}
+
+.lan-panel__list {
+  margin: 0;
+  padding-left: 18px;
+  font-family: var(--body-font);
+  font-size: 13px;
+  max-height: 120px;
+  overflow: auto;
+}
+
+@media (max-width: 720px) {
+  .lan-button {
+    right: calc(var(--minimap-width, 120px) + max(60px, env(safe-area-inset-right)));
+  }
+}

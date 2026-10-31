@@ -228,6 +228,7 @@ export class RaidDirector {
     this.scene.grantExperience?.(reward.xp, false);
     this.scene.showEpic?.('ATAQUE REPELIDO!', `Recompensa: +${reward.coins} moedas e +${reward.xp} XP (dobrado).`, 6000);
     this.scene.audio?.playDawn?.();
+    this.scene.achievements?.note('raids'); // conquista de ataques repelidos
     this.scene.save();
   }
 

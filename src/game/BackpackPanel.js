@@ -41,7 +41,16 @@ export class BackpackPanel {
     this.lastKey = '';
     this.icon.src = textureUrl(scene, 'hud-backpack');
 
+    this.filter = 'all';
     this.handleClick = (event) => {
+      const filterButton = event.target.closest('button[data-filter]');
+      if (filterButton) {
+        this.filter = filterButton.dataset.filter;
+        for (const el of this.root.querySelectorAll('button[data-filter]')) el.classList.toggle('is-active', el === filterButton);
+        this.lastKey = '';
+        this.refresh();
+        return;
+      }
       const button = event.target.closest('button[data-bag]');
       if (!button || button.disabled) return;
       if (button.dataset.bag === 'equipment') {
@@ -99,9 +108,11 @@ export class BackpackPanel {
     // Cada espaço guarda até unitsPerSlot do mesmo item; quantidades maiores ocupam mais espaços.
     const occupied = Object.entries(inventory.items).filter(([, amount]) => amount > 0).flatMap(([type, amount]) =>
       Array.from({ length: inventory.slotsFor(amount) }, (_, index) =>
-        [type, Math.min(inventory.unitsPerSlot, amount - index * inventory.unitsPerSlot)])).slice(0, inventory.maxSlots);
+        [type, Math.min(inventory.unitsPerSlot, amount - index * inventory.unitsPerSlot)])).slice(0, inventory.maxSlots)
+      // Filtro da mochila: usáveis (poções/comida) ou só materiais.
+      .filter(([type]) => this.filter === 'all' || (this.filter === 'usable') === isConsumable(type));
     // Só redesenha quando algo muda (o HUD chama refresh a cada quadro).
-    const key = JSON.stringify([occupied, storeAll, inventory.maxSlots]);
+    const key = JSON.stringify([occupied, storeAll, inventory.maxSlots, this.filter]);
     if (key === this.lastKey) return;
     this.lastKey = key;
 

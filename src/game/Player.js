@@ -51,6 +51,9 @@ export class Player extends Phaser.GameObjects.Container {
     this.dodgeX = 0;
     this.dodgeY = 0;
     this.specialCooldown = 0;
+    // Fúria do Grito (Z): 0..100, carrega causando/recebendo dano; 100 = grito pronto.
+    this.shoutCharge = 0;
+    this.shoutCooldown = 0;
     this.invulnerable = 0;
     this.torchTimer = 0;
     this.direction = 'down';
@@ -144,6 +147,7 @@ export class Player extends Phaser.GameObjects.Container {
     this.dodgeCooldown = Math.max(0, this.dodgeCooldown - delta);
     this.dodgeTimer = Math.max(0, this.dodgeTimer - delta);
     this.specialCooldown = Math.max(0, this.specialCooldown - delta);
+    this.shoutCooldown = Math.max(0, this.shoutCooldown - delta);
     this.invulnerable = Math.max(0, this.invulnerable - delta);
     this.torchTimer = Math.max(0, this.torchTimer - delta);
     this.knockbackTimer = Math.max(0, this.knockbackTimer - delta);
@@ -176,10 +180,20 @@ export class Player extends Phaser.GameObjects.Container {
     } else if (this.dodgeTimer > 0) {
       this.body.setVelocity(this.dodgeX, this.dodgeY);
     } else {
-      // Lodo do brejo e dos oásis deixa o passo mais lento.
+      // Lodo do brejo e dos oásis deixa o passo mais lento; evento "vento a favor" acelera.
       const terrainFactor = this.scene.regionWorld?.speedFactorAt(this.x, this.y) ?? 1;
-      const speed = 130 * this.speedMultiplier * terrainFactor * (this.scene.companions?.speed ?? 1);
+      const eventFactor = this.scene.eventSpeedUntil && this.scene.time.now < this.scene.eventSpeedUntil ? 1.25 : 1;
+      const speed = 130 * this.speedMultiplier * terrainFactor * eventFactor * (this.scene.companions?.speed ?? 1);
       this.body.setVelocity(movement.x * speed, movement.y * speed);
+    }
+    // Poeira do passo ao andar/correr (montado levanta mais poeira).
+    if (movement.lengthSq() > 0 && this.knockbackTimer === 0) {
+      const mounted = this.scene.companions?.state?.mounted;
+      this.stepDustMs = (this.stepDustMs ?? 0) - delta;
+      if (this.stepDustMs <= 0) {
+        this.stepDustMs = mounted ? 110 : 240;
+        this.scene.effects?.spawnStepDust(this.x, this.y + 10, mounted);
+      }
     }
     this.poseGear(delta, movement.lengthSq() > 0 && this.knockbackTimer === 0);
     this.setDepth(this.y + 30);
@@ -188,15 +202,19 @@ export class Player extends Phaser.GameObjects.Container {
   // forced: esquiva pedida pelo botão de toque, além da tecla Espaço.
   dodge(keys, forced = false) {
     const fleetfoot = this.progression?.hasPerk?.('fleetfoot') ?? false;
+    // Skill Esquiva: cada esquiva treina a skill (menos vigor, mais invulnerabilidade).
+    const dodgeSkill = this.scene.skills;
     const staminaCost = Math.round(COMBAT_CONFIG.dodgeStaminaCost *
-      (fleetfoot ? PERK_EFFECTS.fleetfootStaminaMultiplier : 1));
+      (fleetfoot ? PERK_EFFECTS.fleetfootStaminaMultiplier : 1) *
+      (dodgeSkill?.dodgeStaminaMultiplier?.() ?? 1));
     const pressed = Phaser.Input.Keyboard.JustDown(keys.dodge) || forced;
     if (!pressed || this.dodgeCooldown > 0 ||
         this.stamina < staminaCost) return false;
     this.stamina -= staminaCost;
     this.dodgeCooldown = Math.round(COMBAT_CONFIG.dodgeCooldownMs *
       (fleetfoot ? PERK_EFFECTS.fleetfootCooldownMultiplier : 1));
-    this.invulnerable = COMBAT_CONFIG.dodgeInvulnerabilityMs;
+    this.invulnerable = COMBAT_CONFIG.dodgeInvulnerabilityMs + (dodgeSkill?.dodgeIframeBonusMs?.() ?? 0);
+    this.scene.grantSkillXp?.('dodge', 8);
     // A velocidade é mantida por dodgeDurationMs em update(); antes ela durava um único frame.
     this.dodgeTimer = COMBAT_CONFIG.dodgeDurationMs;
     this.dodgeX = this.facing.x * COMBAT_CONFIG.dodgeSpeed;
@@ -204,12 +222,19 @@ export class Player extends Phaser.GameObjects.Container {
     this.knockbackTimer = 0;
     this.body.setVelocity(this.dodgeX, this.dodgeY);
     this.scene.effects?.spawnDust(this.x, this.y + 8, 6, 0xb0ad82);
+    this.scene.audio?.playDodge();
     return true;
   }
 
   // options.fire: dano de fogo, reduzido pela resistência ao fogo (Fogueira 8/10, Forja do Dragão).
+  /** Carrega a barra de Fúria do Grito (Z) até 100. */
+  addShoutCharge(amount) {
+    this.shoutCharge = Math.min(100, this.shoutCharge + amount);
+  }
+
   damage(amount, source = null, options = {}) {
     if (this.invulnerable > 0) return false;
+    this.addShoutCharge(COMBAT_CONFIG.shout.chargePerDamageTaken);
     const fireFactor = options.fire ? 1 - this.fireResistance : 1;
     // fullDamage: o Golem de Fogo bate com o dano cheio (só a defesa reduz).
     const scaling = options.fullDamage ? 1 : COMBAT_CONFIG.enemyDamageToPlayer ?? 1;
@@ -223,7 +248,9 @@ export class Player extends Phaser.GameObjects.Container {
     }
     // Defesa reduz em porcentagem (100 de defesa = metade do dano); assim os monstros
     // continuam perigosos no fim de jogo em vez de baterem sempre 1.
-    const dealt = Math.max(1, Math.round(scaled * 100 / (100 + Math.max(0, this.defense))));
+    // Skill Bloqueio: +1 de defesa por nível treinado com o escudo.
+    const effectiveDefense = Math.max(0, this.defense + (this.scene.skills?.blockDefenseBonus?.() ?? 0));
+    const dealt = Math.max(1, Math.round(scaled * 100 / (100 + effectiveDefense)));
     this.health = Math.max(0, this.health - dealt);
     this.invulnerable = 450;
     this.scene.companions?.onPlayerDamaged();
@@ -231,7 +258,11 @@ export class Player extends Phaser.GameObjects.Container {
     this.scene.effects?.spawnHit(this.x, this.y - 9, 0xff9b78, 6);
     this.scene.effects?.spawnDamage(this.x, this.y - 20, dealt, '#ffb59a');
     this.scene.audio?.playHit();
-    if (this.lastBlockRatio > 0) this.scene.effects?.spawnDamage(this.x, this.y - 32, 'BLOQ', '#a9d8ff');
+    if (this.lastBlockRatio > 0) {
+      this.scene.audio?.playBlock();
+      this.scene.effects?.spawnDamage(this.x, this.y - 32, 'BLOQ', '#a9d8ff');
+      this.scene.grantSkillXp?.('block', 10);
+    }
     if (source) {
       const angle = Phaser.Math.Angle.Between(source.x, source.y, this.x, this.y);
       this.knockbackTimer = COMBAT_CONFIG.knockback.durationMs;

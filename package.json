@@ -11,7 +11,7 @@
     "preview:celular": "vite preview --host",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "node --test",
+    "test": "node --test \"tests/*.test.js\"",
     "test:runtime:phase1": "node scripts/phase1-runtime-check.mjs",
     "test:runtime:map": "node scripts/map-runtime-check.mjs",
     "test:runtime:progression": "node scripts/progression-runtime-check.mjs",
@@ -48,7 +48,9 @@
     "test:runtime:highlevel": "node scripts/high-level-check.mjs",
     "test:runtime:hero": "node scripts/hero-runtime-check.mjs",
     "test:runtime:wolfboss": "node scripts/wolfboss-runtime-check.mjs",
-    "test:runtime:zoom": "node scripts/zoom-runtime-check.mjs"
+    "test:runtime:zoom": "node scripts/zoom-runtime-check.mjs",
+    "test:runtime:lan": "node scripts/lan-runtime-check.mjs",
+    "lan": "node server/lan-server.mjs"
   },
   "dependencies": {
     "@fontsource/pixelify-sans": "^5.3.0",

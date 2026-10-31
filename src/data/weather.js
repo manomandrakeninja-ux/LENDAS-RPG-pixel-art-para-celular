@@ -14,3 +14,20 @@ export function isRainyDay(day) {
 export function isRaining({ dayCount, isNight }) {
   return !isNight && isRainyDay(dayCount);
 }
+
+// ---------- Clima por região (mapa grande) ----------
+// No mesmo dia chuvoso, cada bioma tem seu próprio clima: neve no gelo, poeira no
+// deserto, cinzas na ilha de brasa; caverna fica sempre limpa. À noite, sempre limpo.
+export const WEATHER_ICONS = Object.freeze({ rain: '🌧️', snow: '❄️', dust: '🌪️', ash: '🌋', clear: '' });
+
+export function weatherAt(region, { dayCount, isNight }) {
+  if (isNight) return 'clear';
+  const rainy = isRainyDay(dayCount);
+  switch (region) {
+    case 'gelo': return rainy ? 'snow' : 'clear';
+    case 'areia': return rainy ? 'dust' : 'clear';
+    case 'brasa': return rainy ? 'ash' : 'clear';
+    case 'caverna': return 'clear';
+    default: return rainy ? 'rain' : 'clear'; // vale, antiga, brejo, esmeralda, mar
+  }
+}

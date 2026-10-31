@@ -1,59 +1,12 @@
 import { WORLD } from './config.js';
 import { MAP_SCALE } from './MapRenderer.js';
+import { FAST_TRAVEL_COST, TREASURE_SPOTS, VILLAGES } from '../data/worldRegions.js';
 import { DUNGEON_CONFIG } from '../data/buildings.js';
 import { regionCardAt } from './RegionCard.js';
 import { paintBurntEdge } from './mapParchment.js';
-
-export const WORLD_MAP_MARKER_TYPES = Object.freeze({
-  camp: 'camp',
-  resource: 'resource',
-  chest: 'chest',
-  enemy: 'enemy',
-  player: 'player',
-  mine: 'mine',
-  dungeon: 'dungeon'
-});
-
-// A mina aparece sempre (ícone especial); a masmorra, depois que o acampamento fica completo.
-export function collectWorldMapMarkers({ structures = [], enemies = [], boss = null, player, dungeonRevealed = false } = {}) {
-  const discoveredStructures = structures.filter((structure) => structure?.discovered && structure.type !== 'mineMarker');
-  const mine = structures.find((structure) => structure?.type === 'mineMarker');
-  return {
-    mine: mine ? { x: mine.x, y: mine.y, type: WORLD_MAP_MARKER_TYPES.mine } : null,
-    dungeon: dungeonRevealed ? { x: DUNGEON_CONFIG.x, y: DUNGEON_CONFIG.y, type: WORLD_MAP_MARKER_TYPES.dungeon } : null,
-    camp: { x: WORLD.camp.x, y: WORLD.camp.y, type: WORLD_MAP_MARKER_TYPES.camp },
-    player: player
-      ? { x: player.x, y: player.y, type: WORLD_MAP_MARKER_TYPES.player }
-      : null,
-    structures: discoveredStructures
-      .filter((structure) => structure.type !== 'chest')
-      .map((structure) => ({
-        x: structure.x,
-        y: structure.y,
-        type: WORLD_MAP_MARKER_TYPES.resource,
-        structureType: structure.type
-      })),
-    chests: discoveredStructures
-      .filter((structure) => structure.type === 'chest' && !structure.collected)
-      .map((structure) => ({
-        x: structure.x,
-        y: structure.y,
-        type: WORLD_MAP_MARKER_TYPES.chest
-      })),
-    strongEnemies: [
-      ...enemies
-        .filter((enemy) => enemy?.isElite || enemy?.isBoss || enemy?.kind === 'boss')
-        .map((enemy) => ({
-          x: enemy.x,
-          y: enemy.y,
-          type: WORLD_MAP_MARKER_TYPES.enemy
-        })),
-      ...(boss && !boss.dead
-        ? [{ x: boss.x, y: boss.y, type: WORLD_MAP_MARKER_TYPES.enemy }]
-        : [])
-    ]
-  };
-}
+// Lógica pura dos marcadores vive em worldMapMarkers.js (sem Phaser) para rodar no Node.
+export { WORLD_MAP_MARKER_TYPES, collectWorldMapMarkers } from './worldMapMarkers.js';
+import { WORLD_MAP_MARKER_TYPES, collectWorldMapMarkers } from './worldMapMarkers.js';
 
 // Fase 20H: ícones pintados dos locais (scripts/bake-ui.mjs), desenhados em 2x sobre o pergaminho.
 const MAP_ICON_URLS = {
@@ -154,7 +107,10 @@ export class WorldMapOverlay {
     // Recarrega o mapa quando os ícones pintados chegarem (só na primeira abertura).
     for (const image of Object.values(this.icons)) image.addEventListener?.('load', () => this.render(), { once: true });
     this.isOpen = false;
-    this.zoomIndex = 0;
+    // Zoom e centro do mapa ficam salvos entre aberturas (localStorage).
+    const savedView = this.loadView();
+    this.zoomIndex = savedView?.zoom ?? 0;
+    this.savedCenter = savedView?.center ?? null;
     this.lastMarkerCounts = { camp: 0, structures: 0, chests: 0, strongEnemies: 0, player: 0 };
 
     this.handleClose = () => this.close();
@@ -184,11 +140,33 @@ export class WorldMapOverlay {
       const view = this.view();
       const x = view.left + ((event.clientX - rect.left) / rect.width) * view.width;
       const y = view.top + ((event.clientY - rect.top) / rect.height) * view.height;
+      // Shift+clique: marca um waypoint personalizado (X no mapa + seta verde no minimapa).
+      if (event.shiftKey) {
+        const current = this.scene.waypoint;
+        if (current && Math.hypot(current.x - x, current.y - y) < 300) this.scene.setWaypoint(null);
+        else this.scene.setWaypoint({ x, y });
+        this.render();
+        return;
+      }
+      // Clique perto de um local já descoberto (caverna/torre/porto/acampamento) abre a viagem rápida.
+      const travel = this.findTravelTarget(x, y, view, rect);
+      if (travel) {
+        this.showTravelCard(travel);
+        return;
+      }
       this.showRegionAt(x, y);
     };
     this.canvas.addEventListener('click', this.handleCanvasClick);
     this.card.addEventListener('click', (event) => {
       if (event.target.closest('[data-card-close]')) this.card.hidden = true;
+      const go = event.target.closest('[data-travel-go]');
+      if (go && this.travelTarget) {
+        const target = this.travelTarget;
+        this.card.hidden = true;
+        this.travelTarget = null;
+        this.close();
+        this.scene.regionWorld?.fastTravelTo(target);
+      }
     });
     this.canvas.addEventListener('wheel', this.handleWheel, { passive: false });
   }
@@ -204,7 +182,79 @@ export class WorldMapOverlay {
 
   setZoom(index) {
     this.zoomIndex = Math.max(0, Math.min(ZOOM_LEVELS.length - 1, index));
+    this.saveView();
     this.render();
+  }
+
+  /** Persiste zoom + centro do mapa (localStorage 'lendas-map-view'). */
+  saveView() {
+    try {
+      const view = this.view();
+      localStorage.setItem('lendas-map-view', JSON.stringify({
+        zoom: this.zoomIndex,
+        center: { x: view.left + view.width / 2, y: view.top + view.height / 2 }
+      }));
+    } catch { /* modo privado: ignora */ }
+  }
+
+  loadView() {
+    try {
+      const raw = localStorage.getItem('lendas-map-view');
+      if (!raw) return null;
+      const view = JSON.parse(raw);
+      if (!Number.isFinite(view?.zoom) || !view?.center) return null;
+      return view;
+    } catch { return null; }
+  }
+
+  /** O ponto (x,y) do mundo está explorado? (usa a neblina do World; sem renderer, permite). */
+  isExplored(x, y) {
+    return this.scene.ui?.mapRenderer?.isExplored?.(x, y) ?? this.scene.world?.revealedCells?.has?.(`${Math.floor(x / (WORLD.tileSize * 2))},${Math.floor(y / (WORLD.tileSize * 2))}`) ?? true;
+  }
+
+  /** Procura um local viajável (acampamento, caverna, torre ou porto descoberto) perto do clique. */
+  findTravelTarget(x, y, view, rect) {
+    // Raio de tolerance: ~22 px na tela, convertido para coordenadas do mundo.
+    const radius = 22 * (view.width / Math.max(1, rect.width));
+    const camp = { x: WORLD.camp.x, y: WORLD.camp.y + 85 };
+    if (this.isExplored(camp.x, camp.y) && Math.hypot(x - camp.x, y - camp.y) < Math.max(radius, 240)) {
+      return { type: 'camp', name: 'Acampamento', cost: 0 };
+    }
+    let best = null;
+    let bestDistance = radius;
+    for (const feature of this.scene.regionWorld?.features ?? []) {
+      if (feature.type !== 'cave' && feature.type !== 'dock') continue;
+      if (!this.isExplored(feature.x, feature.y)) continue;
+      const distance = Math.hypot(x - feature.x, y - feature.y);
+      if (distance < bestDistance) {
+        bestDistance = distance;
+        best = {
+          type: 'feature',
+          feature,
+          name: feature.cave?.name ?? feature.dock?.name ?? 'Local',
+          cost: FAST_TRAVEL_COST
+        };
+      }
+    }
+    return best;
+  }
+
+  /** Card de viagem rápida: mostra o destino e o custo, com botão VIAJAR. */
+  showTravelCard(target) {
+    this.travelTarget = target;
+    const coins = this.scene.economy?.coins ?? 0;
+    const canAfford = target.cost === 0 || coins >= target.cost;
+    this.regionCard = null;
+    this.card.innerHTML = `
+      <button type="button" class="region-card__close" data-card-close aria-label="Fechar cartão">✕</button>
+      <h3>✦ Viagem rápida</h3>
+      <p><strong>Destino:</strong> ${target.name}</p>
+      <p><strong>Custo:</strong> ${target.cost === 0 ? 'grátis' : `${target.cost} moedas (você tem ${coins})`}</p>
+      <div class="region-card__actions">
+        <button type="button" data-travel-go ${canAfford ? '' : 'disabled'}>VIAJAR</button>
+        <button type="button" data-card-close>FICAR</button>
+      </div>`;
+    this.card.hidden = false;
   }
 
   /** Mostra o cartão da região do ponto (x, y) do mundo; sem região (mar), esconde. */
@@ -234,6 +284,12 @@ export class WorldMapOverlay {
   open() {
     this.isOpen = true;
     this.root.hidden = false;
+    // Reabre no zoom/centro da última vez (salvo em localStorage); se o jogador andou muito
+    // desde então, volta a centrar nele.
+    const player = this.surfacePlayer();
+    this.centerOverride = this.savedCenter && player && Math.hypot(this.savedCenter.x - player.x, this.savedCenter.y - player.y) < 2600
+      ? this.savedCenter
+      : null;
     this.render();
   }
 
@@ -242,6 +298,8 @@ export class WorldMapOverlay {
     this.root.hidden = true;
     this.card.hidden = true;
     this.target = null;
+    this.travelTarget = null;
+    this.saveView();
   }
 
   /** Abre o mapa inteiro com um alfinete num ponto (fonte de um item, por exemplo). */
@@ -297,14 +355,14 @@ export class WorldMapOverlay {
     return cave ? { x: cave.x, y: cave.y } : player;
   }
 
-  /** Área do mundo visível: o mundo todo, ou um recorte centrado no jogador quando há zoom. */
+  /** Área do mundo visível: o mundo todo, ou um recorte centrado no jogador (ou no último centro salvo). */
   view() {
     const zoom = ZOOM_LEVELS[this.zoomIndex];
     const width = WORLD.width / zoom;
     const height = WORLD.height / zoom;
-    const player = this.surfacePlayer() ?? WORLD.camp;
-    const left = Math.max(0, Math.min(WORLD.width - width, player.x - width / 2));
-    const top = Math.max(0, Math.min(WORLD.height - height, player.y - height / 2));
+    const anchor = this.centerOverride ?? this.surfacePlayer() ?? WORLD.camp;
+    const left = Math.max(0, Math.min(WORLD.width - width, anchor.x - width / 2));
+    const top = Math.max(0, Math.min(WORLD.height - height, anchor.y - height / 2));
     return { left, top, width, height, zoom };
   }
 
@@ -338,34 +396,44 @@ export class WorldMapOverlay {
     }
 
     // Locais do mundo grande já explorados: cavernas, torres e portos com ícones pintados.
+    // Anel dourado = dá para viajar até ali clicando (viagem rápida).
     for (const feature of this.scene.regionWorld?.features ?? []) {
       if (renderer && !renderer.isExplored(feature.x, feature.y)) continue;
       const key = feature.type === 'dock' ? 'dock' : feature.type === 'cave' ? (feature.cave?.tower ? 'tower' : 'cave') : null;
       if (key) drawIcon(context, this.icons[key], toX(feature.x), toY(feature.y) - 10, 2);
+      if (feature.type === 'cave' || feature.type === 'dock') {
+        context.strokeStyle = 'rgba(255, 215, 107, 0.9)';
+        context.lineWidth = Math.max(1, 2 * scale);
+        context.beginPath();
+        context.arc(toX(feature.x), toY(feature.y) - 8, 11 * scale + 3, 0, Math.PI * 2);
+        context.stroke();
+      }
     }
 
-    // Grade com coordenadas (A–L, 1–9) a tinta sépia, para orientar o jogador.
+    // Grade com coordenadas (A–T, 1–15) a tinta sépia, para orientar o jogador.
     context.strokeStyle = 'rgba(74, 52, 36, 0.16)';
     context.lineWidth = 1;
     context.font = '8px "Press Start 2P", monospace';
     context.fillStyle = 'rgba(74, 52, 36, 0.8)';
-    const cellX = WORLD.width / 12;
-    const cellY = WORLD.height / 9;
-    for (let column = 0; column <= 12; column += 1) {
+    const GRID_COLS = 20;
+    const GRID_ROWS = 15;
+    const cellX = WORLD.width / GRID_COLS;
+    const cellY = WORLD.height / GRID_ROWS;
+    for (let column = 0; column <= GRID_COLS; column += 1) {
       const x = Math.round(toX(column * cellX)) + 0.5;
       context.beginPath();
       context.moveTo(x, 0);
       context.lineTo(x, height);
       context.stroke();
-      if (column < 12) context.fillText(String.fromCharCode(65 + column), toX((column + 0.5) * cellX) - 4, 26);
+      if (column < GRID_COLS) context.fillText(String.fromCharCode(65 + column), toX((column + 0.5) * cellX) - 4, 26);
     }
-    for (let row = 0; row <= 9; row += 1) {
+    for (let row = 0; row <= GRID_ROWS; row += 1) {
       const y = Math.round(toY(row * cellY)) + 0.5;
       context.beginPath();
       context.moveTo(0, y);
       context.lineTo(width, y);
       context.stroke();
-      if (row < 9) context.fillText(String(row + 1), 20, toY((row + 0.5) * cellY) + 4);
+      if (row < GRID_ROWS) context.fillText(String(row + 1), 20, toY((row + 0.5) * cellY) + 4);
     }
 
     // Nomes das regiões já exploradas.
@@ -379,6 +447,35 @@ export class WorldMapOverlay {
       context.strokeText(region.name.toUpperCase(), toX(region.x), toY(region.y));
       context.fillStyle = '#3b2717';
       context.fillText(region.name.toUpperCase(), toX(region.x), toY(region.y));
+    }
+    // Baús de tesouro: só aparecem no mapa depois que a área foi explorada.
+    if (renderer) {
+      context.fillStyle = '#c8a030';
+      for (const spot of TREASURE_SPOTS) {
+        if (!renderer.isExplored(spot.x, spot.y)) continue;
+        const bx = toX(spot.x);
+        const by = toY(spot.y);
+        context.fillRect(bx - 2, by - 2, 4, 3);
+        context.fillStyle = '#6a3a1e';
+        context.fillRect(bx - 2, by + 1, 4, 1);
+        context.fillStyle = '#c8a030';
+      }
+    }
+    // Vilarejos nomeados: só aparecem no mapa depois de explorados (neblina).
+    if (renderer) {
+      context.font = '8px "Press Start 2P", monospace';
+      for (const village of VILLAGES) {
+        if (!renderer.isExplored(village.x, village.y)) continue;
+        const vx = toX(village.x);
+        const vy = toY(village.y);
+        context.fillStyle = '#6b4a2a';
+        context.fillRect(vx - 3, vy - 3, 6, 5);
+        context.lineWidth = 3;
+        context.strokeStyle = 'rgba(240, 226, 190, 0.9)';
+        context.strokeText(village.name.toUpperCase(), vx + 7, vy + 3);
+        context.fillStyle = '#4a2c14';
+        context.fillText(village.name.toUpperCase(), vx + 7, vy + 3);
+      }
     }
     context.textAlign = 'left';
 
@@ -439,6 +536,23 @@ export class WorldMapOverlay {
     else if (markers.player) drawMarker(context, markers.player, toX, toY);
 
     this.drawTarget(context, toX, toY);
+    // Waypoint personalizado (Shift+clique): X verde pulsante.
+    const waypoint = this.scene.waypoint;
+    if (waypoint) {
+      const wx = Math.round(toX(waypoint.x));
+      const wy = Math.round(toY(waypoint.y));
+      const pulse = 1 + Math.sin(this.scene.time.now / 240) * 0.15;
+      context.save();
+      context.strokeStyle = '#5aff8a';
+      context.lineWidth = 3;
+      context.translate(wx, wy);
+      context.scale(pulse, pulse);
+      context.beginPath();
+      context.moveTo(-7, -7); context.lineTo(7, 7);
+      context.moveTo(7, -7); context.lineTo(-7, 7);
+      context.stroke();
+      context.restore();
+    }
     // Borda queimada por cima de tudo (pintada uma vez no tamanho do canvas).
     if (!this.burnt || this.burnt.width !== width || this.burnt.height !== height) this.burnt = paintBurntEdge(width, height);
     context.drawImage(this.burnt, 0, 0);

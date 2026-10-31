@@ -50,11 +50,30 @@ export default defineConfig({
   },
   build: {
     // O Phaser sozinho tem ~1,4 MB; fica num arquivo separado que o celular guarda em cache
-    // entre atualizações do jogo.
-    chunkSizeWarningLimit: 1600,
+    // entre atualizações do jogo. 1700 cobre o art-monster-sprites (arquivo único de dados de
+    // sprites: 1,6 MB fonte mas só ~551 kB em gzip, e fica em cache entre atualizações).
+    chunkSizeWarningLimit: 1700,
     rollupOptions: {
       output: {
-        manualChunks: { phaser: ['phaser'] }
+        // Phaser e a arte procedural (sprites gerados em src/art) em chunks próprios:
+        // o index encolhe e cada parte fica em cache no celular entre atualizações.
+        manualChunks(id) {
+          const p = id.split('\\').join('/');
+          if (p.includes('node_modules/phaser')) return 'phaser';
+          if (p.includes('/src/art/')) {
+            // A arte procedural é o pedaço mais pesado: divide por tema pra nenhum chunk passar do limite.
+            // Roteamento explícito e acíclico (base não importa nada de dentro de art; misc só importa dos outros):
+            // evita warning de "circular chunk" entre art-buildings e art-misc.
+            const f = p.split('/').pop();
+            if (['pixel.js', 'palette.js', 'painter.js', 'terrain.js', 'natureSprites.js', 'bakedNature.js', 'biomeProps.js', 'icons.js', 'knight.js', 'person.js', 'gear.js'].includes(f)) return 'art-base';
+            if (/monster/i.test(f)) return 'art-monsters';
+            if (/building|sites/i.test(f)) return 'art-buildings';
+            if (/hero|skin|mount|horse/i.test(f)) return 'art-heroes';
+            if (/gear|weapon/i.test(f)) return 'art-gear';
+            return 'art-misc';
+          }
+          return undefined;
+        }
       }
     }
   }

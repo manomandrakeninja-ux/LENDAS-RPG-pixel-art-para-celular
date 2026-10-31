@@ -114,6 +114,17 @@ test('save v2 preserves farm, market, crafting and storage state', () => {
   assert.equal(migrated.market.offers[0].quantity, 2);
 });
 
+test('waypoint personalizado sobrevive às migrações de save (v1 e v2)', () => {
+  const v1 = migrateV1ToV2({ version: 1, waypoint: { x: 5000, y: 3000 } });
+  assert.deepEqual(v1.waypoint, { x: 5000, y: 3000 });
+  const v2 = migrateSave({ version: SAVE_VERSION, waypoint: { x: 1440, y: 1080 } });
+  assert.deepEqual(v2.waypoint, { x: 1440, y: 1080 });
+  // Sem waypoint ou inválido vira null.
+  assert.equal(migrateSave({ version: SAVE_VERSION }).waypoint, null);
+  assert.equal(migrateSave({ version: SAVE_VERSION, waypoint: { x: NaN, y: 3 } }).waypoint, null);
+  assert.equal(migrateV1ToV2({ version: 1 }).waypoint, null);
+});
+
 test('future save versions are rejected instead of being silently downgraded', () => {
   assert.throws(
     () => migrateSave({ version: SAVE_VERSION + 1 }),

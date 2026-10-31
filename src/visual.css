@@ -101,6 +101,28 @@
   font: 8px/1.5 var(--pixel-font);
 }
 
+.backpack-filters {
+  display: flex;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.backpack-filters button {
+  padding: 3px 7px;
+  border: 2px solid var(--wood-700);
+  border-radius: 6px;
+  background: rgba(30, 20, 12, 0.85);
+  color: #cbb489;
+  font: 7px/1 var(--pixel-font);
+  cursor: pointer;
+}
+
+.backpack-filters button.is-active {
+  border-color: var(--gold);
+  background: rgba(90, 60, 20, 0.9);
+  color: var(--gold);
+}
+
 .backpack-panel__grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -687,7 +709,7 @@
 .building-menu .sell-panel { background: rgba(107, 74, 48, 0.1); border-color: var(--gold-2); }
 .building-menu .sell-panel h3 { color: #5a2f12; }
 .building-menu .qty-value { color: var(--ink); }
-.building-menu .sell-row button, .building-menu .qty-row button { min-height: 44px; }
+.building-menu .sell-row button, .building-menu .qty-row button { min-height: 48px; }
 .building-menu .building-menu__resource { grid-template-columns: 34px minmax(80px, 1.2fr) repeat(2, minmax(56px, 0.8fr)) repeat(4, minmax(72px, 1fr)); }
 @media (max-width: 560px) {
   .building-menu .building-menu__resource { grid-template-columns: 28px 1fr 1fr; }
