@@ -58,7 +58,8 @@ const TIPS = [
   'De dia na praia, um caranguejo dourado 🦀 pode deixar moeditas.',
   'À noite no vale, uma coruja 🦉 pode aparecer com um pouco de XP.',
   'Na ilha Esmeralda, de dia, uma orquídea rara 🌿 pode dar XP.',
-  'À noite de céu limpo no vale, uma estrela cadente 🌠 pode dar moeditas.'
+  'À noite de céu limpo no vale, uma estrela cadente 🌠 pode dar moeditas.',
+  'De dia e sol no brejo, uma abelha dourada 🐝 pode dar um pouco de XP.'
 ];
 
 export function setupSplash() {

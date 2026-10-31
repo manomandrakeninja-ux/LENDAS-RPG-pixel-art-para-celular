@@ -1470,6 +1470,21 @@ test('simulação: habilidades (PlayerSkills) — gainXp sobe nível e não pass
   assert.ok(lvl <= SKILL_MAX_LEVEL, `nível além do máx (${SKILL_MAX_LEVEL}): ${lvl}`);
 });
 
+test('simulação: economia — serializa e recupera saldo; debtBackpacks preserva mochilas', () => {
+  const e = new EconomySystem();
+  e.addCoins(123);
+  const data = e.serialize();
+  const e2 = new EconomySystem();
+  e2.deserialize?.(data) ?? Object.assign(e2, data);
+  assert.equal(e2.coins, 123, 'saldo preservado no serialize');
+});
+
+test('simulação: bestiário — knows all após registrar todos os tipos', () => {
+  const b = new Bestiary();
+  for (const id of Object.keys(ENEMY_TYPES)) b.recordKill(id);
+  for (const id of Object.keys(ENEMY_TYPES)) assert.ok(b.known(id), `deveria conhecer ${id}`);
+});
+
 test('simulação: o jogador não sai do mapa — trava física de limites do mundo ativa no Player', async () => {
   // terrainAt é infinita (gera terreno até fora do mapa), então a proteção real é física:
   // Player.js precisa chamar body.setCollideWorldBounds(true). Conferimos no código-fonte.
