@@ -627,6 +627,9 @@ export class GameUI {
     const parts = [];
     const raid = this.scene.raid;
     if (raid?.statusText) parts.push(raid.statusText);
+    // Fase do dia com ícone (dia / crepúsculo / noite / amanhecer).
+    const phase = this.scene.timeState?.phase;
+    if (phase) parts.push({ day: '☀️ DIA', dusk: '🌆 CREPÚSCULO', night: '🌙 NOITE', dawn: '🌅 AMANHECER' }[phase] ?? phase.toUpperCase());
     const weather = this.scene.weather;
     if (weather && weather !== 'clear') {
       const icon = WEATHER_ICONS[weather] ?? '';

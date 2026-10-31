@@ -69,6 +69,19 @@
 - **D:** suite 49/49.
 - Notas 0–100: visual 79 · código 87 · estabilidade 95 · desempenho 83 · jogabilidade 88 · mobile 70 · originalidade 81.
 
+### Ciclo 32 — Placas de estrada apontam o POI mais próximo (agora incluem os 4 vilarejos)
+- **C:** `roadSigns()` escolhe por placa o POI (caverna/torre/porto/vilarejo) a ≤1400 px; `ROAD_SIGNS` movido após VILLAGES. Resultado: 217 placas, 12 destinos, 4 vilarejos apontados.
+- **D:** world 14/14, simulacao 7/7, suite 49/49.
+- Notas: visual 86 · código 89 · estabilidade 97 · desempenho 84 · jogabilidade 93 · mobile 74 · originalidade 85.
+
+### Ciclo 31 — HUD: fase do dia com ícone no status (☀️ DIA 🌆 CREPÚSCULO 🌙 NOITE 🌅 AMANHECER)
+- **C:** `statusText` mostra a fase do `timeState` com ícone.
+- **D:** suite 49/49.
+- Notas: visual 86 · código 89 · estabilidade 97 · desempenho 84 · jogabilidade 93 · mobile 74 · originalidade 84.
+
+### Ciclo 30 — Verificação final + relatório (fim da 1ª etapa de 30)
+- **EXTENSÃO:** o usuário pediu +100 ciclos → continua do 31 ao 130 abaixo.
+
 ### Ciclo 30 — Verificação final + relatório (FIM DO EXPERIMENTO)
 - **D:** 303 arquivos sintaxe OK; suite 49/49; simulacao 7/7; atlas 3923 ladrilhos/69 objetos; foto 20-mapa-final-30x.
 - **H:** RELATORIO_EVOLUCAO_30X.md completo com comparação início vs fim, 25 melhorias, pendências e limitações de teste.

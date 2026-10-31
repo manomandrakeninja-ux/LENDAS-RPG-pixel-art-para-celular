@@ -39,6 +39,8 @@ Linha base (antes do ciclo 01):
 | 28 | 49/49 arquivos | 85 / 89 / 97 / 84 / 92 / 74 / 84 |
 | 29 | 49/49 arquivos | 85 / 89 / 97 / 84 / 93 / 74 / 84 |
 | 30 | 49/49 arquivos; 303 sintaxe OK; simulacao 7/7; 20 fotos | **86 / 89 / 97 / 84 / 93 / 74 / 84** |
+| 31 | 49/49 arquivos | 86 / 89 / 97 / 84 / 93 / 74 / 84 |
+| 32 | 49/49 arquivos | 86 / 89 / 97 / 84 / 93 / 74 / 85 |
 
 ## Início (base) vs fim
 | Eixo | Base | Final |

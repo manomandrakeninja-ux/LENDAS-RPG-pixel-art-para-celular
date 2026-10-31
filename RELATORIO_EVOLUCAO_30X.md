@@ -90,6 +90,18 @@
 
 # 📊 RELATÓRIO FINAL — Experimento 30x (início vs fim)
 
+> **EXTENSÃO:** o usuário pediu "continue por mais 100x" → o experimento segue do **ciclo 31 até o 130** nesta mesma seção (cada ciclo registrado abaixo, na ordem). Branch continua `experimento-evolucao-30x`.
+
+## Ciclos 31–130 (extensão 100x) — em andamento
+
+### Ciclo 31/130 — HUD: fase do dia com ícone ✅ CONCLUÍDO
+- ☀️ DIA / 🌆 CREPÚSCULO / 🌙 NOITE / 🌅 AMANHECER no status. Suite 49/49.
+- Notas: 86 / 89 / 97 / 84 / 93 / 74 / 84.
+
+### Ciclo 32/130 — Placas apontam o POI mais próximo (vilarejos incluídos) ✅ CONCLUÍDO
+- 217 placas, 12 destinos distintos, 4 vilarejos apontados. Suite 49/49; world 14/14; simulacao 7/7.
+- Notas: 86 / 89 / 97 / 84 / 93 / 74 / 85.
+
 ## Evolução das notas (0–100)
 
 | Eixo | Início (base) | Fim (ciclo 30) | Principiante mudança |

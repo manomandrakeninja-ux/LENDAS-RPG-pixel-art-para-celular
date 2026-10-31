@@ -451,7 +451,8 @@ function roadSigns() {
   const pois = [
     ...CAVES.map((cave) => ({ x: cave.entrance.x, y: cave.entrance.y, name: cave.name })),
     ...Object.values(TOWERS).map((tower) => ({ x: tower.x, y: tower.y, name: tower.name })),
-    ...DOCKS.map((dock) => ({ x: dock.x, y: dockPosition(dock).y, name: dock.name }))
+    ...DOCKS.map((dock) => ({ x: dock.x, y: dockPosition(dock).y, name: dock.name })),
+    ...VILLAGES.map((village) => ({ x: village.x, y: village.y, name: village.name }))
   ];
   const signs = [];
   for (const road of ROADS) {
@@ -479,15 +480,23 @@ function roadSigns() {
         // Só coloca a placa se o ponto for chão firme.
         const terrain = terrainAt(x, y);
         if (BLOCKING.has(terrain)) continue;
-        signs.push({ x, y, label: poi.name, poi });
+        // A placa aponta o POI (caverna/torre/porto/vilarejo) mais próximo DELA; se nenhum perto, o POI do fim da estrada.
+        let near = null;
+        let nearBest = Infinity;
+        for (const candidate of pois) {
+          const distance = Math.hypot(candidate.x - x, candidate.y - y);
+          if (distance < nearBest) { nearBest = distance; near = candidate; }
+        }
+        const target = near && nearBest <= 1400 ? near : poi;
+        signs.push({ x, y, label: target.name, poi: target });
       }
     }
   }
   return signs;
 }
 
-/** Placas de estrada do mundo inteiro (px): { x, y, label, poi }. */
-export const ROAD_SIGNS = Object.freeze(roadSigns());
+/** Placas de estrada do mundo inteiro (px): { x, y, label, poi }.
+ *  Definido DEPOIS de VILLAGES para poder apontar vilarejos também. */
 
 /** Direção cardeal (8 ventos) de um vetor (dx, dy) em coordenadas de tela (y para baixo = sul). */
 export function compass8(dx, dy) {
@@ -545,6 +554,9 @@ export const VILLAGES = Object.freeze([
     lines: ['Cuidado onde pisa, forasteiro. A Gruta Afogada é logo ali embaixo.', 'O Porto do Brejo leva às ilhas de barco.', 'As bruxas do brejo gostam de visitantes... à noite.']
   }
 ]);
+
+/** Placas de estrada do mundo inteiro (px): { x, y, label, poi }. (Após VILLAGES para poder apontá-los.) */
+export const ROAD_SIGNS = Object.freeze(roadSigns());
 
 // ---------- Baús de tesouro escondidos no overworld ----------
 // Pontos determinísticos longe do acampamento e dos POIs; cada baú dá moedas (nível da
