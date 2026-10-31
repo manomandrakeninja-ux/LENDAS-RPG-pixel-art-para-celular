@@ -183,7 +183,9 @@ export class Player extends Phaser.GameObjects.Container {
       // Lodo do brejo e dos oásis deixa o passo mais lento; evento "vento a favor" acelera.
       const terrainFactor = this.scene.regionWorld?.speedFactorAt(this.x, this.y) ?? 1;
       const eventFactor = this.scene.eventSpeedUntil && this.scene.time.now < this.scene.eventSpeedUntil ? 1.25 : 1;
-      const speed = 130 * this.speedMultiplier * terrainFactor * eventFactor * (this.scene.companions?.speed ?? 1);
+      // Evento "nevasca" (gelo à noite): deixa 20% mais lento por 20 s.
+      const slowFactor = this.scene.eventSlowUntil && this.scene.time.now < this.scene.eventSlowUntil ? 0.8 : 1;
+      const speed = 130 * this.speedMultiplier * terrainFactor * eventFactor * slowFactor * (this.scene.companions?.speed ?? 1);
       this.body.setVelocity(movement.x * speed, movement.y * speed);
     }
     // Poeira do passo ao andar/correr (montado levanta mais poeira).

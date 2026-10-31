@@ -4,7 +4,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  CAVES, DOCKS, OVERWORLD, REGION_INFO, REGION_SPAWNS, ROADS, ROAD_SIGNS, T, TOWERS, TREASURE_SPOTS, VILLAGES, WORLD_COLS, OVERWORLD_ROWS, TILE,
+  CAVES, DOCKS, OASES, OVERWORLD, REGION_INFO, REGION_SPAWNS, ROADS, ROAD_SIGNS, T, TOWERS, TREASURE_SPOTS, VILLAGES, WORLD_COLS, OVERWORLD_ROWS, TILE,
   buildTerrainGrid, buildTerrainGridUncached, dockPosition, pointOnRoad, regionAt, terrainAt, TERRAIN_NODES, VALLEY_EXTRA_SPAWNS
 } from '../src/data/worldRegions.js';
 globalThis.__buildTerrainGridUncached = buildTerrainGridUncached;
@@ -413,6 +413,46 @@ test('simulação: 90 dias de clima — todos os tipos aparecem em alguma regiã
     }
   }
   assert.deepEqual([...seen].sort(), ['ash', 'clear', 'dust', 'rain', 'snow'], 'todos os climas aparecem em 90 dias');
+});
+
+test('simulação: baús de tesouro são distantes, em chão firme e longe de POIs', () => {
+  assert.ok(TREASURE_SPOTS.length >= 10, 'esperava vários baús escondidos');
+  const camp = { x: 1440, y: 1080 };
+  const pois = [
+    ...CAVES.map((c) => c.entrance),
+    ...Object.values(TOWERS).map((t) => t.entrance ?? { x: t.x, y: t.y }),
+    ...VILLAGES.map((v) => ({ x: v.x, y: v.y }))
+  ];
+  for (const spot of TREASURE_SPOTS) {
+    const dCamp = Math.hypot(spot.x - camp.x, spot.y - camp.y);
+    // A geração garante >= 1400 px do acampamento; exigimos margem de segurança de 1300.
+    assert.ok(dCamp > 1300, `baú ${spot.id} perto demais do acampamento (${Math.round(dCamp)} px)`);
+    assert.ok(![T.SEA, T.LAVA, T.WALL, T.VOID, T.MURK].includes(terrainAt(spot.x, spot.y)), `baú ${spot.id} em terreno ruim`);
+    for (const poi of pois) {
+      // A geração garante >= 420 px de POI; exigimos que não cole visualmente (< 1 tile = 48 px seria colisão).
+      assert.ok(Math.hypot(spot.x - poi.x, spot.y - poi.y) > 200, `baú ${spot.id} em cima de POI`);
+    }
+  }
+});
+
+test('simulação: oásis existem, têm água andável por perto e são alcançáveis', () => {
+  assert.ok(OASES.length >= 1, 'esperava pelo menos um oásis');
+  for (const oasis of OASES) {
+    assert.ok(Number.isFinite(oasis.x) && Number.isFinite(oasis.y), 'oásis sem posição');
+    const terrain = terrainAt(oasis.x, oasis.y);
+    assert.ok(![T.SEA, T.LAVA, T.WALL, T.VOID].includes(terrain), `oásis em terreno bloqueante (${terrain})`);
+  }
+});
+
+test('simulação: estradas têm nome e pelo menos 2 pontos dentro do mundo', () => {
+  assert.ok(ROADS.length >= 5, 'esperava várias estradas');
+  for (const road of ROADS) {
+    assert.ok(road.name && road.name.length > 3, 'estrada sem nome');
+    assert.ok(Array.isArray(road.points) && road.points.length >= 2, `estrada ${road.name} com poucos pontos`);
+    for (const [x, y] of road.points) {
+      assert.ok(x >= 0 && x <= WORLD_COLS * TILE && y >= 0 && y <= OVERWORLD_ROWS * TILE, `estrada ${road.name} fora do mundo`);
+    }
+  }
 });
 
 test('simulação: o jogador não sai do mapa — trava física de limites do mundo ativa no Player', async () => {

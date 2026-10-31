@@ -193,6 +193,7 @@ export class GameScene extends Phaser.Scene {
     this.runeDay = Number.isFinite(saved?.runeDay) ? saved.runeDay : 0;
     // Eventos aleatórios do overworld (a cada ~1-2 min: moedas, XP, cura, vento a favor...).
     this.eventSpeedUntil = 0;
+    this.eventSlowUntil = 0;
     this.randomEventMs = Phaser.Math.Between(45000, 90000);
     // Medidor de desempenho leve (ring buffer dos últimos 120 frames) — legível no console via window.__lendasPerf.
     this.frameTimes = [];
@@ -1700,6 +1701,11 @@ export class GameScene extends Phaser.Scene {
     } else if (roll < 0.88) {
       this.eventSpeedUntil = this.time.now + 30000;
       this.ui.showMessage('💨 Evento: vento a favor! +25% velocidade por 30 s');
+    } else if (roll < 0.94 && this.timeState?.phase === 'night' && this.regionWorld?.currentRegion?.() === 'gelo') {
+      // Nevasca no gelo à noite: 20% mais lento por 20 s.
+      this.eventSlowUntil = this.time.now + 20000;
+      this.effects.spawnDamage(this.player.x, this.player.y - 30, '🌨️', '#cfe8ff');
+      this.ui.showMessage('🌨️ Evento: nevasca! -20% velocidade por 20 s');
     } else if (roll < 0.94 && this.timeState?.phase === 'night') {
       // Cometa à noite: moedas + um pouco de XP (efeito visual leve).
       const coins = Phaser.Math.Between(20, 45);

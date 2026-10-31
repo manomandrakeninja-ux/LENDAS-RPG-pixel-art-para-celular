@@ -21,7 +21,9 @@ const TIPS = [
   'Na mochila (B) dá para fixar itens com ★ para deixá-los sempre no topo.',
   '? (Shift+/) abre a lista completa de teclas. P esconde a HUD para tirar foto.',
   'A tocha ilumina a noite ao seu redor; cristais e braseiros também brilham no escuro.',
-  'Fora de combate você se cura devagar: 6 s sem levar dano e a vida volta aos poucos.'
+  'Fora de combate você se cura devagar: 6 s sem levar dano e a vida volta aos poucos.',
+  'No gelo, à noite, pode cair uma nevasca: você anda 20% mais lento por 20 s.',
+  'Baús escondidos reabastecem com moedas a cada 3 dias — volte sempre.'
 ];
 
 export function setupSplash() {

@@ -858,6 +858,60 @@ function flowerTuft(seed = 402) {
   return finish(p, { outline: 0.3 });
 }
 
+/** Aglomerado de cogumelos pequenos. */
+function mushroomCluster(seed = 641) {
+  const p = new Painter(18, 12, { transparent: true });
+  for (let i = 0; i < 3; i += 1) {
+    const mx = 3 + i * 5 + (hash(i, seed, 1) - 0.5) * 2;
+    const my = 8 - hash(i, seed, 2) * 3;
+    p.rect(mx, my, 2, 3, '#d8c8a8');
+    p.sphere(mx + 1, my, 2.2, '#a04838', '#c86048');
+    p.set(mx, my - 1, '#f0d8c8');
+  }
+  return finish(p, { outline: 0.3 });
+}
+
+/** Arbusto com frutinhos vermelhos. */
+function berryBush(seed = 643) {
+  const p = new Painter(18, 14, { transparent: true });
+  p.sphere(9, 8, 6, shade(['#1e3a14', '#3f6e2c'], 0.5), '#3f6e2c');
+  for (const [bx, by] of [[5, 6], [9, 4], [13, 7], [7, 10], [12, 10]]) p.set(bx, by, '#d83028');
+  return finish(p, { outline: 0.35 });
+}
+
+/** Fragmento de gelo pontudo. */
+function iceShard(seed = 647) {
+  const p = new Painter(12, 16, { transparent: true });
+  const ice = ['#cfe8ff', '#a8d0f0', '#e8f4ff'];
+  for (let y = 14; y >= 2; y -= 2) {
+    const w = 2 + (14 - y) * 0.5;
+    p.rect(6 - w / 2, y, w, 2, shade([ice[0], ice[2]], 0.5));
+  }
+  p.set(6, 2, '#ffffff');
+  p.rect(5, 14, 2, 2, ice[1]);
+  return finish(p, { outline: 0.35 });
+}
+
+/** Ondulação de areia na praia. */
+function sandRipple(seed = 653) {
+  const p = new Painter(24, 8, { transparent: true });
+  p.rect(2, 3, 20, 2, '#d8c090');
+  p.rect(4, 5, 16, 1, '#c8b080');
+  p.set(6, 3, '#e8d8a8');
+  return finish(p, { outline: 0.3 });
+}
+
+/** Raiz retorcida saindo da lama. */
+function twistedRoot(seed = 659) {
+  const p = new Painter(20, 12, { transparent: true });
+  const bark = ['#4a3420', '#5e4530', '#3a2818'];
+  p.rect(2, 8, 6, 3, shade([bark[0], bark[1]], 0.5));
+  p.rect(8, 6, 5, 3, bark[1]);
+  p.rect(13, 8, 5, 2, bark[2]);
+  p.set(10, 5, bark[0]);
+  return finish(p, { outline: 0.35 });
+}
+
 /** Poça de lama no brejo. */
 function mudPuddle(seed = 613) {
   const p = new Painter(22, 10, { transparent: true });
@@ -1114,6 +1168,16 @@ const PAINTED_ENTRIES = [
   { name: 'footprint-0', draw: () => footprint(619) },
   { name: 'footprint-1', draw: () => footprint(623) },
   { name: 'blooming-cactus', draw: () => bloomingCactus(631) },
+  { name: 'mushroom-cluster-0', draw: () => mushroomCluster(641) },
+  { name: 'mushroom-cluster-1', draw: () => mushroomCluster(643) },
+  { name: 'berry-bush-0', draw: () => berryBush(647) },
+  { name: 'berry-bush-1', draw: () => berryBush(653) },
+  { name: 'ice-shard-0', draw: () => iceShard(659) },
+  { name: 'ice-shard-1', draw: () => iceShard(661) },
+  { name: 'sand-ripple-0', draw: () => sandRipple(673) },
+  { name: 'sand-ripple-1', draw: () => sandRipple(677) },
+  { name: 'twisted-root-0', draw: () => twistedRoot(683) },
+  { name: 'twisted-root-1', draw: () => twistedRoot(691) },
   { name: 'shipwreck', draw: shipwreck },
   { name: 'sea-rock', draw: seaRock },
   { name: 'charred-tree', draw: () => deadTree(['#0c0808', '#1a1010', '#2a1a16', '#3a2620', '#4a3228'], true) },
