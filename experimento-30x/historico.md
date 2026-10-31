@@ -173,6 +173,10 @@
 - 351–355: props — arbusto amarelo da floresta, pedrinha verde de praia, gelo estilhaçado, cogumelo laranja, pedra escura de duna (atlas 331) · 356: teste tiers de gear (18 tiers, ≥4 slots) · 357: teste waypoint clamp · 358: evento 🧊 gelo brilhante no gelo de dia (+6–12 XP) · 359: dica splash · 360: verificação parcial.
 - Notas: visual 98 · código 96 · estabilidade 98 · desempenho 86 · jogabilidade 98 · mobile 74 · originalidade 91.
 
+### Ciclos 361–370 ✅ (lote)
+- 361–365: props — flor azul da floresta, cascalho de neve, concha grande, arbusto seco de cinza, pedrinha escura de selva (atlas 338) · 366: teste bestiário (todos os inimigos com stats) · 367: teste useConsumable real · 368: evento 🌵 cacto florido no deserto à noite (+8–14 XP) · 369: dica splash · 370: verificação parcial.
+- Notas: visual 98 · código 96 · estabilidade 98 · desempenho 86 · jogabilidade 98 · mobile 74 · originalidade 91.
+
 ### Ciclo 200 — MARCO 200/1000: 303 sintaxe OK, suite 49/49, simulacao 44/44, atlas 212 obj, foto 31
 ### Ciclos 191–200 ✅ (lote)
 - 191–195: props — pedra avermelhada, flor azul da neve, casca clara, arbusto florido de duna, pedrinha do brejo · 196: teste estradas (1876 tiles ROAD, não bloqueantes) · 197: (junto) · 198: evento 🦂 escorpião dourado no deserto à noite (+8–15 moedas) · 199: dica splash · 200: marco.

@@ -1302,6 +1302,19 @@ test('simulação: consumíveis — useConsumable(type, inventory, player) funci
   assert.ok(!r2.ok && r2.reason, 'sem item deve falhar com motivo');
 });
 
+test('simulação: mapa mundi — MAP_SCALE produz imagem dentro de limites (1200×900)', () => {
+  // regra do ciclo 49: escala 16 → 400×300 tiles × 16 = 6400×4800 / fator → 1200×900
+  const w = Math.round(WORLD_COLS * TILE / 16);
+  const h = Math.round(OVERWORLD_ROWS * TILE / 16);
+  assert.equal(w, 1200, 'largura do minimapa');
+  assert.equal(h, 900, 'altura do minimapa');
+});
+
+test('simulação: INTERACT_RANGE e TILE sadios para gameplay', () => {
+  assert.equal(TILE, 48, 'TILE=48 invariante');
+  assert.ok(typeof INTERACT_RANGE === 'number' && INTERACT_RANGE > 0 && INTERACT_RANGE <= TILE * 2, 'alcance de interação desarrazoado');
+});
+
 test('simulação: o jogador não sai do mapa — trava física de limites do mundo ativa no Player', async () => {
   // terrainAt é infinita (gera terreno até fora do mapa), então a proteção real é física:
   // Player.js precisa chamar body.setCollideWorldBounds(true). Conferimos no código-fonte.

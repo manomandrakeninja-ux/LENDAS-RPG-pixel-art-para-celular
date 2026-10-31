@@ -1682,7 +1682,13 @@ export class GameScene extends Phaser.Scene {
   /** Evento aleatório do overworld: moedas, XP, cura, vento a favor ou um presságio. */
   randomEvent() {
     const roll = Math.random();
-    if (roll < 0.0006 && this.timeState?.phase === 'night' && this.regionWorld?.currentRegion?.() === 'areia') {
+    if (roll < 0.0005 && this.timeState?.phase === 'day' && this.regionWorld?.currentRegion?.() === 'brejo') {
+      const coins = Phaser.Math.Between(5, 10);
+      this.economy.addCoins(coins);
+      this.audio.playCoin();
+      this.effects.spawnDamage(this.player.x, this.player.y - 30, '🪷', '#f0a0c8');
+      this.ui.showMessage(`🪷 Evento: lírio d'água dourado no brejo! +${coins} moedas`);
+    } else if (roll < 0.0006 && this.timeState?.phase === 'night' && this.regionWorld?.currentRegion?.() === 'areia') {
       const xp = Phaser.Math.Between(8, 14);
       this.grantExperience(xp);
       this.effects.spawnDamage(this.player.x, this.player.y - 30, '🌵', '#8ad86a');

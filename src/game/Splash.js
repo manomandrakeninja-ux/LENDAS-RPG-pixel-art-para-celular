@@ -51,7 +51,8 @@ const TIPS = [
   'À noite nas cinzas, um espírito 👺 pode oferecer XP.',
   'Na ilha Esmeralda, à noite, cristais 💎 pulsam com bastante XP.',
   'No gelo, de dia, um bloco de gelo brilhante 🧊 pode dar um pouco de XP.',
-  'À noite no deserto, um cacto florido 🌵 pode dar um pouco de XP.'
+  'À noite no deserto, um cacto florido 🌵 pode dar um pouco de XP.',
+  'De dia no brejo, um lírio d\'água dourado 🪷 pode dar moeditas.'
 ];
 
 export function setupSplash() {
