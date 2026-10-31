@@ -154,6 +154,10 @@
 - 251–260: props + testes clima/dia-noite + 🌧️ chuva no vale · 261–270: props + testes viajantes/save v2 + 🐸 coro de sapos · 271–280: props + testes bestiário/buffs + 🌨️ nevasca · 281–290: props + testes achievements/economia + 🦋 vaga-lumes · 291–300: props + testes scaling/combate + 🔥 brasa viva + marco 300 (foto 33).
 - Estado no marco 300: 303 arquivos sintaxe OK · suite 49/49 · simulacao 63/63 · atlas 290 objetos · 33 fotos · 31 dicas de splash · 14+ eventos aleatórios. Notas: 97 / 96 / 98 / 86 / 98 / 74 / 90.
 
+### Ciclos 301–400/1000 ✅ CONCLUÍDOS — marco 400 alcançado
+- 301–310: props + testes gear sets/forja + 🍃 vento · 311–320: props + testes recursos/inventário + 🌙 chuva morna · 321–330: props + testes vilas/cavernas + 🐚 concha · 331–340: props + testes baús/keybinds + 👺 espírito · 341–350: props + testes construções/save-futuro + 💎 esmeralda · 351–360: props + testes tiers/waypoint + 🧊 gelo · 361–370: props + testes bestiário/consumíveis + 🌵 cacto · 371–380: props + testes minimapa/invariantes + 🪷 lírio · 381–390: props + testes oásis/portos + 🌋 erupção · 391–400: props + testes regiões/grid + 🏛️ ruínas + marco 400 (foto 34).
+- Estado no marco 400: 303 arquivos sintaxe OK · suite 49/49 · simulacao 83/83 · atlas 360 objetos · 34 fotos · 35 dicas · 18+ eventos. Notas: 98 / 97 / 98 / 86 / 98 / 74 / 91.
+
 ### Ciclo 70/130 — Verificação intermediária (marco) ✅ CONCLUÍDO
 - 303 arquivos sintaxe OK · suite 49/49 · simulacao 19/19 · atlas 90 objetos · foto 28-mapa-ciclo-70. Notas: 90 / 92 / 98 / 86 / 97 / 74 / 86.
 

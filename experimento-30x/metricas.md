@@ -72,6 +72,7 @@ Linha base (antes do ciclo 01):
 | 181–200 | 303 OK; 49/49; simulacao 44/44; atlas 212; 31 fotos | 96 / 95 / 98 / 86 / 97 / 74 / 89 |
 | 201–250 | 303 OK; 49/49; simulacao 53/53; atlas 251; 32 fotos | 97 / 96 / 98 / 86 / 97 / 74 / 89 |
 | 251–300 | 303 OK; 49/49; simulacao 63/63; atlas 290; 33 fotos | 97 / 96 / 98 / 86 / 98 / 74 / 90 |
+| 301–400 | 303 OK; 49/49; simulacao 83/83; atlas 360; 34 fotos | 98 / 97 / 98 / 86 / 98 / 74 / 91 |
 
 ## Início (base) vs fim
 | Eixo | Base | Final |

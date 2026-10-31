@@ -185,6 +185,10 @@
 - 381–385: props — flor verde-água da floresta, pedrinha cinza de duna, gelo lilás, tronco escuro de praia, flor rosa de cinza (atlas 352) · 386: teste oásis (raio, não bloqueantes) · 387: teste portos (dockPosition perto do mar) · 388: evento 🌋 erupção em Brasa à noite (+15–25 XP) · 389: dica splash · 390: verificação parcial.
 - Notas: visual 98 · código 96 · estabilidade 98 · desempenho 86 · jogabilidade 98 · mobile 74 · originalidade 91.
 
+### Ciclos 391–400 ✅ (lote) — MARCO 400
+- 391–395: props — flor roxa escura do brejo, pedra verde escura de praia, neve com pedrinha escura, cogumelo rosa, arbusto seco de duna (atlas 360) · 396: teste regiões (REGION_INFO ↔ REGION_SPAWNS) · 397: teste grid (736×400, terreno válido) · 398: evento 🏛️ ruínas ao sol nas terras antigas (+10–18 XP) · 399: dica splash · 400: marco (foto 34, 303 sintaxe OK, 83/83, 49/49).
+- Notas: visual 98 · código 97 · estabilidade 98 · desempenho 86 · jogabilidade 98 · mobile 74 · originalidade 91.
+
 ### Ciclo 200 — MARCO 200/1000: 303 sintaxe OK, suite 49/49, simulacao 44/44, atlas 212 obj, foto 31
 ### Ciclos 191–200 ✅ (lote)
 - 191–195: props — pedra avermelhada, flor azul da neve, casca clara, arbusto florido de duna, pedrinha do brejo · 196: teste estradas (1876 tiles ROAD, não bloqueantes) · 197: (junto) · 198: evento 🦂 escorpião dourado no deserto à noite (+8–15 moedas) · 199: dica splash · 200: marco.
