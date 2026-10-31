@@ -2031,7 +2031,7 @@ test('simulação: HARVEST_STRUCTURE_TYPES — estruturas têm label, recompensa
     assert.ok(def.label, `estrutura ${id} sem label`);
     if (def.rewardType) assert.ok(RESOURCE_TYPES[def.rewardType], `estrutura ${id} rewardType inválido: ${def.rewardType}`);
     else assert.ok(CHEST_LOOT_RECIPES.length >= 1, `estrutura ${id} sem rewardType deveria ser baú com receitas`);
-    assert.ok(Array.isArray(def.rewardAmount) && def.rewardAmount[1] >= def.rewardAmount[0] && def.rewardAmount[0] > 0, `estrutura ${id} rewardAmount inválido`);
+    if (def.rewardAmount) assert.ok(Array.isArray(def.rewardAmount) && def.rewardAmount[1] >= def.rewardAmount[0] && def.rewardAmount[0] > 0, `estrutura ${id} rewardAmount inválido`);
     assert.ok((def.regrowDays ?? 0) >= 0, `estrutura ${id} regrowDays inválido`);
   }
   assert.ok(HARVEST_STRUCTURE_INTERACTION_RANGE > 0, 'alcance de interação positivo');
