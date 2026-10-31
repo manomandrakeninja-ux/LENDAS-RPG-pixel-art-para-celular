@@ -247,10 +247,11 @@ test('simulação: consumíveis — poção cura sem passar do máx, comida ench
   player.health = 100;
   assert.equal(useConsumable('potion', inventory, player).reason, 'full-health');
   assert.equal(inventory.items.potion, 1);
-  // Comida: stamina até 100.
+  // Comida: cura um pouco (comida é 'heal' baixo).
+  player.health = 50;
   const r2 = useConsumable('food', inventory, player);
   assert.equal(r2.ok, true);
-  assert.ok(player.stamina > 20 && player.stamina <= 100);
+  assert.ok(player.health > 50 && player.health <= 100);
   // Tocha: define torchTimer.
   const r3 = useConsumable('torch', inventory, player);
   assert.equal(r3.ok, true);
