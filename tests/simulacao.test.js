@@ -19,7 +19,6 @@ import { DEFAULT_KEYBINDS, KEY_ACTIONS, isBindableCode, isReservedCode, normaliz
 import { scaleEnemy } from '../src/data/enemyScaling.js';
 import { GEAR_ITEMS, RARITIES, rollGearDrop, GEAR_SLOTS, GEAR_SETS, FORGE_SLOT } from '../src/data/gear.js';
 import { BuffSystem, BUFF_DEFINITIONS } from '../src/game/BuffSystem.js';
-import { DEFAULT_KEYBINDS } from '../src/game/Keybinds.js';
 import { SKILLS, SKILL_MAX_LEVEL, skillLevelForXp, skillXpForLevel, PlayerSkills as PS2 } from '../src/data/skills.js';
 import { Bestiary } from '../src/game/Bestiary.js';
 import { Achievements, ACHIEVEMENTS } from '../src/data/achievements.js';
