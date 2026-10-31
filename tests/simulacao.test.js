@@ -24,6 +24,7 @@ import { Achievements, ACHIEVEMENTS } from '../src/data/achievements.js';
 import { DAY_NIGHT_CONFIG, DAY_NIGHT_TOTAL_SECONDS } from '../src/data/dayNight.js';
 // Validamos uso cruzado do atlas com regex em TODOS os fontes de src/ (RegionWorld importa Phaser).
 import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 function allSrcFiles(dir) {
   const out = [];
   for (const entry of readdirSync(dir)) {
@@ -33,9 +34,8 @@ function allSrcFiles(dir) {
   }
   return out;
 }
-const allSrc = allSrcFiles(new URL('../src', import.meta.url).pathname.replace(/^\/([A-Z]:)/, '$1'))
-  .map((f) => readFileSync(f, 'utf8')).join('\n');
-const regionWorldSrc = allSrc;
+const srcDir = fileURLToPath(new URL('../src', import.meta.url));
+const regionWorldSrc = allSrcFiles(srcDir).map((f) => readFileSync(f, 'utf8')).join('\n');
 import { Inventory } from '../src/game/Inventory.js';
 import { CampfireTravelers, TRAVELER_GOODS, TRAVELER_QUESTS, questById } from '../src/data/travelers.js';
 import { RESOURCE_TYPES } from '../src/game/config.js';
