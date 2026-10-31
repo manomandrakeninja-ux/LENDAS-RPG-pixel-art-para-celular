@@ -1758,10 +1758,10 @@ test('simulação: BUILDING_DEFS — ordem de construção tem todas as constru�
   const set = new Set(BUILDING_ORDER);
   assert.equal(set.size, BUILDING_ORDER.length, 'ordem sem duplicatas');
   for (const key of BUILDING_ORDER) assert.ok(BUILDING_DEFS[key], `construção ${key} ausente em BUILDING_DEFS`);
-  // toda construção da ordem tem custo ou é gratuita por design (nível 1)
+  // toda construção tem níveis válidos (chaves numéricas de 1..MAX)
   for (const key of BUILDING_ORDER) {
-    const def = BUILDING_DEFS[key];
-    assert.ok(def.maxLevel >= 1, `${key} maxLevel inválido`);
+    const lvls = Object.keys(BUILDING_DEFS[key].levels ?? {}).map(Number);
+    assert.ok(lvls.length >= 1 && Math.min(...lvls) >= 1, `${key} sem níveis válidos`);
   }
 });
 
