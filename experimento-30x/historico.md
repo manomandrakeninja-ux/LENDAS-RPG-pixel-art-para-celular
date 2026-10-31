@@ -69,6 +69,11 @@
 - **D:** suite 49/49.
 - Notas 0–100: visual 79 · código 87 · estabilidade 95 · desempenho 83 · jogabilidade 88 · mobile 70 · originalidade 81.
 
+### Ciclo 22 — HUD: ícone do clima junto ao texto (🌧️ CHUVA, ❄️ NEVE, 🌪️ POEIRA, 🌋 CINZAS)
+- **C:** `statusText` prefixa `WEATHER_ICONS[weather]` (import puro de weather.js, seguro para testes).
+- **D:** suite 49/49.
+- Notas 0–100: visual 84 · código 88 · estabilidade 95 · desempenho 83 · jogabilidade 90 · mobile 72 · originalidade 83.
+
 ### Ciclo 21 — Modo foto: coordenadas (m) + dia no canto durante as fotos
 - **C:** `togglePhotoMode` mostra `#photo-coords`; updateFrame atualiza "📍 X m, Y m • dia N" só no modo foto.
 - **D:** suite 49/49.

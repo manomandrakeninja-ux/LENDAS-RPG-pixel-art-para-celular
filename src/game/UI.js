@@ -9,6 +9,7 @@ import { HOTKEY_ITEMS } from '../data/consumables.js';
 import { quantizePixels } from '../art/palette.js';
 import { OVERLAY_DEPTH } from './depths.js';
 import { REGION_INFO } from '../data/worldRegions.js';
+import { WEATHER_ICONS } from '../data/weather.js';
 
 const TEXT_STYLE = {
   fontFamily: 'Press Start 2P',
@@ -627,7 +628,10 @@ export class GameUI {
     const raid = this.scene.raid;
     if (raid?.statusText) parts.push(raid.statusText);
     const weather = this.scene.weather;
-    if (weather && weather !== 'clear') parts.push({ rain: 'CHUVA', snow: 'NEVE', dust: 'POEIRA', ash: 'CINZAS' }[weather] ?? weather.toUpperCase());
+    if (weather && weather !== 'clear') {
+      const icon = WEATHER_ICONS[weather] ?? '';
+      parts.push(`${icon} ${({ rain: 'CHUVA', snow: 'NEVE', dust: 'POEIRA', ash: 'CINZAS' }[weather] ?? weather.toUpperCase())}`);
+    }
     // Os buffs agora aparecem como ícones no painel de efeitos (EffectsPanel).
     return parts.join(' • ');
   }

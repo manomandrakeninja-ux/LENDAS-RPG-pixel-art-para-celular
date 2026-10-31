@@ -80,6 +80,12 @@
 - **D:** suite 49/49.
 - **Notas 0–100:** visual 79 · código 87 · estabilidade 95 · desempenho 83 · jogabilidade 88 · mobile 70 · originalidade 81.
 
+## Ciclo 22/30 — HUD: ícone do clima no status ✅ CONCLUÍDO
+
+- **C:** status do clima agora leva o ícone (🌧️❄️🌪️🌋) junto do texto.
+- **D:** suite 49/49.
+- **Notas 0–100:** visual 84 · código 88 · estabilidade 95 · desempenho 83 · jogabilidade 90 · mobile 72 · originalidade 83.
+
 ## Ciclo 21/30 — Modo foto com coordenadas ✅ CONCLUÍDO
 
 - **C:** no modo foto (P) aparece `📍 X m, Y m • dia N` no canto inferior direito (só nesse modo).
