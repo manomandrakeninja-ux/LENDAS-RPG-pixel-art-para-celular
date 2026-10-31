@@ -1,6 +1,6 @@
-# Laboratório de ideias — 30x
+# Laboratório de ideias — 30x (concluído)
 
-A cada ciclo: 5 ideias novas, nota 0–10 em diversão / originalidade / compatibilidade / viabilidade / benefício, e a escolhida.
+A cada ciclo: 5 ideias novas, nota 0–10 em diversão / originalidade / compatibilidade / viabilidade / benefício, e a escolhida. Resumo das escolhidas está no RELATORIO_EVOLUCAO_30X.md (25 implementações em 30 ciclos); as de alto risco (ex.: tilemap do chão por chunk) ficaram no backlog com justificativa.
 
 ## Ciclo 01
 1. Bússola corrigida nas placas (bug) — diversão 6, originalidade 3, compat 10, viabilidade 10, benefício 8 → **implementada**.
