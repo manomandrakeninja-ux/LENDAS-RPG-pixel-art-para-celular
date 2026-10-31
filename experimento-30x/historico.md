@@ -69,6 +69,11 @@
 - **D:** suite 49/49.
 - Notas 0–100: visual 79 · código 87 · estabilidade 95 · desempenho 83 · jogabilidade 88 · mobile 70 · originalidade 81.
 
+### Ciclos 50–56 (lote) ✅
+- 50: clima do novo dia na msg de amanhecer (dormir) · 51: clima no amanhecer natural (sem duplicar) · 52: teste cavernas/torres vs ENEMY_TYPES (11/11) · 53: loja mostra saldo 🪙 no título · 54: teste de economia (nunca negativa, hook onGain) · 55: rastro fantasma azul na esquiva · 56: teste de consumíveis (13/13; corrigido modelo real: comida=heal baixo).
+- Suite 49/49 em todos; simulacao 13/13; atlas 87; 25 fotos.
+- Notas: visual 90 · código 92 · estabilidade 98 · desempenho 84 · jogabilidade 96 · mobile 74 · originalidade 86.
+
 ### Ciclo 49 — QoL: waypoint do mapa grande agora é limitado aos limites do mundo (clamp)
 - **C:** `setWaypoint` faz clamp em [0, WORLD_COLS*TILE] × [0, OVERWORLD_ROWS*TILE].
 - **D:** suite 49/49.

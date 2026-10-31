@@ -5,8 +5,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   CAVES, DOCKS, OVERWORLD, REGION_INFO, REGION_SPAWNS, ROADS, ROAD_SIGNS, T, TOWERS, TREASURE_SPOTS, VILLAGES, WORLD_COLS, OVERWORLD_ROWS, TILE,
-  buildTerrainGrid, dockPosition, pointOnRoad, regionAt, terrainAt, TERRAIN_NODES, VALLEY_EXTRA_SPAWNS
+  buildTerrainGrid, buildTerrainGridUncached, dockPosition, pointOnRoad, regionAt, terrainAt, TERRAIN_NODES, VALLEY_EXTRA_SPAWNS
 } from '../src/data/worldRegions.js';
+globalThis.__buildTerrainGridUncached = buildTerrainGridUncached;
 import { weatherAt } from '../src/data/weather.js';
 import { COMBAT_CONFIG } from '../src/data/combat.js';
 import { BIOME_PROP_ENTRIES } from '../src/art/biomeProps.js';
@@ -97,6 +98,19 @@ test('simulação: 1 dia de combate/XP — skills sobem de nível e o save aguen
   assert.equal(envelope.version, SAVE_VERSION);
   const restored = new PlayerSkills(envelope.skills);
   assert.equal(restored.level('blade'), skills.level('blade'), 'skill persistiu no save');
+});
+
+test('simulação: performance — build fria do grid < 2 s e cache < 5 ms', async () => {
+  const t0 = process.hrtime.bigint();
+  const fresh = buildTerrainGridUncached();
+  const coldMs = Number(process.hrtime.bigint() - t0) / 1e6;
+  const t1 = process.hrtime.bigint();
+  const cached = buildTerrainGrid();
+  const warmMs = Number(process.hrtime.bigint() - t1) / 1e6;
+  assert.equal(fresh.rows.length, 736 * WORLD_COLS, 'grid com linhas esperadas (overworld + subterrâneo)');
+  assert.ok(coldMs < 2000, `build fria lenta demais: ${coldMs.toFixed(1)} ms`);
+  assert.ok(warmMs < 5, `cache deveria ser instantâneo: ${warmMs.toFixed(3)} ms`);
+  assert.equal(cached, buildTerrainGrid(), 'cache retorna a mesma instância');
 });
 
 test('buildTerrainGrid usa cache: mesma instância em chamadas repetidas (e uncached gera outra)', async () => {

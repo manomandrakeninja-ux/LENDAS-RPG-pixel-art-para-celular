@@ -1044,6 +1044,7 @@ const PAINTED_ENTRIES = [
   { name: 'valley-flower-1', draw: () => valleyFlower(557) },
   { name: 'pebbles-0', draw: () => pebbles(563) },
   { name: 'pebbles-1', draw: () => pebbles(571) },
+  { name: 'frozen-log', draw: () => fallenLog(true) },
   { name: 'shipwreck', draw: shipwreck },
   { name: 'sea-rock', draw: seaRock },
   { name: 'charred-tree', draw: () => deadTree(['#0c0808', '#1a1010', '#2a1a16', '#3a2620', '#4a3228'], true) },
