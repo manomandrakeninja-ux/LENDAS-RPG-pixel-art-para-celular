@@ -38,7 +38,8 @@ const TIPS = [
   'Na beira do mar, a onda 🌊 às vezes molha seus pés e dá um pouco de XP.',
   'À noite na floresta, cogumelos mágicos 🍄 podem brilhar com XP.',
   'No gelo, à noite, a aurora boreal ❄️ pode presentear com moedas.',
-  'Na selva, de dia, flores exóticas 🌺 podem dar um pouco de XP.'
+  'Na selva, de dia, flores exóticas 🌺 podem dar um pouco de XP.',
+  'Nas terras antigas, à noite, um fantasma 👻 pode sussurrar XP.'
 ];
 
 export function setupSplash() {

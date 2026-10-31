@@ -858,6 +858,50 @@ function flowerTuft(seed = 402) {
   return finish(p, { outline: 0.3 });
 }
 
+/** Flor do brejo rosa (brejo). */
+function pinkSwampFlower(seed = 1297) {
+  const p = new Painter(10, 12, { transparent: true });
+  p.rect(4, 6, 2, 5, '#4a6a34');
+  for (const [dx, dy] of [[-3, -2], [3, -2], [-2, 2], [2, 2], [0, -4]]) p.set(5 + dx, 5 + dy, '#f080a8');
+  p.set(5, 5, '#fff0c0');
+  return finish(p, { outline: 0.3 });
+}
+
+/** Pedra de rio escura (brejo). */
+function darkRiverStone(seed = 1301) {
+  const p = new Painter(14, 9, { transparent: true });
+  p.sphere(7, 5, 5, '#3a4046', '#4e565e');
+  p.set(5, 3, '#6a747e');
+  return finish(p, { outline: 0.35 });
+}
+
+/** Gelo rachado (neve). */
+function crackedIce(seed = 1307) {
+  const p = new Painter(16, 10, { transparent: true });
+  p.sphere(8, 6, 6, '#b8d8f0', '#dceefc');
+  p.set(6, 4, '#ffffff');
+  p.rect(8, 2, 1, 6, '#7aa8cc');
+  p.rect(5, 6, 5, 1, '#7aa8cc');
+  return finish(p, { outline: 0.3 });
+}
+
+/** Casca escura (floresta). */
+function darkBark(seed = 1311) {
+  const p = new Painter(14, 8, { transparent: true });
+  p.rect(2, 3, 10, 3, '#4a3a26');
+  p.set(3, 2, '#6e5836');
+  p.set(8, 4, '#33261​4');
+  return finish(p, { outline: 0.35 });
+}
+
+/** Pedra de praia cinza-azulada. */
+function blueGrayStone(seed = 1317) {
+  const p = new Painter(14, 9, { transparent: true });
+  p.sphere(7, 5, 5, '#6a7480', '#8a95a0');
+  p.set(5, 3, '#a8b2bc');
+  return finish(p, { outline: 0.35 });
+}
+
 /** Flor de areia rosa (deserto). */
 function pinkDuneFlower(seed = 1267) {
   const p = new Painter(10, 12, { transparent: true });
@@ -2065,6 +2109,13 @@ const PAINTED_ENTRIES = [
   { name: 'sea-grass-1', draw: () => seaGrass(1285) },
   { name: 'small-lava-rock-0', draw: () => smallLavaRock(1289) },
   { name: 'small-lava-rock-1', draw: () => smallLavaRock(1291) },
+  { name: 'pink-swamp-flower-0', draw: () => pinkSwampFlower(1297) },
+  { name: 'pink-swamp-flower-1', draw: () => pinkSwampFlower(1299) },
+  { name: 'dark-river-stone', draw: () => darkRiverStone(1301) },
+  { name: 'cracked-ice-0', draw: () => crackedIce(1307) },
+  { name: 'cracked-ice-1', draw: () => crackedIce(1309) },
+  { name: 'dark-bark', draw: () => darkBark(1311) },
+  { name: 'blue-gray-stone', draw: () => blueGrayStone(1317) },
   { name: 'shipwreck', draw: shipwreck },
   { name: 'sea-rock', draw: seaRock },
   { name: 'charred-tree', draw: () => deadTree(['#0c0808', '#1a1010', '#2a1a16', '#3a2620', '#4a3228'], true) },

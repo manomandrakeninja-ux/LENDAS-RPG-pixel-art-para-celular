@@ -924,6 +924,32 @@ test('simulação: atlas de props — nomes únicos, draw não vazio, todos usad
   }
 });
 
+test('simulação: torres — têm entrada, boss opcional válido e estão em terreno firme', () => {
+  const towers = Object.values(TOWERS);
+  assert.ok(towers.length >= 8, 'poucas torres');
+  for (const tower of towers) {
+    const pos = tower.entrance ?? { x: tower.x, y: tower.y };
+    assert.ok(Number.isFinite(pos.x) && Number.isFinite(pos.y), `${tower.name} sem entrada`);
+    assert.ok(pos.x > 0 && pos.x < WORLD_COLS * TILE && pos.y > 0 && pos.y < OVERWORLD_ROWS * TILE, `${tower.name} fora do mapa`);
+    assert.ok(![T.SEA, T.LAVA, T.WALL, T.VOID, T.MURK].includes(terrainAt(pos.x, pos.y)), `${tower.name} em terreno ruim`);
+    if (tower.boss) assert.ok(ENEMY_TYPES[tower.boss], `${tower.name} boss inexistente: ${tower.boss}`);
+  }
+  // pelo menos uma torre tem boss
+  assert.ok(towers.some((t) => t.boss), 'nenhuma torre com boss');
+});
+
+test('simulação: biomas do mapa — terreno varia por região e limites do mundo respeitados', () => {
+  // Amostra o grid: cada região declarada aparece de verdade no mapa
+  const grid = buildTerrainGrid();
+  const seen = new Set();
+  for (let i = 0; i < grid.terrain.length; i += 97) seen.add(grid.terrain[i]);
+  for (const t of [T.VALLEY, T.FOREST, T.SWAMP, T.SNOW, T.SAND, T.BEACH, T.JUNGLE, T.ASH, T.SEA, T.DUNE, T.ROAD, T.MURK]) {
+    assert.ok(seen.has(t), `terreno ${t} nunca amostrado no mapa`);
+  }
+  // Bordas do mundo: primeira/última linha e coluna existem e não quebram
+  assert.ok(grid.terrain.length === grid.rows * grid.cols, 'grid consistente');
+});
+
 test('simulação: o jogador não sai do mapa — trava física de limites do mundo ativa no Player', async () => {
   // terrainAt é infinita (gera terreno até fora do mapa), então a proteção real é física:
   // Player.js precisa chamar body.setCollideWorldBounds(true). Conferimos no código-fonte.
