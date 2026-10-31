@@ -8,7 +8,7 @@ import {
   buildTerrainGrid, buildTerrainGridUncached, dockPosition, pointOnRoad, regionAt, terrainAt, TERRAIN_NODES, VALLEY_EXTRA_SPAWNS
 } from '../src/data/worldRegions.js';
 globalThis.__buildTerrainGridUncached = buildTerrainGridUncached;
-import { weatherAt, WEATHER_CONFIG } from '../src/data/weather.js';
+import { weatherAt } from '../src/data/weather.js';
 import { COMBAT_CONFIG } from '../src/data/combat.js';
 import { BIOME_PROP_ENTRIES } from '../src/art/biomeProps.js';
 import { ENEMY_TYPES, ENEMY_TYPE_NAMES, enemyXp, ELITE_CONFIG } from '../src/data/enemies.js';
