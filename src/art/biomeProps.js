@@ -1441,8 +1441,8 @@ function paleBlueBeachPebble(seed = 2591) {
   return finish(p, { outline: 0.35 });
 }
 
-/** Gelo azul claro (neve). */
-function paleBlueIce(seed = 2597) {
+/** Gelo azul-céu claro (neve). */
+function skyBlueIce(seed = 2597) {
   const p = new Painter(14, 9, { transparent: true });
   p.sphere(7, 5, 5, '#c8dcf2', '#e4eefc');
   p.set(5, 3, '#f8fbff');
@@ -4313,7 +4313,7 @@ const PAINTED_ENTRIES = [
   { name: 'pale-blue-swamp-flower-0', draw: () => paleBlueSwampFlower(2587) },
   { name: 'pale-blue-swamp-flower-1', draw: () => paleBlueSwampFlower(2589) },
   { name: 'pale-blue-beach-pebble', draw: () => paleBlueBeachPebble(2591) },
-  { name: 'pale-blue-ice', draw: () => paleBlueIce(2597) },
+  { name: 'sky-blue-ice', draw: () => skyBlueIce(2597) },
   { name: 'blue-dune-log', draw: () => blueDuneLog(2601) },
   { name: 'pale-blue-forest-flower-0', draw: () => paleBlueForestFlower(2607) },
   { name: 'pale-blue-forest-flower-1', draw: () => paleBlueForestFlower(2609) },
