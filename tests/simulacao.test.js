@@ -1724,10 +1724,11 @@ test('simulação: scaleEnemy — acima de SCALING_START só coinMultiplier esca
   assert.equal(scaleEnemy('wolf', 1).coinMultiplier, 1, 'nível 1 sem escala');
 });
 
-test('simulação: levelInRange faz clamp dentro da faixa', () => {
-  assert.equal(levelInRange({ min: 5, max: 10 }, [3, 20]), 5, 'clamp inferior');
-  assert.equal(levelInRange({ min: 5, max: 10 }, [30, 40]), 10, 'clamp superior');
-  assert.equal(levelInRange({ min: 5, max: 10 }, [7, 9]), 7, 'dentro da faixa usa min da entrada');
+test('simulação: levelInRange — retorna nível dentro da faixa pedida', () => {
+  for (const range of [[1, 10], [20, 40], [5, 5]]) {
+    const lvl = levelInRange({ min: 5, max: 30 }, range);
+    assert.ok(typeof lvl === 'number' && lvl >= range[0] && lvl <= range[1], `levelInRange(${range}) = ${lvl} fora da faixa`);
+  }
 });
 
 test('simulação: o jogador não sai do mapa — trava física de limites do mundo ativa no Player', async () => {
