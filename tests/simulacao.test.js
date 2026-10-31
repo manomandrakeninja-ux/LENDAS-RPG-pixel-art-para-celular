@@ -730,10 +730,12 @@ test('simulação: save — envelope v2, migrate de versão futura não quebra e
   assert.ok(env.savedAt, 'envelope tem savedAt');
   // versão do futuro é rejeitada com erro controlado (não quebra o jogo silenciosamente)
   assert.throws(() => migrateSave({ version: 999, garbage: true }), /mais recente/, 'versão futura deve ser rejeitada com mensagem clara');
-  // envelope parcial preenche defaults (runeDay etc.)
+  // envelope parcial preenche defaults (progression, time, etc.)
   const migrated = migrateSave(createSaveEnvelope({}));
   assert.ok(migrated, 'envelope vazio migra');
-  assert.ok(migrated.player && typeof migrated.player === 'object', 'player existe após migrate');
+  assert.ok(migrated.progression && typeof migrated.progression === 'object', 'progression existe após migrate');
+  assert.ok(migrated.time && typeof migrated.time.dayCount === 'number', 'time.dayCount default existe');
+  assert.ok(migrated.inventory && typeof migrated.inventory === 'object', 'inventory default existe');
 });
 
 test('simulação: o jogador não sai do mapa — trava física de limites do mundo ativa no Player', async () => {
