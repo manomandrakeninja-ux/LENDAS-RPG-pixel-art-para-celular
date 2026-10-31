@@ -69,6 +69,11 @@
 - **D:** suite 49/49.
 - Notas 0–100: visual 79 · código 87 · estabilidade 95 · desempenho 83 · jogabilidade 88 · mobile 70 · originalidade 81.
 
+### Ciclo 23 — Game feel: crítico de joia dá hitstop + "CRÍTICO!" dourado
+- **C:** `jewelCrit` destacado no ataque corpo a corpo → hitstop 60 ms + texto dourado (impacto já era forte).
+- **D:** suite 49/49.
+- Notas 0–100: visual 84 · código 88 · estabilidade 95 · desempenho 83 · jogabilidade 91 · mobile 72 · originalidade 83.
+
 ### Ciclo 22 — HUD: ícone do clima junto ao texto (🌧️ CHUVA, ❄️ NEVE, 🌪️ POEIRA, 🌋 CINZAS)
 - **C:** `statusText` prefixa `WEATHER_ICONS[weather]` (import puro de weather.js, seguro para testes).
 - **D:** suite 49/49.

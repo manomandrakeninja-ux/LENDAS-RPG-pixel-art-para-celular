@@ -80,6 +80,12 @@
 - **D:** suite 49/49.
 - **Notas 0–100:** visual 79 · código 87 · estabilidade 95 · desempenho 83 · jogabilidade 88 · mobile 70 · originalidade 81.
 
+## Ciclo 23/30 — Game feel: crítico de joia com hitstop + CRÍTICO! ✅ CONCLUÍDO
+
+- **C:** acerto crítico (joia) no corpo a corpo → hitstop 60 ms, impacto forte dourado e texto "CRÍTICO!".
+- **D:** suite 49/49.
+- **Notas 0–100:** visual 84 · código 88 · estabilidade 95 · desempenho 83 · jogabilidade 91 · mobile 72 · originalidade 83.
+
 ## Ciclo 22/30 — HUD: ícone do clima no status ✅ CONCLUÍDO
 
 - **C:** status do clima agora leva o ícone (🌧️❄️🌪️🌋) junto do texto.

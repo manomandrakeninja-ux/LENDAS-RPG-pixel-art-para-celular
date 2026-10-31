@@ -1062,7 +1062,8 @@ export class GameScene extends Phaser.Scene {
       ? this.progression.hasPerk('rhythm') ? PERK_EFFECTS.rhythmFinisherMultiplier : COMBAT_CONFIG.combo.finisherMultiplier
       : 1;
     let perkMultiplier = this.progression.damageMultiplier(this.player.health / Math.max(1, this.player.maxHealth));
-    if (Math.random() < (this.player.jewelCrit ?? 0)) perkMultiplier *= 2;
+    const jewelCrit = Math.random() < (this.player.jewelCrit ?? 0);
+    if (jewelCrit) perkMultiplier *= 2;
     // Skill Lâmina: +2% de dano corpo a corpo por nível treinado.
     perkMultiplier *= this.skills?.bladeDamageMultiplier?.() ?? 1;
     const attack = Math.round(this.player.attack * multiplier * perkMultiplier) + (this.player.jewelPoison ?? 0);
@@ -1081,8 +1082,13 @@ export class GameScene extends Phaser.Scene {
       const broken = this.gear.rollThrownBreak();
       if (broken) this.afterGearChange({ ok: true, message: `${broken.name} quebrou!` });
     }
-    this.effects.spawnImpact(target.x, target.y - 10, { tint: finisher ? 0xffd76b : 0xffe0a0, strong: finisher || killed });
+    this.effects.spawnImpact(target.x, target.y - 10, { tint: finisher || jewelCrit ? 0xffd76b : 0xffe0a0, strong: finisher || killed || jewelCrit });
     this.audio.playHit();
+    // Crítico de joia: hitstop curto + texto dourado "CRÍTICO".
+    if (jewelCrit) {
+      this.hitstop(60);
+      this.effects.spawnDamage(target.x, target.y - 26, 'CRÍTICO!', '#ffd76b');
+    }
     if (finisher || killed) this.hitstop(killed ? 70 : 50);
     this.effects.spawnDamage(target.x, target.y - 18, damage, finisher ? '#ffe28a' : undefined);
     this.applyWeaponEffects(target, damage, killed);
