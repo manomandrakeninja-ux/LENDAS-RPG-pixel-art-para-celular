@@ -41,3 +41,10 @@
 - **Bug real achado e corrigido:** Gruta dos Piratas em ilha longe de porto → novo DOCK `ancoradouro-piratas` + entrada da gruta movida para 404 px do porto.
 - **D:** simulacao 4/4; suite 49/49 arquivos. Sem regressões.
 - **Notas 0–100:** visual 79 · código 87 · estabilidade 94 · desempenho 80 · jogabilidade 83 · mobile 70 · originalidade 80.
+
+## Ciclo 06/30 — Otimização: cache do buildTerrainGrid ✅ CONCLUÍDO
+
+- **A:** `grid.terrain` só é lida após a construção (auditado) → cache seguro em módulo.
+- **C/F:** `buildTerrainGrid()` cacheada (182 ms → 0,00 ms na 2ª chamada); `buildTerrainGridUncached()` exportada para testes.
+- **D:** simulacao.test.js 5/5 (novo teste de cache); suite 49/49.
+- **Notas 0–100:** visual 79 · código 87 · estabilidade 94 · desempenho 83 · jogabilidade 83 · mobile 70 · originalidade 80.

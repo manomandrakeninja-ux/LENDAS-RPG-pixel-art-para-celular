@@ -605,8 +605,19 @@ function cleanGrid(grid) {
 
 // ---------- Grade de terreno (todo o mundo, inclusive as salas das cavernas) ----------
 
-/** Monta a grade de terrenos do mundo inteiro. Leva poucos milissegundos. */
+// A grade é determinística e só de leitura depois de montada → cache em módulo
+// (evita remontar 400×736 células + cavernas a cada construção de mundo/teste).
+let cachedTerrainGrid = null;
+
+/** Monta (ou devolve do cache) a grade de terrenos do mundo inteiro. */
 export function buildTerrainGrid() {
+  if (cachedTerrainGrid) return cachedTerrainGrid;
+  cachedTerrainGrid = buildTerrainGridUncached();
+  return cachedTerrainGrid;
+}
+
+/** Versão sem cache (testes que precisam de uma grade nova). */
+export function buildTerrainGridUncached() {
   const cols = WORLD_COLS;
   const rows = TOTAL_ROWS;
   const terrain = new Uint8Array(cols * rows).fill(T.VOID);

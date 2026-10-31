@@ -93,6 +93,17 @@ test('simulação: 1 dia de combate/XP — skills sobem de nível e o save aguen
   assert.equal(restored.level('blade'), skills.level('blade'), 'skill persistiu no save');
 });
 
+test('buildTerrainGrid usa cache: mesma instância em chamadas repetidas (e uncached gera outra)', async () => {
+  const { buildTerrainGridUncached } = await import('../src/data/worldRegions.js');
+  const a = buildTerrainGrid();
+  const b = buildTerrainGrid();
+  assert.equal(a, b, 'cache deve devolver a mesma grade');
+  const fresh = buildTerrainGridUncached();
+  assert.notEqual(fresh, a, 'uncached gera instância nova');
+  assert.equal(fresh.cols, a.cols);
+  assert.deepEqual([...fresh.terrain.slice(0, 100)], [...a.terrain.slice(0, 100)], 'mesmo conteúdo');
+});
+
 test('simulação: mapa grande cabe na memória de grade e não vaza para fora', () => {
   const grid = buildTerrainGrid();
   assert.equal(grid.cols, WORLD_COLS);

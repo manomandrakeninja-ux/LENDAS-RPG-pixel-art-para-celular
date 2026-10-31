@@ -37,3 +37,9 @@
 - Suite: 49/49 arquivos passando (antes 48).
 - Notas 0–100: visual 79 · código 87 · estabilidade 94 · desempenho 80 · jogabilidade 83 · mobile 70 · originalidade 80.
 
+### Ciclo 06 — Otimização: cache do buildTerrainGrid
+- **A:** confirmei que `grid.terrain` só é lido (nunca mutado) fora da construção → cache seguro.
+- **C/F:** `buildTerrainGrid()` agora devolve grade cacheada em módulo (medido: 182 ms → 0,00 ms na 2ª chamada); `buildTerrainGridUncached()` para quem precisa de instância nova.
+- **D:** novo teste de cache em simulacao.test.js (5/5); suite 49/49.
+- Notas 0–100: visual 79 · código 87 · estabilidade 94 · desempenho 83 · jogabilidade 83 · mobile 70 · originalidade 80.
+
