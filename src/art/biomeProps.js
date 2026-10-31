@@ -858,6 +858,52 @@ function flowerTuft(seed = 402) {
   return finish(p, { outline: 0.3 });
 }
 
+/** Cristal de cinza (roxo fumê). */
+function ashCrystal(seed = 1201) {
+  const p = new Painter(10, 14, { transparent: true });
+  const c = ['#5a4a7a', '#7a68a0'];
+  for (let y = 12; y >= 2; y -= 2) {
+    const w = 1 + (12 - y) * 0.4;
+    p.rect(5 - w / 2, y, w, 2, shade([c[0], c[1]], 0.5));
+  }
+  p.set(5, 2, '#b8a8e0');
+  return finish(p, { outline: 0.35 });
+}
+
+/** Flor amarela do brejo. */
+function yellowSwampFlower(seed = 1209) {
+  const p = new Painter(10, 12, { transparent: true });
+  p.rect(4, 6, 2, 5, '#4a6a34');
+  for (const [dx, dy] of [[-3, -2], [3, -2], [-2, 2], [2, 2], [0, -4]]) p.set(5 + dx, 5 + dy, '#f4d040');
+  p.set(5, 5, '#a06818');
+  return finish(p, { outline: 0.3 });
+}
+
+/** Pedra coberta de neve. */
+function snowCoveredRock(seed = 1211) {
+  const p = new Painter(16, 10, { transparent: true });
+  p.sphere(8, 6, 5.5, '#7a8a98', '#9aa8b4');
+  p.sphere(8, 4, 4, '#e8f2fc', '#ffffff');
+  return finish(p, { outline: 0.35 });
+}
+
+/** Cascalho de duna. */
+function duneGravel(seed = 1217) {
+  const p = new Painter(18, 8, { transparent: true });
+  for (const [gx, gy] of [[3, 4], [7, 3], [11, 5], [14, 3], [5, 6]]) {
+    p.sphere(gx, gy, 1.6, '#c8a878', '#e0c898');
+  }
+  return finish(p, { outline: 0.3 });
+}
+
+/** Pedra molhada (praia). */
+function wetStone(seed = 1223) {
+  const p = new Painter(14, 8, { transparent: true });
+  p.sphere(7, 5, 4.5, '#4e5a64', '#6a7880');
+  p.set(5, 3, '#8aa0ac');
+  return finish(p, { outline: 0.35 });
+}
+
 /** Cinza quente (brasa viva no chão). */
 function hotAsh(seed = 1171) {
   const p = new Painter(12, 8, { transparent: true });
@@ -1906,6 +1952,14 @@ const PAINTED_ENTRIES = [
   { name: 'jungle-bush-1', draw: () => jungleBush(1189) },
   { name: 'desert-stone-0', draw: () => desertStone(1193) },
   { name: 'desert-stone-1', draw: () => desertStone(1197) },
+  { name: 'ash-crystal-0', draw: () => ashCrystal(1201) },
+  { name: 'ash-crystal-1', draw: () => ashCrystal(1203) },
+  { name: 'yellow-swamp-flower-0', draw: () => yellowSwampFlower(1209) },
+  { name: 'yellow-swamp-flower-1', draw: () => yellowSwampFlower(1211) },
+  { name: 'snow-covered-rock', draw: () => snowCoveredRock(1217) },
+  { name: 'dune-gravel', draw: () => duneGravel(1223) },
+  { name: 'wet-stone-0', draw: () => wetStone(1229) },
+  { name: 'wet-stone-1', draw: () => wetStone(1231) },
   { name: 'shipwreck', draw: shipwreck },
   { name: 'sea-rock', draw: seaRock },
   { name: 'charred-tree', draw: () => deadTree(['#0c0808', '#1a1010', '#2a1a16', '#3a2620', '#4a3228'], true) },

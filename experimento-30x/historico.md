@@ -105,6 +105,10 @@
 - 191–195: props — cogumelo roxo (selva), flor branca do deserto, cascalho de praia, neve empilhada, raiz de brejo (atlas 204) · 196: teste fog/waypoint (limites) · 197: (junto) · 198: evento 🐸 sapo do brejo (+8% vida) · 199: dica splash · 200: marco (verificação + foto 31).
 - Notas: visual 95 · código 94 · estabilidade 98 · desempenho 86 · jogabilidade 97 · mobile 74 · originalidade 88.
 
+### Ciclos 201–210 ✅ (lote)
+- 201–205: props — cinza quente, pedra de gelo clara, tronco de naufrágio, arbusto de selva, pedra do deserto (atlas 221) · 206: teste rollGearDrop determinístico (boss lendário garantido) · 207: teste hotkeys de consumíveis (1–5, máx 3 por tecla) · 208: evento 🌊 onda na praia (+5–10 XP) · 209: dica splash · 210: verificação parcial.
+- Notas: visual 96 · código 95 · estabilidade 98 · desempenho 86 · jogabilidade 97 · mobile 74 · originalidade 89.
+
 ### Ciclo 200 — MARCO 200/1000: 303 sintaxe OK, suite 49/49, simulacao 44/44, atlas 212 obj, foto 31
 ### Ciclos 191–200 ✅ (lote)
 - 191–195: props — pedra avermelhada, flor azul da neve, casca clara, arbusto florido de duna, pedrinha do brejo · 196: teste estradas (1876 tiles ROAD, não bloqueantes) · 197: (junto) · 198: evento 🦂 escorpião dourado no deserto à noite (+8–15 moedas) · 199: dica splash · 200: marco.

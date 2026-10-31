@@ -18,6 +18,7 @@ import { DEFAULT_KEYBINDS, KEY_ACTIONS, isBindableCode, isReservedCode, normaliz
 import { scaleEnemy } from '../src/data/enemyScaling.js';
 import { GEAR_ITEMS, RARITIES, rollGearDrop, GEAR_SLOTS } from '../src/data/gear.js';
 import { BuffSystem, BUFF_DEFINITIONS } from '../src/game/BuffSystem.js';
+import { SKILLS, SKILL_MAX_LEVEL, skillLevelForXp, skillXpForLevel, PlayerSkills as PS2 } from '../src/data/skills.js';
 import { Bestiary } from '../src/game/Bestiary.js';
 import { Achievements, ACHIEVEMENTS } from '../src/data/achievements.js';
 import { DAY_NIGHT_CONFIG, DAY_NIGHT_TOTAL_SECONDS } from '../src/data/dayNight.js';
@@ -837,6 +838,31 @@ test('simulação: consumíveis — hotkeys 1–5 únicos e cada um tem efeito d
     assert.ok(RESOURCE_TYPES[key]?.label ?? c.name, `${key} sem nome/label`);
     assert.ok(Object.keys(c).some((k) => k !== 'hotkey'), `${key} sem nenhum efeito`);
   }
+});
+
+test('simulação: skills — definições sadias e curva de XP simétrica (xp↔nível)', () => {
+  const ids = Object.keys(SKILLS);
+  assert.ok(ids.length >= 5, 'poucas skills');
+  for (const [id, def] of Object.entries(SKILLS)) {
+    assert.ok(def.name && def.icon && def.desc, `skill ${id} mal definida`);
+    assert.ok(def.xpBase > 0, `skill ${id} xpBase inválido`);
+  }
+  // curva: skillXpForLevel(skillLevelForXp(x)) == x para múltiplos
+  for (const x of [0, 50, 200, 1000, 5000]) {
+    const lv = skillLevelForXp(x);
+    assert.ok(lv >= 0 && lv <= SKILL_MAX_LEVEL, `nível fora do limite para ${x} XP: ${lv}`);
+    assert.equal(skillXpForLevel(lv) <= x, true, 'xp do nível não ultrapassa o total');
+  }
+  assert.ok(skillXpForLevel(2) > skillXpForLevel(1), 'curva cresce');
+  assert.ok(SKILL_MAX_LEVEL >= 10, 'nível máx desarrazoado');
+});
+
+test('simulação: elite config sadio — multiplicadores > 1 e aura definida', () => {
+  assert.ok(ELITE_CONFIG.healthMultiplier > 1 && ELITE_CONFIG.damageMultiplier > 1, 'elite deve ser mais forte');
+  assert.ok(ELITE_CONFIG.chance.night > ELITE_CONFIG.chance.day, 'elite mais comum à noite');
+  assert.ok(ELITE_CONFIG.auraColor !== undefined && ELITE_CONFIG.label, 'elite sem aura/label');
+  // enemyXp de elite vale mais
+  assert.ok(enemyXp('wolf', true, 5) > enemyXp('wolf', false, 5), 'elite dá mais XP');
 });
 
 test('simulação: o jogador não sai do mapa — trava física de limites do mundo ativa no Player', async () => {
