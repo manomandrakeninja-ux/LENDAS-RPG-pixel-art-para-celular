@@ -937,8 +937,8 @@ function rottenForestLog(seed = 1941) {
   return finish(p, { outline: 0.35 });
 }
 
-/** Flor de selva amarela. */
-function yellowJungleFlower(seed = 1947) {
+/** Flor de selva dourada. */
+function goldJungleFlower(seed = 1947) {
   const p = new Painter(10, 12, { transparent: true });
   p.rect(4, 6, 2, 5, '#2e5a24');
   for (const [dx, dy] of [[-3, -2], [3, -2], [-2, 2], [2, 2], [0, -4]]) p.set(5 + dx, 5 + dy, '#f4d040');
@@ -3190,8 +3190,8 @@ const PAINTED_ENTRIES = [
   { name: 'coral-dune-pebble', draw: () => coralDunePebble(1931) },
   { name: 'turquoise-ice', draw: () => turquoiseIce(1937) },
   { name: 'rotten-forest-log', draw: () => rottenForestLog(1941) },
-  { name: 'yellow-jungle-flower-0', draw: () => yellowJungleFlower(1947) },
-  { name: 'yellow-jungle-flower-1', draw: () => yellowJungleFlower(1949) },
+  { name: 'gold-jungle-flower-0', draw: () => goldJungleFlower(1947) },
+  { name: 'gold-jungle-flower-1', draw: () => goldJungleFlower(1949) },
   { name: 'shipwreck', draw: shipwreck },
   { name: 'sea-rock', draw: seaRock },
   { name: 'charred-tree', draw: () => deadTree(['#0c0808', '#1a1010', '#2a1a16', '#3a2620', '#4a3228'], true) },
