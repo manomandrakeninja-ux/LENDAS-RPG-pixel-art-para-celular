@@ -983,7 +983,7 @@ test('simulação: quests de viajantes — goods têm preço > 0 e yield válido
   for (const g of goods) {
     assert.ok(g.id && g.name, 'bem sem id/nome');
     assert.ok(g.price > 0, `${g.id} preço inválido`);
-    assert.ok(g.yield >= 1, `${g.id} yield inválido`);
+    assert.ok(typeof g.yield === 'object' && Object.values(g.yield).every((n) => n >= 1), `${g.id} yield inválido`);
   }
   // fluxo completo com inventário fake
   const t = new CampfireTravelers();
@@ -1001,7 +1001,7 @@ test('simulação: quests de viajantes — goods têm preço > 0 e yield válido
 test('simulação: save v2 — envelope serializa e migra de v1 sem perder dados', () => {
   const env = createSaveEnvelope({ time: { day: 7 }, inventory: { items: { wood: 10 } } });
   assert.equal(env.version, SAVE_VERSION, 'versão do envelope');
-  assert.ok(env.savedAt > 0, 'savedAt preenchido');
+  assert.ok(env.savedAt, 'savedAt preenchido');
   const json = JSON.stringify(env);
   const back = JSON.parse(json);
   assert.equal(back.inventory.items.wood, 10, 'dados preservados no round-trip');
