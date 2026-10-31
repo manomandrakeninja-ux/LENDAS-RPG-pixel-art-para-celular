@@ -1889,7 +1889,11 @@ test('simulação: raids — dia de raid tem tier ≥ 1 e composição em ondas 
   const waveTotal = waves.flat().length > 0 ? waves.flat().length : waves.length;
   assert.ok(waveTotal >= 1, 'ondas geradas');
   assert.ok(raidTier(raidDay) >= 1, 'tier positivo');
-  assert.ok(raidEliteChance(raidDay) > 0 && raidEliteChance(raidDay) <= 1, 'chance de elite em (0,1]');
+  for (let d = 1; d <= 120; d += 1) {
+    const ch = raidEliteChance(d);
+    assert.ok(ch >= 0 && ch <= 1, `chance de elite fora de [0,1]: ${ch}`);
+  }
+  assert.ok(raidEliteChance(120) > raidEliteChance(10), 'chance de elite cresce com o tier');
 });
 
 test('simulação: rebirth — multiplicador cresce e canRebirth exige nível', () => {
