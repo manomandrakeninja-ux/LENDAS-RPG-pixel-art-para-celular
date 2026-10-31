@@ -22,3 +22,9 @@
 - **C:** `EconomySystem.onGain` hook → `+N` dourado flutuante sobre o jogador (`Effects.spawnDamage` reusado).
 - **C/D:** teste de roundtrip v2 completo (skills/waypoint/regions/chests/travelerGifts/economy) em save.test.js → 9/9; suite 48/48; sem regressões.
 - **Notas 0–100:** visual 78 · código 86 · estabilidade 92 · desempenho 80 · jogabilidade 82 · mobile 70 · originalidade 80.
+
+## Ciclo 03/30 — UX do mapa: clima e vilarejos no cartão de região ✅ CONCLUÍDO
+
+- **C:** `showRegionAt` agora exibe clima de hoje (`weatherAt` + `WEATHER_ICONS`) e vilarejos da região no cartão.
+- **D:** worldMap 2/2, weather 2/2, suite 48/48; import puro (sem Phaser) mantém testes node verdes.
+- **Notas 0–100:** visual 78 · código 86 · estabilidade 92 · desempenho 80 · jogabilidade 83 · mobile 70 · originalidade 80.

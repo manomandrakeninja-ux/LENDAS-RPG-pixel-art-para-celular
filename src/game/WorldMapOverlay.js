@@ -1,6 +1,7 @@
 import { WORLD } from './config.js';
 import { MAP_SCALE } from './MapRenderer.js';
 import { FAST_TRAVEL_COST, TREASURE_SPOTS, VILLAGES } from '../data/worldRegions.js';
+import { WEATHER_ICONS, weatherAt } from '../data/weather.js';
 import { DUNGEON_CONFIG } from '../data/buildings.js';
 import { regionCardAt } from './RegionCard.js';
 import { paintBurntEdge } from './mapParchment.js';
@@ -267,11 +268,16 @@ export class WorldMapOverlay {
       return null;
     }
     const list = (items) => items.length ? items.join(', ') : '—';
+    // Clima de hoje nessa região (neve no gelo, poeira no deserto, cinzas em brasa, chuva nos demais).
+    const weather = weatherAt(card.region, this.scene.timeState ?? { dayCount: 1, isNight: false });
+    const weatherLabel = { rain: 'Chuva hoje', snow: 'Neve hoje', dust: 'Poeira (vento) hoje', ash: 'Cinzas hoje', clear: 'Tempo limpo hoje' }[weather] ?? 'Tempo limpo hoje';
+    const villagesHere = VILLAGES.filter((village) => village.region === card.region).map((village) => village.name);
     this.card.innerHTML = `
       <button type="button" class="region-card__close" data-card-close aria-label="Fechar cartão">✕</button>
       <h3>${card.name}</h3>
-      <p>Nível ${card.levels}</p>
+      <p>Nível ${card.levels} • ${WEATHER_ICONS[weather] ?? ''} ${weatherLabel}</p>
       ${card.banner ? `<p>${card.banner}</p>` : ''}
+      ${villagesHere.length ? `<p><strong>Vilarejos:</strong> ${villagesHere.join(', ')}</p>` : ''}
       <p><strong>Monstros:</strong> ${list(card.monsters)}</p>
       <p><strong>Cavernas:</strong> ${list(card.caves)}</p>
       <p><strong>Torre:</strong> ${list(card.towers ?? [])}</p>

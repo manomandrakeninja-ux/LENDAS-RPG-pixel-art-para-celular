@@ -11,3 +11,4 @@ Linha base (antes do ciclo 01):
 | base | 48/48 arquivos; world 13 | — |
 | 01 | 48/48 arquivos; world 14/14 | 78 / 85 / 90 / 80 / 82 / 70 / 80 |
 | 02 | 48/48 arquivos; save 9/9 | 78 / 86 / 92 / 80 / 82 / 70 / 80 |
+| 03 | 48/48 arquivos | 78 / 86 / 92 / 80 / 83 / 70 / 80 |
