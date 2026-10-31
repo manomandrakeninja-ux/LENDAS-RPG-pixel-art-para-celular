@@ -14,7 +14,7 @@ import { BIOME_PROP_ENTRIES } from '../src/art/biomeProps.js';
 import { ENEMY_TYPES, ENEMY_TYPE_NAMES, enemyXp, ELITE_CONFIG } from '../src/data/enemies.js';
 import { SCALING_START, levelInRange } from '../src/data/enemyScaling.js';
 import { EconomySystem } from '../src/game/EconomySystem.js';
-import { CONSUMABLES, useConsumable } from '../src/data/consumables.js';
+import { CONSUMABLES, HOTKEY_ITEMS, useConsumable } from '../src/data/consumables.js';
 import { DEFAULT_KEYBINDS, KEY_ACTIONS, isBindableCode, isReservedCode, normalizeKeybinds, rebind, actionForCode, loadKeybinds, saveKeybinds, keyLabel, keyCodeFor } from '../src/game/Keybinds.js';
 import { scaleEnemy } from '../src/data/enemyScaling.js';
 import { GEAR_ITEMS, RARITIES, rollGearDrop, GEAR_SLOTS, GEAR_SETS, FORGE_SLOT } from '../src/data/gear.js';
@@ -1491,7 +1491,7 @@ test('simulação: RESOURCE_TYPES tem label+cor+ícone para todos os recursos', 
   for (const [id, r] of Object.entries(RESOURCE_TYPES)) {
     assert.ok(r.label && typeof r.label === 'string', `recurso ${id} sem label`);
     assert.ok(typeof r.color === 'number' && r.color >= 0 && r.color <= 0xffffff, `recurso ${id} cor inválida`);
-    assert.ok(r.icon && typeof r.icon === 'string', `recurso ${id} sem ícone`);
+    assert.ok(typeof r.icon === 'number' && r.icon >= 0, `recurso ${id} sem ícone (número do atlas)`);
   }
 });
 
