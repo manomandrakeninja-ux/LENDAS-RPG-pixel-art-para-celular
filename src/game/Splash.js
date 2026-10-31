@@ -28,7 +28,8 @@ const TIPS = [
   'No calor do deserto, sua stamina demora mais para voltar — gerencie a esquiva.',
   'No vale, de dia, às vezes um coelhinho 🐇 cruza seu caminho e vira comida.',
   'Borboletas 🦋 na floresta e no vale podem te dar um tiquinho de XP.',
-  'Perto da água, na praia, um peixe 🐟 pode saltar e virar comida.'
+  'Perto da água, na praia, um peixe 🐟 pode saltar e virar comida.',
+  'A cada 7 dias a lua cheia 🌕 abençoa a noite com XP extra.'
 ];
 
 export function setupSplash() {

@@ -24,6 +24,8 @@ import { DAY_NIGHT_CONFIG, DAY_NIGHT_TOTAL_SECONDS } from '../src/data/dayNight.
 import { Inventory } from '../src/game/Inventory.js';
 import { CampfireTravelers, TRAVELER_GOODS, TRAVELER_QUESTS, questById } from '../src/data/travelers.js';
 import { RESOURCE_TYPES } from '../src/game/config.js';
+import { BUILDING_DEFS, BUILDING_ORDER } from '../src/data/buildings.js';
+import { WEATHER_ICONS, WEATHER_CONFIG } from '../src/data/weather.js';
 import { PlayerSkills } from '../src/data/skills.js';
 import { migrateSave, createSaveEnvelope, SAVE_VERSION } from '../src/game/save.js';
 
@@ -672,6 +674,38 @@ test('simulação: tipos de recurso sadios — nome, ícone e peso por unidade',
   for (const key of Object.keys(CONSUMABLES)) {
     const gives = CONSUMABLES[key].gives ?? key;
     assert.ok(RESOURCE_TYPES[gives] || ['health', 'stamina', 'buff'].includes(gives), `consumível ${key} dá recurso inexistente: ${gives}`);
+  }
+});
+
+test('simulação: construções do acampamento sadias — ordem, nome, custo e efeito', () => {
+  assert.ok(BUILDING_ORDER.length >= 5, 'poucas construções');
+  for (const id of BUILDING_ORDER) {
+    const def = BUILDING_DEFS[id];
+    assert.ok(def, `construção ${id} fora de BUILDING_DEFS`);
+    assert.ok(def.name, `${id} sem nome`);
+    assert.ok(def.levels && Object.keys(def.levels).length > 0, `${id} sem níveis`);
+    // custos por nível ficam em def.costs (ex.: { 2: { wood: 40 } }); fogueira começa no nível 1.
+    const costEntries = Object.values(def.costs ?? {}).flatMap((lvlCost) => Object.entries(lvlCost ?? {}));
+    if (def.startLevel === undefined || (def.startLevel ?? 1) < 10) {
+      assert.ok(costEntries.length > 0, `${id} sem custo de melhoria`);
+    }
+    for (const [res, amount] of costEntries) assert.ok(amount > 0, `${id} custo negativo de ${res}`);
+  }
+  // campfire precisa existir (travelers dependem)
+  assert.ok(BUILDING_DEFS.campfire, 'sem fogueira');
+});
+
+test('simulação: clima — todo clima possível tem ícone e config de severidade', () => {
+  const climas = ['clear', 'rain', 'snow', 'dust', 'ash'];
+  for (const c of climas) {
+    assert.ok(c in WEATHER_ICONS, `sem ícone para ${c}`);
+  }
+  assert.ok(WEATHER_CONFIG.rainChance > 0 && WEATHER_CONFIG.rainChance < 1, 'rainChance sadio');
+  // weatherAt devolve sempre um clima válido para qualquer região/dia
+  for (const region of Object.keys(REGION_INFO)) {
+    for (const day of [1, 7, 30, 365]) {
+      assert.ok(climas.includes(weatherAt(region, { dayCount: day, cycleTime: 0 })), `clima inválido em ${region} dia ${day}`);
+    }
   }
 });
 

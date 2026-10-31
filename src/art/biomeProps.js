@@ -858,6 +858,51 @@ function flowerTuft(seed = 402) {
   return finish(p, { outline: 0.3 });
 }
 
+/** Pedra de granito (cinzas). */
+function granite(seed = 961) {
+  const p = new Painter(16, 10, { transparent: true });
+  p.sphere(8, 6, 5.5, '#6a6e78', '#8a8e98');
+  p.set(5, 4, '#a8acb6');
+  p.set(10, 7, '#4a4e58');
+  return finish(p, { outline: 0.35 });
+}
+
+/** Flor branca do deserto. */
+function desertBloom(seed = 967) {
+  const p = new Painter(10, 12, { transparent: true });
+  p.rect(4, 6, 2, 5, '#8a9a5a');
+  for (const [dx, dy] of [[-3, -2], [3, -2], [-2, 2], [2, 2], [0, -4]]) p.set(5 + dx, 5 + dy, '#f8f4e8');
+  p.set(5, 5, '#e8c840');
+  return finish(p, { outline: 0.3 });
+}
+
+/** Tronco de selva caída. */
+function jungleLog(seed = 971) {
+  const p = new Painter(28, 10, { transparent: true });
+  const wood = ['#4a3a22', '#5e4c2e'];
+  p.rect(2, 4, 24, 4, shade([wood[0], wood[1]], 0.5));
+  p.set(2, 4, '#33261​4'); p.set(25, 7, '#332614');
+  p.set(9, 5, '#6e5a3a'); p.set(18, 6, '#3a2c18');
+  p.set(12, 3, '#3f7a2e');
+  return finish(p, { outline: 0.35 });
+}
+
+/** Neve pisada (rastro raso na neve). */
+function snowTrack(seed = 977) {
+  const p = new Painter(16, 8, { transparent: true });
+  p.sphere(5, 4, 2.4, '#b8cfe4', '#cfe0f0');
+  p.sphere(11, 4, 2.4, '#b8cfe4', '#cfe0f0');
+  return finish(p, { outline: 0.3 });
+}
+
+/** Pedra de maré molhada (praia). */
+function tideRock(seed = 983) {
+  const p = new Painter(14, 8, { transparent: true });
+  p.sphere(7, 5, 4.5, '#5e6a70', '#7a8890');
+  p.set(5, 3, '#9ab0b8');
+  return finish(p, { outline: 0.35 });
+}
+
 /** Junco alto (brejo). */
 function reed(seed = 907) {
   const p = new Painter(12, 20, { transparent: true });
@@ -1528,6 +1573,15 @@ const PAINTED_ENTRIES = [
   { name: 'dry-bush-2', draw: () => dryBush2(941) },
   { name: 'pale-stone-0', draw: () => paleStone(947) },
   { name: 'pale-stone-1', draw: () => paleStone(953) },
+  { name: 'granite-0', draw: () => granite(961) },
+  { name: 'granite-1', draw: () => granite(963) },
+  { name: 'desert-bloom-0', draw: () => desertBloom(967) },
+  { name: 'desert-bloom-1', draw: () => desertBloom(971) },
+  { name: 'jungle-log', draw: () => jungleLog(977) },
+  { name: 'snow-track-0', draw: () => snowTrack(983) },
+  { name: 'snow-track-1', draw: () => snowTrack(989) },
+  { name: 'tide-rock-0', draw: () => tideRock(991) },
+  { name: 'tide-rock-1', draw: () => tideRock(997) },
   { name: 'shipwreck', draw: shipwreck },
   { name: 'sea-rock', draw: seaRock },
   { name: 'charred-tree', draw: () => deadTree(['#0c0808', '#1a1010', '#2a1a16', '#3a2620', '#4a3228'], true) },

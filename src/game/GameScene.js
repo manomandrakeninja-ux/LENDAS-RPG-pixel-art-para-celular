@@ -1682,7 +1682,12 @@ export class GameScene extends Phaser.Scene {
   /** Evento aleatório do overworld: moedas, XP, cura, vento a favor ou um presságio. */
   randomEvent() {
     const roll = Math.random();
-    if (roll < 0.12 && this.timeState?.phase === 'day' && this.weather !== 'dust' && terrainAt(this.player.x, this.player.y + TILE * 1.2) === T.SEA) {
+    if (roll < 0.1 && this.timeState?.phase === 'night' && this.timeState.dayCount % 7 === 0) {
+      const xp = 20 + this.player.level * 2;
+      this.grantExperience(xp);
+      this.effects.spawnDamage(this.player.x, this.player.y - 32, '🌕', '#f0e8c8');
+      this.ui.showMessage(`🌕 Evento: lua cheia (dia ${this.timeState.dayCount})! +${xp} XP`);
+    } else if (roll < 0.12 && this.timeState?.phase === 'day' && this.weather !== 'dust' && terrainAt(this.player.x, this.player.y + TILE * 1.2) === T.SEA) {
       const ok = this.inventory?.add?.('food', 1);
       this.effects.spawnDamage(this.player.x, this.player.y - 30, '🐟', '#8ad8f0');
       this.ui.showMessage(ok === false ? '🐟 Evento: um peixe saltou perto da praia (mochila cheia)!' : '🐟 Evento: um peixe saltou perto da praia! +1 comida');
