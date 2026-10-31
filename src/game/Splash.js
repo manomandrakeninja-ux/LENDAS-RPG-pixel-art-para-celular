@@ -75,7 +75,8 @@ const TIPS = [
   'À noite nas cinzas, uma caveira sussurrante 💀 pode render bastante XP.',
   'Na ilha Esmeralda, de dia e sol, uma fonte de vida 💚 pode dar XP.',
   'À noite de céu limpo na neve, uma aurora boreal 🌌 pode dar XP.',
-  'De dia no vale, a brisa fresca 🍃 pode dar um pouco de XP.'
+  'De dia no vale, a brisa fresca 🍃 pode dar um pouco de XP.',
+  'De dia na praia, uma concha cintilante 🐚 pode dar moeditas.'
 ];
 
 export function setupSplash() {

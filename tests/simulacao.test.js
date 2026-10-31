@@ -28,6 +28,8 @@ import { MISSIONS } from '../src/data/campaign.js';
 import { CRAFT_RECIPES } from '../src/data/craftRecipes.js';
 import { RESOURCE_NODES } from '../src/data/resources.js';
 import { SPAWN_ZONES } from '../src/data/biomes.js';
+import { MARKET_CATALOG } from '../src/data/economy.js';
+import { SPAWNING_CONFIG } from '../src/data/spawning.js';
 // Validamos uso cruzado do atlas com regex em TODOS os fontes de src/ (RegionWorld importa Phaser).
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -1831,6 +1833,30 @@ test('simulação: SPAWN_ZONES — zonas têm bioma válido e raio positivo', ()
     assert.ok(typeof zone === 'object', `zona ${name} inválida`);
     if (zone.radius !== undefined) assert.ok(zone.radius > 0, `zona ${name} raio inválido`);
   }
+});
+
+test('simulação: MARKET_CATALOG — entradas têm id, preço positivo e recurso válido', () => {
+  assert.ok(MARKET_CATALOG.length >= 5, 'poucas entradas de mercado');
+  const ids = new Set();
+  for (const entry of MARKET_CATALOG) {
+    assert.ok(entry.id && !ids.has(entry.id), `entrada sem id ou duplicada: ${entry.id}`);
+    ids.add(entry.id);
+    assert.ok((entry.price ?? 0) > 0, `entrada ${entry.id} preço inválido`);
+    const res = entry.sells ?? entry.resource ?? entry.type;
+    if (res) assert.ok(RESOURCE_TYPES[res] || CONSUMABLES[res], `entrada ${entry.id} recurso inválido: ${res}`);
+  }
+});
+
+test('simulação: SPAWNING_CONFIG — limites dia/noite e anéis de distância sadios', () => {
+  const c = SPAWNING_CONFIG;
+  assert.ok(c.activeLimit.night > c.activeLimit.day, 'à noite spawna mais');
+  assert.ok(c.spawnIntervalMs.night < c.spawnIntervalMs.day, 'à noite spawna mais rápido');
+  assert.ok(c.safeZoneRadius > 0, 'zona segura positiva');
+  assert.ok(c.distanceRings.length >= 2, 'poucos anéis de distância');
+  for (const ring of c.distanceRings) {
+    assert.ok(ring.min < ring.max && ring.weight > 0, `anel inválido: ${JSON.stringify(ring)}`);
+  }
+  assert.ok(c.nightScaling.damageMultiplier > 1, 'noite mais perigosa');
 });
 
 test('simulação: o jogador não sai do mapa — trava física de limites do mundo ativa no Player', async () => {

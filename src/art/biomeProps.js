@@ -1166,6 +1166,49 @@ function paleLilacForestFlower(seed = 2397) {
   return finish(p, { outline: 0.3 });
 }
 
+/** Flor coral clara do brejo. */
+function paleCoralSwampFlower(seed = 2407) {
+  const p = new Painter(10, 12, { transparent: true });
+  p.rect(4, 6, 2, 5, '#4a6a34');
+  for (const [dx, dy] of [[-3, -2], [3, -2], [-2, 2], [2, 2], [0, -4]]) p.set(5 + dx, 5 + dy, '#ffb8a8');
+  p.set(5, 5, '#fff4f0');
+  return finish(p, { outline: 0.3 });
+}
+
+/** Pedra coral clara de praia. */
+function paleCoralBeachStone(seed = 2411) {
+  const p = new Painter(14, 9, { transparent: true });
+  p.sphere(7, 5, 5, '#d89880', '#f0bcac');
+  p.set(5, 3, '#ffe4dc');
+  return finish(p, { outline: 0.35 });
+}
+
+/** Gelo coral claro (neve). */
+function paleCoralIce(seed = 2417) {
+  const p = new Painter(14, 9, { transparent: true });
+  p.sphere(7, 5, 5, '#f0ccc0', '#f8e6de');
+  p.set(5, 3, '#fff4ee');
+  return finish(p, { outline: 0.35 });
+}
+
+/** Tronco coral de duna. */
+function coralDuneLog(seed = 2421) {
+  const p = new Painter(26, 10, { transparent: true });
+  const wood = ['#c09878', '#d8b494'];
+  p.rect(2, 4, 22, 4, shade([wood[0], wood[1]], 0.5));
+  p.set(2, 4, '#a07858'); p.set(23, 7, '#a07858');
+  return finish(p, { outline: 0.35 });
+}
+
+/** Flor coral clara da floresta. */
+function paleCoralForestFlower(seed = 2427) {
+  const p = new Painter(10, 12, { transparent: true });
+  p.rect(4, 6, 2, 5, '#4a6a34');
+  for (const [dx, dy] of [[-3, -2], [3, -2], [-2, 2], [2, 2], [0, -4]]) p.set(5 + dx, 5 + dy, '#ffb8a8');
+  p.set(5, 5, '#fff4f0');
+  return finish(p, { outline: 0.3 });
+}
+
 function seaGreenSwampFlower(seed = 2197) {
   const p = new Painter(10, 12, { transparent: true });
   p.rect(4, 6, 2, 5, '#4a6a34');
@@ -3967,6 +4010,13 @@ const PAINTED_ENTRIES = [
   { name: 'lilac-dune-log', draw: () => lilacDuneLog(2391) },
   { name: 'pale-lilac-forest-flower-0', draw: () => paleLilacForestFlower(2397) },
   { name: 'pale-lilac-forest-flower-1', draw: () => paleLilacForestFlower(2399) },
+  { name: 'pale-coral-swamp-flower-0', draw: () => paleCoralSwampFlower(2407) },
+  { name: 'pale-coral-swamp-flower-1', draw: () => paleCoralSwampFlower(2409) },
+  { name: 'pale-coral-beach-stone', draw: () => paleCoralBeachStone(2411) },
+  { name: 'pale-coral-ice', draw: () => paleCoralIce(2417) },
+  { name: 'coral-dune-log', draw: () => coralDuneLog(2421) },
+  { name: 'pale-coral-forest-flower-0', draw: () => paleCoralForestFlower(2427) },
+  { name: 'pale-coral-forest-flower-1', draw: () => paleCoralForestFlower(2429) },
   { name: 'shipwreck', draw: shipwreck },
   { name: 'sea-rock', draw: seaRock },
   { name: 'charred-tree', draw: () => deadTree(['#0c0808', '#1a1010', '#2a1a16', '#3a2620', '#4a3228'], true) },
