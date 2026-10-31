@@ -879,7 +879,7 @@ test('simulação: ilhas esmeralda/brasa são alcançáveis por porto e têm doc
   assert.ok(islandDocks.length >= 2, 'ilhas precisam de porto próprio');
   for (const dock of islandDocks) {
     assert.ok(['esmeralda', 'brasa'].includes(dock.region), `dock ${dock.name} região errada`);
-    assert.ok(dock.name.toLowerCase().includes('ilha') || dock.route, `dock ${dock.name} sem rota para ilha`);
+    assert.ok(dock.island === dock.region, `dock ${dock.name} sem vínculo island=${dock.region}`);
   }
 });
 
