@@ -267,6 +267,9 @@ export class GameScene extends Phaser.Scene {
     const uiObjects = new Set(this.ui.fixed);
     this.cameras.main.ignore([...uiObjects]);
     this.hudCamera.ignore(this.children.list.filter((child) => !uiObjects.has(child)));
+    // Seta verde na borda da tela apontando para o waypoint (Shift+clique no mapa) quando ele está fora da tela.
+    this.waypointArrow = this.add.graphics().setDepth(9999).setScrollFactor(0).setVisible(false);
+    this.hudCamera.ignore(this.waypointArrow);
     // Textos do mundo com tamanho constante na tela (inverso do zoom).
     this.worldTexts = new WorldTexts(this);
     // Campanha "As Cinzas do Primeiro Mundo": 100 missões, moradores, regiões e diárias.
@@ -753,6 +756,7 @@ export class GameScene extends Phaser.Scene {
     // Clima segue a região atual do mapa grande (neve no gelo, poeira no deserto, cinzas em brasa).
     this.weather = weatherAt(this.regionWorld.currentRegion(), this.timeState);
     this.isRaining = this.weather === 'rain' || this.weather === 'snow';
+    this.updateWaypointArrow();
     // Eventos aleatórios só no overworld (não dentro de caverna/torre, nem pausado).
     if (!paused && !this.regionWorld?.underground && !this.overlayBlocked()) {
       this.randomEventMs -= delta;
@@ -1478,6 +1482,50 @@ export class GameScene extends Phaser.Scene {
       }
     }
     if (this.photoMode) this.ui.showMessage('📷 Modo foto ativado — aperte P para voltar');
+  }
+
+  /** Seta na borda da tela → direção do waypoint quando ele está fora da visão (muda de lado ao passar por ele). */
+  updateWaypointArrow() {
+    const arrow = this.waypointArrow;
+    const waypoint = this.waypoint;
+    if (!arrow || !waypoint || this.photoMode) {
+      arrow?.setVisible(false);
+      return;
+    }
+    const view = this.cameras.main.worldView;
+    const margin = 46;
+    const inside = waypoint.x > view.x + margin && waypoint.x < view.right - margin
+      && waypoint.y > view.y + margin && waypoint.y < view.bottom - margin;
+    if (inside) {
+      arrow.setVisible(false);
+      return;
+    }
+    const cx = this.scale.width / 2;
+    const cy = this.scale.height / 2;
+    const angle = Math.atan2(waypoint.y - this.player.y, waypoint.x - this.player.x);
+    // Ponto na borda do retângulo da tela na direção do waypoint (interseção raio × borda).
+    const dx = Math.cos(angle);
+    const dy = Math.sin(angle);
+    const scaleX = dx !== 0 ? (cx - margin) / Math.abs(dx) : Infinity;
+    const scaleY = dy !== 0 ? (cy - margin) / Math.abs(dy) : Infinity;
+    const t = Math.min(scaleX, scaleY);
+    const px = cx + dx * t;
+    const py = cy + dy * t;
+    // Triângulo rotacionado (vértices calculados em JS, sem depender de rotate do Graphics).
+    const tip = { x: px + dx * 14, y: py + dy * 14 };
+    const back = { x: px - dx * 8, y: py - dy * 8 };
+    const perp = { x: -dy * 9, y: dx * 9 };
+    arrow.setVisible(true);
+    arrow.clear();
+    arrow.fillStyle(0x5aff8a, 0.92);
+    arrow.lineStyle(2, 0x0c2a14, 0.9);
+    arrow.beginPath();
+    arrow.moveTo(tip.x, tip.y);
+    arrow.lineTo(back.x + perp.x, back.y + perp.y);
+    arrow.lineTo(back.x - perp.x, back.y - perp.y);
+    arrow.closePath();
+    arrow.fillPath();
+    arrow.strokePath();
   }
 
   /** Painel de ajuda (tecla ?): lista todas as teclas fixas e as configuráveis. */

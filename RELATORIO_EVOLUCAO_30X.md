@@ -55,3 +55,9 @@
 - **Fotos:** 16-vilarejos-com-cama, 17-mapa-com-porto-pirata (7 portos no total).
 - **D:** suite 49/49; simulacao 5/5; world 14/14.
 - **Notas 0–100:** visual 79 · código 87 · estabilidade 94 · desempenho 83 · jogabilidade 85 · mobile 70 · originalidade 80.
+
+## Ciclo 08/30 — Jogabilidade: seta de borda apontando ao waypoint ✅ CONCLUÍDO
+
+- **C:** seta verde na borda da tela (graphics na HUD camera) → direção do waypoint fora da visão; some no modo foto/perto.
+- **D:** suite 49/49; simulacao 5/5.
+- **Notas 0–100:** visual 79 · código 87 · estabilidade 94 · desempenho 83 · jogabilidade 86 · mobile 70 · originalidade 80.

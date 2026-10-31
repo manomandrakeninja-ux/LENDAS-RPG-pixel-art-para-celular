@@ -49,3 +49,8 @@
 - **D:** simulacao 5/5, world 14/14, suite 49/49.
 - Notas 0–100: visual 79 · código 87 · estabilidade 94 · desempenho 83 · jogabilidade 85 · mobile 70 · originalidade 80.
 
+### Ciclo 08 — Jogabilidade: seta de borda → waypoint fora da tela
+- **C:** `updateWaypointArrow()` no GameScene desenha seta verde na borda da tela (HUD camera) apontando ao waypoint quando ele está fora da visão; esconde no modo foto e quando perto.
+- **D:** simulacao 5/5; suite 49/49; `node --check` ok.
+- Notas 0–100: visual 79 · código 87 · estabilidade 94 · desempenho 83 · jogabilidade 86 · mobile 70 · originalidade 80.
+

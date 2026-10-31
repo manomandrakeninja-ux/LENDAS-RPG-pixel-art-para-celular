@@ -16,3 +16,4 @@ Linha base (antes do ciclo 01):
 | 05 | 49/49 arquivos (novo simulacao.test.js 4/4) | 79 / 87 / 94 / 80 / 83 / 70 / 80 |
 | 06 | 49/49 arquivos (simulacao 5/5); buildTerrainGrid 182ms→0ms cacheado | 79 / 87 / 94 / 83 / 83 / 70 / 80 |
 | 07 | 49/49 arquivos; 17 fotos | 79 / 87 / 94 / 83 / 85 / 70 / 80 |
+| 08 | 49/49 arquivos | 79 / 87 / 94 / 83 / 86 / 70 / 80 |
