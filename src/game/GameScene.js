@@ -188,6 +188,15 @@ export class GameScene extends Phaser.Scene {
     // Eventos aleatórios do overworld (a cada ~1-2 min: moedas, XP, cura, vento a favor...).
     this.eventSpeedUntil = 0;
     this.randomEventMs = Phaser.Math.Between(45000, 90000);
+    // Medidor de desempenho leve (ring buffer dos últimos 120 frames) — legível no console via window.__lendasPerf.
+    this.frameTimes = [];
+    window.__lendasPerf = () => {
+      const arr = this.frameTimes;
+      if (!arr.length) return null;
+      const avg = arr.reduce((a, b) => a + b, 0) / arr.length;
+      const sorted = [...arr].sort((a, b) => a - b);
+      return { frames: arr.length, avgMs: +avg.toFixed(2), fps: +(1000 / avg).toFixed(1), p95Ms: +sorted[Math.floor(sorted.length * 0.95)].toFixed(2) };
+    };
     // Auto-save periódico (a cada 3 min) com aviso discreto no canto.
     this.autoSaveMs = 180000;
     // Y: voltar ao acampamento de graça (cooldown de 60 s, fora de combate/caverna).
@@ -750,6 +759,9 @@ export class GameScene extends Phaser.Scene {
   }
 
   updateFrame(_time, delta) {
+    // Ring buffer de ms/frame (máx 120) para o medidor __lendasPerf.
+    this.frameTimes.push(delta);
+    if (this.frameTimes.length > 120) this.frameTimes.shift();
     this.graphics?.update(delta);
     this.lan?.update(delta);
     if (this.gameOver) {
