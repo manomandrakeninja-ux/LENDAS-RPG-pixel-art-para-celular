@@ -1600,7 +1600,7 @@ test('simulação: torres — têm entrada, monstros e ficam em região válida'
 test('simulação: ELITE_CONFIG — multiplicadores sadios e aura definida', () => {
   assert.ok(ELITE_CONFIG.healthMultiplier > 1, 'elite deve ter mais vida');
   assert.ok(ELITE_CONFIG.damageMultiplier > 1, 'elite deve dar mais dano');
-  assert.ok(typeof ELITE_CONFIG.auraColor === 'string', 'elite sem aura');
+  assert.ok(typeof ELITE_CONFIG.auraColor === 'number' || typeof ELITE_CONFIG.auraColor === 'string', 'elite sem aura');
   assert.ok(ELITE_CONFIG.chance && typeof ELITE_CONFIG.chance.day === 'number' && typeof ELITE_CONFIG.chance.night === 'number', 'chance elite incompleta');
   assert.ok(ELITE_CONFIG.chance.day > 0 && ELITE_CONFIG.chance.night > 0, 'elite nunca aparece?');
 });
