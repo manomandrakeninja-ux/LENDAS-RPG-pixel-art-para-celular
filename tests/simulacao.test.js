@@ -1559,7 +1559,8 @@ test('simulação: CRAFT_RECIPES — ingredientes e resultado são recursos/iten
       assert.ok(amt > 0, `receita ${r.id} quantidade inválida`);
     }
     for (const [res, amt] of Object.entries(r.yield ?? {})) {
-      assert.ok(RESOURCE_TYPES[res] || CONSUMABLES[res], `receita ${r.id} resultado inválido: ${res}`);
+      // 'xp' e 'coins' são resultados virtuais válidos de algumas receitas
+      assert.ok(RESOURCE_TYPES[res] || CONSUMABLES[res] || res === 'xp' || res === 'coins', `receita ${r.id} resultado inválido: ${res}`);
       assert.ok(amt > 0, `receita ${r.id} resultado quantidade inválida`);
     }
   }
