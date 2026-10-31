@@ -162,6 +162,10 @@
 - 401–410: props + testes achievements/buffs + 🦀 caranguejo · 411–420: props + testes clima/cavernas + 🦉 coruja · 421–430: props + testes drops/gear + 🌿 orquídea · 431–440: props + testes dayNight/skills + 🌠 estrela · 441–450: props + testes economia/bestiário + 🐝 abelha · 451–460: props + testes recursos/hotkeys + 🐸 sapo · 461–470: props + testes forja/campanha + 🐺 lobo · 471–480: props + testes keybinds/receitas + 🐚 concha · 481–490: props + testes vilas/sinais + 🍄 cogumelo · 491–500: props + testes torres/elites + 👻 eco + marco 500 (foto 35).
 - Estado no marco 500: 303 arquivos sintaxe OK · suite 49/49 · simulacao 103/103 · atlas 435 objetos · 35 fotos · 40 dicas · 20+ eventos. Notas: 98 / 97 / 98 / 86 / 98 / 74 / 92.
 
+### Ciclos 501–600/1000 ✅ CONCLUÍDOS — marco 600 alcançado
+- 501–510: props + testes combat/viajantes + 🦋 borboleta · 511–520: props + testes save-v1/spawns + 🍄 cogumelo lunar · 521–530: props + testes skills/sets + 🌵 cacto · 531–540: props + testes baús/estradas + ❄️ nevasca · 541–550: props + testes cavernas/clima + 🐸 sapo da chuva · 551–560: props + testes scaleEnemy/levelInRange + 🔥 brasa viva · 561–570: props + testes inventário/viajantes + 🏺 ânfora · 571–580: props + testes construções/dayNight + 💀 caveira · 581–590: props + testes consumíveis/enemyXp + 💚 fonte de vida · 591–600: props + testes achievements/bestiário + 🌌 aurora + marco 600 (foto 36).
+- Estado no marco 600: 303 arquivos sintaxe OK · suite 49/49 · simulacao 123/123 · atlas 511 objetos · 36 fotos · 45 dicas · 25+ eventos. Notas: 98 / 97 / 98 / 86 / 98 / 74 / 92.
+
 ### Ciclo 70/130 — Verificação intermediária (marco) ✅ CONCLUÍDO
 - 303 arquivos sintaxe OK · suite 49/49 · simulacao 19/19 · atlas 90 objetos · foto 28-mapa-ciclo-70. Notas: 90 / 92 / 98 / 86 / 97 / 74 / 86.
 
