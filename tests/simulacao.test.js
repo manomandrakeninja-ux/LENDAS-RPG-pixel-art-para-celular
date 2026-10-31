@@ -2142,6 +2142,30 @@ test('simulação: CRAFT_RECIPES — receitas têm custo não vazio e produto v�
   }
 });
 
+test('simulação: skills — xp por nível cresce e nível máximo respeitado', () => {
+  assert.ok(Object.keys(SKILLS).length >= 3, 'poucas habilidades');
+  for (let lvl = 1; lvl <= SKILL_MAX_LEVEL; lvl += 1) {
+    assert.ok(skillXpForLevel(lvl) > 0, `xp nível ${lvl} positivo`);
+    if (lvl > 1) assert.ok(skillXpForLevel(lvl) >= skillXpForLevel(lvl - 1), `xp nível ${lvl} não decresce`);
+  }
+  assert.ok(skillLevelForXp(skillXpForLevel(SKILL_MAX_LEVEL)) <= SKILL_MAX_LEVEL, 'nível máximo respeitado');
+  const ps = new PS2();
+  assert.ok(ps.level('attack') === 1 || ps.level('attack') === 0, 'nível inicial sadio');
+});
+
+test('simulação: BuffSystem — apply/has/remove/serialize funcionam', () => {
+  const b = new BuffSystem();
+  const ids = Object.keys(BUFF_DEFINITIONS);
+  assert.ok(ids.length >= 3, 'poucos buffs definidos');
+  const applied = b.apply(ids[0], 5000);
+  assert.ok(applied, 'apply funciona');
+  assert.ok(b.has(ids[0]), 'has confirma buff ativo');
+  const ser = b.serialize();
+  assert.ok(Array.isArray(ser) && ser.length === 1 && ser[0].id === ids[0], 'serialize preserva buff');
+  assert.ok(b.remove(ids[0]), 'remove funciona');
+  assert.ok(!b.has(ids[0]), 'buff removido some');
+});
+
 test('simulação: o jogador não sai do mapa — trava física de limites do mundo ativa no Player', async () => {
   // terrainAt é infinita (gera terreno até fora do mapa), então a proteção real é física:
   // Player.js precisa chamar body.setCollideWorldBounds(true). Conferimos no código-fonte.
