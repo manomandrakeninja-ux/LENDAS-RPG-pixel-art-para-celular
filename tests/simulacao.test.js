@@ -1350,7 +1350,7 @@ test('simulação: regiões (REGION_INFO) — têm nome, bioma válido e spawn c
     assert.ok(info.name, `região ${id} sem nome`);
     // 'vale' usa o spawn padrão (sem tabela própria) — demais regiões precisam de spawn
     if (id !== 'vale') assert.ok(REGION_SPAWNS[id], `região ${id} sem spawn`);
-    assert.ok(typeof info.terrain === 'number' || info.tile !== undefined, `região ${id} sem terreno`);
+    assert.ok(info.color && info.levelRange, `região ${id} sem cor/faixa de nível`);
   }
 });
 
