@@ -1544,7 +1544,9 @@ test('simulação: keybinds — normalizeKeybinds preenche padrão e rebind troc
     assert.ok(isBindableCode(kb[action]), `tecla padrão inválida: ${kb[action]}`);
   }
   const rebound = rebind(normalizeKeybinds(null), 'attack', 'KeyX');
-  assert.equal(actionForCode(rebound, 'KeyX'), 'attack', 'rebind refletido em actionForCode');
+  assert.ok(rebound.ok, `rebind falhou: ${rebound.message ?? ''}`);
+  assert.equal(actionForCode(rebound.binds, 'KeyX'), 'attack', 'rebind refletido em actionForCode');
+  assert.equal(actionForCode(rebound.binds, 'KeyJ'), null, 'tecla antiga liberada');
   assert.ok(!isReservedCode('KeyX'), 'KeyX não deve ser reservada');
 });
 
