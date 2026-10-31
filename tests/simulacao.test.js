@@ -1664,7 +1664,8 @@ test('simulação: GEAR_SETS — cada set tem peças suficientes (2-5) e bônus 
   for (const [key, set] of Object.entries(GEAR_SETS)) {
     assert.ok(set.name, `set ${key} sem nome`);
     const pieces = Object.values(GEAR_ITEMS).filter((i) => i.tierKey === key);
-    assert.ok(pieces.length >= 2 && pieces.length <= 5, `set ${key} com ${pieces.length} peças (esperado 2-5)`);
+    // ring/weapon podem ter 2 peças cada → até 10 no total
+    assert.ok(pieces.length >= 2 && pieces.length <= 10, `set ${key} com ${pieces.length} peças (esperado 2-10)`);
     assert.ok(set.bonus && Object.keys(set.bonus).length >= 1, `set ${key} sem bônus`);
   }
 });
