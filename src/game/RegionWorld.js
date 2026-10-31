@@ -33,14 +33,14 @@ const INTERACT_RANGE = 70;
 
 // Objetos por terreno: [frame, peso, sólido?]. Sólido = base que bloqueia (largura, altura).
 const PROPS = {
-  [T.FOREST]: { density: 0.2, list: [['ancient-oak-0', 1, [18, 10]], ['ancient-oak-1', 1, [18, 10]], ['mossy-pine-0', 2, [10, 7]], ['mossy-pine-1', 2, [10, 7]], ['giant-mushroom', 0.6, [10, 6]], ['fern', 3], ['fallen-log', 0.6, [40, 10]], ['mossy-rock', 1, [24, 10]]] },
-  [T.SWAMP]: { density: 0.13, list: [['willow', 1.4, [14, 9]], ['dead-tree', 1.4, [10, 7]], ['reeds', 3], ['swamp-shroom', 1.2], ['bog-log', 0.5, [40, 10]], ['mossy-rock', 0.5, [24, 10]]] },
-  [T.SNOW]: { density: 0.12, list: [['snow-pine-0', 2, [10, 7]], ['snow-pine-1', 2, [10, 7]], ['ice-crystal', 1, [16, 8]], ['snow-rock', 1.4, [28, 10]], ['frozen-bush', 1.4]] },
-  [T.SAND]: { density: 0.05, list: [['cactus', 2, [12, 7]], ['cactus-small', 2, [10, 6]], ['desert-rock', 1, [40, 12]], ['skull', 0.7], ['dry-bush', 2], ['ruin-pillar', 0.3, [18, 8]], ['ruin-pillar-broken', 0.4, [18, 8]]] },
-  [T.DUNE]: { density: 0.018, list: [['dry-bush', 1], ['skull', 0.4], ['cactus-small', 0.5, [10, 6]]] },
-  [T.BEACH]: { density: 0.04, list: [['palm-0', 1.5, [8, 6]], ['palm-1', 1.5, [8, 6]], ['sea-rock', 1, [28, 10]], ['big-flower', 0.3]] },
-  [T.JUNGLE]: { density: 0.13, list: [['palm-0', 1.5, [8, 6]], ['palm-1', 1.5, [8, 6]], ['tropical-bush', 3], ['big-flower', 2], ['sea-rock', 0.4, [28, 10]]] },
-  [T.ASH]: { density: 0.09, list: [['charred-tree', 2, [10, 7]], ['obsidian', 2, [28, 12]], ['lava-vent', 1], ['fire-crystal', 0.8, [14, 8]], ['ash-bush', 2]] }
+  [T.FOREST]: { density: 0.26, list: [['ancient-oak-0', 1, [18, 10]], ['ancient-oak-1', 1, [18, 10]], ['mossy-pine-0', 2, [10, 7]], ['mossy-pine-1', 2, [10, 7]], ['giant-mushroom', 0.6, [10, 6]], ['fern', 3], ['fallen-log', 0.6, [40, 10]], ['mossy-rock', 1, [24, 10]], ['grass-tuft-0', 4], ['grass-tuft-1', 4], ['flower-tuft-0', 1.2], ['flower-tuft-1', 1.2]] },
+  [T.SWAMP]: { density: 0.17, list: [['willow', 1.4, [14, 9]], ['dead-tree', 1.4, [10, 7]], ['reeds', 3], ['swamp-shroom', 1.2], ['bog-log', 0.5, [40, 10]], ['mossy-rock', 0.5, [24, 10]], ['grass-tuft-0', 3], ['flower-tuft-1', 0.6]] },
+  [T.SNOW]: { density: 0.15, list: [['snow-pine-0', 2, [10, 7]], ['snow-pine-1', 2, [10, 7]], ['ice-crystal', 1, [16, 8]], ['snow-rock', 1.4, [28, 10]], ['frozen-bush', 1.4], ['grass-tuft-1', 1.5]] },
+  [T.SAND]: { density: 0.07, list: [['cactus', 2, [12, 7]], ['cactus-small', 2, [10, 6]], ['desert-rock', 1, [40, 12]], ['skull', 0.7], ['dry-bush', 2], ['ruin-pillar', 0.3, [18, 8]], ['ruin-pillar-broken', 0.4, [18, 8]], ['grass-tuft-0', 1.5]] },
+  [T.DUNE]: { density: 0.03, list: [['dry-bush', 1], ['skull', 0.4], ['cactus-small', 0.5, [10, 6]], ['grass-tuft-1', 1]] },
+  [T.BEACH]: { density: 0.06, list: [['palm-0', 1.5, [8, 6]], ['palm-1', 1.5, [8, 6]], ['sea-rock', 1, [28, 10]], ['big-flower', 0.3], ['flower-tuft-0', 1.5], ['grass-tuft-0', 2]] },
+  [T.JUNGLE]: { density: 0.17, list: [['palm-0', 1.5, [8, 6]], ['palm-1', 1.5, [8, 6]], ['tropical-bush', 3], ['big-flower', 2], ['sea-rock', 0.4, [28, 10]], ['grass-tuft-0', 3], ['grass-tuft-1', 3], ['flower-tuft-1', 2]] },
+  [T.ASH]: { density: 0.11, list: [['charred-tree', 2, [10, 7]], ['obsidian', 2, [28, 12]], ['lava-vent', 1], ['fire-crystal', 0.8, [14, 8]], ['ash-bush', 2], ['grass-tuft-1', 0.8]] }
 };
 const NODE_DENSITY = 0.011;
 // Objetos que brilham no escuro (iluminam a noite e as cavernas).

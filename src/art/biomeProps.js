@@ -826,6 +826,38 @@ export function valleyRoundTree(base, fruit = null, seed = 0) {
   return finish(p);
 }
 
+/** Tufo baixo de grama (chão, sem colisão) — dá vida ao gramado entre as árvores. */
+function grassTuft(seed = 401) {
+  const p = new Painter(16, 10, { transparent: true });
+  const greens = ['#1e3a14', '#2e5220', '#3f6e2c', '#559040', '#6fae52'];
+  for (let blade = 0; blade < 9; blade += 1) {
+    const bx = 3 + blade * 1.3 + (hash(blade, seed, 1) - 0.5) * 2;
+    const height = 5 + hash(blade, seed, 2) * 4;
+    const lean = (hash(blade, seed, 3) - 0.5) * 3;
+    for (let t = 0; t <= 1; t += 0.12) {
+      const x = bx + lean * t * t;
+      const y = 9 - height * t;
+      p.set(x, y, shade(greens, 0.35 + (1 - t) * 0.5 + hash(blade, Math.round(t * 9), seed) * 0.2));
+    }
+  }
+  return finish(p, { outline: 0.35 });
+}
+
+/** Toque de flores silvestres (3 florzinhas) no chão. */
+function flowerTuft(seed = 402) {
+  const p = new Painter(16, 12, { transparent: true });
+  const petals = ['#e8b8d8', '#f4e6a0', '#c8a8e8', '#f0f0f0'];
+  for (let flower = 0; flower < 3; flower += 1) {
+    const fx = 4 + flower * 4.5 + (hash(flower, seed, 5) - 0.5) * 2;
+    const fy = 4 + hash(flower, seed, 6) * 3;
+    const color = petals[Math.floor(hash(flower, seed, 7) * petals.length) % petals.length];
+    for (let t = 0; t <= 1; t += 0.2) p.set(fx, fy + 6 * t, shade(['#2e5220', '#3f6e2c'], 0.5));
+    for (const [ox, oy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) p.set(fx + ox, fy + oy, color);
+    p.set(fx, fy, '#ffe08a');
+  }
+  return finish(p, { outline: 0.3 });
+}
+
 const PAINTED_ENTRIES = [
   { name: 'ancient-oak-0', draw: () => ancientOak(0) },
   { name: 'ancient-oak-1', draw: () => ancientOak(1) },
@@ -856,6 +888,10 @@ const PAINTED_ENTRIES = [
   { name: 'ruin-pillar-broken', draw: () => ruinPillar(true) },
   { name: 'tropical-bush', draw: tropicalBush },
   { name: 'big-flower', draw: bigFlower },
+  { name: 'grass-tuft-0', draw: () => grassTuft(401) },
+  { name: 'grass-tuft-1', draw: () => grassTuft(417) },
+  { name: 'flower-tuft-0', draw: () => flowerTuft(402) },
+  { name: 'flower-tuft-1', draw: () => flowerTuft(419) },
   { name: 'shipwreck', draw: shipwreck },
   { name: 'sea-rock', draw: seaRock },
   { name: 'charred-tree', draw: () => deadTree(['#0c0808', '#1a1010', '#2a1a16', '#3a2620', '#4a3228'], true) },
