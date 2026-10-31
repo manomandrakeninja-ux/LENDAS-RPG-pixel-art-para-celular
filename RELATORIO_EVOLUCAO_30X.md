@@ -80,6 +80,12 @@
 - **D:** suite 49/49.
 - **Notas 0–100:** visual 79 · código 87 · estabilidade 95 · desempenho 83 · jogabilidade 88 · mobile 70 · originalidade 81.
 
+## Ciclo 15/30 — Documentação: backlog do mapa 400×300 atualizado ✅ CONCLUÍDO
+
+- **H:** `docs/mapa-400x300.md` — cache do grid e teste permanente de POIs marcados como feitos; seção nova lista as entregas do experimento-30x.
+- **D:** suite 49/49 (sem mudança de código neste ciclo).
+- **Notas 0–100:** visual 81 · código 87 · estabilidade 95 · desempenho 83 · jogabilidade 88 · mobile 70 · originalidade 82.
+
 ## Ciclo 14/30 — Arte: tufos de grama/flores nos 8 biomas ✅ CONCLUÍDO
 
 - **C:** 4 props novos (`grass-tuft-0/1`, `flower-tuft-0/1`) no atlas (65→69 objetos) distribuídos pelas tabelas PROPS.

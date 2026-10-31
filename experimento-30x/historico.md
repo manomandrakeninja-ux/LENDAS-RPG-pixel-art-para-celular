@@ -69,6 +69,11 @@
 - **D:** suite 49/49.
 - Notas 0–100: visual 79 · código 87 · estabilidade 95 · desempenho 83 · jogabilidade 88 · mobile 70 · originalidade 81.
 
+### Ciclo 15 — Documentação: backlog do mapa atualizado com entregas do experimento
+- **H:** `docs/mapa-400x300.md` — itens 3 (cache do grid) e 5 (teste de POIs) marcados como feitos; nova seção com o resumo das entregas do experimento-30x.
+- **D:** suite 49/49 (sem mudança de código).
+- Notas 0–100: visual 81 · código 87 · estabilidade 95 · desempenho 83 · jogabilidade 88 · mobile 70 · originalidade 82.
+
 ### Ciclo 14 — Arte: tufos de grama e flores nos biomas (4 props novos)
 - **C:** `grassTuft()` e `flowerTuft()` (2 variantes cada) em biomeProps.js; adicionados às tabelas PROPS dos 8 biomas (densidade maior nos férteis). Atlas regenerado: 69 objetos (antes 65).
 - **Foto:** SUPER ATUALIZAÇÃO/18-detalhe-flores-grama.
