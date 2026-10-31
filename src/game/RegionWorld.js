@@ -265,7 +265,8 @@ export class RegionWorld {
       }
       const npc = scene.add.sprite(village.x, village.y + 30, `villager-${village.id}-0`).setOrigin(0.5, 0.86).setDepth(village.y + 30);
       npc.play(animKey);
-      scene.hudCamera?.ignore(npc);
+      const npcShadow = scene.add.ellipse(village.x, village.y + 34, 22, 7, 0x000000, 0.26).setDepth(village.y - 1);
+      scene.hudCamera?.ignore([npc, npcShadow]);
       this.features.push({ type: 'villager', village, x: village.x, y: village.y + 30, sprite: npc, label: `CONVERSAR • ${village.name}` });
       this.addHint(npc, village.x, village.y - 40, village.name);
     });
@@ -296,8 +297,9 @@ export class RegionWorld {
       }
       const start = pointOnRoad(road, 0.2 + index * 0.3);
       const sprite = scene.add.sprite(start.x, start.y, `villager-${id}-0`).setOrigin(0.5, 0.86).setDepth(start.y).play(animKey);
-      scene.hudCamera?.ignore(sprite);
-      const traveler = { id, road, t: 0.2 + index * 0.3, dir: index % 2 === 0 ? 1 : -1, speed: 24 + index * 4, sprite, lines: travelerLines };
+      const shadow = scene.add.ellipse(start.x, start.y + 4, 22, 7, 0x000000, 0.26).setDepth(start.y - 1);
+      scene.hudCamera?.ignore([sprite, shadow]);
+      const traveler = { id, road, t: 0.2 + index * 0.3, dir: index % 2 === 0 ? 1 : -1, speed: 24 + index * 4, sprite, shadow, lines: travelerLines };
       this.features.push({ type: 'traveler', traveler, get x() { return traveler.sprite.x; }, get y() { return traveler.sprite.y; }, sprite, label: 'CONVERSAR • VIAJANTE' });
       this.addHint(sprite, start.x, start.y - 40, 'Viajante');
       return traveler;
@@ -1132,6 +1134,8 @@ export class RegionWorld {
       if (traveler.t <= 0) { traveler.t = 0; traveler.dir = 1; }
       const point = pointOnRoad(traveler.road, traveler.t);
       traveler.sprite.setPosition(point.x, point.y).setDepth(point.y);
+      // Sombra de contato acompanha o viajante.
+      traveler.shadow?.setPosition(point.x, point.y + 4).setDepth(point.y - 1);
     }
   }
 

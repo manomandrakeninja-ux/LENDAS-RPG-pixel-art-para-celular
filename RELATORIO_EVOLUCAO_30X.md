@@ -28,3 +28,9 @@
 - **C:** `showRegionAt` agora exibe clima de hoje (`weatherAt` + `WEATHER_ICONS`) e vilarejos da região no cartão.
 - **D:** worldMap 2/2, weather 2/2, suite 48/48; import puro (sem Phaser) mantém testes node verdes.
 - **Notas 0–100:** visual 78 · código 86 · estabilidade 92 · desempenho 80 · jogabilidade 83 · mobile 70 · originalidade 80.
+
+## Ciclo 04/30 — Arte: sombra de contato dos NPCs ✅ CONCLUÍDO
+
+- **C:** sombra ellipse sob moradores de vilarejos e viajantes (acompanha no update).
+- **D:** suite 48/48. Limitação: verificação visual não é possível no sandbox (sem Chrome) — auditado só por código.
+- **Notas 0–100:** visual 79 · código 86 · estabilidade 92 · desempenho 80 · jogabilidade 83 · mobile 70 · originalidade 80.
