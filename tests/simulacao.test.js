@@ -1214,8 +1214,8 @@ test('simulação: keybinds — teclas de ação não colidem entre si', () => {
     assert.ok(!seen[code], `code ${code} usado por ${seen[code]} e ${action}`);
     seen[code] = action;
   }
-  // ações mínimas esperadas existem com code válido
-  for (const action of ['map', 'backpack', 'gear', 'journal', 'close']) {
+  // as 5 ações padrão existem com code válido (as demais teclas ficam no GameScene)
+  for (const action of KEY_ACTIONS) {
     const code = DEFAULT_KEYBINDS[action];
     assert.ok(code && typeof code === 'string' && code.length >= 2, `ação obrigatória ausente: ${action}`);
   }
