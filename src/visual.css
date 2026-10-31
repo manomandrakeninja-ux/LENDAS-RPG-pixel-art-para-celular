@@ -123,6 +123,34 @@
   color: var(--gold);
 }
 
+/* Fixar item (★) no topo da mochila */
+.bag-slot { position: relative; }
+
+.bag-slot--pinned {
+  outline: 2px solid var(--gold);
+  outline-offset: -2px;
+}
+
+.bag-slot__pin {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  z-index: 2;
+  border: 0;
+  background: rgba(20, 12, 8, 0.75);
+  color: #8a7a5a;
+  font-size: 11px;
+  line-height: 1;
+  padding: 2px 3px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.bag-slot__pin.is-pinned {
+  color: var(--gold);
+  text-shadow: 0 0 4px rgba(232, 199, 121, 0.6);
+}
+
 /* ---------- Painel de ajuda (tecla ?) ---------- */
 .help-overlay {
   position: fixed;

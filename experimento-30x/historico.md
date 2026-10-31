@@ -69,6 +69,11 @@
 - **D:** suite 49/49.
 - Notas 0–100: visual 79 · código 87 · estabilidade 95 · desempenho 83 · jogabilidade 88 · mobile 70 · originalidade 81.
 
+### Ciclo 18 — QoL: fixar itens (★) no topo da mochila
+- **C:** botão ☆/★ em cada slot; fixados vão primeiro na lista e persistem em localStorage (`lendas-pinned`); CSS dourado no slot fixado.
+- **D:** suite 49/49.
+- Notas 0–100: visual 83 · código 87 · estabilidade 95 · desempenho 83 · jogabilidade 90 · mobile 71 · originalidade 82.
+
 ### Ciclo 17 — Iluminação: tocha do jogador (halo quente próprio à noite)
 - **C:** `getLightSources()` inclui o player como luz 'torch' (raio 120, entra primeiro na lista antes do corte de 24 luzes).
 - **D:** suite 49/49.
