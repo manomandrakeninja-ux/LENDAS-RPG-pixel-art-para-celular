@@ -40,6 +40,8 @@ import { PERK_LEVELS, PERK_OFFER_SIZE, PERKS, respecCost, xpRequiredForLevel } f
 import { VILLAGERS, VILLAGER_STATS } from '../src/data/villagers.js';
 import { BOSS_CONFIG, BOSS_CAMP_DISTANCE } from '../src/data/boss.js';
 import { CHAPTER_STORY, STORY_LORE, ENDINGS } from '../src/data/story.js';
+import { sunShadow } from '../src/data/sunlight.js';
+import { HARVEST_STRUCTURE_TYPES, HARVEST_STRUCTURE_INTERACTION_RANGE, createSeededRandom } from '../src/data/harvestStructures.js';
 // Validamos uso cruzado do atlas com regex em TODOS os fontes de src/ (RegionWorld importa Phaser).
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -2009,6 +2011,28 @@ test('simulação: story — capítulos, lore e finais existem e têm texto', ()
   for (const [id, end] of Object.entries(ENDINGS)) {
     assert.ok(end.title && end.lore, `final ${id} incompleto`);
   }
+});
+
+test('simulação: sunShadow — sombra muda ao longo do dia e fica em faixa válida', () => {
+  const hours = [0, 6, 9, 12, 15, 18, 23];
+  for (const h of hours) {
+    const s = sunShadow(h);
+    assert.ok(typeof s === 'number' && s >= -1 && s <= 1, `sunShadow(${h}) fora de [-1,1]: ${s}`);
+  }
+  // meio-dia sombra menor (mais curta) que fim de tarde
+  assert.ok(Math.abs(sunShadow(15)) > Math.abs(sunShadow(12)), 'sombra maior longe do meio-dia');
+});
+
+test('simulação: HARVEST_STRUCTURE_TYPES — estruturas têm custo e produção sadios', () => {
+  const types = Object.keys(HARVEST_STRUCTURE_TYPES);
+  assert.ok(types.length >= 3, 'poucas estruturas de coleta');
+  for (const [id, def] of Object.entries(HARVEST_STRUCTURE_TYPES)) {
+    assert.ok(def.name, `estrutura ${id} sem nome`);
+    assert.ok(def.produce || def.yield || def.loot, `estrutura ${id} sem produção`);
+  }
+  assert.ok(HARVEST_STRUCTURE_INTERACTION_RANGE > 0, 'alcance de interação positivo');
+  const r = createSeededRandom(123);
+  assert.ok(typeof r() === 'number' && r() >= 0 && r() < 1, 'seeded random determinístico e em [0,1)');
 });
 
 test('simulação: o jogador não sai do mapa — trava física de limites do mundo ativa no Player', async () => {
