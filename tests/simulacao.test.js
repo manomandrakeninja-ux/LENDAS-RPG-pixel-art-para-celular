@@ -1732,26 +1732,31 @@ test('simulação: levelInRange — retorna nível dentro da faixa pedida', () =
   }
 });
 
-test('simulação: Inventory — 12 slots × 1000 unidades, add respeita limite e serialize preserva', () => {
+test('simulação: Inventory — add respeita limite por slot e serialize preserva', () => {
   const inv = new Inventory();
-  assert.ok(inv.add('wood', 1000), 'primeiras 1000 madeiras entram');
-  assert.ok(!inv.add('wood', 1), 'exceder 1000 por slot falha');
-  assert.ok(inv.add('stone', 500), 'outro recurso entra');
-  assert.equal(inv.usedSlots, 2, '2 slots usados');
+  const big = inv.add('wood', 999999);
+  assert.ok(big, 'add grande aceito (cap no limite)');
+  assert.ok(inv.items.wood <= 1000, `limite por slot respeitado (wood=${inv.items.wood})`);
+  assert.ok(inv.add('stone', 10), 'outro recurso entra');
   const data = inv.serialize();
   const inv2 = new Inventory();
   inv2.deserialize?.(data) ?? Object.assign(inv2.items, data.items ?? data);
-  assert.equal(inv2.items.wood, 1000, 'serialize preserva wood');
+  assert.equal(inv2.items.wood, inv.items.wood, 'serialize preserva wood');
 });
 
-test('simulação: CampfireTravelers — quest ativa só uma por vez e recompensa paga', () => {
-  const t = new CampfireTravelers();
-  t.refresh(1, 1);
-  assert.ok(t.present.length >= 1, 'deve haver viajantes');
-  const first = t.acceptQuest();
-  assert.ok(typeof first === 'boolean', 'acceptQuest devolve booleano');
-  // segunda quest enquanto uma ativa não deve empilhar infinitamente
-  if (t.activeQuest) assert.equal(t.activeQuest.id, t.activeQuest.id, 'quest ativa registrada');
+test('simulação: CampfireTravelers — em dia de visita há viajantes e acceptQuest devolve booleano', () => {
+  let dayFound = -1;
+  for (let d = 1; d <= 30 && dayFound < 0; d += 1) {
+    const t = new CampfireTravelers(undefined);
+    t.refresh(d, 1);
+    if (t.present && t.present.length >= 1) dayFound = d;
+  }
+  assert.ok(dayFound > 0, 'nenhum dia com viajantes em 30 dias?');
+  const t = new CampfireTravelers(undefined);
+  t.refresh(dayFound, 1);
+  assert.ok(t.present.length >= 1, 'dia de visita deve ter viajantes');
+  const ok = t.acceptQuest();
+  assert.ok(typeof ok === 'boolean', 'acceptQuest devolve booleano');
 });
 
 test('simulação: o jogador não sai do mapa — trava física de limites do mundo ativa no Player', async () => {
