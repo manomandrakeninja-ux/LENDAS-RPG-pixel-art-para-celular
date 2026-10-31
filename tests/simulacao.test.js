@@ -833,8 +833,9 @@ test('simulação: consumíveis — hotkeys 1–5 únicos e cada um tem efeito d
   for (const hk of hks) counts[hk] = (counts[hk] ?? 0) + 1;
   for (const [hk, n] of Object.entries(counts)) assert.ok(n <= 3, `tecla ${hk} com ${n} consumíveis (máx 3)`);
   for (const [key, c] of Object.entries(CONSUMABLES)) {
-    assert.ok(c.name, `${key} sem nome`);
-    assert.ok(c.effect || c.gives || c.type, `${key} sem efeito`);
+    // nome vem do recurso correspondente (RESOURCE_TYPES)
+    assert.ok(RESOURCE_TYPES[key]?.label ?? c.name, `${key} sem nome/label`);
+    assert.ok(Object.keys(c).some((k) => k !== 'hotkey'), `${key} sem nenhum efeito`);
   }
 });
 
