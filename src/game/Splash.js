@@ -62,7 +62,8 @@ const TIPS = [
   'De dia e sol no brejo, uma abelha dourada 🐝 pode dar um pouco de XP.',
   'À noite na selva, um sapo dourado 🐸 pode render bastante XP.',
   'De dia na neve, um lobo das neves 🐺 pode render um pouco de XP.',
-  'À noite na praia, uma concha rara 🐚 pode brilhar com XP.'
+  'À noite na praia, uma concha rara 🐚 pode brilhar com XP.',
+  'Na chuva da floresta, um cogumelo raro 🍄 pode brotar com XP.'
 ];
 
 export function setupSplash() {

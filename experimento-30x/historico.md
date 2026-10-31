@@ -221,6 +221,10 @@
 - 461–465: props — flor lilás de praia, pedra turquesa de duna, neve florida turquesa, cogumelo violeta, flor coral de cinza (atlas 412) · 466: teste forja/rollGearDrop (boss lendário) · 467: teste campanha (missões id único) · 468: evento 🐺 lobo das neves de dia na neve (+10–16 XP) · 469: dica splash · 470: verificação parcial.
 - Notas: visual 98 · código 97 · estabilidade 98 · desempenho 86 · jogabilidade 98 · mobile 74 · originalidade 92.
 
+### Ciclos 471–480 ✅ (lote)
+- 471–475: props — flor lilás do brejo, pedrinha turquesa de praia, gelo lilás-escuro, tronco claro de cinza, flor turquesa de selva (atlas 419) · 476: teste keybinds normalize/rebind · 477: teste receitas de craft (custos/resultados válidos) · 478: evento 🐚 concha rara na praia à noite (+10–16 XP) · 479: dica splash · 480: verificação parcial.
+- Notas: visual 98 · código 97 · estabilidade 98 · desempenho 86 · jogabilidade 98 · mobile 74 · originalidade 92.
+
 ### Ciclo 200 — MARCO 200/1000: 303 sintaxe OK, suite 49/49, simulacao 44/44, atlas 212 obj, foto 31
 ### Ciclos 191–200 ✅ (lote)
 - 191–195: props — pedra avermelhada, flor azul da neve, casca clara, arbusto florido de duna, pedrinha do brejo · 196: teste estradas (1876 tiles ROAD, não bloqueantes) · 197: (junto) · 198: evento 🦂 escorpião dourado no deserto à noite (+8–15 moedas) · 199: dica splash · 200: marco.

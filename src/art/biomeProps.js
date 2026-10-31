@@ -902,6 +902,51 @@ function darkRoundDuneRock(seed = 1647) {
   return finish(p, { outline: 0.35 });
 }
 
+/** Flor da duna turquesa. */
+function turquoiseDuneFlower(seed = 2017) {
+  const p = new Painter(10, 12, { transparent: true });
+  p.rect(4, 6, 2, 5, '#9a8a5a');
+  for (const [dx, dy] of [[-3, -2], [3, -2], [-2, 2], [2, 2], [0, -4]]) p.set(5 + dx, 5 + dy, '#40d0c8');
+  p.set(5, 5, '#f0fffc');
+  return finish(p, { outline: 0.3 });
+}
+
+/** Pedra de praia lilás-escura. */
+function darkLilacBeachStone(seed = 2021) {
+  const p = new Painter(14, 9, { transparent: true });
+  p.sphere(7, 5, 5, '#8a78a8', '#a898c8');
+  p.set(5, 3, '#d0c4e8');
+  return finish(p, { outline: 0.35 });
+}
+
+/** Neve com flor lilás (neve). */
+function lilacFloweredSnow(seed = 2027) {
+  const p = new Painter(16, 9, { transparent: true });
+  p.sphere(8, 6, 5.5, '#dceaf6', '#f4faff');
+  p.set(8, 3, '#c090e8');
+  p.set(6, 5, '#c090e8');
+  p.set(10, 5, '#ffffff');
+  return finish(p, { outline: 0.3 });
+}
+
+/** Cogumelo turquesa (brejo). */
+function turquoiseShroom(seed = 2031) {
+  const p = new Painter(10, 10, { transparent: true });
+  p.rect(4, 6, 2, 3, '#d8e8e4');
+  p.sphere(5, 5, 3.2, '#3aa89c', '#5cc8bc');
+  p.set(4, 4, '#e8f8f6');
+  return finish(p, { outline: 0.35 });
+}
+
+/** Flor da floresta lilás. */
+function lilacForestFlower(seed = 2037) {
+  const p = new Painter(10, 12, { transparent: true });
+  p.rect(4, 6, 2, 5, '#4a6a34');
+  for (const [dx, dy] of [[-3, -2], [3, -2], [-2, 2], [2, 2], [0, -4]]) p.set(5 + dx, 5 + dy, '#c090e8');
+  p.set(5, 5, '#f8f0ff');
+  return finish(p, { outline: 0.3 });
+}
+
 /** Flor do brejo lilás. */
 function lilacSwampFlower(seed = 1987) {
   const p = new Painter(10, 12, { transparent: true });
@@ -3295,6 +3340,14 @@ const PAINTED_ENTRIES = [
   { name: 'pale-ash-log', draw: () => paleAshLog(2001) },
   { name: 'turquoise-jungle-flower-0', draw: () => turquoiseJungleFlower(2007) },
   { name: 'turquoise-jungle-flower-1', draw: () => turquoiseJungleFlower(2009) },
+  { name: 'turquoise-dune-flower-0', draw: () => turquoiseDuneFlower(2017) },
+  { name: 'turquoise-dune-flower-1', draw: () => turquoiseDuneFlower(2019) },
+  { name: 'dark-lilac-beach-stone', draw: () => darkLilacBeachStone(2021) },
+  { name: 'lilac-flowered-snow', draw: () => lilacFloweredSnow(2027) },
+  { name: 'turquoise-shroom-0', draw: () => turquoiseShroom(2031) },
+  { name: 'turquoise-shroom-1', draw: () => turquoiseShroom(2033) },
+  { name: 'lilac-forest-flower-0', draw: () => lilacForestFlower(2037) },
+  { name: 'lilac-forest-flower-1', draw: () => lilacForestFlower(2039) },
   { name: 'shipwreck', draw: shipwreck },
   { name: 'sea-rock', draw: seaRock },
   { name: 'charred-tree', draw: () => deadTree(['#0c0808', '#1a1010', '#2a1a16', '#3a2620', '#4a3228'], true) },

@@ -1566,6 +1566,24 @@ test('simulação: CRAFT_RECIPES — ingredientes e resultado são recursos/iten
   }
 });
 
+test('simulação: vilas — têm nome, NPCs e posição dentro do mundo', () => {
+  assert.ok(VILLAGES.length >= 4, 'poucas vilas');
+  for (const v of VILLAGES) {
+    assert.ok(v.name, 'vila sem nome');
+    assert.ok(v.x > 0 && v.x < WORLD_COLS * TILE && v.y > 0 && v.y < OVERWORLD_ROWS * TILE, `${v.name} fora do mapa`);
+    assert.ok(Array.isArray(v.npcs) && v.npcs.length >= 1, `${v.name} sem NPCs`);
+  }
+});
+
+test('simulação: road signs — apontam para POI dentro do mundo', () => {
+  assert.ok(ROAD_SIGNS.length >= 5, 'poucos sinais');
+  for (const sign of ROAD_SIGNS) {
+    assert.ok(sign.poi, 'sinal sem POI');
+    assert.ok(sign.poi.x >= 0 && sign.poi.x <= WORLD_COLS * TILE, 'POI x fora');
+    assert.ok(sign.poi.y >= 0 && sign.poi.y <= OVERWORLD_ROWS * TILE, 'POI y fora');
+  }
+});
+
 test('simulação: o jogador não sai do mapa — trava física de limites do mundo ativa no Player', async () => {
   // terrainAt é infinita (gera terreno até fora do mapa), então a proteção real é física:
   // Player.js precisa chamar body.setCollideWorldBounds(true). Conferimos no código-fonte.
