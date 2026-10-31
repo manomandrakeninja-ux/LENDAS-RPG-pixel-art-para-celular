@@ -738,6 +738,21 @@ test('simulação: save — envelope v2, migrate de versão futura não quebra e
   assert.ok(migrated.inventory && typeof migrated.inventory === 'object', 'inventory default existe');
 });
 
+test('simulação: spawns por região — dia e noite com tipos válidos; ilhas têm spawn próprio', () => {
+  const regioes = Object.keys(REGION_SPAWNS);
+  assert.ok(regioes.length >= 8, 'poucas regiões com spawn');
+  for (const [region, spawns] of Object.entries(REGION_SPAWNS)) {
+    assert.ok(Array.isArray(spawns.day) && spawns.day.length > 0, `${region} sem spawn de dia`);
+    assert.ok(Array.isArray(spawns.night) && spawns.night.length > 0, `${region} sem spawn de noite`);
+    for (const id of [...spawns.day, ...spawns.night]) {
+      assert.ok(ENEMY_TYPES[id], `${region} referencia inimigo inexistente: ${id}`);
+    }
+  }
+  // Ilhas (esmeralda/brasa) têm spawns próprios, diferentes do continente.
+  assert.ok(REGION_SPAWNS.esmeralda && REGION_SPAWNS.brasa, 'ilhas sem spawn próprio');
+  assert.notDeepEqual(REGION_SPAWNS.esmeralda.day, REGION_SPAWNS.antiga.day, 'ilha esmeralda deve ter fauna própria');
+});
+
 test('simulação: o jogador não sai do mapa — trava física de limites do mundo ativa no Player', async () => {
   // terrainAt é infinita (gera terreno até fora do mapa), então a proteção real é física:
   // Player.js precisa chamar body.setCollideWorldBounds(true). Conferimos no código-fonte.

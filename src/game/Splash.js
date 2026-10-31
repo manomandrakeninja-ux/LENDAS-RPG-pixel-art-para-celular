@@ -30,7 +30,8 @@ const TIPS = [
   'Borboletas 🦋 na floresta e no vale podem te dar um tiquinho de XP.',
   'Perto da água, na praia, um peixe 🐟 pode saltar e virar comida.',
   'A cada 7 dias a lua cheia 🌕 abençoa a noite com XP extra.',
-  'De dia, o vento às vezes carrega uma folhinha 🍃 com um pouco de XP.'
+  'De dia, o vento às vezes carrega uma folhinha 🍃 com um pouco de XP.',
+  'Em dias de sol aberto ☀️ o calor rende um tiquinho de XP.'
 ];
 
 export function setupSplash() {

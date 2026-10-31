@@ -858,6 +858,54 @@ function flowerTuft(seed = 402) {
   return finish(p, { outline: 0.3 });
 }
 
+/** Pedra esverdeada (brejo). */
+function greenStone(seed = 1041) {
+  const p = new Painter(14, 9, { transparent: true });
+  p.sphere(7, 5, 5, '#5e7050', '#7a8a68');
+  p.set(5, 3, '#9ab088');
+  p.sphere(10, 7, 2, '#3f6e2c', '#57a050');
+  return finish(p, { outline: 0.35 });
+}
+
+/** Flor laranja pequena (cinzas). */
+function orangeFlower(seed = 1049) {
+  const p = new Painter(10, 12, { transparent: true });
+  p.rect(4, 6, 2, 5, '#6a5a3a');
+  for (const [dx, dy] of [[-3, -2], [3, -2], [-2, 2], [2, 2], [0, -4]]) p.set(5 + dx, 5 + dy, '#ff9030');
+  p.set(5, 5, '#ffe080');
+  return finish(p, { outline: 0.3 });
+}
+
+/** Raiz retorcida de duna. */
+function duneRoot(seed = 1051) {
+  const p = new Painter(18, 8, { transparent: true });
+  const bark = ['#8a6c3a', '#a8895a', '#6e5628'];
+  p.rect(2, 5, 6, 2, shade([bark[0], bark[1]], 0.5));
+  p.rect(8, 3, 5, 2, bark[1]);
+  p.rect(13, 5, 3, 2, bark[2]);
+  return finish(p, { outline: 0.35 });
+}
+
+/** Gelo esculpido (bloco decorativo). */
+function carvedIce(seed = 1057) {
+  const p = new Painter(14, 14, { transparent: true });
+  const ice = ['#cfe8ff', '#a8d0f0', '#e8f4ff'];
+  p.rect(2, 2, 10, 10, shade([ice[0], ice[2]], 0.5));
+  p.rect(4, 4, 6, 6, ice[1]);
+  p.set(6, 6, '#ffffff');
+  return finish(p, { outline: 0.35 });
+}
+
+/** Tronco caído seco (deserto). */
+function dryLog(seed = 1061) {
+  const p = new Painter(24, 9, { transparent: true });
+  const wood = ['#9a8258', '#b89a6c'];
+  p.rect(2, 3, 20, 4, shade([wood[0], wood[1]], 0.5));
+  p.set(2, 3, '#7a6240'); p.set(21, 6, '#7a6240');
+  p.set(8, 4, '#c8b088');
+  return finish(p, { outline: 0.35 });
+}
+
 /** Cogumelo vermelho grande (floresta). */
 function redCap(seed = 1009) {
   const p = new Painter(14, 12, { transparent: true });
@@ -1638,6 +1686,13 @@ const PAINTED_ENTRIES = [
   { name: 'floating-branch-1', draw: () => floatingBranch(1021) },
   { name: 'snow-branch', draw: () => snowBranch(1031) },
   { name: 'pink-shell', draw: () => pinkShell(1033) },
+  { name: 'green-stone-0', draw: () => greenStone(1041) },
+  { name: 'green-stone-1', draw: () => greenStone(1043) },
+  { name: 'orange-flower-0', draw: () => orangeFlower(1049) },
+  { name: 'orange-flower-1', draw: () => orangeFlower(1051) },
+  { name: 'dune-root', draw: () => duneRoot(1057) },
+  { name: 'carved-ice', draw: () => carvedIce(1061) },
+  { name: 'dry-log', draw: () => dryLog(1063) },
   { name: 'shipwreck', draw: shipwreck },
   { name: 'sea-rock', draw: seaRock },
   { name: 'charred-tree', draw: () => deadTree(['#0c0808', '#1a1010', '#2a1a16', '#3a2620', '#4a3228'], true) },
