@@ -69,3 +69,8 @@
 - **D:** suite 49/49.
 - Notas 0–100: visual 79 · código 87 · estabilidade 95 · desempenho 83 · jogabilidade 88 · mobile 70 · originalidade 81.
 
+### Ciclo 12 — Game feel: texto flutuante de XP no jogador
+- **C:** `grantExperience` mostra `+N XP` ciano flutuante sobre o player (throttle 700 ms para não virar spam em hordas); mensagem de HUD continua.
+- **D:** suite 49/49.
+- Notas 0–100: visual 79 · código 87 · estabilidade 95 · desempenho 83 · jogabilidade 88 · mobile 70 · originalidade 81.
+

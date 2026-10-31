@@ -79,3 +79,9 @@
 - **C:** `openShop()` comum (poção 15 / comida 8 / tocha 5); morador do vilarejo abre a loja da vila; viajante reusa.
 - **D:** suite 49/49.
 - **Notas 0–100:** visual 79 · código 87 · estabilidade 95 · desempenho 83 · jogabilidade 88 · mobile 70 · originalidade 81.
+
+## Ciclo 12/30 — Game feel: +XP flutuante no jogador ✅ CONCLUÍDO
+
+- **C:** texto ciano `+N XP` sobre o player em `grantExperience` (throttle 700 ms).
+- **D:** suite 49/49.
+- **Notas 0–100:** visual 79 · código 87 · estabilidade 95 · desempenho 83 · jogabilidade 88 · mobile 70 · originalidade 81.

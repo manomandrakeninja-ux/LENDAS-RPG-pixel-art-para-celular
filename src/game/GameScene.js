@@ -1650,6 +1650,12 @@ export class GameScene extends Phaser.Scene {
       this.showLevelUpChoice();
     } else if (announce) {
       this.ui.showMessage(`+${amount} XP`);
+      // Texto flutuante ciano no jogador (com throttle para não virarwall of text em hordas).
+      const now = this.time.now;
+      if (!this.lastXpFloatAt || now - this.lastXpFloatAt > 700) {
+        this.lastXpFloatAt = now;
+        this.effects?.spawnDamage(this.player.x, this.player.y - 34, `+${amount} XP`, '#8ad8ff');
+      }
     }
     this.save();
     return result;
