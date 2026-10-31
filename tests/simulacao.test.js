@@ -977,6 +977,41 @@ test('simulação: ciclo dia/noite — durações somam DAY_NIGHT_TOTAL_SECONDS 
   assert.ok(DAY_NIGHT_CONFIG.warningSeconds <= DAY_NIGHT_CONFIG.transitionDurationSeconds, 'aviso deve caber na transição');
 });
 
+test('simulação: quests de viajantes — goods têm preço > 0 e yield válido; quest completa dá recompensa', () => {
+  const goods = Object.values(TRAVELER_GOODS);
+  assert.ok(goods.length >= 3, 'poucos bens de viajante');
+  for (const g of goods) {
+    assert.ok(g.id && g.name, 'bem sem id/nome');
+    assert.ok(g.price > 0, `${g.id} preço inválido`);
+    assert.ok(g.yield >= 1, `${g.id} yield inválido`);
+  }
+  // fluxo completo com inventário fake
+  const t = new CampfireTravelers();
+  t.refresh(100, 99);
+  assert.ok(t.present, 'viajante presente no dia 100 com fogueira nv 99');
+  const quest = t.acceptQuest();
+  assert.ok(quest, 'quest aceita');
+  const storage = { take: (type, amt) => ({ ok: true }), add: () => ({ ok: true }) };
+  const inventory = { items: { [quest.item]: quest.amount + 5 } };
+  assert.ok(t.questReady({ inventory, storage }), 'quest pronta com itens suficientes');
+  const reward = t.claim({ inventory, storage }, (res) => res);
+  assert.ok(reward && (reward.coins > 0 || reward.item), 'recompensa recebida');
+});
+
+test('simulação: save v2 — envelope serializa e migra de v1 sem perder dados', () => {
+  const env = createSaveEnvelope({ time: { day: 7 }, inventory: { items: { wood: 10 } } });
+  assert.equal(env.version, SAVE_VERSION, 'versão do envelope');
+  assert.ok(env.savedAt > 0, 'savedAt preenchido');
+  const json = JSON.stringify(env);
+  const back = JSON.parse(json);
+  assert.equal(back.inventory.items.wood, 10, 'dados preservados no round-trip');
+  // save v1 migra para v2
+  const v1 = { version: 1, player: { x: 1, y: 2 }, inventory: { items: { stone: 3 } } };
+  const migrated = migrateSave(v1);
+  assert.equal(migrated.version, 2, 'migrou para v2');
+  assert.equal(migrated.inventory.items.stone, 3, 'inventário preservado na migração');
+});
+
 test('simulação: o jogador não sai do mapa — trava física de limites do mundo ativa no Player', async () => {
   // terrainAt é infinita (gera terreno até fora do mapa), então a proteção real é física:
   // Player.js precisa chamar body.setCollideWorldBounds(true). Conferimos no código-fonte.
