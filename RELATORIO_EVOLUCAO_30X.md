@@ -80,6 +80,12 @@
 - **D:** suite 49/49.
 - **Notas 0–100:** visual 79 · código 87 · estabilidade 95 · desempenho 83 · jogabilidade 88 · mobile 70 · originalidade 81.
 
+## Ciclo 29/30 — UX: dicas contextuais na tela de derrota ✅ CONCLUÍDO
+
+- **C:** game over mostra dica conforme o contexto (noite, região perigosa para o nível, poções/esquiva).
+- **D:** suite 49/49.
+- **Notas 0–100:** visual 85 · código 89 · estabilidade 97 · desempenho 84 · jogabilidade 93 · mobile 74 · originalidade 84.
+
 ## Ciclo 28/30 — Conteúdo: 4º viajante na Estrada do Penhasco ✅ CONCLUÍDO
 
 - **C:** `travelerRoads = [ROADS[0], ROADS[2], ROADS[3], ROADS[4]]` → 4 viajantes (presente diário + lojinha itinerante).

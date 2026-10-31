@@ -61,7 +61,7 @@ import { GearSystem } from './GearSystem.js';
 import { EquipmentPanel } from './EquipmentPanel.js';
 import { GEAR_ITEMS, RARITIES, blessingPrice, rollGearDrop } from '../data/gear.js';
 import { JEWELS, rollJewelDrop } from '../data/enhance.js';
-import { TILE, roadAt } from '../data/worldRegions.js';
+import { REGION_INFO, TILE, roadAt } from '../data/worldRegions.js';
 import { ExperiencePickups } from './ExperiencePickups.js';
 import { LevelUpOverlay } from './LevelUpOverlay.js';
 import { EconomySystem } from './EconomySystem.js';
@@ -976,7 +976,13 @@ export class GameScene extends Phaser.Scene {
     this.skipSave = true;
     this.buildingMenu.close();
     this.worldMap.close();
-    this.gameOverText.textContent = text;
+    // Dica contextual conforme onde e quando o jogador caiu.
+    let hint = '💡 Dica: poções (tecla 1) e comida (2) salvam em apuros; a Esquiva (tecla configurável) livra de golpes.';
+    const region = this.regionWorld?.currentRegion?.();
+    const info = region ? REGION_INFO[region] : null;
+    if (this.timeState?.isNight) hint = '💡 Dica: de noite os inimigos são mais fortes — durma na fogueira (N) ou numa cama de vilarejo antes de anoitecer. ' + hint;
+    if (info && (info.levelRange?.[0] ?? 0) >= (this.progression?.level ?? 1) + 6) hint = `💡 A região ${info.name} é perigosa para o seu nível (sugerido ${info.levels}, você nível ${this.progression?.level ?? 1}). Explore regiões do seu nível primeiro. ` + hint;
+    this.gameOverText.textContent = `${text}\n\n${hint}`;
     this.gameOverRoot.hidden = false;
     this.cameras.main.shake(600, 0.012, true);
   }
