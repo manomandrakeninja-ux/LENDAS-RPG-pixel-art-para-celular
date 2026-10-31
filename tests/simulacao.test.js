@@ -43,6 +43,7 @@ import { CHAPTER_STORY, STORY_LORE, ENDINGS } from '../src/data/story.js';
 import { sunShadow } from '../src/data/sunlight.js';
 import { isRainyDay, isRaining } from '../src/data/weather.js';
 import { COMMON_DROP_SCALE, isScaledDrop, scaledChance, scaledAmount } from '../src/data/dropScale.js';
+import { FARM_CROPS, AUTO_ANIMAL_PRODUCTS, FORGE_SERVICES, repairCostFor, upgradeCostFor } from '../src/data/buildingSystems.js';
 import { HARVEST_STRUCTURE_TYPES, HARVEST_STRUCTURE_INTERACTION_RANGE, CHEST_LOOT_RECIPES, createSeededRandom } from '../src/data/harvestStructures.js';
 // Validamos uso cruzado do atlas com regex em TODOS os fontes de src/ (RegionWorld importa Phaser).
 import { readFileSync, readdirSync, statSync } from 'node:fs';
@@ -2062,6 +2063,25 @@ test('simulação: dropScale — escala não deixa chance > 1 nem negativa', () 
   }
   const amt = scaledAmount(10, drop, {}, () => 0.5);
   assert.ok(amt >= 0 && amt <= 10, `scaledAmount (${amt}) deve ficar em [0, original]`);
+});
+
+test('simulação: FARM_CROPS — culturas têm custo, produção e tempo de crescimento sadios', () => {
+  const crops = Object.keys(FARM_CROPS);
+  assert.ok(crops.length >= 3, 'poucas culturas');
+  for (const [id, crop] of Object.entries(FARM_CROPS)) {
+    assert.ok(crop.label, `cultura ${id} sem label`);
+    assert.ok(crop.seed && RESOURCE_TYPES[crop.seed], `cultura ${id} sem semente válida`);
+    assert.ok(crop.yield && RESOURCE_TYPES[crop.yield], `cultura ${id} sem produto válido`);
+    assert.ok((crop.growSeconds ?? 0) > 0, `cultura ${id} cresce instantaneamente?`);
+  }
+});
+
+test('simulação: repairCostFor/upgradeCostFor — custo nunca negativo e cresce', () => {
+  assert.ok(repairCostFor(100) >= 0, 'reparo não negativo');
+  assert.ok(repairCostFor(200) >= repairCostFor(100), 'reparo cresce com o dano');
+  assert.ok(upgradeCostFor({ coins: 10 }) >= 0, 'upgrade não negativo');
+  assert.ok(Object.keys(FORGE_SERVICES).length >= 2, 'poucos serviços de forja');
+  assert.ok(AUTO_ANIMAL_PRODUCTS.every((p) => RESOURCE_TYPES[p]), 'produtos automáticos válidos');
 });
 
 test('simulação: o jogador não sai do mapa — trava física de limites do mundo ativa no Player', async () => {
