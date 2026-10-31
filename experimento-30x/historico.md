@@ -69,6 +69,11 @@
 - **D:** suite 49/49.
 - Notas 0–100: visual 79 · código 87 · estabilidade 95 · desempenho 83 · jogabilidade 88 · mobile 70 · originalidade 81.
 
+### Ciclo 19 — Auditoria de código: syntax check geral + imports
+- **D:** `node --check` em 303 arquivos (src+scripts+tests): 0 falhas. Verificação manual confirma que todos os imports adicionados nesta sessão estão em uso (roadAt, keyLabel, compass8, weatherAt, WEATHER_ICONS, VILLAGES, TREASURE_SPOTS, FAST_TRAVEL_COST). Detector automático de imports ociosos deu falso-positivo (regex via pwsh) — descartado e refeito manualmente.
+- **D:** suite 49/49.
+- Notas 0–100: visual 83 · código 88 · estabilidade 95 · desempenho 83 · jogabilidade 90 · mobile 71 · originalidade 82.
+
 ### Ciclo 18 — QoL: fixar itens (★) no topo da mochila
 - **C:** botão ☆/★ em cada slot; fixados vão primeiro na lista e persistem em localStorage (`lendas-pinned`); CSS dourado no slot fixado.
 - **D:** suite 49/49.

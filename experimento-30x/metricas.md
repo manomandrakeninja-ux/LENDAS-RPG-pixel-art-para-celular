@@ -27,3 +27,4 @@ Linha base (antes do ciclo 01):
 | 16 | 49/49 arquivos | 81 / 87 / 95 / 83 / 89 / 70 / 82 |
 | 17 | 49/49 arquivos | 83 / 87 / 95 / 83 / 89 / 70 / 82 |
 | 18 | 49/49 arquivos | 83 / 87 / 95 / 83 / 90 / 71 / 82 |
+| 19 | 49/49 arquivos; 303 arquivos com sintaxe OK | 83 / 88 / 95 / 83 / 90 / 71 / 82 |
