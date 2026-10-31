@@ -2007,7 +2007,7 @@ test('simulação: story — capítulos, lore e finais existem e têm texto', ()
   assert.ok(Object.keys(STORY_LORE).length >= 5, 'pouco lore');
   assert.ok(Object.keys(ENDINGS).length >= 2, 'poucos finais');
   for (const [id, end] of Object.entries(ENDINGS)) {
-    assert.ok(end.title && end.text, `final ${id} incompleto`);
+    assert.ok(end.title && end.lore, `final ${id} incompleto`);
   }
 });
 
