@@ -1221,6 +1221,35 @@ test('simulação: keybinds — teclas de ação não colidem entre si', () => {
   }
 });
 
+test('simulação: construções (BUILDING_DEFS) — keys, níveis, custos e desbloqueios sadios', () => {
+  const keys = Object.keys(BUILDING_DEFS);
+  assert.ok(keys.includes('campfire') && keys.includes('farm') && keys.includes('forge'), 'construções base ausentes');
+  for (const [key, def] of Object.entries(BUILDING_DEFS)) {
+    assert.ok(def.name, `${key} sem nome`);
+    assert.ok(def.levels && Object.keys(def.levels).length >= 1, `${key} sem níveis`);
+    for (const [lvl, desc] of Object.entries(def.levels)) {
+      assert.ok(typeof desc === 'string' && desc.length > 3, `${key} nível ${lvl} sem descrição`);
+    }
+    // custos por nível (exceto nível 1 de fogueira que é grátis por design)
+    if (def.costs) {
+      for (const [lvl, cost] of Object.entries(def.costs)) {
+        assert.ok(Object.keys(cost).length > 0, `${key} nível ${lvl} custo vazio`);
+        for (const [res, amt] of Object.entries(cost)) {
+          assert.ok(RESOURCE_TYPES[res], `${key} custo com recurso inexistente: ${res}`);
+          assert.ok(amt > 0, `${key} custo inválido`);
+        }
+      }
+    }
+  }
+});
+
+test('simulação: save v2 — migrateSave rejeita versão futura (proteção de compatibilidade)', () => {
+  assert.throws(() => migrateSave({ version: 99, savedAt: 'x' }), /mais recente/, 'versão futura deve lançar erro');
+  // envelope válido passa sem erro
+  const ok = migrateSave(createSaveEnvelope({ time: { day: 1 } }));
+  assert.equal(ok.version, SAVE_VERSION, 'envelope atual migra para si mesmo');
+});
+
 test('simulação: o jogador não sai do mapa — trava física de limites do mundo ativa no Player', async () => {
   // terrainAt é infinita (gera terreno até fora do mapa), então a proteção real é física:
   // Player.js precisa chamar body.setCollideWorldBounds(true). Conferimos no código-fonte.

@@ -161,6 +161,10 @@
 - 321–325: props — arbusto rosa de praia, pedra cinza da neve, tronco longo de praia, flor verde-água do brejo, pedra avermelhada de cinza (atlas 310) · 326: teste vilas (4 vilas, nomes únicos, não bloqueantes) · 327: teste cavernas (11, entradas válidas, bosses) · 328: evento 🐚 concha brilhante na praia de dia (+4–9 moedas) · 329: dica splash · 330: verificação parcial.
 - Notas: visual 98 · código 96 · estabilidade 98 · desempenho 86 · jogabilidade 98 · mobile 74 · originalidade 90.
 
+### Ciclos 331–340 ✅ (lote)
+- 331–335: props — flor rosa da selva, pedrinha dourada de duna, neve com pedrinha, cascalho colorido de praia, flor laranja de cinza (atlas 317) · 336: teste baús (longe de torres/acampamento, terreno firme) · 337: teste keybinds (5 ações, sem colisão de code) · 338: evento 👺 espírito das cinzas à noite (+12–20 XP) · 339: dica splash · 340: verificação parcial.
+- Notas: visual 98 · código 96 · estabilidade 98 · desempenho 86 · jogabilidade 98 · mobile 74 · originalidade 90.
+
 ### Ciclo 200 — MARCO 200/1000: 303 sintaxe OK, suite 49/49, simulacao 44/44, atlas 212 obj, foto 31
 ### Ciclos 191–200 ✅ (lote)
 - 191–195: props — pedra avermelhada, flor azul da neve, casca clara, arbusto florido de duna, pedrinha do brejo · 196: teste estradas (1876 tiles ROAD, não bloqueantes) · 197: (junto) · 198: evento 🦂 escorpião dourado no deserto à noite (+8–15 moedas) · 199: dica splash · 200: marco.

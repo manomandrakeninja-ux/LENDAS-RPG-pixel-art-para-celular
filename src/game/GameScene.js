@@ -1682,7 +1682,12 @@ export class GameScene extends Phaser.Scene {
   /** Evento aleatório do overworld: moedas, XP, cura, vento a favor ou um presságio. */
   randomEvent() {
     const roll = Math.random();
-    if (roll < 0.0012 && this.timeState?.phase === 'night' && this.regionWorld?.currentRegion?.() === 'cinzas') {
+    if (roll < 0.001 && this.timeState?.phase === 'night' && this.regionWorld?.currentRegion?.() === 'esmeralda') {
+      const xp = Phaser.Math.Between(15, 25);
+      this.grantExperience(xp);
+      this.effects.spawnDamage(this.player.x, this.player.y - 30, '💎', '#6af0c8');
+      this.ui.showMessage(`💎 Evento: cristal da ilha esmeralda pulsa à noite! +${xp} XP`);
+    } else if (roll < 0.0012 && this.timeState?.phase === 'night' && this.regionWorld?.currentRegion?.() === 'cinzas') {
       const xp = Phaser.Math.Between(12, 20);
       this.grantExperience(xp);
       this.effects.spawnDamage(this.player.x, this.player.y - 30, '👺', '#ff6a50');

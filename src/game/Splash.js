@@ -48,7 +48,8 @@ const TIPS = [
   'O vento 🍃 forte no vale, de dia, às vezes traz um pouco de XP.',
   'Chuva à noite 🌙 pode ser morna e curar um tiquinho.',
   'De dia na praia, conchas brilhantes 🐚 podem dar moeditas.',
-  'À noite nas cinzas, um espírito 👺 pode oferecer XP.'
+  'À noite nas cinzas, um espírito 👺 pode oferecer XP.',
+  'Na ilha Esmeralda, à noite, cristais 💎 pulsam com bastante XP.'
 ];
 
 export function setupSplash() {
