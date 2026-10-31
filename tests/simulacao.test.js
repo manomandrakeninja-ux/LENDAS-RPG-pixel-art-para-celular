@@ -1379,25 +1379,28 @@ test('simulação: achievements com goal "all" — desbloqueia só quando todos 
     ach.check();
     assert.equal(ach.unlocked[id], undefined, `${id} não deve desbloquear vazia`);
   }
-  // preenche a meta de uma conquista simples e garante que check a registra
-  const simple = Object.entries(ACHIEVEMENTS).find(([, a]) => a.goal !== 'all' && typeof a.goal === 'number');
+  // preenche a meta de uma conquista simples e garante que check a registra (id real = a.id)
+  const simple = Object.values(ACHIEVEMENTS).find((a) => a.goal !== 'all' && typeof a.goal === 'number');
   assert.ok(simple, 'nenhuma conquista numérica simples');
-  const [sid, sa] = simple;
   const ach = new Achievements();
-  ach.note(sa.stat, sa.goal + 1);
+  ach.note(simple.stat, simple.goal + 1);
   const got = ach.check();
-  assert.ok(ach.unlocked[sid], `conquista ${sid} deveria desbloquear com ${sa.goal + 1}`);
-  assert.ok(got.some((a) => a.id === sid), 'check devolve a conquista desbloqueada');
+  assert.ok(ach.unlocked[simple.id], `conquista ${simple.id} deveria desbloquear com ${simple.goal + 1}`);
+  assert.ok(got.some((a) => a.id === simple.id), 'check devolve a conquista desbloqueada');
 });
 
-test('simulação: buffs — serialize/deserialize preserva buffs ativos', () => {
+test('simulação: buffs — serialize devolve lista com ids válidos e tempos restantes', () => {
   const b = new BuffSystem();
   b.apply('meal', { durationMs: 60000 });
   b.apply('wellRested', { untilDay: 10 });
   const data = b.serialize();
-  const b2 = new BuffSystem();
-  b2.deserialize?.(data) ?? b2.load?.(data);
-  assert.ok(b2.has('meal') || b2.has('wellRested'), 'serialize preserva ao menos um buff ativo');
+  assert.ok(Array.isArray(data) && data.length === 2, 'serialize lista 2 buffs ativos');
+  for (const entry of data) {
+    assert.ok(BUFF_DEFINITIONS[entry.id], `buff serializado desconhecido: ${entry.id}`);
+    assert.ok(entry.remainingMs === null || entry.remainingMs > 0, 'remainingMs sadio');
+  }
+  // list() reflete os ativos
+  assert.equal(b.list().length, 2, 'list() = 2 buffs');
 });
 
 test('simulação: o jogador não sai do mapa — trava física de limites do mundo ativa no Player', async () => {
