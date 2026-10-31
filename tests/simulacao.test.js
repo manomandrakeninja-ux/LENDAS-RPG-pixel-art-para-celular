@@ -328,7 +328,9 @@ test('simulação: todos os tipos de inimigo têm dados sadios (vida, dano, hitb
     assert.ok(def.hitbox && def.hitbox.width > 0 && def.hitbox.height > 0, `${id} sem hitbox`);
     assert.ok(def.placeholder && def.placeholder.shape, `${id} sem shape visual`);
     assert.ok(['day', 'night', 'both', 'any'].includes(def.period), `${id} período inválido: ${def.period}`);
-    assert.ok(def.spawnWeight && (def.spawnWeight.day > 0 || def.spawnWeight.night > 0), `${id} nunca spawna`);
+    // Bosses não precisam de spawnWeight (aparecem só como boss de caverna/torre).
+    const isBoss = CAVES.some((c) => c.boss === id) || Object.values(TOWERS).some((t) => t.boss === id);
+    if (!isBoss) assert.ok(def.spawnWeight && (def.spawnWeight.day > 0 || def.spawnWeight.night > 0), `${id} nunca spawna`);
     for (const drop of def.drops ?? []) {
       assert.ok(drop.type && drop.chance > 0 && drop.chance <= 1 && drop.max >= drop.min, `${id} drop inválido: ${JSON.stringify(drop)}`);
     }
