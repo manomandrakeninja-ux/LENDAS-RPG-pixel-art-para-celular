@@ -8900,9 +8900,169 @@
     "h": 12
    }
   },
-  "shipwreck": {
+  "light-green-beach-flower-0": {
+   "frame": {
+    "x": 446,
+    "y": 548,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "light-green-beach-flower-1": {
+   "frame": {
+    "x": 458,
+    "y": 548,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "sea-green-dune-stone": {
+   "frame": {
+    "x": 470,
+    "y": 548,
+    "w": 14,
+    "h": 9
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 9
+   },
+   "sourceSize": {
+    "w": 14,
+    "h": 9
+   }
+  },
+  "pale-green-ice": {
+   "frame": {
+    "x": 486,
+    "y": 548,
+    "w": 14,
+    "h": 9
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 9
+   },
+   "sourceSize": {
+    "w": 14,
+    "h": 9
+   }
+  },
+  "light-green-swamp-shroom-0": {
    "frame": {
     "x": 2,
+    "y": 562,
+    "w": 10,
+    "h": 10
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 10
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 10
+   }
+  },
+  "light-green-swamp-shroom-1": {
+   "frame": {
+    "x": 14,
+    "y": 562,
+    "w": 10,
+    "h": 10
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 10
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 10
+   }
+  },
+  "light-sea-green-ash-flower-0": {
+   "frame": {
+    "x": 26,
+    "y": 562,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "light-sea-green-ash-flower-1": {
+   "frame": {
+    "x": 38,
+    "y": 562,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "shipwreck": {
+   "frame": {
+    "x": 50,
     "y": 562,
     "w": 116,
     "h": 70
@@ -8922,7 +9082,7 @@
   },
   "sea-rock": {
    "frame": {
-    "x": 120,
+    "x": 168,
     "y": 562,
     "w": 44,
     "h": 32
@@ -8942,7 +9102,7 @@
   },
   "charred-tree": {
    "frame": {
-    "x": 166,
+    "x": 214,
     "y": 562,
     "w": 60,
     "h": 84
@@ -8962,7 +9122,7 @@
   },
   "obsidian": {
    "frame": {
-    "x": 228,
+    "x": 276,
     "y": 562,
     "w": 44,
     "h": 48
@@ -8982,7 +9142,7 @@
   },
   "lava-vent": {
    "frame": {
-    "x": 274,
+    "x": 322,
     "y": 562,
     "w": 40,
     "h": 30
@@ -9002,7 +9162,7 @@
   },
   "fire-crystal": {
    "frame": {
-    "x": 316,
+    "x": 364,
     "y": 562,
     "w": 34,
     "h": 40
@@ -9022,7 +9182,7 @@
   },
   "ash-bush": {
    "frame": {
-    "x": 352,
+    "x": 400,
     "y": 562,
     "w": 30,
     "h": 22
@@ -9042,8 +9202,8 @@
   },
   "cave-earth": {
    "frame": {
-    "x": 384,
-    "y": 562,
+    "x": 2,
+    "y": 648,
     "w": 104,
     "h": 80
    },
@@ -9062,7 +9222,7 @@
   },
   "cave-swamp": {
    "frame": {
-    "x": 2,
+    "x": 108,
     "y": 648,
     "w": 104,
     "h": 80
@@ -9082,7 +9242,7 @@
   },
   "cave-ice": {
    "frame": {
-    "x": 108,
+    "x": 214,
     "y": 648,
     "w": 104,
     "h": 80
@@ -9102,7 +9262,7 @@
   },
   "cave-tomb": {
    "frame": {
-    "x": 214,
+    "x": 320,
     "y": 648,
     "w": 104,
     "h": 80
@@ -9122,8 +9282,8 @@
   },
   "cave-sea": {
    "frame": {
-    "x": 320,
-    "y": 648,
+    "x": 2,
+    "y": 730,
     "w": 104,
     "h": 80
    },
@@ -9142,7 +9302,7 @@
   },
   "cave-fire": {
    "frame": {
-    "x": 2,
+    "x": 108,
     "y": 730,
     "w": 104,
     "h": 80
@@ -9162,7 +9322,7 @@
   },
   "stalagmite-earth": {
    "frame": {
-    "x": 108,
+    "x": 214,
     "y": 730,
     "w": 26,
     "h": 42
@@ -9182,7 +9342,7 @@
   },
   "stalagmite-swamp": {
    "frame": {
-    "x": 136,
+    "x": 242,
     "y": 730,
     "w": 26,
     "h": 42
@@ -9202,7 +9362,7 @@
   },
   "stalagmite-ice": {
    "frame": {
-    "x": 164,
+    "x": 270,
     "y": 730,
     "w": 26,
     "h": 42
@@ -9222,7 +9382,7 @@
   },
   "stalagmite-tomb": {
    "frame": {
-    "x": 192,
+    "x": 298,
     "y": 730,
     "w": 26,
     "h": 42
@@ -9242,7 +9402,7 @@
   },
   "stalagmite-sea": {
    "frame": {
-    "x": 220,
+    "x": 326,
     "y": 730,
     "w": 26,
     "h": 42
@@ -9262,7 +9422,7 @@
   },
   "stalagmite-fire": {
    "frame": {
-    "x": 248,
+    "x": 354,
     "y": 730,
     "w": 26,
     "h": 42
@@ -9282,7 +9442,7 @@
   },
   "stairs-down": {
    "frame": {
-    "x": 276,
+    "x": 382,
     "y": 730,
     "w": 48,
     "h": 48
@@ -9302,7 +9462,7 @@
   },
   "stairs-up": {
    "frame": {
-    "x": 326,
+    "x": 432,
     "y": 730,
     "w": 48,
     "h": 48
@@ -9322,8 +9482,8 @@
   },
   "pier": {
    "frame": {
-    "x": 376,
-    "y": 730,
+    "x": 2,
+    "y": 812,
     "w": 48,
     "h": 48
    },
@@ -9342,7 +9502,7 @@
   },
   "boat": {
    "frame": {
-    "x": 2,
+    "x": 52,
     "y": 812,
     "w": 100,
     "h": 56
@@ -9362,7 +9522,7 @@
   },
   "signpost": {
    "frame": {
-    "x": 104,
+    "x": 154,
     "y": 812,
     "w": 30,
     "h": 36
@@ -9382,7 +9542,7 @@
   },
   "village-house": {
    "frame": {
-    "x": 136,
+    "x": 186,
     "y": 812,
     "w": 48,
     "h": 42
@@ -9402,7 +9562,7 @@
   },
   "boss-chest": {
    "frame": {
-    "x": 186,
+    "x": 236,
     "y": 812,
     "w": 42,
     "h": 34
@@ -9422,7 +9582,7 @@
   },
   "bones": {
    "frame": {
-    "x": 230,
+    "x": 280,
     "y": 812,
     "w": 30,
     "h": 18
@@ -9442,7 +9602,7 @@
   },
   "node-iron": {
    "frame": {
-    "x": 262,
+    "x": 312,
     "y": 812,
     "w": 34,
     "h": 28
@@ -9462,7 +9622,7 @@
   },
   "node-coal": {
    "frame": {
-    "x": 298,
+    "x": 348,
     "y": 812,
     "w": 34,
     "h": 28
@@ -9482,7 +9642,7 @@
   },
   "node-gold": {
    "frame": {
-    "x": 334,
+    "x": 384,
     "y": 812,
     "w": 34,
     "h": 28
@@ -9502,7 +9662,7 @@
   },
   "node-crystal": {
    "frame": {
-    "x": 370,
+    "x": 420,
     "y": 812,
     "w": 34,
     "h": 28
@@ -9522,7 +9682,7 @@
   },
   "node-magmaCore": {
    "frame": {
-    "x": 406,
+    "x": 456,
     "y": 812,
     "w": 34,
     "h": 28
@@ -9542,8 +9702,8 @@
   },
   "node-food": {
    "frame": {
-    "x": 442,
-    "y": 812,
+    "x": 2,
+    "y": 870,
     "w": 30,
     "h": 22
    },
@@ -9562,8 +9722,8 @@
   },
   "lily-0": {
    "frame": {
-    "x": 474,
-    "y": 812,
+    "x": 34,
+    "y": 870,
     "w": 30,
     "h": 20
    },
@@ -9582,7 +9742,7 @@
   },
   "lily-1": {
    "frame": {
-    "x": 2,
+    "x": 66,
     "y": 870,
     "w": 30,
     "h": 20
@@ -9602,7 +9762,7 @@
   },
   "cave-crystal": {
    "frame": {
-    "x": 34,
+    "x": 98,
     "y": 870,
     "w": 34,
     "h": 34

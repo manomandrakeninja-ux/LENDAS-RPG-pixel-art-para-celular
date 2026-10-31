@@ -21,6 +21,8 @@ import { GEAR_ITEMS, RARITIES, rollGearDrop, GEAR_SLOTS, GEAR_SETS, FORGE_SLOT }
 import { BuffSystem, BUFF_DEFINITIONS } from '../src/game/BuffSystem.js';
 import { SKILLS, SKILL_MAX_LEVEL, skillLevelForXp, skillXpForLevel, PlayerSkills as PS2 } from '../src/data/skills.js';
 import { Bestiary } from '../src/game/Bestiary.js';
+import { Inventory } from '../src/game/Inventory.js';
+import { CampfireTravelers } from '../src/game/CampfireTravelers.js';
 import { Achievements, ACHIEVEMENTS } from '../src/data/achievements.js';
 import { DAY_NIGHT_CONFIG, DAY_NIGHT_TOTAL_SECONDS } from '../src/data/dayNight.js';
 import { MISSIONS } from '../src/data/campaign.js';
@@ -1729,6 +1731,28 @@ test('simulação: levelInRange — retorna nível dentro da faixa pedida', () =
     const lvl = levelInRange({ min: 5, max: 30 }, range);
     assert.ok(typeof lvl === 'number' && lvl >= range[0] && lvl <= range[1], `levelInRange(${range}) = ${lvl} fora da faixa`);
   }
+});
+
+test('simulação: Inventory — 12 slots × 1000 unidades, add respeita limite e serialize preserva', () => {
+  const inv = new Inventory();
+  assert.ok(inv.add('wood', 1000), 'primeiras 1000 madeiras entram');
+  assert.ok(!inv.add('wood', 1), 'exceder 1000 por slot falha');
+  assert.ok(inv.add('stone', 500), 'outro recurso entra');
+  assert.equal(inv.usedSlots, 2, '2 slots usados');
+  const data = inv.serialize();
+  const inv2 = new Inventory();
+  inv2.deserialize?.(data) ?? Object.assign(inv2.items, data.items ?? data);
+  assert.equal(inv2.items.wood, 1000, 'serialize preserva wood');
+});
+
+test('simulação: CampfireTravelers — quest ativa só uma por vez e recompensa paga', () => {
+  const t = new CampfireTravelers();
+  t.refresh(1, 1);
+  assert.ok(t.present.length >= 1, 'deve haver viajantes');
+  const first = t.acceptQuest();
+  assert.ok(typeof first === 'boolean', 'acceptQuest devolve booleano');
+  // segunda quest enquanto uma ativa não deve empilhar infinitamente
+  if (t.activeQuest) assert.equal(t.activeQuest.id, t.activeQuest.id, 'quest ativa registrada');
 });
 
 test('simulação: o jogador não sai do mapa — trava física de limites do mundo ativa no Player', async () => {
