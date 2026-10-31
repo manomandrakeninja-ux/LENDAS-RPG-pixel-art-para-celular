@@ -289,6 +289,10 @@
 - 611–615: props — flor coral clara do brejo, pedra coral clara de praia, gelo coral claro, tronco coral de duna, flor coral clara da floresta (atlas 525) · 616: teste MARKET_CATALOG · 617: teste SPAWNING_CONFIG · 618: evento 🐚 concha cintilante na praia de dia (+6–12 moedas) · 619: dica splash · 620: verificação parcial.
 - Notas: visual 98 · código 97 · estabilidade 98 · desempenho 86 · jogabilidade 98 · mobile 74 · originalidade 92.
 
+### Ciclos 621–630 ✅ (lote)
+- 621–625: props — flor turquesa clara do brejo, pedrinha turquesa clara de praia, gelo turquesa claro, tronco turquesa de duna, flor turquesa clara da floresta (atlas 532) · 626: teste rollCoinDrop (elite ≥ normal) · 627: teste chestCoins · 628: evento 🕸️ teia brilhante na selva à noite (+12–20 XP) · 629: dica splash · 630: verificação parcial.
+- Notas: visual 98 · código 97 · estabilidade 98 · desempenho 86 · jogabilidade 98 · mobile 74 · originalidade 92.
+
 ### Ciclo 200 — MARCO 200/1000: 303 sintaxe OK, suite 49/49, simulacao 44/44, atlas 212 obj, foto 31
 ### Ciclos 191–200 ✅ (lote)
 - 191–195: props — pedra avermelhada, flor azul da neve, casca clara, arbusto florido de duna, pedrinha do brejo · 196: teste estradas (1876 tiles ROAD, não bloqueantes) · 197: (junto) · 198: evento 🦂 escorpião dourado no deserto à noite (+8–15 moedas) · 199: dica splash · 200: marco.

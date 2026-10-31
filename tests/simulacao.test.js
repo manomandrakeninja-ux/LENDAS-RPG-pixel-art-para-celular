@@ -31,6 +31,8 @@ import { SPAWN_ZONES } from '../src/data/biomes.js';
 import { MARKET_CATALOG } from '../src/data/economy.js';
 import { SPAWNING_CONFIG } from '../src/data/spawning.js';
 import { COIN_DROP_RANGES, rollCoinDrop, chestCoins } from '../src/data/economy.js';
+import { RAID_CONFIG, isRaidDay, raidTier, raidComposition, raidEliteChance, splitIntoWaves } from '../src/data/raids.js';
+import { REBIRTH_CONFIG, rebirthMultiplier, canRebirth } from '../src/data/rebirth.js';
 // Validamos uso cruzado do atlas com regex em TODOS os fontes de src/ (RegionWorld importa Phaser).
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -1873,6 +1875,28 @@ test('simulação: chestCoins — baú conhecido dá moedas dentro da faixa', ()
   assert.ok(typeof coins === 'number' && coins >= 0, 'moedas de baú válidas');
   // baú inexistente não deve quebrar
   assert.ok(chestCoins('naoExiste') === 0 || typeof chestCoins('naoExiste') === 'number', 'baú desconhecido não quebra');
+});
+
+test('simulação: raids — dia de raid tem tier ≥ 1 e composição em ondas válidas', () => {
+  // acha um dia de raid
+  let raidDay = -1;
+  for (let d = 1; d <= 60 && raidDay < 0; d += 1) if (isRaidDay(d)) raidDay = d;
+  assert.ok(raidDay > 0, 'nenhum dia de raid em 60 dias');
+  const comp = raidComposition(raidDay);
+  assert.ok(Array.isArray(comp) && comp.length > 0, 'composição vazia');
+  const waves = splitIntoWaves(comp);
+  assert.ok(waves.length >= 1 && waves.flat().length === comp.length, 'ondas preservam composição');
+  assert.ok(raidTier(raidDay) >= 1, 'tier positivo');
+  assert.ok(raidEliteChance(raidDay) > 0 && raidEliteChance(raidDay) <= 1, 'chance de elite em (0,1]');
+});
+
+test('simulação: rebirth — multiplicador cresce e canRebirth exige nível', () => {
+  assert.equal(rebirthMultiplier(0), 1, 'sem rebirth multiplicador 1');
+  assert.ok(rebirthMultiplier(1) > 1, '1 rebirth aumenta multiplicador');
+  assert.ok(rebirthMultiplier(3) > rebirthMultiplier(1), 'monotônico');
+  assert.equal(canRebirth(1, 0), false, 'nível baixo não pode renascer');
+  const cfg = REBIRTH_CONFIG;
+  assert.ok(canRebirth(cfg.minLevel, 0) === true, `nível ${cfg.minLevel} deve poder renascer`);
 });
 
 test('simulação: o jogador não sai do mapa — trava física de limites do mundo ativa no Player', async () => {
