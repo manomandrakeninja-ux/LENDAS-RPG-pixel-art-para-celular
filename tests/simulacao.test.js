@@ -107,7 +107,8 @@ test('simulação: performance — build fria do grid < 2 s e cache < 5 ms', asy
   const t1 = process.hrtime.bigint();
   const cached = buildTerrainGrid();
   const warmMs = Number(process.hrtime.bigint() - t1) / 1e6;
-  assert.equal(fresh.rows.length, 736 * WORLD_COLS, 'grid com linhas esperadas (overworld + subterrâneo)');
+  assert.equal(fresh.rows.length, 736, 'grid com 736 linhas (overworld 300 + subterrâneo)');
+  assert.equal(fresh.cols, WORLD_COLS, 'grid com 400 colunas');
   assert.ok(coldMs < 2000, `build fria lenta demais: ${coldMs.toFixed(1)} ms`);
   assert.ok(warmMs < 5, `cache deveria ser instantâneo: ${warmMs.toFixed(3)} ms`);
   assert.equal(cached, buildTerrainGrid(), 'cache retorna a mesma instância');
