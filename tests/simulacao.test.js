@@ -2089,22 +2089,27 @@ test('simulação: repairCostFor/upgradeCostFor — custo em recursos, não nega
   assert.ok(AUTO_ANIMAL_PRODUCTS.every((p) => RESOURCE_TYPES[p]), 'produtos automáticos válidos');
 });
 
-test('simulação: COMBAT_CONFIG — cooldowns e alcances positivos e coerentes', () => {
+test('simulação: COMBAT_CONFIG — cooldowns, alcances e custos positivos', () => {
   const c = COMBAT_CONFIG;
-  assert.ok(c.attackCooldownMs > 0, 'cooldown de ataque positivo');
-  assert.ok(c.attackRange > 0, 'alcance de ataque positivo');
-  assert.ok(c.dodgeCooldownMs >= 0, 'cooldown de esquiva não negativo');
-  if (c.specialCooldownMs !== undefined) assert.ok(c.specialCooldownMs > 0, 'cooldown especial positivo');
+  assert.ok(c.basicAttackCooldownMs > 0, 'cooldown de ataque positivo');
+  assert.ok(c.basicAttackRange > 0 && c.specialAttackRange > c.basicAttackRange, 'especial alcança mais');
+  assert.ok(c.dodgeInvulnerabilityMs > 0, 'esquiva dá i-frames');
+  assert.ok(c.specialStaminaCost > 0 && c.dodgeStaminaCost > 0, 'custos de stamina positivos');
+  assert.ok(c.combo.length >= 2 && c.combo.windowMs > 0, 'combo configurado');
+  assert.ok(c.specialAttackMultiplier > 1, 'especial causa mais dano');
 });
 
-test('simulação: GEAR_SETS — conjuntos têm peças em slots válidos e bônus', () => {
+test('simulação: GEAR_SETS — conjuntos têm nome, nível, região e bônus', () => {
   const setIds = Object.keys(GEAR_SETS);
   assert.ok(setIds.length >= 3, 'poucos conjuntos de equipamento');
   for (const [id, set] of Object.entries(GEAR_SETS)) {
-    const pieces = Object.keys(set.pieces ?? {});
+    assert.ok(set.name, `conjunto ${id} sem nome`);
+    assert.ok((set.level ?? 0) >= 1, `conjunto ${id} nível inválido`);
+    assert.ok(set.bonus && Object.keys(set.bonus).length > 0, `conjunto ${id} sem bônus`);
+    // as peças do conjunto são itens em GEAR_ITEMS com setId igual
+    const pieces = GEAR_ITEMS.filter((item) => item.set === id || item.setId === id);
     assert.ok(pieces.length >= 2, `conjunto ${id} com poucas peças (${pieces.length})`);
-    for (const slot of pieces) assert.ok(GEAR_SLOTS.includes(slot), `conjunto ${id} slot inválido: ${slot}`);
-    assert.ok(set.bonus || set.name, `conjunto ${id} sem bônus nem nome`);
+    for (const item of pieces) assert.ok(GEAR_SLOTS.includes(item.slot), `conjunto ${id} slot inválido: ${item.slot}`);
   }
 });
 
