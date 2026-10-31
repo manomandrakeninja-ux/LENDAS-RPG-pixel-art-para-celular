@@ -2106,8 +2106,9 @@ test('simulação: GEAR_SETS — conjuntos têm nome, nível, região e bônus',
     assert.ok(set.name, `conjunto ${id} sem nome`);
     assert.ok((set.level ?? 0) >= 1, `conjunto ${id} nível inválido`);
     assert.ok(set.bonus && Object.keys(set.bonus).length > 0, `conjunto ${id} sem bônus`);
-    // as peças do conjunto são itens em GEAR_ITEMS com setId igual
-    const pieces = GEAR_ITEMS.filter((item) => item.set === id || item.setId === id);
+    // as peças do conjunto são itens em GEAR_ITEMS (objeto) com set igual
+    const allItems = Object.values(GEAR_ITEMS);
+    const pieces = allItems.filter((item) => item.set === id || item.setId === id);
     assert.ok(pieces.length >= 2, `conjunto ${id} com poucas peças (${pieces.length})`);
     for (const item of pieces) assert.ok(GEAR_SLOTS.includes(item.slot), `conjunto ${id} slot inválido: ${item.slot}`);
   }
