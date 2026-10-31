@@ -1629,6 +1629,26 @@ test('simulação: viajantes — bens têm preço > 0 e yield de recurso válido
   }
 });
 
+test('simulação: save — envelope v2 tem campos essenciais e migrateSave v1 preserva inventário', () => {
+  const env = createSaveEnvelope({ inventory: { items: { wood: 5 } }, coins: 42 });
+  assert.equal(env.version, SAVE_VERSION, 'versão do envelope');
+  assert.ok(env.savedAt, 'savedAt presente');
+  assert.ok(migrateSave({ version: 1, inventory: { items: { wood: 7 } } }).inventory.items.wood === 7, 'v1 migra preservando itens');
+});
+
+test('simulação: spawn por região — dia e noite têm inimigos válidos', () => {
+  for (const [region, spawns] of Object.entries(REGION_SPAWNS)) {
+    for (const phase of ['day', 'night']) {
+      const list = spawns[phase] ?? [];
+      for (const id of list) assert.ok(ENEMY_TYPES[id], `região ${region} ${phase} spawn inválido: ${id}`);
+    }
+  }
+  // vale tem spawn extra válido
+  for (const id of [...VALLEY_EXTRA_SPAWNS.day, ...VALLEY_EXTRA_SPAWNS.night]) {
+    assert.ok(ENEMY_TYPES[id], `vale extra spawn inválido: ${id}`);
+  }
+});
+
 test('simulação: o jogador não sai do mapa — trava física de limites do mundo ativa no Player', async () => {
   // terrainAt é infinita (gera terreno até fora do mapa), então a proteção real é física:
   // Player.js precisa chamar body.setCollideWorldBounds(true). Conferimos no código-fonte.
