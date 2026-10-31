@@ -901,7 +901,12 @@ test('simulação: atlas de props — nomes únicos, draw não vazio, todos usad
   // (T.VALLEY é um prado limpo por design: valley-flower fica no atlas para eventos futuros).
   const RESERVED = /^valley-flower-/;
   for (const name of names) {
-    assert.ok(RESERVED.test(name) || regionWorldSrc.includes(`'${name}'`), `prop ${name} definido mas não usado em RegionWorld`);
+    // Props de MURK são montados com template (`lily-${n}`): vale o prefixo sem o dígito final.
+    const prefix = name.replace(/-[0-9]$/, '');
+    assert.ok(
+      RESERVED.test(name) || regionWorldSrc.includes(`'${name}'`) || regionWorldSrc.includes(`\`${prefix}-`),
+      `prop ${name} definido mas não usado em RegionWorld`
+    );
   }
 });
 
