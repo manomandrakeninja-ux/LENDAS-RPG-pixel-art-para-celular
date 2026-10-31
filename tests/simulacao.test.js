@@ -38,6 +38,8 @@ import { CHEST_LOOT, CHEST_TIERS, rollMonsterChest } from '../src/data/monsterCh
 import { MAX_ENHANCE, enhanceChance, enhanceCost, enhanceMultiplier, JEWELS, JEWEL_TYPES, SOCKET_SLOTS, socketCount, jewelValue, describeJewel, rollJewelDrop } from '../src/data/enhance.js';
 import { PERK_LEVELS, PERK_OFFER_SIZE, PERKS, respecCost, xpRequiredForLevel } from '../src/data/progression.js';
 import { VILLAGERS, VILLAGER_STATS } from '../src/data/villagers.js';
+import { BOSS_CONFIG, BOSS_CAMP_DISTANCE } from '../src/data/boss.js';
+import { CHAPTER_STORY, STORY_LORE, ENDINGS } from '../src/data/story.js';
 // Validamos uso cruzado do atlas com regex em TODOS os fontes de src/ (RegionWorld importa Phaser).
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -1984,6 +1986,27 @@ test('simulação: villagers — aldeões têm stats positivos e IDs únicos', (
   }
   assert.ok(VILLAGER_STATS.health > 0 && VILLAGER_STATS.attack > 0, 'stats de aldeão positivos');
   assert.ok(VILLAGER_STATS.sight > VILLAGER_STATS.range, 'aldeão enxerga longe');
+});
+
+test('simulação: boss — config tem cooldown, raio e recompensa sadios', () => {
+  const c = BOSS_CONFIG;
+  assert.ok(c.cooldownSeconds > 0, 'cooldown positivo');
+  assert.ok((c.playerAggroRadius ?? 0) > 0, 'raio de aggro positivo');
+  assert.ok(c.coins > 0 || (c.rewards && Object.keys(c.rewards).length > 0), 'boss dá recompensa');
+  assert.ok(BOSS_CAMP_DISTANCE > 0, 'distância ao acampamento calculada');
+});
+
+test('simulação: story — capítulos, lore e finais existem e têm texto', () => {
+  const chapters = Object.keys(CHAPTER_STORY);
+  assert.ok(chapters.length >= 3, 'poucos capítulos');
+  for (const [id, ch] of Object.entries(CHAPTER_STORY)) {
+    assert.ok(ch.title || ch.text, `capítulo ${id} sem conteúdo`);
+  }
+  assert.ok(Object.keys(STORY_LORE).length >= 5, 'pouco lore');
+  assert.ok(Object.keys(ENDINGS).length >= 2, 'poucos finais');
+  for (const [id, end] of Object.entries(ENDINGS)) {
+    assert.ok(end.title && end.text, `final ${id} incompleto`);
+  }
 });
 
 test('simulação: o jogador não sai do mapa — trava física de limites do mundo ativa no Player', async () => {
