@@ -1623,7 +1623,9 @@ test('simulação: viajantes — bens têm preço > 0 e yield de recurso válido
     }
   }
   for (const q of TRAVELER_QUESTS) {
-    assert.ok(['kill', 'deliver'].includes(q.type), `quest ${q.id} tipo inválido: ${q.type}`);
+    assert.ok(['kill', 'deliver'].includes(q.kind), `quest ${q.id} kind inválido: ${q.kind}`);
+    assert.ok(q.text && q.reward, `quest ${q.id} sem texto/recompensa`);
+    if (q.kind === 'kill') assert.ok(ENEMY_TYPES[q.enemy], `quest ${q.id} inimigo inválido: ${q.enemy}`);
   }
 });
 
