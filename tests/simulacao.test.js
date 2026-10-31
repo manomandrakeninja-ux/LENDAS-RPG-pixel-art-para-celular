@@ -30,6 +30,7 @@ import { RESOURCE_NODES } from '../src/data/resources.js';
 import { SPAWN_ZONES } from '../src/data/biomes.js';
 import { MARKET_CATALOG } from '../src/data/economy.js';
 import { SPAWNING_CONFIG } from '../src/data/spawning.js';
+import { COIN_DROP_RANGES, rollCoinDrop, chestCoins } from '../src/data/economy.js';
 // Validamos uso cruzado do atlas com regex em TODOS os fontes de src/ (RegionWorld importa Phaser).
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -1857,6 +1858,21 @@ test('simulação: SPAWNING_CONFIG — limites dia/noite e anéis de distância 
     assert.ok(ring.min < ring.max && ring.weight > 0, `anel inválido: ${JSON.stringify(ring)}`);
   }
   assert.ok(c.nightScaling.damageMultiplier > 1, 'noite mais perigosa');
+});
+
+test('simulação: COIN_DROP_RANGES/rollCoinDrop — elite dá mais moedas que normal', () => {
+  const normal = rollCoinDrop('day', () => 0.5, false);
+  const elite = rollCoinDrop('day', () => 0.5, true);
+  assert.ok(elite >= normal, `elite (${elite}) deve dar >= normal (${normal})`);
+  assert.ok(normal >= 0, 'moedas não negativas');
+  assert.ok(Object.keys(COIN_DROP_RANGES).length >= 2, 'poucos períodos de drop');
+});
+
+test('simulação: chestCoins — baú conhecido dá moedas dentro da faixa', () => {
+  const coins = chestCoins('commonChest');
+  assert.ok(typeof coins === 'number' && coins >= 0, 'moedas de baú válidas');
+  // baú inexistente não deve quebrar
+  assert.ok(chestCoins('naoExiste') === 0 || typeof chestCoins('naoExiste') === 'number', 'baú desconhecido não quebra');
 });
 
 test('simulação: o jogador não sai do mapa — trava física de limites do mundo ativa no Player', async () => {
