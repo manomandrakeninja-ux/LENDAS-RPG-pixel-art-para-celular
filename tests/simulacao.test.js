@@ -1506,6 +1506,30 @@ test('simulação: HOTKEY_ITEMS — teclas 1-5 com até 3 consumíveis por tecla
   }
 });
 
+test('simulação: FORGE_SLOT existe e rollGearDrop devolve raridades válidas por região', () => {
+  assert.ok(FORGE_SLOT && typeof FORGE_SLOT === 'object', 'FORGE_SLOT ausente');
+  const drops = rollGearDrop({ region: 'selva', level: 20, elite: true, boss: false, guaranteed: true }, Math.random);
+  assert.ok(Array.isArray(drops) && drops.length >= 1, 'drop vazio');
+  for (const d of drops) {
+    assert.ok(GEAR_ITEMS[d.id], `drop com item inexistente: ${d.id}`);
+    if (d.rarity) assert.ok(RARITIES[d.rarity], `raridade inválida: ${d.rarity}`);
+  }
+  // boss garantido dropa lendário
+  const bossDrops = rollGearDrop({ region: 'brasa', level: 40, elite: false, boss: true, guaranteed: true }, Math.random);
+  assert.ok(bossDrops.some((d) => d.rarity === 'legendary'), 'boss garantido deve dropar lendário');
+});
+
+test('simulação: CAMPAIGN — marcos têm id único e alvo válido', () => {
+  const ids = new Set();
+  for (const step of CAMPAIGN_STEPS ?? []) {
+    assert.ok(step.id, 'etapa sem id');
+    assert.ok(!ids.has(step.id), `id duplicado: ${step.id}`);
+    ids.add(step.id);
+    assert.ok(step.title, `etapa ${step.id} sem título`);
+  }
+  assert.ok(ids.size >= 5, 'poucas etapas de campanha');
+});
+
 test('simulação: o jogador não sai do mapa — trava física de limites do mundo ativa no Player', async () => {
   // terrainAt é infinita (gera terreno até fora do mapa), então a proteção real é física:
   // Player.js precisa chamar body.setCollideWorldBounds(true). Conferimos no código-fonte.
