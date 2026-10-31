@@ -1510,6 +1510,49 @@ function paleLimeForestFlower(seed = 2637) {
   return finish(p, { outline: 0.3 });
 }
 
+/** Flor menta clara do brejo. */
+function paleMintSwampFlower(seed = 2647) {
+  const p = new Painter(10, 12, { transparent: true });
+  p.rect(4, 6, 2, 5, '#4a6a34');
+  for (const [dx, dy] of [[-3, -2], [3, -2], [-2, 2], [2, 2], [0, -4]]) p.set(5 + dx, 5 + dy, '#a8f0d0');
+  p.set(5, 5, '#f4fffa');
+  return finish(p, { outline: 0.3 });
+}
+
+/** Pedrinha menta clara de praia. */
+function paleMintBeachPebble(seed = 2651) {
+  const p = new Painter(10, 7, { transparent: true });
+  p.sphere(5, 4, 3.4, '#a8d8c8', '#c8ecdf');
+  p.set(4, 3, '#e8f8f2');
+  return finish(p, { outline: 0.35 });
+}
+
+/** Gelo menta claro (neve). */
+function paleMintIce(seed = 2657) {
+  const p = new Painter(14, 9, { transparent: true });
+  p.sphere(7, 5, 5, '#c8ecdf', '#e2f6ee');
+  p.set(5, 3, '#f6fffb');
+  return finish(p, { outline: 0.35 });
+}
+
+/** Tronco menta de duna. */
+function mintDuneLog(seed = 2661) {
+  const p = new Painter(26, 10, { transparent: true });
+  const wood = ['#a0c0b0', '#bcd8ca'];
+  p.rect(2, 4, 22, 4, shade([wood[0], wood[1]], 0.5));
+  p.set(2, 4, '#809f90'); p.set(23, 7, '#809f90');
+  return finish(p, { outline: 0.35 });
+}
+
+/** Flor menta clara da floresta. */
+function paleMintForestFlower(seed = 2667) {
+  const p = new Painter(10, 12, { transparent: true });
+  p.rect(4, 6, 2, 5, '#4a6a34');
+  for (const [dx, dy] of [[-3, -2], [3, -2], [-2, 2], [2, 2], [0, -4]]) p.set(5 + dx, 5 + dy, '#a8f0d0');
+  p.set(5, 5, '#f4fffa');
+  return finish(p, { outline: 0.3 });
+}
+
 function seaGreenSwampFlower(seed = 2197) {
   const p = new Painter(10, 12, { transparent: true });
   p.rect(4, 6, 2, 5, '#4a6a34');
@@ -4367,6 +4410,13 @@ const PAINTED_ENTRIES = [
   { name: 'lime-dune-log', draw: () => limeDuneLog(2631) },
   { name: 'pale-lime-forest-flower-0', draw: () => paleLimeForestFlower(2637) },
   { name: 'pale-lime-forest-flower-1', draw: () => paleLimeForestFlower(2639) },
+  { name: 'pale-mint-swamp-flower-0', draw: () => paleMintSwampFlower(2647) },
+  { name: 'pale-mint-swamp-flower-1', draw: () => paleMintSwampFlower(2649) },
+  { name: 'pale-mint-beach-pebble', draw: () => paleMintBeachPebble(2651) },
+  { name: 'pale-mint-ice', draw: () => paleMintIce(2657) },
+  { name: 'mint-dune-log', draw: () => mintDuneLog(2661) },
+  { name: 'pale-mint-forest-flower-0', draw: () => paleMintForestFlower(2667) },
+  { name: 'pale-mint-forest-flower-1', draw: () => paleMintForestFlower(2669) },
   { name: 'shipwreck', draw: shipwreck },
   { name: 'sea-rock', draw: seaRock },
   { name: 'charred-tree', draw: () => deadTree(['#0c0808', '#1a1010', '#2a1a16', '#3a2620', '#4a3228'], true) },

@@ -41,6 +41,8 @@ import { VILLAGERS, VILLAGER_STATS } from '../src/data/villagers.js';
 import { BOSS_CONFIG, BOSS_CAMP_DISTANCE } from '../src/data/boss.js';
 import { CHAPTER_STORY, STORY_LORE, ENDINGS } from '../src/data/story.js';
 import { sunShadow } from '../src/data/sunlight.js';
+import { isRainyDay, isRaining } from '../src/data/weather.js';
+import { COMMON_DROP_SCALE, isScaledDrop, scaledChance, scaledAmount } from '../src/data/dropScale.js';
 import { HARVEST_STRUCTURE_TYPES, HARVEST_STRUCTURE_INTERACTION_RANGE, CHEST_LOOT_RECIPES, createSeededRandom } from '../src/data/harvestStructures.js';
 // Validamos uso cruzado do atlas com regex em TODOS os fontes de src/ (RegionWorld importa Phaser).
 import { readFileSync, readdirSync, statSync } from 'node:fs';
@@ -2038,6 +2040,28 @@ test('simulação: HARVEST_STRUCTURE_TYPES — estruturas têm label, recompensa
   const r = createSeededRandom(123);
   const a = r(); const b = r();
   assert.ok(a >= 0 && a < 1 && b >= 0 && b < 1 && a !== b, 'seeded random em [0,1) e não constante');
+});
+
+test('simulação: weather — weatherAt devolve clima válido e ícone conhecido', () => {
+  for (const region of ['vale', 'floresta', 'brejo', 'neve', 'areia', 'praia', 'selva', 'gelo', 'cinzas', 'brasa', 'antiga', 'esmeralda', 'mar']) {
+    for (const night of [false, true]) {
+      const w = weatherAt(region, { dayCount: 5, isNight: night });
+      assert.ok(typeof w === 'string' && w.length > 0, `weatherAt(${region}, noite=${night}) inválido: ${w}`);
+      assert.ok(Object.keys(WEATHER_CONFIG).includes(w) || w in WEATHER_ICONS, `clima desconhecido: ${w}`);
+    }
+  }
+  assert.equal(isRaining({ dayCount: 3, isNight: false }), isRainyDay(3), 'isRaining dia = isRainyDay');
+});
+
+test('simulação: dropScale — escala não deixa chance > 1 nem negativa', () => {
+  const drop = { type: 'wood', chance: 0.9 };
+  for (const def of [{}, { rareBelow: 0.5 }, { chance: 1 }]) {
+    const ch = scaledChance(drop, def);
+    assert.ok(ch >= 0 && ch <= 1, `scaledChance fora de [0,1]: ${ch}`);
+    assert.ok(isScaledDrop(drop, def) === true || isScaledDrop(drop, def) === false, 'isScaledDrop booleano');
+  }
+  const amt = scaledAmount(10, drop, {}, () => 0.5);
+  assert.ok(amt >= 0 && amt <= 10, `scaledAmount (${amt}) deve ficar em [0, original]`);
 });
 
 test('simulação: o jogador não sai do mapa — trava física de limites do mundo ativa no Player', async () => {

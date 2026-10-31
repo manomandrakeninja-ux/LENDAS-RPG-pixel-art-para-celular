@@ -83,7 +83,8 @@ const TIPS = [
   'À noite de céu limpo no brejo, uma flor de lótus 🪷 pode dar bastante XP.',
   'Na chuva da floresta, de dia, um cogumelo raro 🍄 pode dar XP.',
   'À noite com neve no gelo, uma nevasca mágica ❄️ pode render bastante XP.',
-  'À noite de céu limpo na praia, uma estrela-do-mar 🌟 pode dar moeditas.'
+  'À noite de céu limpo na praia, uma estrela-do-mar 🌟 pode dar moeditas.',
+  'De dia na selva, uma flor exótica 🌺 pode dar bastante XP.'
 ];
 
 export function setupSplash() {
