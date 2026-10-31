@@ -321,6 +321,10 @@
 - Spec `specs/lote-691-700.md` · 691–695: props menta clara (brejo/praia/gelo/duna/floresta, atlas 581) · 696: teste weather (climas/ícones) · 697: teste dropScale · 698: evento 🌺 flor exótica na selva de dia (+10–18 XP) · 699: dica splash · 700: marco (foto 37, 303 sintaxe OK, 143/143, 49/49).
 - Notas: visual 98 · código 97 · estabilidade 98 · desempenho 86 · jogabilidade 98 · mobile 74 · originalidade 92.
 
+### Ciclos 701–710 ✅ (lote, com spec)
+- Spec `specs/lote-701-710.md` · 701–705: props cinza claro (brejo/praia/gelo/duna/floresta, atlas 588) · 706: teste FARM_CROPS · 707: teste forja/reparo · 708: evento 👻 eco de herói nas terras antigas à noite (+14–22 XP) · 709: dica splash · 710: verificação parcial.
+- Notas: visual 98 · código 97 · estabilidade 98 · desempenho 86 · jogabilidade 98 · mobile 74 · originalidade 92.
+
 ### Ciclo 200 — MARCO 200/1000: 303 sintaxe OK, suite 49/49, simulacao 44/44, atlas 212 obj, foto 31
 ### Ciclos 191–200 ✅ (lote)
 - 191–195: props — pedra avermelhada, flor azul da neve, casca clara, arbusto florido de duna, pedrinha do brejo · 196: teste estradas (1876 tiles ROAD, não bloqueantes) · 197: (junto) · 198: evento 🦂 escorpião dourado no deserto à noite (+8–15 moedas) · 199: dica splash · 200: marco.

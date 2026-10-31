@@ -2089,6 +2089,25 @@ test('simulação: repairCostFor/upgradeCostFor — custo em recursos, não nega
   assert.ok(AUTO_ANIMAL_PRODUCTS.every((p) => RESOURCE_TYPES[p]), 'produtos automáticos válidos');
 });
 
+test('simulação: COMBAT_CONFIG — cooldowns e alcances positivos e coerentes', () => {
+  const c = COMBAT_CONFIG;
+  assert.ok(c.attackCooldownMs > 0, 'cooldown de ataque positivo');
+  assert.ok(c.attackRange > 0, 'alcance de ataque positivo');
+  assert.ok(c.dodgeCooldownMs >= 0, 'cooldown de esquiva não negativo');
+  if (c.specialCooldownMs !== undefined) assert.ok(c.specialCooldownMs > 0, 'cooldown especial positivo');
+});
+
+test('simulação: GEAR_SETS — conjuntos têm peças em slots válidos e bônus', () => {
+  const setIds = Object.keys(GEAR_SETS);
+  assert.ok(setIds.length >= 3, 'poucos conjuntos de equipamento');
+  for (const [id, set] of Object.entries(GEAR_SETS)) {
+    const pieces = Object.keys(set.pieces ?? {});
+    assert.ok(pieces.length >= 2, `conjunto ${id} com poucas peças (${pieces.length})`);
+    for (const slot of pieces) assert.ok(GEAR_SLOTS.includes(slot), `conjunto ${id} slot inválido: ${slot}`);
+    assert.ok(set.bonus || set.name, `conjunto ${id} sem bônus nem nome`);
+  }
+});
+
 test('simulação: o jogador não sai do mapa — trava física de limites do mundo ativa no Player', async () => {
   // terrainAt é infinita (gera terreno até fora do mapa), então a proteção real é física:
   // Player.js precisa chamar body.setCollideWorldBounds(true). Conferimos no código-fonte.
