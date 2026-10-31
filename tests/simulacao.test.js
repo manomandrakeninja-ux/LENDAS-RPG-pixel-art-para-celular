@@ -827,8 +827,11 @@ test('simulação: rollGearDrop determinístico — drop válido, slot real, rar
 test('simulação: consumíveis — hotkeys 1–5 únicos e cada um tem efeito definido', () => {
   const hks = Object.values(CONSUMABLES).map((c) => c.hotkey).filter((h) => h !== undefined && h !== null);
   assert.ok(hks.length >= 5, 'poucos atalhos de consumível');
-  assert.equal(new Set(hks).size, hks.length, 'hotkeys duplicados');
   for (const hk of hks) assert.ok(hk >= 1 && hk <= 5, `hotkey fora de 1-5: ${hk}`);
+  // Vários consumíveis podem dividir a mesma tecla (usa o primeiro com estoque) — máx 3 por tecla.
+  const counts = {};
+  for (const hk of hks) counts[hk] = (counts[hk] ?? 0) + 1;
+  for (const [hk, n] of Object.entries(counts)) assert.ok(n <= 3, `tecla ${hk} com ${n} consumíveis (máx 3)`);
   for (const [key, c] of Object.entries(CONSUMABLES)) {
     assert.ok(c.name, `${key} sem nome`);
     assert.ok(c.effect || c.gives || c.type, `${key} sem efeito`);
