@@ -1036,7 +1036,7 @@ test('simulação: buffs — apply com opções, effects agregam, expira por tem
   const buffs = new BuffSystem();
   assert.ok(buffs.apply('attackBoost', { durationMs: 1000 }), 'apply retorna true');
   assert.ok(buffs.has('attackBoost'), 'buff ativo');
-  assert.ok(buffs.effects.attack > 0 || buffs.effects.attackPercent > 0, 'effect'étaient);
+  assert.ok(buffs.effects.attack > 0 || buffs.effects.attackPercent > 0, 'buff deve dar bonus de ataque');
   buffs.update(2000, 1);
   assert.equal(buffs.has('attackBoost'), false, 'buff expirou por tempo');
   // buff por dia
