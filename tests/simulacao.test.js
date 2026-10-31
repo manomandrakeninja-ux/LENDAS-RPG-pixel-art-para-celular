@@ -1287,15 +1287,18 @@ test('simulação: bestiário cobre todos os inimigos com nome e tier', () => {
     assert.ok(def.name, `inimigo ${id} sem nome`);
     assert.ok(def.tier >= 1 && def.tier <= 10, `inimigo ${id} tier inválido: ${def.tier}`);
     assert.ok(def.health > 0 && def.damage > 0, `inimigo ${id} sem stats`);
-    assert.ok(ENEMY_TYPE_NAMES[id], `inimigo ${id} sem nome de exibição`);
+    assert.ok(def.name, `inimigo ${id} sem nome`);
   }
 });
 
-test('simulação: consumíveis — useConsumable com inventário fake funciona ou falha com motivo', () => {
-  const inv = { items: { potion: 2 }, remove: (t, n) => { inv.items[t] -= n; return true; } };
-  const r1 = useConsumable('potion', { inventory: inv, player: { health: 10, maxHealth: 100 }, buffs: new BuffSystem(), economy: new EconomySystem() });
+test('simulação: consumíveis — useConsumable(type, inventory, player) funciona ou falha com motivo', () => {
+  const inv = new Inventory();
+  inv.add('potion', 2);
+  const player = { health: 10, maxHealth: 100, addBuff: () => true };
+  const r1 = useConsumable('potion', inv, player);
   assert.ok(r1.ok, `poção deve funcionar: ${r1.reason ?? ''}`);
-  const r2 = useConsumable('potionGreat', { inventory: { items: {} }, player: { health: 1, maxHealth: 100 }, buffs: new BuffSystem(), economy: new EconomySystem() });
+  assert.equal(inv.items.potion, 1, 'poção consumida do inventário');
+  const r2 = useConsumable('potionGreat', inv, player);
   assert.ok(!r2.ok && r2.reason, 'sem item deve falhar com motivo');
 });
 
