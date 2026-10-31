@@ -109,6 +109,10 @@
 - 5 placas eram geradas em cima do lodo (MURK) → geração agora tenta lado oposto/centro. Teste também alinhado ao BLOCKING real (lodo é andável/lento). Simulacao 8/8; suite 49/49.
 - Notas: 86 / 90 / 97 / 84 / 94 / 74 / 85.
 
+### Ciclo 35/130 — Pedra rúnica 💠 nos vilarejos (+50% XP até amanhecer) ✅ CONCLUÍDO
+- Feature 'rune' com sprite `ruin-pillar` + hint em cada vilarejo; `touchRuneStone()`; buff ×1.5 no XP do dia; persistido em `runeDay` (compatível com saves antigos). Suite 49/49; simulacao 8/8; atlas regerado.
+- Notas: 87 / 90 / 97 / 84 / 95 / 74 / 86.
+
 ## Evolução das notas (0–100)
 
 | Eixo | Início (base) | Fim (ciclo 30) | Principiante mudança |

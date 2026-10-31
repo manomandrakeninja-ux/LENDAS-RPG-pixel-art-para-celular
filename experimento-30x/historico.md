@@ -69,6 +69,11 @@
 - **D:** suite 49/49.
 - Notas 0–100: visual 79 · código 87 · estabilidade 95 · desempenho 83 · jogabilidade 88 · mobile 70 · originalidade 81.
 
+### Ciclo 35 — Conteúdo: pedra rúnica 💠 na praça de cada vilarejo (+50% XP até amanhecer, 1x/dia, salva em runeDay)
+- **C:** feature 'rune' com sprite ruin-pillar + hint; `touchRuneStone` no GameScene; buff ×1.5 no grantExperience; save/load com fallback.
+- **D:** atlas regerado; suite 49/49; simulacao 8/8.
+- Notas: visual 87 · código 90 · estabilidade 97 · desempenho 84 · jogabilidade 95 · mobile 74 · originalidade 86.
+
 ### Ciclo 34 — Teste novo: placas válidas + estradas andáveis (achou e corrigiu 5 placas no lodo + alinhado NOT_WALKABLE com BLOCKING real)
 - **D:** novo teste em simulacao (8/8). Corrigiu geração de placas (tenta lado oposto/centro) e o próprio teste (MURK é lodo andável, não bloqueante).
 - **D:** suite 49/49.

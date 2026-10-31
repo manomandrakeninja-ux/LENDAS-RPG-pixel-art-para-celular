@@ -276,6 +276,13 @@ export class RegionWorld {
       const bedX = village.x + bedDx;
       const bedY = village.y + bedDy + 18;
       this.features.push({ type: 'bed', village, x: bedX, y: bedY, label: `DORMIR ATÉ AMANHECER • ${village.name}` });
+      // Pedra rúnica na praça do vilarejo: abençoa com +50% XP até o fim do dia (1x por dia).
+      const runeX = village.x + 56;
+      const runeY = village.y + 52;
+      const runeSprite = scene.add.image(runeX, runeY, 'biome', 'ruin-pillar').setOrigin(0.5, 0.9).setDepth(runeY);
+      scene.hudCamera?.ignore([runeSprite]);
+      this.addHint(runeSprite, runeX, runeY - Math.round(runeSprite.displayHeight * 0.9) - 10, 'Pedra Rúnica');
+      this.features.push({ type: 'rune', village, x: runeX, y: runeY, sprite: runeSprite, label: `💠 TOCAR A PEDRA RÚNICA • ${village.name}` });
     });
     // Viajantes que caminham pelas estradas (ida e volta) e conversam/trocam com E.
     const travelerRoads = [ROADS[0], ROADS[2], ROADS[3], ROADS[4]].filter(Boolean);
@@ -399,6 +406,7 @@ export class RegionWorld {
     else if (feature.type === 'villager') this.talkToVillager(feature.village);
     else if (feature.type === 'traveler') this.talkToTraveler(feature.traveler);
     else if (feature.type === 'bed') this.scene.sleepAtBed(feature.village);
+    else if (feature.type === 'rune') this.scene.touchRuneStone(feature.village);
     return true;
   }
 

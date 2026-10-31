@@ -183,6 +183,8 @@ export class GameScene extends Phaser.Scene {
     this.waypoint = saved?.waypoint && Number.isFinite(saved.waypoint.x) && Number.isFinite(saved.waypoint.y)
       ? { x: saved.waypoint.x, y: saved.waypoint.y }
       : null;
+    // Dia em que a pedra rúnica de um vilarejo foi tocada (buff +50% XP até amanhecer).
+    this.runeDay = Number.isFinite(saved?.runeDay) ? saved.runeDay : 0;
     // Eventos aleatórios do overworld (a cada ~1-2 min: moedas, XP, cura, vento a favor...).
     this.eventSpeedUntil = 0;
     this.randomEventMs = Phaser.Math.Between(45000, 90000);
@@ -1695,10 +1697,25 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
+  /** Pedra rúnica de um vilarejo: +50% XP até o fim do dia (1x por dia). */
+  touchRuneStone(village) {
+    const day = this.timeState?.dayCount ?? 1;
+    if (this.runeDay === day) {
+      this.ui.showMessage(`💠 A pedra rúnica de ${village.name} já te abençoou hoje.`);
+      return;
+    }
+    this.runeDay = day;
+    this.audio.playCollect?.();
+    this.effects.spawnDamage(this.player.x, this.player.y - 30, '💠 ABENÇOADO!', '#9ad8ff');
+    this.ui.showMessage(`💠 Pedra rúnica de ${village.name}: +50% XP até amanhecer!`);
+    this.save?.();
+  }
+
   grantExperience(amount, announce = true) {
     const levelBefore = this.progression.level;
-    // Evento "XP em dobro" (dia 7, 14...) ou bônus de novato da Fogueira (não acumulam).
-    const boosted = Math.round((Number(amount) || 0) * this.xpBoost.multiplier(this.timeState?.dayCount ?? 1));
+    // Evento "XP em dobro" (dia 7, 14...), bônus de novato da Fogueira e pedra rúnica (não acumulam entre si no máx? acumulam o rúnico).
+    let boosted = Math.round((Number(amount) || 0) * this.xpBoost.multiplier(this.timeState?.dayCount ?? 1));
+    if (this.runeDay === (this.timeState?.dayCount ?? 1)) boosted = Math.round(boosted * 1.5);
     amount = boosted;
     const result = this.progression.addXp(amount);
     this.player.recalculateEquipment(this.camp.equipment);
@@ -2838,6 +2855,7 @@ export class GameScene extends Phaser.Scene {
       harvestStructures: this.harvestStructures.serialize(),
       fog: this.world.serializeFog(),
       waypoint: this.waypoint ? { ...this.waypoint } : null,
+      runeDay: this.runeDay ?? 0,
       regions: this.regionWorld?.serialize(),
       bestiary: this.bestiary?.serialize(),
       gear: this.gear?.serialize(),
