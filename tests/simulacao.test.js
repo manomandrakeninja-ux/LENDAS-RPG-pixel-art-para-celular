@@ -786,6 +786,25 @@ test('simulação: mapa mundi — células reveladas (fog) persistem e respeitam
   assert.deepEqual(clamp(500, 600), [500, 600]);
 });
 
+test('simulação: tiles de estrada (T.ROAD) existem em quantidade e são andáveis (não bloqueantes)', () => {
+  const grid = buildTerrainGrid();
+  let roadTiles = 0;
+  for (let i = 0; i < grid.terrain.length; i += 1) {
+    if (grid.terrain[i] === T.ROAD) {
+      roadTiles += 1;
+      // ROAD por definição não pode ser bloqueante
+      assert.ok(![T.SEA, T.LAVA, T.WALL, T.VOID].includes(grid.terrain[i]), 'ROAD nunca é bloqueante');
+    }
+  }
+  assert.ok(roadTiles > 500, `poucos tiles de estrada no grid (${roadTiles})`);
+  // pointOnRoad devolve ponto dentro do mundo para cada estrada
+  for (const road of ROADS) {
+    const p = pointOnRoad(road, 0.5);
+    assert.ok(Number.isFinite(p.x) && Number.isFinite(p.y), `pointOnRoad quebrou para ${road.name}`);
+    assert.ok(p.x >= 0 && p.x <= WORLD_COLS * TILE && p.y >= 0 && p.y <= OVERWORLD_ROWS * TILE, `${road.name} fora do mundo`);
+  }
+});
+
 test('simulação: o jogador não sai do mapa — trava física de limites do mundo ativa no Player', async () => {
   // terrainAt é infinita (gera terreno até fora do mapa), então a proteção real é física:
   // Player.js precisa chamar body.setCollideWorldBounds(true). Conferimos no código-fonte.

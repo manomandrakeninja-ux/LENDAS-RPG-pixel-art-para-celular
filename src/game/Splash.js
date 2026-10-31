@@ -33,7 +33,8 @@ const TIPS = [
   'De dia, o vento às vezes carrega uma folhinha 🍃 com um pouco de XP.',
   'Em dias de sol aberto ☀️ o calor rende um tiquinho de XP.',
   'Em noites limpas ⭐ podem cair estrelas cadentes com moeditas.',
-  'No brejo, um sapo 🐸 pode te beijar e devolver um pouco de vida.'
+  'No brejo, um sapo 🐸 pode te beijar e devolver um pouco de vida.',
+  'À noite no deserto, um escorpião dourado 🦂 pode deixar moeditas para trás.'
 ];
 
 export function setupSplash() {
