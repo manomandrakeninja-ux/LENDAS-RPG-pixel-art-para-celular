@@ -21,7 +21,6 @@ import { GEAR_ITEMS, RARITIES, rollGearDrop, GEAR_SLOTS, GEAR_SETS, FORGE_SLOT }
 import { BuffSystem, BUFF_DEFINITIONS } from '../src/game/BuffSystem.js';
 import { SKILLS, SKILL_MAX_LEVEL, skillLevelForXp, skillXpForLevel, PlayerSkills as PS2 } from '../src/data/skills.js';
 import { Bestiary } from '../src/game/Bestiary.js';
-import { Inventory } from '../src/game/Inventory.js';
 import { CampfireTravelers } from '../src/game/CampfireTravelers.js';
 import { Achievements, ACHIEVEMENTS } from '../src/data/achievements.js';
 import { DAY_NIGHT_CONFIG, DAY_NIGHT_TOTAL_SECONDS } from '../src/data/dayNight.js';
