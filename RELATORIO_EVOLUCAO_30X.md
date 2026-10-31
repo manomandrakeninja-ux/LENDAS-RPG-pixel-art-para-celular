@@ -73,3 +73,9 @@
 - **A:** `terrainAt` é infinita por design → fora do mapa gera chão; a barreira real é `setCollideWorldBounds(true)` no Player. Novo teste valida isso no código-fonte + tamanho do FULL_WORLD.
 - **D:** simulacao 6/6; suite 49/49.
 - **Notas 0–100:** visual 79 · código 87 · estabilidade 95 · desempenho 83 · jogabilidade 87 · mobile 70 · originalidade 80.
+
+## Ciclo 11/30 — Conteúdo: lojinha nos vilarejos ✅ CONCLUÍDO
+
+- **C:** `openShop()` comum (poção 15 / comida 8 / tocha 5); morador do vilarejo abre a loja da vila; viajante reusa.
+- **D:** suite 49/49.
+- **Notas 0–100:** visual 79 · código 87 · estabilidade 95 · desempenho 83 · jogabilidade 88 · mobile 70 · originalidade 81.

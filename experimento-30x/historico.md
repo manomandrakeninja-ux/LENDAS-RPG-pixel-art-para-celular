@@ -64,3 +64,8 @@
 - **D:** simulacao 6/6; suite 49/49.
 - Notas 0–100: visual 79 · código 87 · estabilidade 95 · desempenho 83 · jogabilidade 87 · mobile 70 · originalidade 80.
 
+### Ciclo 11 — Conteúdo: lojinha nos vilarejos
+- **C:** `openShop(speaker, title)` extraído (poção/comida/tocha por moedas); `talkToVillager` agora abre a loja da vila com fala do morador; viajante reusa o mesmo método.
+- **D:** suite 49/49.
+- Notas 0–100: visual 79 · código 87 · estabilidade 95 · desempenho 83 · jogabilidade 88 · mobile 70 · originalidade 81.
+

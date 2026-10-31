@@ -426,34 +426,40 @@ export class RegionWorld {
       scene.save?.();
       return;
     }
-    // Lojinha itinerante: poção, comida e tocha por moedas.
+    // Lojinha itinerante (compartilhada com os vilarejos).
+    this.openShop('viajante', `🧳 Viajante: "${line}" — O que vai ser, forasteiro?`);
+  }
+
+  /** Loja simples por moedas: poção, comida e tocha (viajantes e vilarejos). */
+  openShop(speaker, title) {
+    const scene = this.scene;
     const ui = scene.campaign?.ui;
-    if (ui?.dialogue) {
-      const coins = scene.economy?.coins ?? 0;
-      const offers = [
-        { label: 'POÇÃO DE VIDA • 15 moedas', price: 15, type: 'potion' },
-        { label: 'COMIDA • 8 moedas', price: 8, type: 'food' },
-        { label: 'TOCHA • 5 moedas', price: 5, type: 'torch' }
-      ].map((offer) => ({
-        label: offer.label,
-        primary: true,
-        disabled: coins < offer.price,
-        action: () => {
-          if (scene.economy?.spendCoins?.(offer.price) && scene.inventory?.add(offer.type, 1)) {
-            scene.ui.showMessage(`🧳 Comprou ${offer.type} do viajante!`);
-            scene.audio?.playCoin?.();
-            scene.save?.();
-          } else {
-            scene.ui.showMessage('Mochila cheia ou sem moedas!');
-          }
-        }
-      }));
-      offers.push({ label: 'SÓ CONVERSAR', action: () => scene.ui.showMessage(`🧳 Viajante: "${line}"`) });
-      ui.dialogue('viajante', `"${line}" — O que vai ser, forasteiro?`, offers);
-    } else {
-      scene.ui.showMessage(`🧳 Viajante: "${line}"`);
+    if (!ui?.dialogue) {
+      scene.ui.showMessage(title);
       scene.audio?.playPick?.();
+      return;
     }
+    const coins = scene.economy?.coins ?? 0;
+    const offers = [
+      { label: 'POÇÃO DE VIDA • 15 moedas', price: 15, type: 'potion' },
+      { label: 'COMIDA • 8 moedas', price: 8, type: 'food' },
+      { label: 'TOCHA • 5 moedas', price: 5, type: 'torch' }
+    ].map((offer) => ({
+      label: offer.label,
+      primary: true,
+      disabled: coins < offer.price,
+      action: () => {
+        if (scene.economy?.spendCoins?.(offer.price) && scene.inventory?.add(offer.type, 1)) {
+          scene.ui.showMessage(`🛒 Comprou ${offer.type} na loja do ${speaker}!`);
+          scene.audio?.playCoin?.();
+          scene.save?.();
+        } else {
+          scene.ui.showMessage('Mochila cheia ou sem moedas!');
+        }
+      }
+    }));
+    offers.push({ label: 'SÓ CONVERSAR', action: () => scene.ui.showMessage(title) });
+    ui.dialogue(speaker, title, offers);
   }
 
   /** Baú escondido no overworld: saque único com equipamento; reabastece com moedas 3 dias depois. */
@@ -505,18 +511,18 @@ export class RegionWorld {
     scene.save?.();
   }
 
-  /** Fala com o morador de um vilarejo: linha aleatória + a região entra nas Descobertas. */
+  /** Fala com o morador de um vilarejo: linha + descoberta + lojinha da vila. */
   talkToVillager(village) {
     const scene = this.scene;
     const line = village.lines[Math.floor(Math.random() * village.lines.length)];
-    scene.ui.showMessage(`🧑 ${village.name}: ${line}`);
-    scene.audio?.playPick?.();
     if (!this.discovered.has(`vila:${village.id}`)) {
       this.discovered.add(`vila:${village.id}`);
       scene.campaign?.ui?.toast?.(`Descoberto: ${village.name}`, 'gold');
       scene.grantExperience?.(15, true);
       scene.save?.();
     }
+    // Vilarejos têm commerce local: mesma lojinha do viajante, com fala do morador.
+    this.openShop('morador', `🧑 ${village.name}: "${line}" — A lojinha da vila tá aberta!`);
   }
 
   /** Placa de estrada: diz para onde fica o destino e a quantos metros. */
