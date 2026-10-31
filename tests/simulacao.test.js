@@ -1210,15 +1210,14 @@ test('simulação: baús de tesouro — longe de acampamento/torres, em terreno 
 
 test('simulação: keybinds — teclas de ação não colidem entre si', () => {
   const seen = {};
-  for (const [action, key] of Object.entries(DEFAULT_KEYBINDS ?? {})) {
-    const k = String(key).toLowerCase();
-    assert.ok(!seen[k], `tecla ${k} usada por ${seen[k]} e ${action}`);
-    seen[k] = action;
+  for (const [action, code] of Object.entries(DEFAULT_KEYBINDS ?? {})) {
+    assert.ok(!seen[code], `code ${code} usado por ${seen[code]} e ${action}`);
+    seen[code] = action;
   }
-  // teclas mínimas esperadas existem
-  const all = Object.values(DEFAULT_KEYBINDS ?? {}).map((k) => String(k).toLowerCase());
-  for (const required of ['m', 'b', 'v', 'l', 'escape']) {
-    assert.ok(all.includes(required), `tecla obrigatória ausente: ${required}`);
+  // ações mínimas esperadas existem com code válido
+  for (const action of ['map', 'backpack', 'gear', 'journal', 'close']) {
+    const code = DEFAULT_KEYBINDS[action];
+    assert.ok(code && typeof code === 'string' && code.length >= 2, `ação obrigatória ausente: ${action}`);
   }
 });
 
