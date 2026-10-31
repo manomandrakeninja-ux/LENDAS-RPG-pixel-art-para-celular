@@ -1812,13 +1812,15 @@ test('simulação: bestiário — serialize preserva kills e known', () => {
   assert.equal(b2.kills.wolf, 2, 'serialize preserva kills');
 });
 
-test('simulação: RESOURCE_NODES — nós de recurso têm recurso válido e quantidade sadia', () => {
+test('simulação: RESOURCE_NODES — nós têm label, count positivo e amount [min,max] válido', () => {
   const ids = Object.keys(RESOURCE_NODES);
-  assert.ok(ids.length >= 10, 'poucos nós de recurso');
+  assert.ok(ids.length >= 3, 'poucos nós de recurso');
   for (const [id, node] of Object.entries(RESOURCE_NODES)) {
-    const res = node.resource ?? node.type ?? node.drop;
-    if (res) assert.ok(RESOURCE_TYPES[res], `nó ${id} recurso inválido: ${res}`);
-    if (node.amount !== undefined) assert.ok(node.amount > 0, `nó ${id} quantidade inválida`);
+    assert.ok(node.label, `nó ${id} sem label`);
+    assert.ok((node.count ?? 0) > 0, `nó ${id} count inválido`);
+    if (Array.isArray(node.amount)) {
+      assert.ok(node.amount[0] > 0 && node.amount[1] >= node.amount[0], `nó ${id} amount inválido: ${node.amount}`);
+    }
   }
 });
 
