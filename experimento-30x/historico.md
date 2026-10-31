@@ -69,6 +69,13 @@
 - **D:** suite 49/49.
 - Notas 0–100: visual 79 · código 87 · estabilidade 95 · desempenho 83 · jogabilidade 88 · mobile 70 · originalidade 81.
 
+### Ciclo 64 — Teste: curva de nível das skills (nível = floor(sqrt(xp/50)), bônus por nível) — simulacao 18/18
+- **D:** simulacao 18/18; suite 49/49.
+- Notas: visual 90 · código 92 · estabilidade 98 · desempenho 85 · jogabilidade 96 · mobile 74 · originalidade 86.
+
+### Ciclo 63 — Teste: todos os 50 tipos de inimigo com dados sadios (17/17; bosses/caverna dispensados de spawnWeight)
+- **D:** suite 49/49.
+
 ### Ciclo 62 — Teste: vilarejos válidos (3 casas, falas, região, terreno andável) — simulacao 16/16
 - **D:** novo teste em simulacao (16/16). Suite 49/49.
 - Notas: visual 90 · código 92 · estabilidade 98 · desempenho 85 · jogabilidade 96 · mobile 74 · originalidade 86.

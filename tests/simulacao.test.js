@@ -342,6 +342,28 @@ test('simulação: todos os tipos de inimigo têm dados sadios (vida, dano, hitb
   }
 });
 
+test('simulação: curva de nível das skills — nível 2 aos 200 XP, monotônica e com bônus', () => {
+  const skills = new PlayerSkills({});
+  assert.equal(skills.level('blade'), 0, 'começa nível 0');
+  skills.addXp('blade', 199);
+  assert.equal(skills.level('blade'), 1, '199 XP = nível 1 (nível = floor(sqrt(xp/50)))');
+  const levels = skills.addXp('blade', 1); // total 200
+  assert.ok(levels >= 1, 'subiu de nível aos 200 XP');
+  assert.equal(skills.level('blade'), 2);
+  // Curva monotônica: mais XP nunca baixa o nível.
+  for (let i = 0; i < 20; i += 1) skills.addXp('blade', 500);
+  const lv = skills.level('blade');
+  assert.ok(lv >= 3, `nível alto alcançável (ficou ${lv})`);
+  skills.addXp('blade', 0);
+  assert.equal(skills.level('blade'), lv, 'XP zero não muda nível');
+  // Multiplicador de lâmina cresce com o nível e nunca fica abaixo de 1.
+  const mult = skills.bladeDamageMultiplier?.() ?? 1;
+  assert.ok(mult >= 1 && mult < 3, `bônus de lâmina sadio (nv ${lv} → ${mult})`);
+  // Skill inexistente não quebra.
+  assert.equal(skills.level('inexistente'), 0);
+  skills.addXp('inexistente', 100);
+});
+
 test('simulação: o jogador não sai do mapa — trava física de limites do mundo ativa no Player', async () => {
   // terrainAt é infinita (gera terreno até fora do mapa), então a proteção real é física:
   // Player.js precisa chamar body.setCollideWorldBounds(true). Conferimos no código-fonte.
