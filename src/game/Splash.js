@@ -53,7 +53,8 @@ const TIPS = [
   'No gelo, de dia, um bloco de gelo brilhante 🧊 pode dar um pouco de XP.',
   'À noite no deserto, um cacto florido 🌵 pode dar um pouco de XP.',
   'De dia no brejo, um lírio d\'água dourado 🪷 pode dar moeditas.',
-  'Na ilha de Brasa, à noite, uma erupção distante 🌋 rende bastante XP.'
+  'Na ilha de Brasa, à noite, uma erupção distante 🌋 rende bastante XP.',
+  'Nas terras antigas, de dia e sol aberto 🏛️, as ruínas podem dar XP.'
 ];
 
 export function setupSplash() {

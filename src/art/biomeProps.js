@@ -902,6 +902,50 @@ function darkRoundDuneRock(seed = 1647) {
   return finish(p, { outline: 0.35 });
 }
 
+/** Flor do brejo roxa escura. */
+function darkPurpleSwampFlower(seed = 1747) {
+  const p = new Painter(10, 12, { transparent: true });
+  p.rect(4, 6, 2, 5, '#4a6a34');
+  for (const [dx, dy] of [[-3, -2], [3, -2], [-2, 2], [2, 2], [0, -4]]) p.set(5 + dx, 5 + dy, '#8a4ac0');
+  p.set(5, 5, '#f0e0ff');
+  return finish(p, { outline: 0.3 });
+}
+
+/** Pedra de praia verde escura. */
+function darkGreenBeachStone(seed = 1751) {
+  const p = new Painter(14, 9, { transparent: true });
+  p.sphere(7, 5, 5, '#4a6a50', '#628a68');
+  p.set(5, 3, '#88aa90');
+  return finish(p, { outline: 0.35 });
+}
+
+/** Neve com pedrinha escura. */
+function darkPebbledSnow(seed = 1757) {
+  const p = new Painter(16, 9, { transparent: true });
+  p.sphere(8, 6, 5.5, '#dceaf6', '#f4faff');
+  p.sphere(10, 5, 1.8, '#5a6068', '#7a828a');
+  return finish(p, { outline: 0.3 });
+}
+
+/** Cogumelo rosa (floresta). */
+function pinkShroom(seed = 1761) {
+  const p = new Painter(10, 10, { transparent: true });
+  p.rect(4, 6, 2, 3, '#f0e0e8');
+  p.sphere(5, 5, 3.2, '#d86a90', '#f090b0');
+  p.set(4, 4, '#ffe8f0');
+  return finish(p, { outline: 0.35 });
+}
+
+/** Arbusto de duna seco. */
+function dryDuneBush(seed = 1767) {
+  const p = new Painter(16, 10, { transparent: true });
+  const c = ['#b09a5a', '#c8b478'];
+  for (const [bx, h] of [[4, 8], [8, 6], [12, 7]]) {
+    for (let y = 9; y > 9 - h; y -= 2) p.rect(bx, y, 1, 2, shade([c[0], c[1]], 0.5));
+  }
+  return finish(p, { outline: 0.35 });
+}
+
 /** Flor da floresta verde-água. */
 function tealForestFlower(seed = 1717) {
   const p = new Painter(10, 12, { transparent: true });
@@ -2830,6 +2874,14 @@ const PAINTED_ENTRIES = [
   { name: 'dark-beach-log', draw: () => darkBeachLog(1731) },
   { name: 'pink-ash-flower-0', draw: () => pinkAshFlower(1737) },
   { name: 'pink-ash-flower-1', draw: () => pinkAshFlower(1739) },
+  { name: 'dark-purple-swamp-flower-0', draw: () => darkPurpleSwampFlower(1747) },
+  { name: 'dark-purple-swamp-flower-1', draw: () => darkPurpleSwampFlower(1749) },
+  { name: 'dark-green-beach-stone', draw: () => darkGreenBeachStone(1751) },
+  { name: 'dark-pebbled-snow', draw: () => darkPebbledSnow(1757) },
+  { name: 'pink-shroom-0', draw: () => pinkShroom(1761) },
+  { name: 'pink-shroom-1', draw: () => pinkShroom(1763) },
+  { name: 'dry-dune-bush-0', draw: () => dryDuneBush(1767) },
+  { name: 'dry-dune-bush-1', draw: () => dryDuneBush(1769) },
   { name: 'shipwreck', draw: shipwreck },
   { name: 'sea-rock', draw: seaRock },
   { name: 'charred-tree', draw: () => deadTree(['#0c0808', '#1a1010', '#2a1a16', '#3a2620', '#4a3228'], true) },

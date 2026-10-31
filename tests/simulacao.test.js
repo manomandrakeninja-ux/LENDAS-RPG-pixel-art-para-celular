@@ -1343,6 +1343,27 @@ test('simulação: portos (DOCKS) — posição válida, não bloqueante, preço
   }
 });
 
+test('simulação: regiões (REGION_INFO) — têm nome, bioma válido e spawn condizente', () => {
+  const infos = Object.entries(REGION_INFO ?? {});
+  assert.ok(infos.length >= 8, 'poucas regiões com info');
+  for (const [id, info] of infos) {
+    assert.ok(info.name, `região ${id} sem nome`);
+    assert.ok(REGION_SPAWNS[id], `região ${id} sem spawn`);
+    assert.ok(typeof info.terrain === 'number' || info.tile !== undefined, `região ${id} sem terreno`);
+  }
+});
+
+test('simulação: grid do mundo — linhas/colunas consistentes e terreno dentro do enum T', () => {
+  const grid = buildTerrainGrid();
+  assert.equal(grid.cols, WORLD_COLS, 'cols=400');
+  assert.equal(grid.rows, 736, 'rows=736 (300 overworld + 436 subterrâneo)');
+  assert.equal(grid.terrain.length, grid.rows * grid.cols, 'terrain.length consistente');
+  const valid = new Set(Object.values(T));
+  for (let i = 0; i < grid.terrain.length; i += 101) {
+    assert.ok(valid.has(grid.terrain[i]), `terreno inválido no índice ${i}: ${grid.terrain[i]}`);
+  }
+});
+
 test('simulação: o jogador não sai do mapa — trava física de limites do mundo ativa no Player', async () => {
   // terrainAt é infinita (gera terreno até fora do mapa), então a proteção real é física:
   // Player.js precisa chamar body.setCollideWorldBounds(true). Conferimos no código-fonte.
