@@ -22,10 +22,20 @@ import { SKILLS, SKILL_MAX_LEVEL, skillLevelForXp, skillXpForLevel, PlayerSkills
 import { Bestiary } from '../src/game/Bestiary.js';
 import { Achievements, ACHIEVEMENTS } from '../src/data/achievements.js';
 import { DAY_NIGHT_CONFIG, DAY_NIGHT_TOTAL_SECONDS } from '../src/data/dayNight.js';
-// Espelho das tabelas PROPS de RegionWorld (que importa Phaser): validamos uso cruzado com regex no fonte.
-import { readFileSync } from 'node:fs';
-const regionWorldSrc = readFileSync(new URL('../src/game/RegionWorld.js', import.meta.url), 'utf8');
-const PROPS_FOR_TEST = { __src: regionWorldSrc };
+// Validamos uso cruzado do atlas com regex em TODOS os fontes de src/ (RegionWorld importa Phaser).
+import { readFileSync, readdirSync, statSync } from 'node:fs';
+function allSrcFiles(dir) {
+  const out = [];
+  for (const entry of readdirSync(dir)) {
+    const full = `${dir}/${entry}`;
+    if (statSync(full).isDirectory()) out.push(...allSrcFiles(full));
+    else if (full.endsWith('.js')) out.push(full);
+  }
+  return out;
+}
+const allSrc = allSrcFiles(new URL('../src', import.meta.url).pathname.replace(/^\/([A-Z]:)/, '$1'))
+  .map((f) => readFileSync(f, 'utf8')).join('\n');
+const regionWorldSrc = allSrc;
 import { Inventory } from '../src/game/Inventory.js';
 import { CampfireTravelers, TRAVELER_GOODS, TRAVELER_QUESTS, questById } from '../src/data/travelers.js';
 import { RESOURCE_TYPES } from '../src/game/config.js';
