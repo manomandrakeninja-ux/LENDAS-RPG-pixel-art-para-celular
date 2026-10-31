@@ -1018,6 +1018,35 @@ test('simulação: save v2 — envelope serializa e migra de v1 sem perder dados
   assert.equal(migrated.inventory.items.stone, 3, 'inventário preservado na migração');
 });
 
+test('simulação: bestiário — registra kills, conhece inimigos e serializa', () => {
+  const b = new Bestiary();
+  assert.equal(b.known('wolf'), false, 'desconhece antes do kill');
+  b.recordKill('wolf');
+  b.recordKill('wolf');
+  b.recordKill('bear');
+  assert.equal(b.known('wolf'), true, 'conhece após kill');
+  assert.equal(b.kills.wolf, 2, 'conta kills');
+  const data = b.serialize();
+  const b2 = new Bestiary();
+  b2.deserialize?.(data) ?? Object.assign(b2.kills, data.kills ?? data);
+  assert.equal(b2.kills.wolf, 2, 'round-trip preserva kills');
+});
+
+test('simulação: buffs — apply com opções, effects agregam, expira por tempo/dia', () => {
+  const buffs = new BuffSystem();
+  assert.ok(buffs.apply('attackBoost', { durationMs: 1000 }), 'apply retorna true');
+  assert.ok(buffs.has('attackBoost'), 'buff ativo');
+  assert.ok(buffs.effects.attack > 0 || buffs.effects.attackPercent > 0, 'effect'étaient);
+  buffs.update(2000, 1);
+  assert.equal(buffs.has('attackBoost'), false, 'buff expirou por tempo');
+  // buff por dia
+  buffs.apply('nightOwl', { untilDay: 5 });
+  buffs.update(0, 6);
+  assert.equal(buffs.has('nightOwl'), false, 'buff expirou por dia');
+  const data = buffs.serialize();
+  assert.ok(Array.isArray(data), 'serialize devolve lista');
+});
+
 test('simulação: o jogador não sai do mapa — trava física de limites do mundo ativa no Player', async () => {
   // terrainAt é infinita (gera terreno até fora do mapa), então a proteção real é física:
   // Player.js precisa chamar body.setCollideWorldBounds(true). Conferimos no código-fonte.

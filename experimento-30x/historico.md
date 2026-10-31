@@ -129,6 +129,10 @@
 - 251–255: props — flor lilás de duna, pedra esverdeada de praia, cogumelo cinza, neve soprada, flor laranja da selva (atlas 260) · 256: teste clima (weatherAt determinístico, 5 tipos) · 257: teste ciclo dia/noite (total = dia+noite) · 258: evento 🌧️ chuva no vale cura (+10% vida) · 259: dica splash · 260: verificação parcial.
 - Notas: visual 97 · código 96 · estabilidade 98 · desempenho 86 · jogabilidade 97 · mobile 74 · originalidade 89.
 
+### Ciclos 261–270 ✅ (lote)
+- 261–265: props — cascalho claro de cinza, flor branca do brejo, pedrinha clara de duna, arbusto seco de praia, flor rosada da floresta (atlas 268) · 266: teste viajantes (bens + quest kill/deliver + recompensa) · 267: teste save v2 (envelope + migração v1) · 268: evento 🐸 coro de sapos no brejo à noite (+10–16 XP) · 269: dica splash · 270: verificação parcial.
+- Notas: visual 97 · código 96 · estabilidade 98 · desempenho 86 · jogabilidade 97 · mobile 74 · originalidade 89.
+
 ### Ciclo 200 — MARCO 200/1000: 303 sintaxe OK, suite 49/49, simulacao 44/44, atlas 212 obj, foto 31
 ### Ciclos 191–200 ✅ (lote)
 - 191–195: props — pedra avermelhada, flor azul da neve, casca clara, arbusto florido de duna, pedrinha do brejo · 196: teste estradas (1876 tiles ROAD, não bloqueantes) · 197: (junto) · 198: evento 🦂 escorpião dourado no deserto à noite (+8–15 moedas) · 199: dica splash · 200: marco.

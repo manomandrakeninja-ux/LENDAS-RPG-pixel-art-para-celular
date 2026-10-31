@@ -858,6 +858,50 @@ function flowerTuft(seed = 402) {
   return finish(p, { outline: 0.3 });
 }
 
+/** Flor do gelo verde-água. */
+function mintIceFlower(seed = 1387) {
+  const p = new Painter(10, 12, { transparent: true });
+  p.rect(4, 6, 2, 5, '#7aa8a0');
+  for (const [dx, dy] of [[-3, -2], [3, -2], [-2, 2], [2, 2], [0, -4]]) p.set(5 + dx, 5 + dy, '#8ae8c8');
+  p.set(5, 5, '#ffffff');
+  return finish(p, { outline: 0.3 });
+}
+
+/** Pedra de praia amarelada. */
+function yellowBeachStone(seed = 1391) {
+  const p = new Painter(14, 9, { transparent: true });
+  p.sphere(7, 5, 5, '#c0a878', '#d8c898');
+  p.set(5, 3, '#f0e0b0');
+  return finish(p, { outline: 0.35 });
+}
+
+/** Tronco musgoso (floresta). */
+function mossyLog(seed = 1397) {
+  const p = new Painter(24, 9, { transparent: true });
+  const wood = ['#5a4630', '#6e5a3e'];
+  p.rect(2, 3, 20, 4, shade([wood[0], wood[1]], 0.5));
+  p.sphere(8, 4, 2.4, '#3f6e2c', '#57a050');
+  p.set(2, 3, '#3a2c1e');
+  return finish(p, { outline: 0.35 });
+}
+
+/** Cogumelo azul claro (brejo). */
+function lightBlueShroom(seed = 1401) {
+  const p = new Painter(10, 10, { transparent: true });
+  p.rect(4, 6, 2, 3, '#c8d8e0');
+  p.sphere(5, 5, 3.2, '#5a8ac0', '#7aa8e0');
+  p.set(4, 4, '#e8f4ff');
+  return finish(p, { outline: 0.35 });
+}
+
+/** Pedregulho de duna arredondado. */
+function roundDuneRock(seed = 1407) {
+  const p = new Painter(16, 10, { transparent: true });
+  p.sphere(8, 6, 5.5, '#c8a878', '#e0c898');
+  p.set(6, 4, '#f4e4b8');
+  return finish(p, { outline: 0.35 });
+}
+
 /** Cascalho de cinza claro (cinzas). */
 function lightAshGravel(seed = 1357) {
   const p = new Painter(16, 8, { transparent: true });
@@ -2221,6 +2265,13 @@ const PAINTED_ENTRIES = [
   { name: 'dry-sea-bush-1', draw: () => drySeaBush(1373) },
   { name: 'blush-forest-flower-0', draw: () => blushForestFlower(1377) },
   { name: 'blush-forest-flower-1', draw: () => blushForestFlower(1379) },
+  { name: 'mint-ice-flower-0', draw: () => mintIceFlower(1387) },
+  { name: 'mint-ice-flower-1', draw: () => mintIceFlower(1389) },
+  { name: 'yellow-beach-stone', draw: () => yellowBeachStone(1391) },
+  { name: 'mossy-log', draw: () => mossyLog(1397) },
+  { name: 'light-blue-shroom-0', draw: () => lightBlueShroom(1401) },
+  { name: 'light-blue-shroom-1', draw: () => lightBlueShroom(1403) },
+  { name: 'round-dune-rock', draw: () => roundDuneRock(1407) },
   { name: 'shipwreck', draw: shipwreck },
   { name: 'sea-rock', draw: seaRock },
   { name: 'charred-tree', draw: () => deadTree(['#0c0808', '#1a1010', '#2a1a16', '#3a2620', '#4a3228'], true) },
