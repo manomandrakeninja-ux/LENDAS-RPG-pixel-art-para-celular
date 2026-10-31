@@ -38,3 +38,15 @@ Linha base (antes do ciclo 01):
 | 27 | 49/49 arquivos; 19 fotos; atlas 69 objetos | 85 / 89 / 97 / 84 / 91 / 74 / 83 |
 | 28 | 49/49 arquivos | 85 / 89 / 97 / 84 / 92 / 74 / 84 |
 | 29 | 49/49 arquivos | 85 / 89 / 97 / 84 / 93 / 74 / 84 |
+| 30 | 49/49 arquivos; 303 sintaxe OK; simulacao 7/7; 20 fotos | **86 / 89 / 97 / 84 / 93 / 74 / 84** |
+
+## Início (base) vs fim
+| Eixo | Base | Final |
+|---|---|---|
+| Visual | 78 | 86 |
+| Código | 85 | 89 |
+| Estabilidade | 90 | 97 |
+| Desempenho | 80 | 84 |
+| Jogabilidade | 82 | 93 |
+| Mobile | 70 | 74 |
+| Originalidade | 80 | 84 |

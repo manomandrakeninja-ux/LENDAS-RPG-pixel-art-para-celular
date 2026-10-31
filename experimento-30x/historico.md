@@ -69,6 +69,11 @@
 - **D:** suite 49/49.
 - Notas 0–100: visual 79 · código 87 · estabilidade 95 · desempenho 83 · jogabilidade 88 · mobile 70 · originalidade 81.
 
+### Ciclo 30 — Verificação final + relatório (FIM DO EXPERIMENTO)
+- **D:** 303 arquivos sintaxe OK; suite 49/49; simulacao 7/7; atlas 3923 ladrilhos/69 objetos; foto 20-mapa-final-30x.
+- **H:** RELATORIO_EVOLUCAO_30X.md completo com comparação início vs fim, 25 melhorias, pendências e limitações de teste.
+- Notas finais 0–100: visual 86 · código 89 · estabilidade 97 · desempenho 84 · jogabilidade 93 · mobile 74 · originalidade 84.
+
 ### Ciclo 29 — UX: dicas contextuais na tela de derrota (noite / região perigosa / poções)
 - **C:** `triggerGameOver` monta dica conforme o contexto (de noite, região acima do nível, lembrete de poções/esquiva).
 - **D:** suite 49/49.

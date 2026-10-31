@@ -80,6 +80,80 @@
 - **D:** suite 49/49.
 - **Notas 0–100:** visual 79 · código 87 · estabilidade 95 · desempenho 83 · jogabilidade 88 · mobile 70 · originalidade 81.
 
+## Ciclo 30/30 — Verificação final + relatório ✅ CONCLUÍDO
+
+- **D:** `node --check` em 303 arquivos (src+scripts+tests): **0 falhas**. Suite `run-all-tests.ps1`: **49/49 arquivos**. `simulacao.test.js`: **7/7**. Atlas regerado (3923 ladrilhos, 69 objetos). Foto final: `SUPER ATUALIZAÇÃO/20-mapa-final-30x`.
+- **D (regressões):** nenhum teste regrediu em nenhum ciclo (sempre 49/49 após cada mudança). Build `npm run build` não roda no sandbox (spawn EPERM) — **limitação**: o usuário deve rodar `npm run build` fora do sandbox; nada mudou em dependências nem em config de build.
+- **Notas 0–100 finais:** visual 86 · código 89 · estabilidade 97 · desempenho 84 · jogabilidade 93 · mobile 74 · originalidade 84.
+
+---
+
+# 📊 RELATÓRIO FINAL — Experimento 30x (início vs fim)
+
+## Evolução das notas (0–100)
+
+| Eixo | Início (base) | Fim (ciclo 30) | Principiante mudança |
+|---|---|---|---|
+| Visual | 78 | 86 | tufos de grama/flores nos 8 biomas (atlas 65→69), sombras nos NPCs, tocha do jogador, ícone de clima, vinheta de vida baixa |
+| Código | 85 | 89 | compass8 pura+teste, cache do grid, openShop comum, doSleep comum, 303 arquivos sintaxe OK, simulacao.test.js (7 testes) |
+| Estabilidade | 90 | 97 | bug da bússola corrigido, bug do POI inalcançável corrigido (porto pirata), roundtrip de save testado, pausa ao ocultar aba, save em pagehide já existia |
+| Desempenho | 80 | 84 | buildTerrainGrid cacheado (182 ms → 0 ms), auditados hotspots (streaming/hints/fog já throttled) |
+| Jogabilidade | 82 | 93 | ajuda "?", dormir em vilarejos, loja em vilarejos, baús reabastecem (3 dias), 4º viajante, evento de baú na estrada, seta de waypoint na borda, 💀 de morte, +XP/+moedas flutuantes, CRÍTICO com hitstop, dicas no game over, 14 dicas no splash |
+| Mobile | 70 | 74 | perfil gráfico de partículas já existia; pausa ao trocar de aba; nada visual testado em tela real (limitação) |
+| Originalidade | 80 | 84 | vilarejos vivos (morador+loja+cama), viajantes com presente diário, clima por região no cartão, waypoint com seta |
+
+## Melhorias entregues (29 ciclos com mudança real)
+
+1. **Bug corrigido:** bússola das placas invertida (`compass8` + teste).
+2. **Bug corrigido:** Gruta dos Piratas inalcançável → novo Ancoradouro dos Piratas + gruta movida.
+3. Cache do `buildTerrainGrid` (182 ms → 0 ms).
+4. Painel de ajuda "?" com todas as teclas.
+5. Clima + vilarejos no cartão de região do mapa.
+6. Sombras de contato nos NPCs de vilarejo/viajante.
+7. Dormir em vilarejos (cama na 1ª casa).
+8. Seta verde na borda da tela → waypoint.
+9. Baús de mundo reabastecem em 3 dias (`chestDays`, compatível com saves antigos).
+10. Loja (poção/comida/tocha) nos vilarejos.
+11. +N moedas e +N XP flutuantes no jogador.
+12. Evento aleatório: baú abandonado perto de estradas.
+13. 4 props novos de grama/flores nos 8 biomas (atlas regerado).
+14. Tocha do jogador ilumina a noite.
+15. Caveira 💀 no minimapa marca o local da morte.
+16. Itens fixáveis (★) na mochila.
+17. Dicas rotativas no splash (14).
+18. Modo foto mostra coordenadas em metros + dia.
+19. Ícone do clima no HUD.
+20. Hitstop + "CRÍTICO!" no crítico de joia.
+21. Vinheta vermelha pulsante com vida < 25%.
+22. Pausa automática ao ocultar a aba.
+23. 4º viajante na Estrada do Penhasco.
+24. Dicas contextuais no game over.
+25. Testes novos: simulacao.test.js (BFS de POIs, clima 30 dias, XP+save roundtrip, cache do grid, grade do mapa, trava física do mundo, conteúdo por bioma/região) — suite 48→49 arquivos, todos verdes.
+
+## Problemas pendentes / backlog restante
+
+- `npm run build` e testes em navegador (Chrome headless) **não rodam neste sandbox** (spawn EPERM) — rodar fora; nada de build/dependências foi alterado.
+- Backlog restante em `docs/mapa-400x300.md`: save da névoa em chunks (hoje já é compacto como pares [col,row]) e tilemap do chão por chunk (só se pesar no celular).
+- Verificação visual (sprites/HUD em tela real) não foi possível aqui — auditado por código e testes de unidade.
+
+## Limitações de teste (honesto)
+
+- Sem browser neste ambiente: **não testei visualmente** HUD, animações, partículas ou telas reais; validei por `node --check`, testes de unidade/simulação e geração dos atlas/fotos estáticas.
+- Testes cobrem lógica pura (mundo, clima, save, skills, POIs); combate em tempo real não foi simulado frame a frame.
+- Métricas 0–100 são autoavaliação com evidências observáveis (testes, medições, diffs), não medições de FPS em dispositivo real.
+
+## Como reproduzir/verificar
+
+```bash
+git log --oneline experimento-evolucao-30x   # 30+ commits, um por ciclo
+powershell -ExecutionPolicy Bypass -File scripts/run-all-tests.ps1   # 49/49
+node tests/simulacao.test.js                                          # 7/7
+node scripts/generate-world-assets.js                                 # atlas consistente
+npm run build                                                         # FORA do sandbox (spawn EPERM aqui)
+```
+
+Fotos: `SUPER ATUALIZAÇÃO/` (20 PNGs, da 01 à 20).
+
 ## Ciclo 29/30 — UX: dicas contextuais na tela de derrota ✅ CONCLUÍDO
 
 - **C:** game over mostra dica conforme o contexto (noite, região perigosa para o nível, poções/esquiva).
