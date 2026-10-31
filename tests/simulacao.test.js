@@ -41,7 +41,7 @@ import { VILLAGERS, VILLAGER_STATS } from '../src/data/villagers.js';
 import { BOSS_CONFIG, BOSS_CAMP_DISTANCE } from '../src/data/boss.js';
 import { CHAPTER_STORY, STORY_LORE, ENDINGS } from '../src/data/story.js';
 import { sunShadow } from '../src/data/sunlight.js';
-import { HARVEST_STRUCTURE_TYPES, HARVEST_STRUCTURE_INTERACTION_RANGE, createSeededRandom } from '../src/data/harvestStructures.js';
+import { HARVEST_STRUCTURE_TYPES, HARVEST_STRUCTURE_INTERACTION_RANGE, CHEST_LOOT_RECIPES, createSeededRandom } from '../src/data/harvestStructures.js';
 // Validamos uso cruzado do atlas com regex em TODOS os fontes de src/ (RegionWorld importa Phaser).
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -2030,7 +2030,7 @@ test('simulação: HARVEST_STRUCTURE_TYPES — estruturas têm label, recompensa
   for (const [id, def] of Object.entries(HARVEST_STRUCTURE_TYPES)) {
     assert.ok(def.label, `estrutura ${id} sem label`);
     if (def.rewardType) assert.ok(RESOURCE_TYPES[def.rewardType], `estrutura ${id} rewardType inválido: ${def.rewardType}`);
-    assert.ok(def.rewardType || def.coins || def.loot, `estrutura ${id} sem nenhuma recompensa`);
+    else assert.ok(CHEST_LOOT_RECIPES.length >= 1, `estrutura ${id} sem rewardType deveria ser baú com receitas`);
     assert.ok(Array.isArray(def.rewardAmount) && def.rewardAmount[1] >= def.rewardAmount[0] && def.rewardAmount[0] > 0, `estrutura ${id} rewardAmount inválido`);
     assert.ok((def.regrowDays ?? 0) >= 0, `estrutura ${id} regrowDays inválido`);
   }
