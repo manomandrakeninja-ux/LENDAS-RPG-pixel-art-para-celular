@@ -1403,6 +1403,33 @@ test('simulação: buffs — serialize devolve lista com ids válidos e tempos r
   assert.equal(b.list().length, 2, 'list() = 2 buffs');
 });
 
+test('simulação: clima por região — neve só neva no gelo, poeira só no deserto/cinzas', () => {
+  // amostra grande: gelo pode nevar; vale nunca neva
+  let snowInIce = 0; let snowInVale = 0;
+  let dustInAreia = 0; let dustInVale = 0;
+  for (let day = 0; day < 600; day += 1) {
+    if (weatherAt('gelo', { dayCount: day, cycleTime: 0.5 }) === 'snow') snowInIce += 1;
+    if (weatherAt('vale', { dayCount: day, cycleTime: 0.5 }) === 'snow') snowInVale += 1;
+    if (weatherAt('areia', { dayCount: day, cycleTime: 0.5 }) === 'dust') dustInAreia += 1;
+    if (weatherAt('vale', { dayCount: day, cycleTime: 0.5 }) === 'dust') dustInVale += 1;
+  }
+  assert.ok(snowInIce > 0, 'gelo deveria nevar em algum dia');
+  assert.equal(snowInVale, 0, 'vale nunca deve nevar');
+  assert.ok(dustInAreia > 0, 'deserto deveria ter poeira em algum dia');
+  assert.equal(dustInVale, 0, 'vale nunca deve ter poeira');
+});
+
+test('simulação: regions do subterrâneo — cavernas têm tema válido e profundidade sadia', () => {
+  const themes = new Set(['earth', 'swamp', 'ice', 'tomb', 'sea', 'fire']);
+  for (const c of CAVES) {
+    assert.ok(c.theme === undefined || themes.has(c.theme), `caverna ${c.id} tema inválido: ${c.theme}`);
+    assert.ok((c.depth ?? 0) >= 0, `caverna ${c.id} profundidade inválida`);
+  }
+  // há cavernas de vários temas
+  const usedThemes = new Set(CAVES.map((c) => c.theme).filter(Boolean));
+  assert.ok(usedThemes.size >= 3, `poucos temas de caverna (${[...usedThemes].join(',')})`);
+});
+
 test('simulação: o jogador não sai do mapa — trava física de limites do mundo ativa no Player', async () => {
   // terrainAt é infinita (gera terreno até fora do mapa), então a proteção real é física:
   // Player.js precisa chamar body.setCollideWorldBounds(true). Conferimos no código-fonte.
