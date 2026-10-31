@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import {
   BLOCKING, BOAT_FARE, DUNGEONS, CAVES_BY_ID, CAVE_NODES, DOCKS, FAST_TRAVEL_COST, FULL_WORLD, NODE_REGROW_DAYS, OASES, OVERWORLD,
-  REGION_INFO, REGION_NODES, ROADS, ROAD_SIGNS, ROOM_COLS, T, TERRAIN_NODES, TILE, TREASURE_SPOTS, VILLAGES, buildTerrainGrid, dungeonLevelRange, dockPosition, pointOnRoad, regionAt, roadAt, roomAt
+  REGION_INFO, REGION_NODES, ROADS, ROAD_SIGNS, ROOM_COLS, T, TERRAIN_NODES, TILE, TREASURE_SPOTS, VILLAGES, buildTerrainGrid, compass8, dungeonLevelRange, dockPosition, pointOnRoad, regionAt, roadAt, roomAt
 } from '../data/worldRegions.js';
 import { VILLAGERS } from '../data/villagers.js';
 import { drawVillager } from '../art/person.js';
@@ -495,8 +495,7 @@ export class RegionWorld {
     const dx = poi.x - player.x;
     const dy = poi.y - player.y;
     const meters = Math.max(0, Math.round((Math.hypot(dx, dy) / TILE) * 10));
-    const angle = Math.atan2(dy, dx);
-    const compass = ['L', 'SE', 'S', 'SO', 'O', 'NO', 'N', 'NE'][Math.round(angle / (Math.PI / 4)) + 4 & 7];
+    const compass = compass8(dx, dy);
     scene.ui.showMessage(`🪧 Placa: ${poi.name} fica a ${meters} m para ${compass}.`);
     scene.audio?.playPick?.();
   }

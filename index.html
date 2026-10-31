@@ -245,6 +245,13 @@
       </div>
       <button id="store-all-action" class="store-all-action" type="button" hidden>GUARDAR TUDO</button>
       <button id="world-action" class="world-action" type="button">ATACAR</button>
+      <section id="help-overlay" class="help-overlay" role="dialog" aria-modal="true" aria-labelledby="help-title" hidden>
+        <div class="help-overlay__card">
+          <h2 id="help-title">AJUDA — TECLAS</h2>
+          <div id="help-keys" class="help-overlay__keys"></div>
+          <button id="help-close" type="button" class="button--primary">FECHAR (? ou ESC)</button>
+        </div>
+      </section>
     </div>
     <script type="module" src="/src/main.js"></script>
   </body>

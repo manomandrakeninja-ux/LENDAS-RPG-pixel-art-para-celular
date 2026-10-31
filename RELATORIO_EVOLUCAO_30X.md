@@ -15,3 +15,10 @@
 - **G (autocrítica):** o painel de ajuda é estático — poderia ler as teclas rebindadas ao vivo (já lê via `loadKeybinds()` na abertura, ok). Poderia haver foto do painel, mas sem browser no sandbox.
 - **H (documentação):** experimento-30x/{historico,bugs,ideias,metricas}.md atualizados; commit de checkpoint a seguir.
 - **Notas 0–100:** visual 78 (pixel art coeso; sem verificação visual possível) · código 85 (cobertura boa no mundo; GameScene grande) · estabilidade 90 (48/48 + bug corrigido) · desempenho 80 (sem perfilação real no sandbox) · jogabilidade 82 (ajuda de teclas nova) · mobile 70 (touch existe, não testado) · originalidade 80.
+
+## Ciclo 02/30 — Fundação: feedback de moedas + roundtrip de save ✅ CONCLUÍDO
+
+- **A:** `updateFog` auditado — já retorna cedo se a névoa não mudou (sem hotspot).
+- **C:** `EconomySystem.onGain` hook → `+N` dourado flutuante sobre o jogador (`Effects.spawnDamage` reusado).
+- **C/D:** teste de roundtrip v2 completo (skills/waypoint/regions/chests/travelerGifts/economy) em save.test.js → 9/9; suite 48/48; sem regressões.
+- **Notas 0–100:** visual 78 · código 86 · estabilidade 92 · desempenho 80 · jogabilidade 82 · mobile 70 · originalidade 80.

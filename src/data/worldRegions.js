@@ -488,6 +488,13 @@ function roadSigns() {
 /** Placas de estrada do mundo inteiro (px): { x, y, label, poi }. */
 export const ROAD_SIGNS = Object.freeze(roadSigns());
 
+/** Direção cardeal (8 ventos) de um vetor (dx, dy) em coordenadas de tela (y para baixo = sul). */
+export function compass8(dx, dy) {
+  const names = ['L', 'SE', 'S', 'SO', 'O', 'NO', 'N', 'NE'];
+  const angle = Math.atan2(dy, dx); // 0 = leste, π/2 = sul (y cresce para baixo)
+  return names[((Math.round(angle / (Math.PI / 4)) % 8) + 8) % 8];
+}
+
 /** Ponto na polyline da estrada no parâmetro t (0..1, proporcional ao comprimento). */
 export function pointOnRoad(road, t) {
   const clamped = Math.max(0, Math.min(1, t));

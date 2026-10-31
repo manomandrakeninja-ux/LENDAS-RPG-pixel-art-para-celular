@@ -52,7 +52,7 @@ import { CompanionSystem } from './CompanionSystem.js';
 import { HeroChoice, shouldAskHero } from './HeroChoice.js';
 import { HERO_LABELS, normalizeGender } from './HeroStyle.js';
 import { EffectsPanel } from './EffectsPanel.js';
-import { actionForCode, keyCodeFor, loadKeybinds } from './Keybinds.js';
+import { actionForCode, keyCodeFor, keyLabel, loadKeybinds } from './Keybinds.js';
 import { WARD_TIP_TEXT, WARD_TIP_TITLE, isNewbieProtected, shouldShowWardTip } from './NewbieProtection.js';
 import { EnemyProjectiles } from './EnemyProjectiles.js';
 import { BestiaryPanel } from './BestiaryPanel.js';
@@ -153,6 +153,11 @@ export class GameScene extends Phaser.Scene {
     this.progression = new PlayerProgression(saved?.progression);
     this.skills = new PlayerSkills(saved?.skills);
     this.economy = new EconomySystem(saved?.economy);
+    // Texto flutuante dourado "+N" perto do jogador sempre que ganhar moedas.
+    this.economy.onGain = (coins) => {
+      const player = this.player;
+      if (player) this.effects?.spawnDamage(player.x, player.y - 34, `+${coins}`, '#ffd76b');
+    };
     this.player = new Player(this, WORLD.camp.x, WORLD.camp.y + 85, saved?.player, this.progression);
     this.player.setGender(this.heroGender);
     this.player.recalculateEquipment(this.camp.equipment);
@@ -328,12 +333,23 @@ export class GameScene extends Phaser.Scene {
     this.applyKeybinds(loadKeybinds());
     this.input.keyboard.on('keydown', (event) => {
       if (event.ctrlKey || event.altKey || event.metaKey) return;
+      // Shift+/ = "?" abre/fecha a ajuda de teclas.
+      if (event.code === 'Slash' && event.shiftKey) {
+        event.preventDefault();
+        this.toggleHelp();
+        return;
+      }
       const action = actionForCode(this.keybinds, event.code);
       if (action === 'interact') this.interact();
       else if (action === 'attack') this.attackNearby();
       else if (action === 'special') this.specialAttack();
       else if (action === 'potion') this.useHotkey('1');
     });
+    // Monta o painel de ajuda (?).
+    this.helpRoot = document.getElementById('help-overlay');
+    this.helpKeys = document.getElementById('help-keys');
+    document.getElementById('help-close')?.addEventListener('click', () => this.toggleHelp(false));
+    this.input.keyboard.on('keydown-ESC', () => { if (this.helpOpen) this.toggleHelp(false); });
     this.input.keyboard.on('keydown-TWO', () => this.useHotkey('2'));
     this.input.keyboard.on('keydown-THREE', () => this.useHotkey('3'));
     this.input.keyboard.on('keydown-FOUR', () => this.useHotkey('4'));
@@ -1462,6 +1478,41 @@ export class GameScene extends Phaser.Scene {
       }
     }
     if (this.photoMode) this.ui.showMessage('📷 Modo foto ativado — aperte P para voltar');
+  }
+
+  /** Painel de ajuda (tecla ?): lista todas as teclas fixas e as configuráveis. */
+  toggleHelp(force) {
+    this.helpOpen = force ?? !this.helpOpen;
+    if (!this.helpRoot) return;
+    if (this.helpOpen && this.helpKeys && !this.helpKeys.childElementCount) {
+      const kb = this.keybinds ?? loadKeybinds();
+      const rows = [
+        ['WASD / setas', 'Mover'],
+        [`${keyLabel(kb.attack)}`, 'Atacar'],
+        [`${keyLabel(kb.special)}`, 'Golpe especial'],
+        [`${keyLabel(kb.dodge)}`, 'Esquiva'],
+        [`${keyLabel(kb.interact)}`, 'Interagir (E)'],
+        [`${keyLabel(kb.potion)} … 5`, 'Poção / comer / tocha / vigor / elixir'],
+        ['B ou I', 'Mochila (filtros: todos/usáveis/materiais)'],
+        ['V', 'Equipamento'],
+        ['L', 'Diário (missões, descobertas, skills)'],
+        ['M', 'Mapa do mundo (clique: região · Shift+clique: waypoint · perto de POI: viajar)'],
+        ['T', 'Conquistas'],
+        ['C', 'Acampamento'],
+        ['K', 'Ajustes'],
+        ['F', 'Descansar (no acampamento)'],
+        ['N', 'Dormir até de manhã (na fogueira/casa)'],
+        ['G', 'Montar/desmontar'],
+        ['H', 'Convocar o cavalo e montar'],
+        ['Z', 'GRITO FUS RO DAH! (barra de Fúria cheia)'],
+        ['R', 'Loot rápido (pega tudo perto)'],
+        ['Y', 'Voltar ao acampamento (60 s de cooldown)'],
+        ['P', 'Modo foto (esconde a HUD)'],
+        ['?', 'Esta ajuda']
+      ];
+      this.helpKeys.innerHTML = rows.map(([key, label]) => `<div><span>${label}</span><b>${key}</b></div>`).join('');
+    }
+    this.helpRoot.hidden = !this.helpOpen;
   }
 
   /** Tecla Y: volta ao acampamento de graça (60 s de cooldown; bloqueado em caverna/luta/ataque). */

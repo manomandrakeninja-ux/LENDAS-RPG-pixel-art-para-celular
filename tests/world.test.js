@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import test from 'node:test';
 import {
   CAVES, DUNGEONS, CAVE_NODES, DOCKS, OVERWORLD, REGION_INFO, REGION_NODES, REGION_SPAWNS, ROADS, ROAD_SIGNS, ROOM_COLS, ROOM_ROWS, T, TERRAIN_NODES, TILE,
-  TOWERS, TREASURE_SPOTS, VALLEY, VILLAGES, VALLEY_EXTRA_SPAWNS, WORLD_COLS, OVERWORLD_ROWS, buildTerrainGrid, dockPosition, pointOnRoad, regionAt, roadAt, terrainAt
+  TOWERS, TREASURE_SPOTS, VALLEY, VILLAGES, VALLEY_EXTRA_SPAWNS, WORLD_COLS, OVERWORLD_ROWS, buildTerrainGrid, compass8, dockPosition, pointOnRoad, regionAt, roadAt, terrainAt
 } from '../src/data/worldRegions.js';
 import { layoutTiles } from '../src/data/terrainLayout.js';
 import { ENEMY_TYPES } from '../src/data/enemies.js';
@@ -197,6 +197,17 @@ test('pointOnRoad: percorre a estrada proporcionalmente ao comprimento e para na
     const over = pointOnRoad(road, 5);
     assert.ok(Math.hypot(over.x - last[0], over.y - last[1]) < 1, 'limite superior');
   }
+});
+
+test('compass8: bússola de 8 ventos aponta para o lado certo (y para baixo = sul)', () => {
+  assert.equal(compass8(10, 0), 'L');
+  assert.equal(compass8(0, 10), 'S');
+  assert.equal(compass8(-10, 0), 'O');
+  assert.equal(compass8(0, -10), 'N');
+  assert.equal(compass8(10, 10), 'SE');
+  assert.equal(compass8(-10, -10), 'NO');
+  assert.equal(compass8(-10, 10), 'SO');
+  assert.equal(compass8(10, -10), 'NE');
 });
 
 test('sombras: compridas de manhã e à tarde, curtas ao meio-dia, viradas para lados opostos', () => {

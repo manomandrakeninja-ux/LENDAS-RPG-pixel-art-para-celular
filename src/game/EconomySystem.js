@@ -6,6 +6,8 @@ export class EconomySystem {
   addCoins(amount) {
     const coins = Math.max(0, Math.floor(Number(amount) || 0));
     this.coins += coins;
+    // Hook opcional (texto flutuante "+N" dourado no jogador, definido pela cena).
+    if (coins > 0) this.onGain?.(coins);
     return coins;
   }
 
