@@ -69,6 +69,11 @@
 - **D:** suite 49/49.
 - Notas 0–100: visual 79 · código 87 · estabilidade 95 · desempenho 83 · jogabilidade 88 · mobile 70 · originalidade 81.
 
+### Ciclo 21 — Modo foto: coordenadas (m) + dia no canto durante as fotos
+- **C:** `togglePhotoMode` mostra `#photo-coords`; updateFrame atualiza "📍 X m, Y m • dia N" só no modo foto.
+- **D:** suite 49/49.
+- Notas 0–100: visual 83 · código 88 · estabilidade 95 · desempenho 83 · jogabilidade 90 · mobile 72 · originalidade 83.
+
 ### Ciclo 20 — UX: dicas rotativas na tela de carregamento (14 dicas)
 - **C:** `TIPS` no Splash.js + elemento `#splash-tip`; troca a cada 4 s enquanto carrega (teclas novas: ?, waypoint, vilarejos, baús, portos, fixar ★...).
 - **D:** suite 49/49.

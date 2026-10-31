@@ -761,6 +761,11 @@ export class GameScene extends Phaser.Scene {
     if (this.deathMarker && Phaser.Math.Distance.Between(this.player.x, this.player.y, this.deathMarker.x, this.deathMarker.y) < 160) {
       this.deathMarker = null;
     }
+    // Coordenadas no modo foto (atualizadas aqui, no update).
+    if (this.photoMode && this.photoCoords) {
+      const meters = (v) => Math.round((v / TILE) * 10);
+      this.photoCoords.textContent = `📍 ${meters(this.player.x)} m, ${meters(this.player.y)} m • dia ${this.timeState.dayCount}`;
+    }
     // Eventos aleatórios só no overworld (não dentro de caverna/torre, nem pausado).
     if (!paused && !this.regionWorld?.underground && !this.overlayBlocked()) {
       this.randomEventMs -= delta;
@@ -1485,6 +1490,9 @@ export class GameScene extends Phaser.Scene {
         delete el.dataset.prevDisplay;
       }
     }
+    // No modo foto mostramos só as coordenadas (canto inferior direito) — útil para registrar lugares.
+    this.photoCoords = document.getElementById('photo-coords');
+    if (this.photoCoords) this.photoCoords.hidden = !this.photoMode;
     if (this.photoMode) this.ui.showMessage('📷 Modo foto ativado — aperte P para voltar');
   }
 

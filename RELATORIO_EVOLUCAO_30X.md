@@ -80,6 +80,12 @@
 - **D:** suite 49/49.
 - **Notas 0–100:** visual 79 · código 87 · estabilidade 95 · desempenho 83 · jogabilidade 88 · mobile 70 · originalidade 81.
 
+## Ciclo 21/30 — Modo foto com coordenadas ✅ CONCLUÍDO
+
+- **C:** no modo foto (P) aparece `📍 X m, Y m • dia N` no canto inferior direito (só nesse modo).
+- **D:** suite 49/49.
+- **Notas 0–100:** visual 83 · código 88 · estabilidade 95 · desempenho 83 · jogabilidade 90 · mobile 72 · originalidade 83.
+
 ## Ciclo 20/30 — UX: dicas rotativas no splash ✅ CONCLUÍDO
 
 - **C:** 14 dicas (teclas novas do experimento incluídas) girando a cada 4 s durante o carregamento.
