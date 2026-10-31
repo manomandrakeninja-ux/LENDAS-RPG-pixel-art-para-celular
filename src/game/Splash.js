@@ -46,7 +46,8 @@ const TIPS = [
   'À noite na selva, os vaga-lumes 🦋 podem deixar moeditas.',
   'De dia nas cinzas, uma brasa viva 🔥 pode pular em você com XP.',
   'O vento 🍃 forte no vale, de dia, às vezes traz um pouco de XP.',
-  'Chuva à noite 🌙 pode ser morna e curar um tiquinho.'
+  'Chuva à noite 🌙 pode ser morna e curar um tiquinho.',
+  'De dia na praia, conchas brilhantes 🐚 podem dar moeditas.'
 ];
 
 export function setupSplash() {

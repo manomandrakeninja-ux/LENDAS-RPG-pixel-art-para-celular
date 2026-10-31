@@ -1172,6 +1172,27 @@ test('simulação: inventário — add respeita limite de slots e serialize faz 
   assert.equal(inv2.items.wood, 1100, 'serialize preserva itens');
 });
 
+test('simulação: vilas — têm nome, posição válida, não bloqueantes e dentro do mapa', () => {
+  assert.ok(VILLAGES.length >= 5, 'poucas vilas');
+  for (const v of VILLAGES) {
+    assert.ok(v.name && v.name.length > 2, 'vila sem nome');
+    assert.ok(v.x > 0 && v.x < WORLD_COLS * TILE && v.y > 0 && v.y < OVERWORLD_ROWS * TILE, `${v.name} fora do mapa`);
+    assert.ok(![T.SEA, T.LAVA, T.WALL, T.VOID].includes(terrainAt(v.x, v.y)), `${v.name} em terreno bloqueante`);
+  }
+  // nomes únicos
+  assert.equal(new Set(VILLAGES.map((v) => v.name)).size, VILLAGES.length, 'nomes de vilas repetidos');
+});
+
+test('simulação: cavernas — entrada válida, não bloqueante, dentro do mapa; boss válido', () => {
+  assert.ok(CAVES.length >= 8, 'poucas cavernas');
+  for (const c of CAVES) {
+    const e = c.entrance ?? { x: c.x, y: c.y };
+    assert.ok(e.x > 0 && e.x < WORLD_COLS * TILE && e.y > 0 && e.y < OVERWORLD_ROWS * TILE, `${c.name} fora do mapa`);
+    assert.ok(![T.SEA, T.LAVA, T.WALL, T.VOID].includes(terrainAt(e.x, e.y)), `${c.name} entrada bloqueante`);
+    if (c.boss) assert.ok(ENEMY_TYPES[c.boss], `${c.name} boss inexistente: ${c.boss}`);
+  }
+});
+
 test('simulação: o jogador não sai do mapa — trava física de limites do mundo ativa no Player', async () => {
   // terrainAt é infinita (gera terreno até fora do mapa), então a proteção real é física:
   // Player.js precisa chamar body.setCollideWorldBounds(true). Conferimos no código-fonte.
