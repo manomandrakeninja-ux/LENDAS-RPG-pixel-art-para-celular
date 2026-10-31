@@ -122,6 +122,9 @@
 ### Ciclo 39/130 — Flor do deserto (dunas/areia) ✅ · Ciclo 40/130 — Flor do brejo (pântano, foto 23) ✅ · Ciclo 41/130 — Flor vulcânica (cinzas) ✅
 - 6 props novos no total; atlas 65 → **77 objetos**. Suite 49/49 em todos. Notas: 88→89 / 90 / 98 / 84 / 95 / 74 / 86.
 
+### Ciclo 42/130 — Game feel: recoil do FUS RO DAH ✅ · Ciclo 43/130 — Teste COMBAT_CONFIG ✅ · Ciclo 44/130 — Teste de props do atlas ✅ · Ciclo 45/130 — Flor tropical na selva (foto 24, atlas 79) ✅
+- Suite 49/49 e simulacao 10/10 em todos. Notas: 90 / 91 / 98 / 84 / 96 / 74 / 86.
+
 ### Ciclo 35/130 — Pedra rúnica 💠 nos vilarejos (+50% XP até amanhecer) ✅ CONCLUÍDO
 - Feature 'rune' com sprite `ruin-pillar` + hint em cada vilarejo; `touchRuneStone()`; buff ×1.5 no XP do dia; persistido em `runeDay` (compatível com saves antigos). Suite 49/49; simulacao 8/8; atlas regerado.
 - Notas: 87 / 90 / 97 / 84 / 95 / 74 / 86.

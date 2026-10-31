@@ -858,6 +858,65 @@ function flowerTuft(seed = 402) {
   return finish(p, { outline: 0.3 });
 }
 
+/** Pedrinhas espalhadas no chão (detalhe de chão, sem colisão). */
+function pebbles(seed = 563) {
+  const p = new Painter(18, 8, { transparent: true });
+  const stones = ['#8a8a92', '#6a6a72', '#9a9aa2'];
+  for (let i = 0; i < 4; i += 1) {
+    const sx = 2 + hash(i, seed, 1) * 13;
+    const sy = 2 + hash(i, seed, 2) * 4;
+    const r = 1.2 + hash(i, seed, 3) * 1.2;
+    const c = stones[Math.floor(hash(i, seed, 4) * stones.length) % stones.length];
+    p.sphere(sx, sy, r, shade([c], 0.7), c);
+  }
+  return finish(p, { outline: 0.35 });
+}
+
+/** Flor dourada do vale (pradaria). */
+function valleyFlower(seed = 547) {
+  const p = new Painter(14, 11, { transparent: true });
+  const petals = ['#f4d03f', '#ffe08a', '#f0c020'];
+  for (let flower = 0; flower < 3; flower += 1) {
+    const fx = 3 + flower * 4 + (hash(flower, seed, 5) - 0.5) * 2;
+    const fy = 3 + hash(flower, seed, 6) * 3;
+    const color = petals[Math.floor(hash(flower, seed, 7) * petals.length) % petals.length];
+    for (let t = 0; t <= 1; t += 0.2) p.set(fx, fy + 6 * t, shade(['#4a7a24', '#5a8a30'], 0.5));
+    for (const [ox, oy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) p.set(fx + ox, fy + oy, color);
+    p.set(fx, fy, '#fff4b0');
+  }
+  return finish(p, { outline: 0.3 });
+}
+
+/** Flor silvestre azul-clara na floresta. */
+function forestFlower(seed = 531) {
+  const p = new Painter(14, 11, { transparent: true });
+  const petals = ['#a8c8f0', '#8ab0e8', '#c8e0ff'];
+  for (let flower = 0; flower < 3; flower += 1) {
+    const fx = 3 + flower * 4 + (hash(flower, seed, 5) - 0.5) * 2;
+    const fy = 3 + hash(flower, seed, 6) * 3;
+    const color = petals[Math.floor(hash(flower, seed, 7) * petals.length) % petals.length];
+    for (let t = 0; t <= 1; t += 0.2) p.set(fx, fy + 6 * t, shade(['#2e5220', '#3f6e2c'], 0.5));
+    for (const [ox, oy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) p.set(fx + ox, fy + oy, color);
+    p.set(fx, fy, '#e8f4ff');
+  }
+  return finish(p, { outline: 0.3 });
+}
+
+/** Flor de praia (branca/amarela) na areia da costa. */
+function beachFlower(seed = 515) {
+  const p = new Painter(14, 11, { transparent: true });
+  const petals = ['#ffffff', '#f4e6a0', '#ffe8c0'];
+  for (let flower = 0; flower < 2; flower += 1) {
+    const fx = 4 + flower * 6 + (hash(flower, seed, 5) - 0.5) * 2;
+    const fy = 3 + hash(flower, seed, 6) * 3;
+    const color = petals[Math.floor(hash(flower, seed, 7) * petals.length) % petals.length];
+    for (let t = 0; t <= 1; t += 0.2) p.set(fx, fy + 6 * t, shade(['#8a9a4a', '#9aaa5a'], 0.5));
+    for (const [ox, oy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) p.set(fx + ox, fy + oy, color);
+    p.set(fx, fy, '#f4d03f');
+  }
+  return finish(p, { outline: 0.3 });
+}
+
 /** Flor tropical (rosa vivo) na selva. */
 function jungleFlower(seed = 499) {
   const p = new Painter(14, 11, { transparent: true });
@@ -977,6 +1036,14 @@ const PAINTED_ENTRIES = [
   { name: 'ash-flower-1', draw: () => ashFlower(491) },
   { name: 'jungle-flower-0', draw: () => jungleFlower(499) },
   { name: 'jungle-flower-1', draw: () => jungleFlower(507) },
+  { name: 'beach-flower-0', draw: () => beachFlower(515) },
+  { name: 'beach-flower-1', draw: () => beachFlower(523) },
+  { name: 'forest-flower-0', draw: () => forestFlower(531) },
+  { name: 'forest-flower-1', draw: () => forestFlower(541) },
+  { name: 'valley-flower-0', draw: () => valleyFlower(547) },
+  { name: 'valley-flower-1', draw: () => valleyFlower(557) },
+  { name: 'pebbles-0', draw: () => pebbles(563) },
+  { name: 'pebbles-1', draw: () => pebbles(571) },
   { name: 'shipwreck', draw: shipwreck },
   { name: 'sea-rock', draw: seaRock },
   { name: 'charred-tree', draw: () => deadTree(['#0c0808', '#1a1010', '#2a1a16', '#3a2620', '#4a3228'], true) },
