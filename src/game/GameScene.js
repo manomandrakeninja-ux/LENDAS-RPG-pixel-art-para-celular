@@ -1682,7 +1682,12 @@ export class GameScene extends Phaser.Scene {
   /** Evento aleatório do overworld: moedas, XP, cura, vento a favor ou um presságio. */
   randomEvent() {
     const roll = Math.random();
-    if (roll < 0.0015 && this.timeState?.phase === 'day' && this.regionWorld?.currentRegion?.() === 'praia') {
+    if (roll < 0.0012 && this.timeState?.phase === 'night' && this.regionWorld?.currentRegion?.() === 'cinzas') {
+      const xp = Phaser.Math.Between(12, 20);
+      this.grantExperience(xp);
+      this.effects.spawnDamage(this.player.x, this.player.y - 30, '👺', '#ff6a50');
+      this.ui.showMessage(`👺 Evento: espírito das cinzas à noite! +${xp} XP`);
+    } else if (roll < 0.0015 && this.timeState?.phase === 'day' && this.regionWorld?.currentRegion?.() === 'praia') {
       const coins = Phaser.Math.Between(4, 9);
       this.economy.addCoins(coins);
       this.audio.playCoin();

@@ -1193,6 +1193,35 @@ test('simulação: cavernas — entrada válida, não bloqueante, dentro do mapa
   }
 });
 
+test('simulação: baús de tesouro — longe de acampamento/torres, em terreno firme, rewards válidos', () => {
+  assert.ok(TREASURE_SPOTS.length >= 20, 'poucos baús');
+  const blockers = [...Object.values(TOWERS).map((t) => t.entrance ?? { x: t.x, y: t.y }), { x: 1440, y: 1080 }];
+  for (const spot of TREASURE_SPOTS) {
+    assert.ok(spot.x > 0 && spot.x < WORLD_COLS * TILE && spot.y > 0 && spot.y < OVERWORLD_ROWS * TILE, 'baú fora do mapa');
+    assert.ok(![T.SEA, T.LAVA, T.WALL, T.VOID].includes(terrainAt(spot.x, spot.y)), 'baú em terreno bloqueante');
+    const dCamp = Math.hypot(spot.x - 1440, spot.y - 1080);
+    assert.ok(dCamp > 1200, `baú muito perto do acampamento (${Math.round(dCamp)})`);
+    for (const b of blockers) {
+      assert.ok(Math.hypot(spot.x - b.x, spot.y - b.y) > 400, 'baú colidindo com torre/acampamento');
+    }
+    assert.ok((spot.rewards ?? []).length > 0, 'baú sem recompensa');
+  }
+});
+
+test('simulação: keybinds — teclas de ação não colidem entre si', () => {
+  const seen = {};
+  for (const [action, key] of Object.entries(KEYBINDS ?? {})) {
+    const k = String(key).toLowerCase();
+    assert.ok(!seen[k], `tecla ${k} usada por ${seen[k]} e ${action}`);
+    seen[k] = action;
+  }
+  // teclas mínimas esperadas existem
+  const all = Object.values(KEYBINDS ?? {}).map((k) => String(k).toLowerCase());
+  for (const required of ['m', 'b', 'v', 'l', 'escape']) {
+    assert.ok(all.includes(required), `tecla obrigatória ausente: ${required}`);
+  }
+});
+
 test('simulação: o jogador não sai do mapa — trava física de limites do mundo ativa no Player', async () => {
   // terrainAt é infinita (gera terreno até fora do mapa), então a proteção real é física:
   // Player.js precisa chamar body.setCollideWorldBounds(true). Conferimos no código-fonte.
