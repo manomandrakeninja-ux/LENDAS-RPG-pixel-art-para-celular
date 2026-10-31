@@ -31,7 +31,8 @@ const TIPS = [
   'Perto da água, na praia, um peixe 🐟 pode saltar e virar comida.',
   'A cada 7 dias a lua cheia 🌕 abençoa a noite com XP extra.',
   'De dia, o vento às vezes carrega uma folhinha 🍃 com um pouco de XP.',
-  'Em dias de sol aberto ☀️ o calor rende um tiquinho de XP.'
+  'Em dias de sol aberto ☀️ o calor rende um tiquinho de XP.',
+  'Em noites limpas ⭐ podem cair estrelas cadentes com moeditas.'
 ];
 
 export function setupSplash() {

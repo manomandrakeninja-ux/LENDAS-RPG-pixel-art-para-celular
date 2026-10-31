@@ -753,6 +753,26 @@ test('simulação: spawns por região — dia e noite com tipos válidos; ilhas 
   assert.notDeepEqual(REGION_SPAWNS.esmeralda.day, REGION_SPAWNS.antiga.day, 'ilha esmeralda deve ter fauna própria');
 });
 
+test('simulação: POIs do mapa — placas apontam para POIs reais e alcance ≤ 1400 px', () => {
+  assert.ok(ROAD_SIGNS.length > 100, 'poucas placas');
+  const poiPoints = [
+    ...CAVES.map((c) => c.entrance),
+    ...Object.values(TOWERS).map((t) => t.entrance ?? { x: t.x, y: t.y }),
+    ...DOCKS.map((d) => ({ x: d.x, y: dockPosition(d).y })),
+    ...VILLAGES.map((v) => ({ x: v.x, y: v.y }))
+  ];
+  for (const sign of ROAD_SIGNS) {
+    assert.ok(sign.label && sign.label.length > 2, 'placa sem label');
+    assert.ok(Number.isFinite(sign.x) && Number.isFinite(sign.y), 'placa sem posição');
+    assert.ok(![T.SEA, T.LAVA, T.WALL, T.VOID].includes(terrainAt(sign.x, sign.y)), `placa ${sign.label} em terreno bloqueante`);
+    // se tem poi, deve haver um POI real perto (<= 1400 px)
+    if (sign.poi) {
+      const near = poiPoints.some((p) => Math.hypot(p.x - sign.poi.x, p.y - sign.poi.y) < 60);
+      assert.ok(near, `placa "${sign.label}" aponta para POI inexistente em (${sign.poi.x}, ${sign.poi.y})`);
+    }
+  }
+});
+
 test('simulação: o jogador não sai do mapa — trava física de limites do mundo ativa no Player', async () => {
   // terrainAt é infinita (gera terreno até fora do mapa), então a proteção real é física:
   // Player.js precisa chamar body.setCollideWorldBounds(true). Conferimos no código-fonte.
