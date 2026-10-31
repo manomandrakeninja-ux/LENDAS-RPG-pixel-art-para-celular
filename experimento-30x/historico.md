@@ -69,6 +69,16 @@
 - **D:** suite 49/49.
 - Notas 0–100: visual 79 · código 87 · estabilidade 95 · desempenho 83 · jogabilidade 88 · mobile 70 · originalidade 81.
 
+### Ciclo 62 — Teste: vilarejos válidos (3 casas, falas, região, terreno andável) — simulacao 16/16
+- **D:** novo teste em simulacao (16/16). Suite 49/49.
+- Notas: visual 90 · código 92 · estabilidade 98 · desempenho 85 · jogabilidade 96 · mobile 74 · originalidade 86.
+
+### Ciclo 61 — Arte: conchas na praia (atlas 88→90)
+- **C/D:** `shell-0/1` no T.BEACH; atlas regerado; suite 49/49.
+
+### Ciclo 60 — Teste: portos na costa + foto 26 do mapa (ciclo 60)
+- **D:** simulacao 15/15; suite 49/49; foto 26-mapa-ciclo-60.
+
 ### Ciclo 59 — Baú de tesouro do mundo também dá XP (além de moedas/equipamento)
 - **C:** `openWorldChest` chama `grantExperience` com valor por nível da região.
 - **D:** suite 49/49; simulacao 14/14.

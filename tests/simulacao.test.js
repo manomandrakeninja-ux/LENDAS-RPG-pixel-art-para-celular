@@ -306,6 +306,40 @@ test('simulação: todo porto fica na borda do mar (tem água vizinha) e em regi
   }
 });
 
+test('simulação: vilarejos válidos — casas, falas, região e chão andável no centro', () => {
+  assert.ok(VILLAGES.length >= 4, 'esperava 4 vilarejos');
+  for (const village of VILLAGES) {
+    assert.ok(Array.isArray(village.houses) && village.houses.length === 3, `${village.name} precisa de 3 casas`);
+    assert.ok(Array.isArray(village.lines) && village.lines.length > 0, `${village.name} sem falas`);
+    assert.ok(REGION_INFO[village.region], `${village.name} em região inexistente: ${village.region}`);
+    const terrain = terrainAt(village.x, village.y);
+    assert.ok(![T.SEA, T.LAVA, T.WALL, T.VOID, T.MURK].includes(terrain), `${village.name} em terreno não andável (${terrain})`);
+    assert.ok(village.x > 0 && village.x < WORLD_COLS * TILE && village.y > 0 && village.y < OVERWORLD_ROWS * TILE, `${village.name} fora do mapa`);
+  }
+});
+
+test('simulação: todos os tipos de inimigo têm dados sadios (vida, dano, hitbox, drops, spawn)', () => {
+  const types = Object.entries(ENEMY_TYPES);
+  assert.ok(types.length >= 40, 'esperava dezenas de tipos de inimigo');
+  for (const [id, def] of types) {
+    assert.ok(def.name, `${id} sem nome`);
+    assert.ok(def.health > 0 && def.damage > 0 && def.xp > 0, `${id} com atributos inválidos`);
+    assert.ok(def.speed > 0, `${id} parado`);
+    assert.ok(def.hitbox && def.hitbox.width > 0 && def.hitbox.height > 0, `${id} sem hitbox`);
+    assert.ok(def.placeholder && def.placeholder.shape, `${id} sem shape visual`);
+    assert.ok(['day', 'night', 'both', 'any'].includes(def.period), `${id} período inválido: ${def.period}`);
+    assert.ok(def.spawnWeight && (def.spawnWeight.day > 0 || def.spawnWeight.night > 0), `${id} nunca spawna`);
+    for (const drop of def.drops ?? []) {
+      assert.ok(drop.type && drop.chance > 0 && drop.chance <= 1 && drop.max >= drop.min, `${id} drop inválido: ${JSON.stringify(drop)}`);
+    }
+  }
+  // Todo boss referenciado por caverna/torre existe e é bem maior que os trash.
+  for (const cave of CAVES) {
+    const boss = ENEMY_TYPES[cave.boss];
+    assert.ok(boss.health >= 150, `boss ${cave.boss} fraco demais (${boss.health})`);
+  }
+});
+
 test('simulação: o jogador não sai do mapa — trava física de limites do mundo ativa no Player', async () => {
   // terrainAt é infinita (gera terreno até fora do mapa), então a proteção real é física:
   // Player.js precisa chamar body.setCollideWorldBounds(true). Conferimos no código-fonte.
