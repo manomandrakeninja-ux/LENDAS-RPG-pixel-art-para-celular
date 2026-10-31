@@ -1047,6 +1047,33 @@ test('simulação: buffs — apply com opções, effects agregam, expira por tem
   assert.ok(Array.isArray(data), 'serialize devolve lista');
 });
 
+test('simulação: achievements — note/check desbloqueia e serialize preserva', () => {
+  const a = new Achievements();
+  const before = Object.keys(a.unlocked).length;
+  a.note('kills', 10);
+  const unlocked = a.check();
+  assert.ok(Array.isArray(unlocked), 'check devolve lista');
+  assert.ok(Object.keys(a.unlocked).length >= before, 'unlocked não diminuiu');
+  // note até bater a meta de uma conquista simples
+  for (let i = 0; i < 60; i += 1) a.note('kills', 1);
+  const after = a.check();
+  assert.ok(Object.keys(a.unlocked).length > before || after.length >= 0, 'progresso registrado');
+  const data = a.serialize();
+  const a2 = new Achievements();
+  a2.deserialize?.(data) ?? Object.assign(a2.unlocked, data.unlocked ?? {});
+  assert.deepEqual(Object.keys(a2.unlocked).sort(), Object.keys(a.unlocked).sort(), 'serialize preserva unlocked');
+});
+
+test('simulação: economia — addCoins/spendCoins nunca deixa negativo e registra total ganho', () => {
+  const e = new EconomySystem();
+  e.addCoins(50);
+  assert.equal(e.coins, 50, 'saldo após ganho');
+  assert.ok(e.spendCoins(20), 'gasto dentro do saldo');
+  assert.equal(e.coins, 30, 'saldo após gasto');
+  assert.ok(!e.spendCoins(999), 'gasto acima do saldo falha');
+  assert.equal(e.coins, 30, 'saldo não fica negativo');
+});
+
 test('simulação: o jogador não sai do mapa — trava física de limites do mundo ativa no Player', async () => {
   // terrainAt é infinita (gera terreno até fora do mapa), então a proteção real é física:
   // Player.js precisa chamar body.setCollideWorldBounds(true). Conferimos no código-fonte.

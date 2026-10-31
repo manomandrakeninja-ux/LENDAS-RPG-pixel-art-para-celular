@@ -133,6 +133,10 @@
 - 261–265: props — cascalho claro de cinza, flor branca do brejo, pedrinha clara de duna, arbusto seco de praia, flor rosada da floresta (atlas 268) · 266: teste viajantes (bens + quest kill/deliver + recompensa) · 267: teste save v2 (envelope + migração v1) · 268: evento 🐸 coro de sapos no brejo à noite (+10–16 XP) · 269: dica splash · 270: verificação parcial.
 - Notas: visual 97 · código 96 · estabilidade 98 · desempenho 86 · jogabilidade 97 · mobile 74 · originalidade 89.
 
+### Ciclos 271–280 ✅ (lote)
+- 271–275: props — flor menta do gelo, pedra amarelada de praia, tronco musgoso, cogumelo azul claro, pedregulho de duna (atlas 275) · 276: teste bestiário (kills/serialize) · 277: teste buffs (apply/untilDay/expira) · 278: evento 🌨️ nevasca mágica no gelo de dia (+8–14 XP) · 279: dica splash · 280: verificação parcial.
+- Notas: visual 97 · código 96 · estabilidade 98 · desempenho 86 · jogabilidade 97 · mobile 74 · originalidade 89.
+
 ### Ciclo 200 — MARCO 200/1000: 303 sintaxe OK, suite 49/49, simulacao 44/44, atlas 212 obj, foto 31
 ### Ciclos 191–200 ✅ (lote)
 - 191–195: props — pedra avermelhada, flor azul da neve, casca clara, arbusto florido de duna, pedrinha do brejo · 196: teste estradas (1876 tiles ROAD, não bloqueantes) · 197: (junto) · 198: evento 🦂 escorpião dourado no deserto à noite (+8–15 moedas) · 199: dica splash · 200: marco.

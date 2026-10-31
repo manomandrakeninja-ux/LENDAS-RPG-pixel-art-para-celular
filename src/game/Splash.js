@@ -42,7 +42,8 @@ const TIPS = [
   'Nas terras antigas, à noite, um fantasma 👻 pode sussurrar XP.',
   'A chuva 🌧️ no vale, de dia, pode curar um pouco das suas feridas.',
   'À noite no brejo, o coro dos sapos 🐸 rende um pouco de XP.',
-  'De dia com neve 🌨️ no gelo, a nevasca pode dar um pouco de XP.'
+  'De dia com neve 🌨️ no gelo, a nevasca pode dar um pouco de XP.',
+  'À noite na selva, os vaga-lumes 🦋 podem deixar moeditas.'
 ];
 
 export function setupSplash() {
