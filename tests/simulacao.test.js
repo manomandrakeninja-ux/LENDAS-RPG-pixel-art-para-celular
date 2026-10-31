@@ -12,7 +12,7 @@ import { weatherAt } from '../src/data/weather.js';
 import { COMBAT_CONFIG } from '../src/data/combat.js';
 import { BIOME_PROP_ENTRIES } from '../src/art/biomeProps.js';
 import { ENEMY_TYPES, ENEMY_TYPE_NAMES, enemyXp, ELITE_CONFIG } from '../src/data/enemies.js';
-import { scaleEnemy, SCALING_START } from '../src/data/enemyScaling.js';
+import { SCALING_START } from '../src/data/enemyScaling.js';
 import { EconomySystem } from '../src/game/EconomySystem.js';
 import { CONSUMABLES, useConsumable } from '../src/data/consumables.js';
 import { DEFAULT_KEYBINDS, KEY_ACTIONS, isBindableCode, isReservedCode, normalizeKeybinds, rebind, actionForCode, loadKeybinds, saveKeybinds, keyLabel, keyCodeFor } from '../src/game/Keybinds.js';
