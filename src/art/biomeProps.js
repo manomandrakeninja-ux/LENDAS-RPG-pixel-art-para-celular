@@ -858,6 +858,53 @@ function flowerTuft(seed = 402) {
   return finish(p, { outline: 0.3 });
 }
 
+/** Flor silvestre rosa (floresta). */
+function pinkFlower(seed = 877) {
+  const p = new Painter(10, 12, { transparent: true });
+  p.rect(4, 6, 2, 5, '#3f7a2e');
+  for (const [dx, dy] of [[-3, -2], [3, -2], [-2, 2], [2, 2], [0, -4]]) p.set(5 + dx, 5 + dy, '#f078b0');
+  p.set(5, 5, '#fff0a0');
+  return finish(p, { outline: 0.3 });
+}
+
+/** Tronco podre pequeno (floresta). */
+function rottenLog(seed = 881) {
+  const p = new Painter(26, 10, { transparent: true });
+  const wood = ['#5a4326', '#6e543a'];
+  p.rect(2, 4, 22, 4, shade([wood[0], wood[1]], 0.5));
+  p.set(2, 4, '#3a2c18'); p.set(23, 7, '#3a2c18');
+  p.set(8, 5, '#8a7050'); p.set(16, 6, '#4a3a20');
+  return finish(p, { outline: 0.35 });
+}
+
+/** Pedregulho na praia. */
+function beachBoulder(seed = 883) {
+  const p = new Painter(18, 12, { transparent: true });
+  p.sphere(9, 7, 6.5, '#9a9284', '#b8b0a0');
+  p.set(6, 4, '#c8c0b0');
+  return finish(p, { outline: 0.35 });
+}
+
+/** Cacto alto (deserto). */
+function tallCactus(seed = 887) {
+  const p = new Painter(14, 24, { transparent: true });
+  const green = ['#2e6a2e', '#3f8a3a'];
+  p.rect(6, 2, 3, 20, shade([green[0], green[1]], 0.5));
+  p.rect(2, 8, 4, 2, green[0]);
+  p.rect(2, 8, 2, 5, green[1]);
+  p.rect(9, 5, 3, 2, green[1]);
+  p.set(7, 1, '#57a850');
+  return finish(p, { outline: 0.35 });
+}
+
+/** Ondinha na água do mar (praia, rasa). */
+function seaFoam(seed = 893) {
+  const p = new Painter(22, 6, { transparent: true });
+  p.rect(2, 2, 18, 2, '#cfeef8');
+  p.set(6, 2, '#ffffff'); p.set(14, 3, '#e8f8ff');
+  return finish(p, { outline: 0.3 });
+}
+
 /** Pedrinha com musgo (brejo). */
 function mossPebble(seed = 839) {
   const p = new Painter(12, 8, { transparent: true });
@@ -1418,6 +1465,14 @@ const PAINTED_ENTRIES = [
   { name: 'spiral-shell', draw: () => spiralShell(857) },
   { name: 'lava-rock-0', draw: () => lavaRock(863) },
   { name: 'lava-rock-1', draw: () => lavaRock(867) },
+  { name: 'pink-flower-0', draw: () => pinkFlower(877) },
+  { name: 'pink-flower-1', draw: () => pinkFlower(879) },
+  { name: 'rotten-log', draw: () => rottenLog(881) },
+  { name: 'beach-boulder-0', draw: () => beachBoulder(883) },
+  { name: 'beach-boulder-1', draw: () => beachBoulder(885) },
+  { name: 'tall-cactus', draw: () => tallCactus(887) },
+  { name: 'sea-foam-0', draw: () => seaFoam(893) },
+  { name: 'sea-foam-1', draw: () => seaFoam(897) },
   { name: 'shipwreck', draw: shipwreck },
   { name: 'sea-rock', draw: seaRock },
   { name: 'charred-tree', draw: () => deadTree(['#0c0808', '#1a1010', '#2a1a16', '#3a2620', '#4a3228'], true) },

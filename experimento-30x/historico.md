@@ -79,6 +79,16 @@
 - Estado: atlas 138 objetos; suite 49/49; simulacao 30/30.
 - Notas: visual 93 · código 93 · estabilidade 98 · desempenho 86 · jogabilidade 97 · mobile 74 · originalidade 88.
 
+### Ciclos 111–120 ✅ (lote)
+- 111–115: props — pedrinha musgosa (brejo), flor branca (neve), casca caída, concha espiral, pedra vulcânica (atlas 147) · 116: teste ciclo dia/noite · 117: teste combate (campos reais) · 118: evento 🐇 coelho no vale de dia (+1 comida) · 119: dica splash · 120: verificação parcial.
+- Estado: suite 49/49; simulacao 32/32.
+- Notas: visual 93 · código 93 · estabilidade 98 · desempenho 86 · jogabilidade 97 · mobile 74 · originalidade 88.
+
+### Ciclos 121–130 ✅ (lote)
+- 121–125: props — flor rosa, tronco podre, pedregulho de praia, cacto alto, espuma do mar (atlas 155) · 126: teste Inventory (slots, capacidade, persiste) · 127: teste CampfireTravelers (visita, bens, missão 1x) · 128: evento 🦋 borboleta (+5–12 XP) · 129: dica splash · 130: verificação parcial.
+- Estado: suite 49/49; simulacao 34/34.
+- Notas: visual 94 · código 94 · estabilidade 98 · desempenho 86 · jogabilidade 97 · mobile 74 · originalidade 88.
+
 ### Ciclo 100 — MARCO 100/1000: 303 arquivos sintaxe OK, suite 49/49, simulacao 27/27, atlas 129 obj, foto 29
 ### Ciclos 98–99 — props (pedrinha, lírio aquático grande, espeto de gelo, onda de duna, flor amarela) + testes scaleEnemy/gear + evento 🔥 onda de calor
 

@@ -21,6 +21,8 @@ import { BuffSystem, BUFF_DEFINITIONS } from '../src/game/BuffSystem.js';
 import { Bestiary } from '../src/game/Bestiary.js';
 import { Achievements, ACHIEVEMENTS } from '../src/data/achievements.js';
 import { DAY_NIGHT_CONFIG, DAY_NIGHT_TOTAL_SECONDS } from '../src/data/dayNight.js';
+import { Inventory } from '../src/game/Inventory.js';
+import { CampfireTravelers, TRAVELER_GOODS, TRAVELER_QUESTS } from '../src/data/travelers.js';
 import { PlayerSkills } from '../src/data/skills.js';
 import { migrateSave, createSaveEnvelope, SAVE_VERSION } from '../src/game/save.js';
 
@@ -583,6 +585,50 @@ test('simulação: combate sadio — esquiva tem i-frames, combo de 3 golpes, fi
   assert.ok(COMBAT_CONFIG.shout.damageMultiplier > 1, 'grito causa mais dano');
   assert.ok(COMBAT_CONFIG.shout.chargePerHit > 0 && COMBAT_CONFIG.shout.chargePerFinisher > COMBAT_CONFIG.shout.chargePerHit, 'finisher carrega mais grito');
   assert.ok(COMBAT_CONFIG.specialAttackMultiplier > COMBAT_CONFIG.combo.finisherMultiplier - 0.5, 'especial compete com finisher');
+});
+
+test('simulação: inventário — adiciona (bool), conta em items, usa slots, persiste no save', () => {
+  const inv = new Inventory(undefined);
+  assert.equal(inv.add('potion', 3), true);
+  assert.equal(inv.add('herbs', 5), true);
+  assert.equal(inv.items.potion, 3);
+  assert.ok(inv.usedSlots > 0 && inv.usedSlots <= inv.maxSlots, 'slots usados sadios');
+  assert.ok(inv.total >= 8, 'total conta unidades');
+  // tipo desconhecido não entra
+  assert.equal(inv.add('diamante', 1), false);
+  assert.equal(inv.items.diamante, undefined);
+  // enche até o limite sem quebrar
+  let guard = 0;
+  while (inv.add('herbs', inv.unitsPerSlot) && guard < 500) guard += 1;
+  assert.equal(inv.add('potion', inv.unitsPerSlot), false, 'mochila cheia rejeita');
+  const reloaded = new Inventory(inv.serialize());
+  assert.equal(reloaded.items.herbs, inv.items.herbs, 'persiste quantidades');
+  assert.equal(reloaded.maxSlots, inv.maxSlots, 'persiste capacidade');
+});
+
+test('simulação: viajantes da fogueira — bens/missões sadios, visita e presente por dia', () => {
+  assert.ok(Object.keys(TRAVELER_GOODS).length >= 3, 'poucos bens de viajante');
+  for (const [id, good] of Object.entries(TRAVELER_GOODS)) {
+    assert.ok(good.name && (good.price ?? 0) >= 0 && good.yield, `bem ${id} mal formado: ${JSON.stringify(good)}`);
+  }
+  assert.ok(Object.keys(TRAVELER_QUESTS).length >= 3, 'poucas missões de viajante');
+  for (const [id, quest] of Object.entries(TRAVELER_QUESTS)) {
+    assert.ok(quest.text && quest.reward && (quest.count ?? 1) > 0, `missão ${id} mal formada`);
+  }
+  const travelers = new CampfireTravelers(undefined);
+  // Dia 100 é múltiplo de qualquer intervalo pequeno; fogueira nível alto libera viajantes.
+  assert.equal(travelers.isVisitDay(100, 99), true, 'dia 100 é dia de visita com fogueira alta');
+  assert.equal(travelers.present, false, 'sem visita ainda → sem presente');
+  assert.equal(travelers.refresh(100, 99), true, 'refresh prepara a visita');
+  assert.equal(travelers.present, true, 'agora tem presente/visita');
+  assert.ok(travelers.goods.length >= 1 && travelers.offeredQuest, 'visita traz bens e missão');
+  assert.equal(travelers.refresh(100, 99), true, 'refresh no mesmo dia mantém');
+  const reloaded = new CampfireTravelers(travelers.serialize());
+  assert.equal(reloaded.present, true, 'persiste visita');
+  assert.deepEqual(reloaded.goods, travelers.goods, 'persiste bens');
+  // aceitar missão só uma vez
+  assert.equal(travelers.acceptQuest(), true);
+  assert.equal(travelers.acceptQuest(), false, 'só uma missão ativa por vez');
 });
 
 test('simulação: o jogador não sai do mapa — trava física de limites do mundo ativa no Player', async () => {

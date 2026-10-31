@@ -1682,7 +1682,12 @@ export class GameScene extends Phaser.Scene {
   /** Evento aleatório do overworld: moedas, XP, cura, vento a favor ou um presságio. */
   randomEvent() {
     const roll = Math.random();
-    if (roll < 0.16 && this.timeState?.phase === 'day' && this.regionWorld?.currentRegion?.() === 'vale') {
+    if (roll < 0.14 && this.timeState?.phase === 'day' && ['floresta', 'vale'].includes(this.regionWorld?.currentRegion?.())) {
+      const xp = Phaser.Math.Between(5, 12);
+      this.grantExperience(xp);
+      this.effects.spawnDamage(this.player.x, this.player.y - 30, '🦋', '#a8d8ff');
+      this.ui.showMessage(`🦋 Evento: uma borboleta azul passou... +${xp} XP`);
+    } else if (roll < 0.16 && this.timeState?.phase === 'day' && this.regionWorld?.currentRegion?.() === 'vale') {
       const ok = this.inventory?.add?.('food', 1);
       this.effects.spawnDamage(this.player.x, this.player.y - 30, '🐇', '#e8e0d0');
       this.ui.showMessage(ok === false ? '🐇 Evento: um coelho passou correndo (mochila cheia)!' : '🐇 Evento: você pegou um coelhinho! +1 comida');

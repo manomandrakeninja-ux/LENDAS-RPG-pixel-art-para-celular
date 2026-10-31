@@ -26,7 +26,8 @@ const TIPS = [
   'Baús escondidos reabastecem com moedas a cada 3 dias — volte sempre.',
   'Depois da chuva às vezes aparece um arco-íris 🌈 no céu.',
   'No calor do deserto, sua stamina demora mais para voltar — gerencie a esquiva.',
-  'No vale, de dia, às vezes um coelhinho 🐇 cruza seu caminho e vira comida.'
+  'No vale, de dia, às vezes um coelhinho 🐇 cruza seu caminho e vira comida.',
+  'Borboletas 🦋 na floresta e no vale podem te dar um tiquinho de XP.'
 ];
 
 export function setupSplash() {
