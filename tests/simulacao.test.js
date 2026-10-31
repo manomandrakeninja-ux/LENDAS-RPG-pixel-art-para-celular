@@ -32,7 +32,6 @@ import { RESOURCE_TYPES } from '../src/game/config.js';
 import { BUILDING_DEFS, BUILDING_ORDER } from '../src/data/buildings.js';
 import { WEATHER_ICONS, WEATHER_CONFIG } from '../src/data/weather.js';
 import { SAVE_VERSION, createSaveEnvelope } from '../src/game/save.js';
-import { BIOME_PROP_ENTRIES } from '../src/art/biomeProps.js';
 import { PlayerSkills } from '../src/data/skills.js';
 import { migrateSave } from '../src/game/save.js';
 
