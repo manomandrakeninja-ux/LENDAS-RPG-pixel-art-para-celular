@@ -1682,7 +1682,12 @@ export class GameScene extends Phaser.Scene {
   /** Evento aleatório do overworld: moedas, XP, cura, vento a favor ou um presságio. */
   randomEvent() {
     const roll = Math.random();
-    if (roll < 0.001 && this.timeState?.phase === 'night' && this.regionWorld?.currentRegion?.() === 'esmeralda') {
+    if (roll < 0.0008 && this.timeState?.phase === 'day' && this.regionWorld?.currentRegion?.() === 'gelo') {
+      const xp = Phaser.Math.Between(6, 12);
+      this.grantExperience(xp);
+      this.effects.spawnDamage(this.player.x, this.player.y - 30, '🧊', '#a8d8f8');
+      this.ui.showMessage(`🧊 Evento: bloco de gelo brilhante no gelo! +${xp} XP`);
+    } else if (roll < 0.001 && this.timeState?.phase === 'night' && this.regionWorld?.currentRegion?.() === 'esmeralda') {
       const xp = Phaser.Math.Between(15, 25);
       this.grantExperience(xp);
       this.effects.spawnDamage(this.player.x, this.player.y - 30, '💎', '#6af0c8');

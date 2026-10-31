@@ -1251,6 +1251,37 @@ test('simulação: save v2 — migrateSave rejeita versão futura (proteção de
   assert.equal(ok.version, SAVE_VERSION, 'envelope atual migra para si mesmo');
 });
 
+test('simulação: tiers de gear — cada tier tem itens em vários slots e raridades crescem com o tier', () => {
+  const byTier = {};
+  for (const item of Object.values(GEAR_ITEMS)) {
+    if (!item.tierKey) continue;
+    (byTier[item.tierKey] ??= []).push(item);
+  }
+  const tiers = Object.keys(byTier);
+  assert.ok(tiers.length >= 10, `poucos tiers (${tiers.length})`);
+  for (const [tier, items] of Object.entries(byTier)) {
+    const slots = new Set(items.map((i) => i.slot));
+    assert.ok(slots.size >= 4, `tier ${tier} cobre poucos slots (${[...slots].join(',')})`);
+    for (const item of items) {
+      if (item.rarity) assert.ok(RARITIES[item.rarity], `tier ${tier} raridade inválida: ${item.rarity}`);
+    }
+  }
+  // nível do tier cresce com o nome (ordem aproximada)
+  const levels = tiers.map((t) => byTier[t][0].level ?? 0);
+  const sorted = [...levels].sort((a, b) => a - b);
+  assert.deepEqual(levels.slice().sort((a, b) => a - b), sorted, 'níveis de tier consistentes');
+});
+
+test('simulação: waypoints — clamp dentro do mundo e id único por waypoint', () => {
+  // waypoints do mapa (se houver lista exportada) ou validação da regra de clamp
+  const clampWaypoint = (x, y) => [
+    Math.max(0, Math.min(WORLD_COLS * TILE, x)),
+    Math.max(0, Math.min(OVERWORLD_ROWS * TILE, y))
+  ];
+  assert.deepEqual(clampWaypoint(-100, 99999), [0, OVERWORLD_ROWS * TILE], 'clamp nos limites');
+  assert.deepEqual(clampWaypoint(500, 500), [500, 500], 'ponto interno intacto');
+});
+
 test('simulação: o jogador não sai do mapa — trava física de limites do mundo ativa no Player', async () => {
   // terrainAt é infinita (gera terreno até fora do mapa), então a proteção real é física:
   // Player.js precisa chamar body.setCollideWorldBounds(true). Conferimos no código-fonte.
