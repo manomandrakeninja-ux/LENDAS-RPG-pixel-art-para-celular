@@ -1348,8 +1348,9 @@ test('simulação: regiões (REGION_INFO) — têm nome, bioma válido e spawn c
   assert.ok(infos.length >= 8, 'poucas regiões com info');
   for (const [id, info] of infos) {
     assert.ok(info.name, `região ${id} sem nome`);
-    // 'vale' usa o spawn padrão (sem tabela própria) — demais regiões precisam de spawn
-    assert.ok(info.color && info.levelRange, `região ${id} sem cor/faixa de nível`);
+    // cor/faixa de nível são opcionais (mar não tem), mas se existem devem ser válidas
+    if (info.color !== undefined) assert.ok(/^#[0-9a-fA-F]{6}$/.test(info.color), `região ${id} cor inválida`);
+    if (info.levelRange !== undefined) assert.ok(Array.isArray(info.levelRange) && info.levelRange[0] <= info.levelRange[1], `região ${id} levelRange inválido`);
   }
   // toda região com spawn próprio deve ter info (vale/mar usam padrão)
   for (const id of Object.keys(REGION_SPAWNS)) {
