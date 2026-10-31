@@ -48,3 +48,10 @@
 - **C/F:** `buildTerrainGrid()` cacheada (182 ms → 0,00 ms na 2ª chamada); `buildTerrainGridUncached()` exportada para testes.
 - **D:** simulacao.test.js 5/5 (novo teste de cache); suite 49/49.
 - **Notas 0–100:** visual 79 · código 87 · estabilidade 94 · desempenho 83 · jogabilidade 83 · mobile 70 · originalidade 80.
+
+## Ciclo 07/30 — Game design: dormir em vilarejos ✅ CONCLUÍDO
+
+- **C:** cama na 1ª casa de cada vilarejo (feature `bed`) → `sleepAtBed()` compartilha `doSleep()` com o acampamento (cura + amanhecer + save). Ajuda "?" atualizada.
+- **Fotos:** 16-vilarejos-com-cama, 17-mapa-com-porto-pirata (7 portos no total).
+- **D:** suite 49/49; simulacao 5/5; world 14/14.
+- **Notas 0–100:** visual 79 · código 87 · estabilidade 94 · desempenho 83 · jogabilidade 85 · mobile 70 · originalidade 80.
