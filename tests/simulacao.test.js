@@ -33,6 +33,8 @@ import { SPAWNING_CONFIG } from '../src/data/spawning.js';
 import { COIN_DROP_RANGES, rollCoinDrop, chestCoins } from '../src/data/economy.js';
 import { RAID_CONFIG, isRaidDay, raidTier, raidComposition, raidEliteChance, splitIntoWaves } from '../src/data/raids.js';
 import { REBIRTH_CONFIG, rebirthMultiplier, canRebirth } from '../src/data/rebirth.js';
+import { PETS, PET_IDS, EGG_PET_IDS, SHOP_PET_IDS, MOUNT_LEVEL, MOUNT_SPEED, petAbility, mountUnlocked } from '../src/data/companions.js';
+import { CHEST_LOOT, CHEST_TIERS, rollMonsterChest } from '../src/data/monsterChests.js';
 // Validamos uso cruzado do atlas com regex em TODOS os fontes de src/ (RegionWorld importa Phaser).
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -1904,6 +1906,31 @@ test('simulação: rebirth — multiplicador cresce e canRebirth exige nível', 
   const cfg = REBIRTH_CONFIG;
   assert.ok(canRebirth(cfg.level, 0) === true, `nível ${cfg.level} deve poder renascer`);
   assert.ok(canRebirth(cfg.level, cfg.max) === false, 'no máximo de renasceres não pode de novo');
+});
+
+test('simulação: companions — pets têm id único, ovo ou loja, e mountUnlocked só no nível certo', () => {
+  assert.ok(PET_IDS.length >= 3, 'poucos pets');
+  assert.equal(new Set(PET_IDS).size, PET_IDS.length, 'ids de pets duplicados');
+  for (const id of PET_IDS) {
+    const pet = PETS[id];
+    assert.ok(pet.egg === true || pet.egg === false || pet.price !== undefined, `pet ${id} sem origem`);
+    assert.ok(petAbility(id), `pet ${id} sem habilidade`);
+  }
+  assert.equal(mountUnlocked(MOUNT_LEVEL - 1), false, 'abaixo do nível não monta');
+  assert.equal(mountUnlocked(MOUNT_LEVEL), true, 'no nível desbloqueia montaria');
+  assert.ok(MOUNT_SPEED > 1, 'montaria acelera');
+});
+
+test('simulação: monsterChests — baús têm tiers e loot válido', () => {
+  assert.ok(Object.keys(CHEST_TIERS).length >= 2, 'poucos tiers de baú');
+  for (const [tier, cfg] of Object.entries(CHEST_TIERS)) {
+    assert.ok((cfg.weight ?? cfg.chance ?? 1) >= 0, `tier ${tier} peso inválido`);
+  }
+  const roll = rollMonsterChest('elite', () => 0.5);
+  assert.ok(roll && (roll.type || roll.id), 'loot de baú elite válido');
+  for (const [id, loot] of Object.entries(CHEST_LOOT)) {
+    assert.ok(loot, `loot ${id} vazio`);
+  }
 });
 
 test('simulação: o jogador não sai do mapa — trava física de limites do mundo ativa no Player', async () => {

@@ -78,7 +78,8 @@ const TIPS = [
   'De dia no vale, a brisa fresca 🍃 pode dar um pouco de XP.',
   'De dia na praia, uma concha cintilante 🐚 pode dar moeditas.',
   'À noite de céu limpo na selva, uma teia brilhante 🕸️ pode render bastante XP.',
-  'De dia no sol do deserto, um escorpião dourado 🦂 pode dar XP.'
+  'De dia no sol do deserto, um escorpião dourado 🦂 pode dar XP.',
+  'À noite de céu limpo na floresta, uma coruja sábia 🦉 pode dar XP.'
 ];
 
 export function setupSplash() {
