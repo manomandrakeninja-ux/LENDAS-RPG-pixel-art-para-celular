@@ -2120,8 +2120,9 @@ test('simulação: MISSIONS — missões de campanha têm id, texto e recompensa
   for (const m of MISSIONS) {
     assert.ok(m.id && !ids.has(m.id), `missão sem id ou duplicada: ${m.id}`);
     ids.add(m.id);
-    assert.ok(m.title || m.text || m.name, `missão ${m.id} sem texto`);
-    assert.ok(m.reward, `missão ${m.id} sem recompensa`);
+    assert.ok(m.title || m.description, `missão ${m.id} sem texto`);
+    assert.ok(m.rewards || m.reward, `missão ${m.id} sem recompensa`);
+    assert.ok(Array.isArray(m.objectives) && m.objectives.length > 0, `missão ${m.id} sem objetivos`);
   }
 });
 
