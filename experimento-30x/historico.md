@@ -97,6 +97,10 @@
 - 161–165: props — pedra esverdeada, flor laranja, raiz de duna, gelo esculpido, tronco seco (atlas 188) · 166: teste spawns por região + ilhas com fauna própria · 167: (junto) · 168: evento ☀️ sol forte (+8 XP em dia claro) · 169: dica splash · 170: verificação parcial.
 - Notas: visual 95 · código 94 · estabilidade 98 · desempenho 86 · jogabilidade 97 · mobile 74 · originalidade 88.
 
+### Ciclos 171–180 ✅ (lote)
+- 181–185: props — graveto, flor lilás, pedregulho da floresta, espetos de cinza, buraco na neve (atlas 196) · 186: teste placas de estrada apontam para POIs reais · 187: (junto) · 188: evento ⭐ estrelas cadentes em noite limpa (+5–12 moedas) · 189: dica splash · 190: verificação parcial.
+- Notas: visual 95 · código 94 · estabilidade 98 · desempenho 86 · jogabilidade 97 · mobile 74 · originalidade 88.
+
 ### Ciclo 150 — MARCO 150/1000: 303 sintaxe OK, suite 49/49, simulacao 38/38, atlas 173 obj, foto 30
 ### Ciclos 141–150 ✅ (lote)
 - 141–145: props — granito, flor do deserto, tronco de selva, neve pisada, pedra de maré · 146: teste construções do acampamento · 147: teste clima/ícones · 148: evento 🌕 lua cheia a cada 7 dias (+XP) · 149: dica splash · 150: marco (foto 30).

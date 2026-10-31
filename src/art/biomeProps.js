@@ -858,6 +858,51 @@ function flowerTuft(seed = 402) {
   return finish(p, { outline: 0.3 });
 }
 
+/** Cogumelo roxo (selva). */
+function purpleShroom(seed = 1109) {
+  const p = new Painter(10, 10, { transparent: true });
+  p.rect(4, 6, 2, 3, '#d8c8e8');
+  p.sphere(5, 5, 3.4, '#6a3a9a', '#8a5ac0');
+  p.set(4, 4, '#f0e8ff');
+  return finish(p, { outline: 0.35 });
+}
+
+/** Flor branca do deserto. */
+function whiteDesertFlower(seed = 1117) {
+  const p = new Painter(10, 12, { transparent: true });
+  p.rect(4, 6, 2, 5, '#8a9a5a');
+  for (const [dx, dy] of [[-3, -2], [3, -2], [-2, 2], [2, 2], [0, -4]]) p.set(5 + dx, 5 + dy, '#ffffff');
+  p.set(5, 5, '#f0c040');
+  return finish(p, { outline: 0.3 });
+}
+
+/** Cascalho de praia. */
+function beachGravel(seed = 1121) {
+  const p = new Painter(18, 8, { transparent: true });
+  for (const [gx, gy] of [[3, 4], [7, 3], [11, 5], [14, 3], [5, 6], [12, 6]]) {
+    p.sphere(gx, gy, 1.6, '#a89a88', '#c0b4a4');
+  }
+  return finish(p, { outline: 0.3 });
+}
+
+/** Neve empilhada pequena. */
+function snowPile(seed = 1123) {
+  const p = new Painter(14, 8, { transparent: true });
+  p.sphere(7, 5, 4.5, '#cfe0f0', '#eef6fc');
+  p.set(6, 3, '#ffffff');
+  return finish(p, { outline: 0.3 });
+}
+
+/** Raiz de brejo emergindo. */
+function swampRoot(seed = 1129) {
+  const p = new Painter(14, 10, { transparent: true });
+  const bark = ['#3a2c18', '#4a3a22'];
+  p.rect(6, 2, 3, 6, shade([bark[0], bark[1]], 0.5));
+  p.rect(3, 6, 3, 2, bark[1]);
+  p.rect(9, 5, 3, 2, bark[0]);
+  return finish(p, { outline: 0.35 });
+}
+
 /** Graveto na praia. */
 function driftwood(seed = 1071) {
   const p = new Painter(18, 6, { transparent: true });
@@ -1747,6 +1792,14 @@ const PAINTED_ENTRIES = [
   { name: 'ash-spike-1', draw: () => ashSpike(1093) },
   { name: 'snow-hollow-0', draw: () => snowHollow(1097) },
   { name: 'snow-hollow-1', draw: () => snowHollow(1099) },
+  { name: 'purple-shroom-0', draw: () => purpleShroom(1109) },
+  { name: 'purple-shroom-1', draw: () => purpleShroom(1111) },
+  { name: 'white-desert-flower-0', draw: () => whiteDesertFlower(1117) },
+  { name: 'white-desert-flower-1', draw: () => whiteDesertFlower(1119) },
+  { name: 'beach-gravel', draw: () => beachGravel(1121) },
+  { name: 'snow-pile-0', draw: () => snowPile(1123) },
+  { name: 'snow-pile-1', draw: () => snowPile(1127) },
+  { name: 'swamp-root', draw: () => swampRoot(1129) },
   { name: 'shipwreck', draw: shipwreck },
   { name: 'sea-rock', draw: seaRock },
   { name: 'charred-tree', draw: () => deadTree(['#0c0808', '#1a1010', '#2a1a16', '#3a2620', '#4a3228'], true) },

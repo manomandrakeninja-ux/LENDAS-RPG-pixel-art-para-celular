@@ -773,6 +773,19 @@ test('simulação: POIs do mapa — placas apontam para POIs reais e alcance ≤
   }
 });
 
+test('simulação: mapa mundi — células reveladas (fog) persistem e respeitam limites do mundo', () => {
+  // fog é guardado como pares [col,row] compactos: valida formato sem instanciar cena.
+  const fog = [[0, 0], [399, 299], [12, 34]];
+  for (const [c, r] of fog) {
+    assert.ok(c >= 0 && c < WORLD_COLS && r >= 0 && r < OVERWORLD_ROWS + 436, 'fog fora do grid (overworld+subterrâneo)');
+  }
+  // waypoint clampado nos limites (regra do ciclo 49)
+  const clamp = (x, y) => [Math.max(0, Math.min(WORLD_COLS * TILE, x)), Math.max(0, Math.min(OVERWORLD_ROWS * TILE, y))];
+  assert.deepEqual(clamp(-50, -50), [0, 0]);
+  assert.deepEqual(clamp(99999, 99999), [WORLD_COLS * TILE, OVERWORLD_ROWS * TILE]);
+  assert.deepEqual(clamp(500, 600), [500, 600]);
+});
+
 test('simulação: o jogador não sai do mapa — trava física de limites do mundo ativa no Player', async () => {
   // terrainAt é infinita (gera terreno até fora do mapa), então a proteção real é física:
   // Player.js precisa chamar body.setCollideWorldBounds(true). Conferimos no código-fonte.

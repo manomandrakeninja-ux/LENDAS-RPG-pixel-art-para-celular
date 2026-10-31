@@ -32,7 +32,8 @@ const TIPS = [
   'A cada 7 dias a lua cheia 🌕 abençoa a noite com XP extra.',
   'De dia, o vento às vezes carrega uma folhinha 🍃 com um pouco de XP.',
   'Em dias de sol aberto ☀️ o calor rende um tiquinho de XP.',
-  'Em noites limpas ⭐ podem cair estrelas cadentes com moeditas.'
+  'Em noites limpas ⭐ podem cair estrelas cadentes com moeditas.',
+  'No brejo, um sapo 🐸 pode te beijar e devolver um pouco de vida.'
 ];
 
 export function setupSplash() {

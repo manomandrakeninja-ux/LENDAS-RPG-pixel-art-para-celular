@@ -1682,7 +1682,14 @@ export class GameScene extends Phaser.Scene {
   /** Evento aleatório do overworld: moedas, XP, cura, vento a favor ou um presságio. */
   randomEvent() {
     const roll = Math.random();
-    if (roll < 0.05 && this.timeState?.phase === 'night' && this.weather === 'clear') {
+    if (roll < 0.04 && this.timeState?.phase === 'day' && this.regionWorld?.currentRegion?.() === 'brejo') {
+      // Sapo no brejo: cura pequena.
+      const heal = Math.max(1, Math.round(this.player.maxHealth * 0.08));
+      this.player.health = Math.min(this.player.maxHealth, this.player.health + heal);
+      this.effects.spawnHeal?.(this.player.x, this.player.y - 20);
+      this.effects.spawnDamage(this.player.x, this.player.y - 32, '🐸', '#8ad86a');
+      this.ui.showMessage(`🐸 Evento: um sapo do brejo te deu um beijo! +${heal} vida`);
+    } else if (roll < 0.05 && this.timeState?.phase === 'night' && this.weather === 'clear') {
       const coins = Phaser.Math.Between(5, 12);
       this.economy.addCoins(coins);
       this.audio.playCoin();
