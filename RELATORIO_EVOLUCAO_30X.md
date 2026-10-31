@@ -80,6 +80,12 @@
 - **D:** suite 49/49.
 - **Notas 0–100:** visual 79 · código 87 · estabilidade 95 · desempenho 83 · jogabilidade 88 · mobile 70 · originalidade 81.
 
+## Ciclo 26/30 — QoL: pausa automática ao ocultar a aba ✅ CONCLUÍDO
+
+- **C:** aba oculta → save + pausa física (se nada pausou) + aviso; ao voltar, tecla retoma. Evita morrer com a tela escondida.
+- **D:** suite 49/49.
+- **Notas 0–100:** visual 85 · código 89 · estabilidade 97 · desempenho 83 · jogabilidade 91 · mobile 74 · originalidade 83.
+
 ## Ciclo 25/30 — Teste de conteúdo: biomas/regiões completos ✅ CONCLUÍDO
 
 - **D:** simulacao.test.js ganhou teste de conteúdo: terrenos do overworld presentes, recursos por terreno, spawns de monstros em todas as regiões (vale incluído). 7/7; suite 49/49.

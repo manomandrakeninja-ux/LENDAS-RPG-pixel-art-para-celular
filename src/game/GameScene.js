@@ -414,7 +414,22 @@ export class GameScene extends Phaser.Scene {
     });
 
     this.handleVisibilityChange = () => {
-      if (document.visibilityState === 'hidden') this.save();
+      if (document.visibilityState === 'hidden') {
+        this.save();
+        // Aba oculta: pausa a física para o jogador não morrer sem ver (só se nada já pausou).
+        if (!this.isUiPaused() && !this.gameOver && !this.wasAutoPausedHidden) {
+          this.wasAutoPausedHidden = true;
+          this.physics.world.pause();
+          this.ui.showMessage('⏸ Jogo pausado (aba oculta). Voltou? Aperte qualquer tecla.');
+          this.hiddenKeyHandler = (event) => {
+            if (document.visibilityState !== 'visible') return;
+            this.wasAutoPausedHidden = false;
+            if (this.physics.world.isPaused) this.physics.world.resume();
+            this.input.keyboard.off('keydown', this.hiddenKeyHandler);
+          };
+          this.input.keyboard.on('keydown', this.hiddenKeyHandler);
+        }
+      }
     };
     this.handlePageHide = () => this.save();
     document.addEventListener('visibilitychange', this.handleVisibilityChange);
