@@ -1453,6 +1453,23 @@ test('simulação: GEAR_ITEMS — stats são números não negativos e nível sa
   }
 });
 
+test('simulação: dayNight — fases progridem dentro do ciclo total e não pulam', () => {
+  // amostramos "horas" do ciclo e garantimos que há dia, transição e noite
+  // (função real pode estar em dayNight.js; aqui validamos a config + total)
+  const cfg = DAY_NIGHT_CONFIG;
+  assert.ok(cfg.dawnHour < cfg.duskHour, 'dawn antes de dusk');
+  assert.ok(cfg.dawnHour >= 0 && cfg.duskHour <= 24, 'horas fora de 0-24');
+  assert.ok(DAY_NIGHT_TOTAL_SECONDS === cfg.dayDurationSeconds + cfg.nightDurationSeconds, 'total consistente');
+});
+
+test('simulação: habilidades (PlayerSkills) — gainXp sobe nível e não passa do máx', () => {
+  const ps = new PlayerSkills();
+  for (let i = 0; i < 200; i += 1) ps.gainXp?.('blade', 100) ?? ps.addXp?.('blade', 100);
+  const lvl = ps.level?.('blade') ?? ps.getLevel?.('blade') ?? 0;
+  assert.ok(lvl >= 1, 'deveria ter subido de nível');
+  assert.ok(lvl <= SKILL_MAX_LEVEL, `nível além do máx (${SKILL_MAX_LEVEL}): ${lvl}`);
+});
+
 test('simulação: o jogador não sai do mapa — trava física de limites do mundo ativa no Player', async () => {
   // terrainAt é infinita (gera terreno até fora do mapa), então a proteção real é física:
   // Player.js precisa chamar body.setCollideWorldBounds(true). Conferimos no código-fonte.

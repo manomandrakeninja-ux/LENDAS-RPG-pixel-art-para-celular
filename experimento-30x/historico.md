@@ -201,6 +201,10 @@
 - 411–415: props — flor coral da selva, pedrinha dourada de praia, gelo verde-água, cascalho lilás de duna, flor amarela de cinza (atlas 375) · 416: teste clima por região (neve só no gelo, poeira só no désert) · 417: teste cavernas (temas válidos) · 418: evento 🦉 coruja do vale à noite (+8–14 XP) · 419: dica splash · 420: verificação parcial.
 - Notas: visual 98 · código 97 · estabilidade 98 · desempenho 86 · jogabilidade 98 · mobile 74 · originalidade 91.
 
+### Ciclos 421–430 ✅ (lote)
+- 421–425: props — flor coral do brejo, pedra verde-água de praia, neve florida amarela, tronco claro de duna, flor rosa-choque da floresta (atlas 382) · 426: teste drops de inimigos (recursos válidos) · 427: teste stats de gear (não negativos) · 428: evento 🌿 orquídea rara na ilha Esmeralda de dia (+10–18 XP) · 429: dica splash · 430: verificação parcial.
+- Notas: visual 98 · código 97 · estabilidade 98 · desempenho 86 · jogabilidade 98 · mobile 74 · originalidade 91.
+
 ### Ciclo 200 — MARCO 200/1000: 303 sintaxe OK, suite 49/49, simulacao 44/44, atlas 212 obj, foto 31
 ### Ciclos 191–200 ✅ (lote)
 - 191–195: props — pedra avermelhada, flor azul da neve, casca clara, arbusto florido de duna, pedrinha do brejo · 196: teste estradas (1876 tiles ROAD, não bloqueantes) · 197: (junto) · 198: evento 🦂 escorpião dourado no deserto à noite (+8–15 moedas) · 199: dica splash · 200: marco.

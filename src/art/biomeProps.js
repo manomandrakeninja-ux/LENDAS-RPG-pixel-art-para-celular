@@ -902,6 +902,51 @@ function darkRoundDuneRock(seed = 1647) {
   return finish(p, { outline: 0.35 });
 }
 
+/** Flor do deserto coral. */
+function coralDuneFlower(seed = 1867) {
+  const p = new Painter(10, 12, { transparent: true });
+  p.rect(4, 6, 2, 5, '#9a8a5a');
+  for (const [dx, dy] of [[-3, -2], [3, -2], [-2, 2], [2, 2], [0, -4]]) p.set(5 + dx, 5 + dy, '#ff7a60');
+  p.set(5, 5, '#fff0d8');
+  return finish(p, { outline: 0.3 });
+}
+
+/** Pedra de praia coral. */
+function coralBeachStone(seed = 1871) {
+  const p = new Painter(14, 9, { transparent: true });
+  p.sphere(7, 5, 5, '#c07060', '#e09080');
+  p.set(5, 3, '#f0b8a8');
+  return finish(p, { outline: 0.35 });
+}
+
+/** Neve com flor verde (neve). */
+function greenFloweredSnow(seed = 1877) {
+  const p = new Painter(16, 9, { transparent: true });
+  p.sphere(8, 6, 5.5, '#dceaf6', '#f4faff');
+  p.set(8, 3, '#8ad86a');
+  p.set(6, 5, '#8ad86a');
+  p.set(10, 5, '#ffffff');
+  return finish(p, { outline: 0.3 });
+}
+
+/** Cogumelo coral (floresta). */
+function coralShroom(seed = 1881) {
+  const p = new Painter(10, 10, { transparent: true });
+  p.rect(4, 6, 2, 3, '#f0e8e0');
+  p.sphere(5, 5, 3.2, '#e06850', '#f09070');
+  p.set(4, 4, '#ffe8e0');
+  return finish(p, { outline: 0.35 });
+}
+
+/** Arbusto de brejo com flor branca. */
+function whiteFloweredSwampBush(seed = 1887) {
+  const p = new Painter(18, 12, { transparent: true });
+  p.sphere(9, 7, 6, shade(['#3a5230', '#4e6e42'], 0.5), '#2e4426');
+  p.set(7, 5, '#6a8a58');
+  p.set(11, 8, '#ffffff');
+  return finish(p, { outline: 0.35 });
+}
+
 /** Flor do brejo coral. */
 function coralSwampFlower(seed = 1837) {
   const p = new Painter(10, 12, { transparent: true });
@@ -3038,6 +3083,14 @@ const PAINTED_ENTRIES = [
   { name: 'pale-dune-log', draw: () => paleDuneLog(1851) },
   { name: 'hot-pink-flower-0', draw: () => hotPinkFlower(1857) },
   { name: 'hot-pink-flower-1', draw: () => hotPinkFlower(1859) },
+  { name: 'coral-dune-flower-0', draw: () => coralDuneFlower(1867) },
+  { name: 'coral-dune-flower-1', draw: () => coralDuneFlower(1869) },
+  { name: 'coral-beach-stone', draw: () => coralBeachStone(1871) },
+  { name: 'green-flowered-snow', draw: () => greenFloweredSnow(1877) },
+  { name: 'coral-shroom-0', draw: () => coralShroom(1881) },
+  { name: 'coral-shroom-1', draw: () => coralShroom(1883) },
+  { name: 'white-flowered-swamp-bush-0', draw: () => whiteFloweredSwampBush(1887) },
+  { name: 'white-flowered-swamp-bush-1', draw: () => whiteFloweredSwampBush(1889) },
   { name: 'shipwreck', draw: shipwreck },
   { name: 'sea-rock', draw: seaRock },
   { name: 'charred-tree', draw: () => deadTree(['#0c0808', '#1a1010', '#2a1a16', '#3a2620', '#4a3228'], true) },
