@@ -35,6 +35,7 @@ import { RAID_CONFIG, isRaidDay, raidTier, raidComposition, raidEliteChance, spl
 import { REBIRTH_CONFIG, rebirthMultiplier, canRebirth } from '../src/data/rebirth.js';
 import { PETS, PET_IDS, EGG_PET_IDS, SHOP_PET_IDS, MOUNT_LEVEL, MOUNT_SPEED, petAbility, mountUnlocked } from '../src/data/companions.js';
 import { CHEST_LOOT, CHEST_TIERS, rollMonsterChest } from '../src/data/monsterChests.js';
+import { MAX_ENHANCE, enhanceChance, enhanceCost, enhanceMultiplier, JEWELS, JEWEL_TYPES, SOCKET_SLOTS, socketCount, jewelValue, describeJewel, rollJewelDrop } from '../src/data/enhance.js';
 // Validamos uso cruzado do atlas com regex em TODOS os fontes de src/ (RegionWorld importa Phaser).
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -1936,6 +1937,29 @@ test('simulação: monsterChests — baús têm tiers e loot válido', () => {
   for (const [id, loot] of Object.entries(CHEST_LOOT)) {
     assert.ok(loot, `loot ${id} vazio`);
   }
+});
+
+test('simulação: enhance — chance cai com o nível e nunca fica negativa; custo cresce', () => {
+  for (let t = 0; t <= MAX_ENHANCE; t += 1) {
+    const ch = enhanceChance(t);
+    assert.ok(ch > 0 && ch <= 1, `chance enhance nível ${t} fora de (0,1]: ${ch}`);
+    if (t > 0) assert.ok(ch <= enhanceChance(t - 1) + 1e-9, `chance não cai no nível ${t}`);
+  }
+  assert.ok(enhanceCost(0, 1) <= enhanceCost(0, MAX_ENHANCE), 'custo cresce com o alvo');
+  assert.ok(enhanceMultiplier(MAX_ENHANCE) > enhanceMultiplier(0), 'multiplicador cresce');
+});
+
+test('simulação: jewels — tipos válidos dão valor positivo e socketCount respeita raridade', () => {
+  assert.ok(JEWEL_TYPES.length >= 3, 'poucas joias');
+  for (const type of JEWEL_TYPES) {
+    assert.ok(jewelValue(type, 10) > 0, `joia ${type} valor inválido`);
+    assert.ok(typeof describeJewel(type, 10) === 'string', `joia ${type} sem descrição`);
+  }
+  for (const slot of SOCKET_SLOTS) {
+    assert.ok(socketCount(slot, 'rare') >= socketCount(slot, 'common'), `slot ${slot} raro deve ter mais soquetes`);
+  }
+  const drop = rollJewelDrop({ elite: true }, () => 0.01);
+  assert.ok(drop === null || Array.isArray(drop) || typeof drop === 'object', 'drop de joia válido');
 });
 
 test('simulação: o jogador não sai do mapa — trava física de limites do mundo ativa no Player', async () => {

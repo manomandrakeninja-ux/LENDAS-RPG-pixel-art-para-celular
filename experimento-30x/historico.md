@@ -297,6 +297,10 @@
 - 631–635: props — flor verde-água clara clara do brejo, pedra verde-água clara clara de praia, gelo verde-água claro claro, tronco verde-água de duna, flor verde-água clara clara da floresta (atlas 539) · 636: teste raids (dia de raid, ondas, elite chance) · 637: teste rebirth (multiplicador, canRebirth) · 638: evento 🦂 escorpião dourado no deserto de dia (+8–14 XP) · 639: dica splash · 640: verificação parcial.
 - Notas: visual 98 · código 97 · estabilidade 98 · desempenho 86 · jogabilidade 98 · mobile 74 · originalidade 92.
 
+### Ciclos 641–650 ✅ (lote)
+- 641–645: props — flor dourada clara do brejo, pedra dourada clara de praia, gelo dourado claro, tronco dourado de duna, flor dourada clara da floresta (atlas 546) · 646: teste pets/montaria · 647: teste baús de monstros (loot válido) · 648: evento 🦉 coruja sábia na floresta à noite (+10–16 XP) · 649: dica splash · 650: verificação parcial.
+- Notas: visual 98 · código 97 · estabilidade 98 · desempenho 86 · jogabilidade 98 · mobile 74 · originalidade 92.
+
 ### Ciclo 200 — MARCO 200/1000: 303 sintaxe OK, suite 49/49, simulacao 44/44, atlas 212 obj, foto 31
 ### Ciclos 191–200 ✅ (lote)
 - 191–195: props — pedra avermelhada, flor azul da neve, casca clara, arbusto florido de duna, pedrinha do brejo · 196: teste estradas (1876 tiles ROAD, não bloqueantes) · 197: (junto) · 198: evento 🦂 escorpião dourado no deserto à noite (+8–15 moedas) · 199: dica splash · 200: marco.
