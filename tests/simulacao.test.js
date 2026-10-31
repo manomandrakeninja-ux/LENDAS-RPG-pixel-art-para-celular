@@ -903,10 +903,8 @@ test('simulação: atlas de props — nomes únicos, draw não vazio, todos usad
   for (const name of names) {
     // Props de MURK são montados com template (`lily-${n}`): vale o prefixo sem o dígito final.
     const prefix = name.replace(/-[0-9]$/, '');
-    assert.ok(
-      RESERVED.test(name) || regionWorldSrc.includes(`'${name}'`) || regionWorldSrc.includes(`\`${prefix}-`),
-      `prop ${name} definido mas não usado em RegionWorld`
-    );
+    const used = new RegExp(`['"\`]${name}['"\`]`).test(regionWorldSrc) || new RegExp(`\\\`${prefix}-`).test(regionWorldSrc);
+    assert.ok(RESERVED.test(name) || used, `prop ${name} definido mas não usado em RegionWorld`);
   }
 });
 
