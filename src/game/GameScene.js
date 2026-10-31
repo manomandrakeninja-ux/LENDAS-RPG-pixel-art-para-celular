@@ -127,6 +127,12 @@ export class GameScene extends Phaser.Scene {
     createGameAnimations(this);
     const saveResult = loadSaveDetailed();
     const saved = saveResult.data;
+    // Avisa quando o save foi gravado pela última vez (só se havia save).
+    if (saved?.savedAt) {
+      const when = new Date(saved.savedAt);
+      const label = Number.isNaN(when.getTime()) ? saved.savedAt : when.toLocaleString('pt-BR');
+      this.time.delayedCall(2500, () => this.ui?.showMessage(`💾 Save carregado (gravado em ${label}).`));
+    }
     this.worldBounds = { ...WORLD, camp: WORLD.camp };
     this.inventory = new Inventory(saved?.inventory);
     this.buffs = new BuffSystem(saved?.buffs);

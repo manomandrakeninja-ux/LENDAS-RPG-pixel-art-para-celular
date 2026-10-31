@@ -69,6 +69,11 @@
 - **D:** suite 49/49.
 - Notas 0–100: visual 79 · código 87 · estabilidade 95 · desempenho 83 · jogabilidade 88 · mobile 70 · originalidade 81.
 
+### Ciclo 65 — Desempenho/debug: `window.__lendasPerf()` expõe avg ms/frame, FPS e p95 (ring 120 frames)
+- **C/F:** ring buffer no updateFrame + função de leitura no console. Sem custo quando não lido.
+- **D:** suite 49/49.
+- Notas: visual 90 · código 92 · estabilidade 98 · desempenho 86 · jogabilidade 96 · mobile 74 · originalidade 86.
+
 ### Ciclo 64 — Teste: curva de nível das skills (nível = floor(sqrt(xp/50)), bônus por nível) — simulacao 18/18
 - **D:** simulacao 18/18; suite 49/49.
 - Notas: visual 90 · código 92 · estabilidade 98 · desempenho 85 · jogabilidade 96 · mobile 74 · originalidade 86.

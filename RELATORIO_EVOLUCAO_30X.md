@@ -129,6 +129,10 @@
 - 46: flor de praia (atlas 81) · 47: flor da floresta (atlas 83, foto 25) · 48: pedrinhas em 4 biomas (atlas 87; teste pegou bug no `shade` e foi corrigido) · 49: waypoint com clamp nos limites do mundo.
 - Suite 49/49 e simulacao 10/10 em todos. Notas: 90 / 91 / 98 / 84 / 96 / 74 / 86.
 
+### Ciclos 50–65/130 ✅ CONCLUÍDOS (lote)
+- 50–51: clima do novo dia no amanhecer (dormir + natural, sem duplicar) · 52: teste cavernas/torres vs ENEMY_TYPES · 53: saldo 🪙 no título da loja · 54: teste de economia · 55: rastro fantasma na esquiva · 56: teste de consumíveis · 57: tronco congelado (atlas 88) · 58: teste de performance do grid (fria 82 ms, cache ~0 ms) · 59: XP do baú escalável (+2/nível da região) · 60: teste de portos na costa + foto 26 · 61: conchas na praia (atlas 90) · 62: teste de vilarejos · 63: teste dos 50 inimigos · 64: teste da curva de skills · 65: `__lendasPerf()` (avg/FPS/p95).
+- Estado: suite 49/49, simulacao 18/18, atlas 90 objetos, 26 fotos. Notas: 90 / 92 / 98 / 86 / 96 / 74 / 86.
+
 ### Ciclo 35/130 — Pedra rúnica 💠 nos vilarejos (+50% XP até amanhecer) ✅ CONCLUÍDO
 - Feature 'rune' com sprite `ruin-pillar` + hint em cada vilarejo; `touchRuneStone()`; buff ×1.5 no XP do dia; persistido em `runeDay` (compatível com saves antigos). Suite 49/49; simulacao 8/8; atlas regerado.
 - Notas: 87 / 90 / 97 / 84 / 95 / 74 / 86.
