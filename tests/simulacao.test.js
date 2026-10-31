@@ -1235,7 +1235,8 @@ test('simulação: construções (BUILDING_DEFS) — keys, níveis, custos e des
       for (const [lvl, cost] of Object.entries(def.costs)) {
         assert.ok(Object.keys(cost).length > 0, `${key} nível ${lvl} custo vazio`);
         for (const [res, amt] of Object.entries(cost)) {
-          assert.ok(RESOURCE_TYPES[res], `${key} custo com recurso inexistente: ${res}`);
+          // 'coins' é a moeda da economia; demais devem ser recursos válidos
+          assert.ok(res === 'coins' || RESOURCE_TYPES[res], `${key} custo com recurso inexistente: ${res}`);
           assert.ok(amt > 0, `${key} custo inválido`);
         }
       }
