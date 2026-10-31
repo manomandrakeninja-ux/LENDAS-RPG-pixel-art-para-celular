@@ -80,6 +80,12 @@
 - **D:** suite 49/49.
 - **Notas 0–100:** visual 79 · código 87 · estabilidade 95 · desempenho 83 · jogabilidade 88 · mobile 70 · originalidade 81.
 
+## Ciclo 24/30 — Feedback de perigo: vinheta vermelha com vida < 25% ✅ CONCLUÍDO
+
+- **C:** vinheta pulsante (CSS) no HUD; liga/desliga no update conforme vida; some no modo foto.
+- **D:** suite 49/49.
+- **Notas 0–100:** visual 85 · código 88 · estabilidade 95 · desempenho 83 · jogabilidade 91 · mobile 73 · originalidade 83.
+
 ## Ciclo 23/30 — Game feel: crítico de joia com hitstop + CRÍTICO! ✅ CONCLUÍDO
 
 - **C:** acerto crítico (joia) no corpo a corpo → hitstop 60 ms, impacto forte dourado e texto "CRÍTICO!".

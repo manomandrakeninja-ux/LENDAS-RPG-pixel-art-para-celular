@@ -69,6 +69,11 @@
 - **D:** suite 49/49.
 - Notas 0–100: visual 79 · código 87 · estabilidade 95 · desempenho 83 · jogabilidade 88 · mobile 70 · originalidade 81.
 
+### Ciclo 24 — Feedback: vinheta vermelha pulsante com vida < 25%
+- **C:** `#low-hp-vignette` (CSS pulse) liga no update quando vida < 25% do máx; some no modo foto ou com vida cheia/safe.
+- **D:** suite 49/49.
+- Notas 0–100: visual 85 · código 88 · estabilidade 95 · desempenho 83 · jogabilidade 91 · mobile 73 · originalidade 83.
+
 ### Ciclo 23 — Game feel: crítico de joia dá hitstop + "CRÍTICO!" dourado
 - **C:** `jewelCrit` destacado no ataque corpo a corpo → hitstop 60 ms + texto dourado (impacto já era forte).
 - **D:** suite 49/49.

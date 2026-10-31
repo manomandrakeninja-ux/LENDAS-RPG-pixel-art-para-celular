@@ -766,6 +766,9 @@ export class GameScene extends Phaser.Scene {
       const meters = (v) => Math.round((v / TILE) * 10);
       this.photoCoords.textContent = `📍 ${meters(this.player.x)} m, ${meters(this.player.y)} m • dia ${this.timeState.dayCount}`;
     }
+    // Vinheta vermelha pulsante com vida abaixo de 25% (feedback de perigo).
+    this.lowHpEl ??= document.getElementById('low-hp-vignette');
+    if (this.lowHpEl) this.lowHpEl.hidden = this.photoMode || !(this.player.health > 0 && this.player.health < this.player.maxHealth * 0.25);
     // Eventos aleatórios só no overworld (não dentro de caverna/torre, nem pausado).
     if (!paused && !this.regionWorld?.underground && !this.overlayBlocked()) {
       this.randomEventMs -= delta;
