@@ -25,6 +25,7 @@ import { Achievements, ACHIEVEMENTS } from '../src/data/achievements.js';
 import { DAY_NIGHT_CONFIG, DAY_NIGHT_TOTAL_SECONDS } from '../src/data/dayNight.js';
 import { MISSIONS } from '../src/data/campaign.js';
 import { CRAFT_RECIPES } from '../src/data/craftRecipes.js';
+import { TRAVELER_GOODS, TRAVELER_QUESTS } from '../src/data/travelers.js';
 // Validamos uso cruzado do atlas com regex em TODOS os fontes de src/ (RegionWorld importa Phaser).
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -1603,6 +1604,28 @@ test('simulação: ELITE_CONFIG — multiplicadores sadios e aura definida', () 
   assert.ok(typeof ELITE_CONFIG.auraColor === 'number' || typeof ELITE_CONFIG.auraColor === 'string', 'elite sem aura');
   assert.ok(ELITE_CONFIG.chance && typeof ELITE_CONFIG.chance.day === 'number' && typeof ELITE_CONFIG.chance.night === 'number', 'chance elite incompleta');
   assert.ok(ELITE_CONFIG.chance.day > 0 && ELITE_CONFIG.chance.night > 0, 'elite nunca aparece?');
+});
+
+test('simulação: COMBAT_CONFIG — combo, esquiva e grito com valores sadios', () => {
+  assert.ok(COMBAT_CONFIG.combo.length >= 3, 'combo curto demais');
+  assert.ok(COMBAT_CONFIG.combo.windowMs > 0, 'janela de combo inválida');
+  assert.ok(COMBAT_CONFIG.combo.finisherMultiplier > 1, 'finisher deve multiplicar');
+  assert.ok(COMBAT_CONFIG.dodgeInvulnerabilityMs > 0, 'i-frames de esquiva inválidos');
+  assert.ok(COMBAT_CONFIG.shout.cooldownMs > 0, 'cooldown do grito inválido');
+  assert.ok(COMBAT_CONFIG.basicAttackRange > 0, 'alcance de ataque inválido');
+});
+
+test('simulação: viajantes — bens têm preço > 0 e yield de recurso válido; quests têm tipo válido', () => {
+  for (const g of TRAVELER_GOODS) {
+    assert.ok(g.price > 0, `bem ${g.id} preço inválido`);
+    for (const [res, amt] of Object.entries(g.yield ?? {})) {
+      assert.ok(RESOURCE_TYPES[res], `bem ${g.id} yield inválido: ${res}`);
+      assert.ok(amt > 0, `bem ${g.id} yield quantidade inválida`);
+    }
+  }
+  for (const q of TRAVELER_QUESTS) {
+    assert.ok(['kill', 'deliver'].includes(q.type), `quest ${q.id} tipo inválido: ${q.type}`);
+  }
 });
 
 test('simulação: o jogador não sai do mapa — trava física de limites do mundo ativa no Player', async () => {

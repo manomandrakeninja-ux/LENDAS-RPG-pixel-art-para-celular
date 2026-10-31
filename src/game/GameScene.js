@@ -1682,7 +1682,12 @@ export class GameScene extends Phaser.Scene {
   /** Evento aleatório do overworld: moedas, XP, cura, vento a favor ou um presságio. */
   randomEvent() {
     const roll = Math.random();
-    if (roll < 0.00001 && this.timeState?.phase === 'night' && this.regionWorld?.currentRegion?.() === 'antiga') {
+    if (roll < 0.000008 && this.timeState?.phase === 'day' && this.regionWorld?.currentRegion?.() === 'selva') {
+      const xp = Phaser.Math.Between(8, 14);
+      this.grantExperience(xp);
+      this.effects.spawnDamage(this.player.x, this.player.y - 30, '🦋', '#f0b060');
+      this.ui.showMessage(`🦋 Evento: borboleta dourada na selva de dia! +${xp} XP`);
+    } else if (roll < 0.00001 && this.timeState?.phase === 'night' && this.regionWorld?.currentRegion?.() === 'antiga') {
       const xp = Phaser.Math.Between(15, 25);
       this.grantExperience(xp);
       this.effects.spawnDamage(this.player.x, this.player.y - 30, '👻', '#b8c8e8');
