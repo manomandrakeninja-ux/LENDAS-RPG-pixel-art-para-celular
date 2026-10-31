@@ -1120,7 +1120,12 @@ test('simulação: gear sets — cada conjunto tem peças em slots distintos e b
     const pieceIds = Object.values(GEAR_ITEMS).filter((i) => i.tierKey === key).map((i) => i.id);
     assert.ok(pieceIds.length >= 3, `set ${key} com poucas peças (${pieceIds.length})`);
     const slots = pieceIds.map((id) => GEAR_ITEMS[id].slot);
-    assert.equal(new Set(slots).size, slots.length, `set ${key} com peças repetindo slot`);
+    const slotCount = {};
+    for (const s of slots) slotCount[s] = (slotCount[s] ?? 0) + 1;
+    // anel pode ter par (2); demais slots no máx 1
+    for (const [s, n] of Object.entries(slotCount)) {
+      assert.ok(n <= (s === 'ring' ? 2 : 1), `set ${key} slot ${s} com ${n} peças`);
+    }
   }
 });
 
