@@ -209,6 +209,10 @@
 - 431–435: props — flor coral de duna, pedra coral de praia, neve florida verde, cogumelo coral, arbusto florido branco do brejo (atlas 390) · 436: teste dayNight (dawn<dusk, total) · 437: teste PlayerSkills (nível ≤ máx) · 438: evento 🌠 estrela cadente no vale à noite de céu limpo (+8–14 moedas) · 439: dica splash · 440: verificação parcial.
 - Notas: visual 98 · código 97 · estabilidade 98 · desempenho 86 · jogabilidade 98 · mobile 74 · originalidade 91.
 
+### Ciclos 441–450 ✅ (lote)
+- 441–445: props — flor turquesa da floresta, pedrinha coral de praia, gelo coral, cascalho verde de praia, flor verde-água de cinza (atlas 397) · 446: teste economia serialize · 447: teste bestiário "conhece todos" · 448: evento 🐝 abelha dourada no brejo de dia (+8–14 XP) · 449: dica splash · 450: verificação parcial.
+- Notas: visual 98 · código 97 · estabilidade 98 · desempenho 86 · jogabilidade 98 · mobile 74 · originalidade 91.
+
 ### Ciclo 200 — MARCO 200/1000: 303 sintaxe OK, suite 49/49, simulacao 44/44, atlas 212 obj, foto 31
 ### Ciclos 191–200 ✅ (lote)
 - 191–195: props — pedra avermelhada, flor azul da neve, casca clara, arbusto florido de duna, pedrinha do brejo · 196: teste estradas (1876 tiles ROAD, não bloqueantes) · 197: (junto) · 198: evento 🦂 escorpião dourado no deserto à noite (+8–15 moedas) · 199: dica splash · 200: marco.

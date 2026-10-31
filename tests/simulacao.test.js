@@ -1485,6 +1485,26 @@ test('simulação: bestiário — knows all após registrar todos os tipos', () 
   for (const id of Object.keys(ENEMY_TYPES)) assert.ok(b.known(id), `deveria conhecer ${id}`);
 });
 
+test('simulação: RESOURCE_TYPES tem label+cor+ícone para todos os recursos', () => {
+  const n = Object.keys(RESOURCE_TYPES).length;
+  assert.ok(n >= 20, `poucos recursos (${n})`);
+  for (const [id, r] of Object.entries(RESOURCE_TYPES)) {
+    assert.ok(r.label && typeof r.label === 'string', `recurso ${id} sem label`);
+    assert.ok(typeof r.color === 'number' && r.color >= 0 && r.color <= 0xffffff, `recurso ${id} cor inválida`);
+    assert.ok(r.icon && typeof r.icon === 'string', `recurso ${id} sem ícone`);
+  }
+});
+
+test('simulação: HOTKEY_ITEMS — teclas 1-5 com até 3 consumíveis por tecla', () => {
+  const keys = Object.keys(HOTKEY_ITEMS);
+  assert.ok(keys.length >= 1 && keys.length <= 5, 'hotkeys devem ser 1..5');
+  for (const [key, list] of Object.entries(HOTKEY_ITEMS)) {
+    assert.ok(/^[1-5]$/.test(key), `hotkey fora de 1-5: ${key}`);
+    assert.ok(Array.isArray(list) && list.length <= 3, `hotkey ${key} com mais de 3 itens`);
+    for (const itemId of list) assert.ok(CONSUMABLES[itemId], `hotkey ${key} aponta para consumível inexistente: ${itemId}`);
+  }
+});
+
 test('simulação: o jogador não sai do mapa — trava física de limites do mundo ativa no Player', async () => {
   // terrainAt é infinita (gera terreno até fora do mapa), então a proteção real é física:
   // Player.js precisa chamar body.setCollideWorldBounds(true). Conferimos no código-fonte.
