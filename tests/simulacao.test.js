@@ -35,7 +35,10 @@ function allSrcFiles(dir) {
   return out;
 }
 const srcDir = fileURLToPath(new URL('../src', import.meta.url));
-const regionWorldSrc = allSrcFiles(srcDir).map((f) => readFileSync(f, 'utf8')).join('\n');
+// Buscamos uso fora do próprio biomeProps.js (que é só a definição do atlas).
+const regionWorldSrc = allSrcFiles(srcDir)
+  .filter((f) => !f.endsWith('biomeProps.js'))
+  .map((f) => readFileSync(f, 'utf8')).join('\n');
 import { Inventory } from '../src/game/Inventory.js';
 import { CampfireTravelers, TRAVELER_GOODS, TRAVELER_QUESTS, questById } from '../src/data/travelers.js';
 import { RESOURCE_TYPES } from '../src/game/config.js';
@@ -912,9 +915,10 @@ test('simulação: atlas de props — nomes únicos, draw não vazio, todos usad
   const RESERVED = /^valley-flower-/;
   for (const name of names) {
     // Props de MURK são montados com template (`lily-${n}`): vale o prefixo sem o dígito final.
+    // Aceita nome exato com aspas, prefixo de template (`lily-${n}`) ou substring (region-cave-earth).
     const prefix = name.replace(/-[0-9]$/, '');
-    const used = new RegExp(`['"\`]${name}['"\`]`).test(regionWorldSrc) || new RegExp(`\\\`${prefix}-`).test(regionWorldSrc);
-    assert.ok(RESERVED.test(name) || used, `prop ${name} definido mas não usado em RegionWorld`);
+    const used = regionWorldSrc.includes(name) || regionWorldSrc.includes(`\`${prefix}-`);
+    assert.ok(RESERVED.test(name) || used, `prop ${name} definido mas não usado fora do atlas`);
   }
 });
 
