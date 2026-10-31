@@ -1149,7 +1149,7 @@ test('simulação: recursos (RESOURCE_TYPES) — label, cor e ícone válidos; b
     assert.ok(def.accent === undefined || validColor(def.accent), `recurso ${key} accent inválido`);
   }
   // baús de tesouro usam recursos que existem
-  for (const spot of treasureSpots()) {
+  for (const spot of TREASURE_SPOTS) {
     for (const reward of spot.rewards ?? []) {
       if (reward.type) assert.ok(RESOURCE_TYPES[reward.type], `baú usa recurso inexistente: ${reward.type}`);
     }
