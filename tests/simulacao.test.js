@@ -1714,6 +1714,22 @@ test('simulação: clima — WEATHER_CONFIG tem chances entre 0 e 1', () => {
   for (const [k, icon] of Object.entries(WEATHER_ICONS)) assert.ok(typeof icon === 'string', `ícone ${k} inválido`);
 });
 
+test('simulação: scaleEnemy — acima de SCALING_START só coinMultiplier escala', () => {
+  const low = scaleEnemy('wolf', 5);
+  const high = scaleEnemy('wolf', 50);
+  assert.equal(low.level, 5, 'nível preservado');
+  assert.ok(high.coinMultiplier > low.coinMultiplier, 'moedas devem escalar com nível');
+  assert.equal(high.level, 50, 'nível alto preservado');
+  // abaixo do SCALING_START nada escala
+  assert.equal(scaleEnemy('wolf', 1).coinMultiplier, 1, 'nível 1 sem escala');
+});
+
+test('simulação: levelInRange faz clamp dentro da faixa', () => {
+  assert.equal(levelInRange({ min: 5, max: 10 }, [3, 20]), 5, 'clamp inferior');
+  assert.equal(levelInRange({ min: 5, max: 10 }, [30, 40]), 10, 'clamp superior');
+  assert.equal(levelInRange({ min: 5, max: 10 }, [7, 9]), 7, 'dentro da faixa usa min da entrada');
+});
+
 test('simulação: o jogador não sai do mapa — trava física de limites do mundo ativa no Player', async () => {
   // terrainAt é infinita (gera terreno até fora do mapa), então a proteção real é física:
   // Player.js precisa chamar body.setCollideWorldBounds(true). Conferimos no código-fonte.

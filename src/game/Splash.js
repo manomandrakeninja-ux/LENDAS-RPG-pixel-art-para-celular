@@ -69,7 +69,8 @@ const TIPS = [
   'À noite de céu limpo na floresta, um cogumelo lunar 🍄 pode brilhar com XP.',
   'De dia no sol do deserto, um cacto em flor 🌵 pode dar um pouco de XP.',
   'Na nevasca do gelo, à noite, a neve mágica ❄️ rende bastante XP.',
-  'Na chuva do brejo, de dia, um sapo 🐸 pode dar um pouco de XP.'
+  'Na chuva do brejo, de dia, um sapo 🐸 pode dar um pouco de XP.',
+  'Na ilha de Brasa, à noite com cinzas, uma brasa viva 🔥 rende bastante XP.'
 ];
 
 export function setupSplash() {
