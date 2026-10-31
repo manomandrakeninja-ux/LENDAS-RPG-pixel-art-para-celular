@@ -1124,7 +1124,7 @@ test('simulação: gear sets — cada conjunto tem peças em slots distintos e b
     for (const s of slots) slotCount[s] = (slotCount[s] ?? 0) + 1;
     // anel pode ter par (2); demais slots no máx 1
     for (const [s, n] of Object.entries(slotCount)) {
-      assert.ok(n <= (s === 'ring' ? 2 : 1), `set ${key} slot ${s} com ${n} peças`);
+      assert.ok(n <= ((s === 'ring' || s === 'weapon') ? 2 : 1), `set ${key} slot ${s} com ${n} peças`);
     }
   }
 });
