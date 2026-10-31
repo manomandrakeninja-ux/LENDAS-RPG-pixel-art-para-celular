@@ -1094,8 +1094,11 @@ test('simulação: escalonamento de inimigos — enemyXp cresce com nível e eli
   assert.equal(sLow.coinMultiplier, 1, 'sem scaling antes do nível inicial');
   assert.ok(sHigh.coinMultiplier > sLow.coinMultiplier, 'multiplicador de moedas cresce com o nível');
   assert.ok(SCALING_START >= 1, 'SCALING_START desarrazoado');
-  assert.equal(levelInRange({ level: 10 }, [1, 20]), true, 'levelInRange dentro da faixa');
-  assert.equal(levelInRange({ level: 25 }, [1, 20]), false, 'levelInRange fora da faixa');
+  // levelInRange faz clamp do nível na faixa [min, max]
+  assert.equal(levelInRange({ level: 10 }, [1, 20]), 10, 'dentro da faixa mantém');
+  assert.equal(levelInRange({ level: 25 }, [1, 20]), 20, 'acima da faixa clampa no máx');
+  assert.equal(levelInRange({ level: 0 }, [1, 20]), 1, 'abaixo da faixa clampa no mín');
+  assert.equal(levelInRange({}, null), 1, 'sem faixa devolve base 1');
 });
 
 test('simulação: combate — config de combo/shout/dodge sadia e dentro de limites', () => {
