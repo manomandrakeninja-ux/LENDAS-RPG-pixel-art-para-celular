@@ -757,6 +757,10 @@ export class GameScene extends Phaser.Scene {
     this.weather = weatherAt(this.regionWorld.currentRegion(), this.timeState);
     this.isRaining = this.weather === 'rain' || this.weather === 'snow';
     this.updateWaypointArrow();
+    // Marca de morte some quando o jogador chega perto do local.
+    if (this.deathMarker && Phaser.Math.Distance.Between(this.player.x, this.player.y, this.deathMarker.x, this.deathMarker.y) < 160) {
+      this.deathMarker = null;
+    }
     // Eventos aleatórios só no overworld (não dentro de caverna/torre, nem pausado).
     if (!paused && !this.regionWorld?.underground && !this.overlayBlocked()) {
       this.randomEventMs -= delta;
@@ -1798,6 +1802,8 @@ export class GameScene extends Phaser.Scene {
 
   respawn() {
     this.isRespawning = true;
+    // Marca onde o jogador caiu (caveira vermelha no minimapa) para voltar e pegar o loot.
+    this.deathMarker = { x: Math.round(this.player.x), y: Math.round(this.player.y) };
     this.arena?.end('Você caiu na arena. Fim da tentativa.');
     this.achievements?.note('deaths'); // conquista de mortes (só aviso/título)
     const day = this.timeState.dayCount;

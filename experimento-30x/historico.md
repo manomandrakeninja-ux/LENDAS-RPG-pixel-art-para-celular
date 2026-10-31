@@ -69,6 +69,11 @@
 - **D:** suite 49/49.
 - Notas 0–100: visual 79 · código 87 · estabilidade 95 · desempenho 83 · jogabilidade 88 · mobile 70 · originalidade 81.
 
+### Ciclo 16 — QoL: caveira de morte no minimapa (recuperar loot)
+- **C:** `respawn()` guarda `deathMarker`; minimapa desenha 💀 vermelho; some ao chegar perto (160 px).
+- **D:** suite 49/49.
+- Notas 0–100: visual 81 · código 87 · estabilidade 95 · desempenho 83 · jogabilidade 89 · mobile 70 · originalidade 82.
+
 ### Ciclo 15 — Documentação: backlog do mapa atualizado com entregas do experimento
 - **H:** `docs/mapa-400x300.md` — itens 3 (cache do grid) e 5 (teste de POIs) marcados como feitos; nova seção com o resumo das entregas do experimento-30x.
 - **D:** suite 49/49 (sem mudança de código).

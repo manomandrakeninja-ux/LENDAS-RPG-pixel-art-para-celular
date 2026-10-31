@@ -839,6 +839,15 @@ export class GameUI {
       }
     }
 
+    // Caveira vermelha onde o jogador caiu (marker de morte até chegar perto).
+    const death = this.scene.deathMarker;
+    if (death && inside(toX(death.x), toY(death.y), -4)) {
+      context.fillStyle = '#ff5a4a';
+      context.font = '10px "Press Start 2P", monospace';
+      context.textAlign = 'center';
+      context.fillText('💀', toX(death.x), toY(death.y) + 3);
+    }
+
     renderer.drawPlayer(context, size / 2, size / 2, 5);
     // Vinheta e borda interna.
     const vignette = context.createRadialGradient(size / 2, size / 2, size * 0.32, size / 2, size / 2, size * 0.72);

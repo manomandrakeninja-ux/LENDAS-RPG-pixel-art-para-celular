@@ -24,3 +24,4 @@ Linha base (antes do ciclo 01):
 | 13 | 49/49 arquivos (simulacao 6/6) | 79 / 87 / 95 / 83 / 88 / 70 / 82 |
 | 14 | 49/49 arquivos; atlas 69 objetos; 18 fotos | 81 / 87 / 95 / 83 / 88 / 70 / 82 |
 | 15 | 49/49 arquivos (docs) | 81 / 87 / 95 / 83 / 88 / 70 / 82 |
+| 16 | 49/49 arquivos | 81 / 87 / 95 / 83 / 89 / 70 / 82 |
