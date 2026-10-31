@@ -20,7 +20,8 @@ const TIPS = [
   'Ilhas só se alcançam de barco: viaje entre portos (tarifa de 15 moedas).',
   'Na mochila (B) dá para fixar itens com ★ para deixá-los sempre no topo.',
   '? (Shift+/) abre a lista completa de teclas. P esconde a HUD para tirar foto.',
-  'A tocha ilumina a noite ao seu redor; cristais e braseiros também brilham no escuro.'
+  'A tocha ilumina a noite ao seu redor; cristais e braseiros também brilham no escuro.',
+  'Fora de combate você se cura devagar: 6 s sem levar dano e a vida volta aos poucos.'
 ];
 
 export function setupSplash() {
