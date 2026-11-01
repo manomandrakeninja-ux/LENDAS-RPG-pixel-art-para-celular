@@ -11,7 +11,6 @@ import { HeroStance } from './heroStance.js';
 const OPPOSITE = { left: 'right', right: 'left', up: 'down', down: 'up' };
 const TURN_VIA = { left: 'down', right: 'down', up: 'right', down: 'right' };
 const TURN_MS = 90;
-const WALK_STEP_FRAMES = [0, 1, 2, 3, 2, 1];
 
 /** Colunas da folha de uma textura (12 no padrão novo, 4 nas folhas antigas). */
 export function sheetColumns(scene, textureKey) {
