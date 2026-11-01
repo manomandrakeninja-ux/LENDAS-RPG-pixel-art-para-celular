@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { ensureNpcAnims, hasNpcSheet, npcOriginY, npcSheetKey } from './npcArt.js';
 import { PixelCanvas } from '../art/pixel.js';
 import { buildingFootprint } from './Obstacles.js';
-import { buildingVisual } from '../data/buildingVisuals.js';
+import { buildingVisual, visualStage } from '../data/buildingVisuals.js';
 import {
   BUILDING_DEFS,
   BUILDING_HIT_DURABILITY_LOSS,
@@ -127,6 +127,7 @@ export class Camp {
     });
 
     for (const key of Object.keys(ATLAS_FRAMES)) this.buildings[key] = this.drawBuilding(key);
+    this.createAuxiliaryBuildings();
 
     const forge = this.buildings.forge.sprite;
     this.smoke = scene.add.sprite(forge.x + 36, forge.y - 144, 'buildings', 'smoke-0')
@@ -206,6 +207,35 @@ export class Camp {
     return building;
   }
 
+  // Serraria e mina ficam dentro do anel da muralha, entre os prédios laterais
+  // e a fogueira. Suas artes são independentes do atlas legado e evoluem com
+  // os estágios visuais já usados pelo acampamento.
+  createAuxiliaryBuildings() {
+    const definitions = {
+      // Cantos superiores internos: ficam a mais de um prédio de distância
+      // da fogueira, do portão, do curral e dos prédios centrais.
+      sawmill: { x: -260, y: -155, sourceLevel: 'farm', label: 'SERRARIA' },
+      mine: { x: 260, y: -155, sourceLevel: 'forge', label: 'MINA' }
+    };
+    this.auxiliaryBuildings = {};
+    for (const [key, definition] of Object.entries(definitions)) {
+      const stage = visualStage(this.levels[definition.sourceLevel]);
+      const sprite = this.scene.add.image(this.x + definition.x, this.y + definition.y, `camp-${key}-${stage}`)
+        .setOrigin(0.5, 0.86)
+        .setScale(stage === 1 ? 0.13 : stage === 4 ? 0.145 : 0.16)
+        .setDepth(this.y + definition.y + 10)
+        .setInteractive({ useHandCursor: true });
+      sprite.on('pointerdown', (pointer, localX, localY, event) => {
+        event?.stopPropagation?.();
+        this.scene.ui?.showMessage(`${definition.label} • visual NV ${stage}`);
+      });
+      this.scene.obstacles?.add(sprite.x, sprite.y + 8, 86, 28);
+      const label = this.makeLabel(key, sprite.x, sprite.y - 78);
+      label.setText(`${definition.label} • NV ${stage}`);
+      this.auxiliaryBuildings[key] = { sprite, label, definition, stage };
+    }
+  }
+
   /** Colisão da base conforme o estágio (cada estágio tem um tamanho de prédio). */
   placeFootprint(key, building, stage) {
     const obstacles = this.scene.obstacles;
@@ -241,6 +271,18 @@ export class Camp {
       }
     }
     this.refreshAnimalPen();
+    this.refreshAuxiliaryBuildings();
+  }
+
+  refreshAuxiliaryBuildings() {
+    for (const [key, building] of Object.entries(this.auxiliaryBuildings ?? {})) {
+      const stage = visualStage(this.levels[building.definition.sourceLevel]);
+      if (stage === building.stage) continue;
+      building.stage = stage;
+      building.sprite.setTexture(`camp-${key}-${stage}`)
+        .setScale(stage === 1 ? 0.13 : stage === 4 ? 0.145 : 0.16);
+      building.label.setText(`${building.definition.label} • NV ${stage}`);
+    }
   }
 
   /**
