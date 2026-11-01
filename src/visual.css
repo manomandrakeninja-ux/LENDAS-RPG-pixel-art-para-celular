@@ -101,6 +101,144 @@
   font: 8px/1.5 var(--pixel-font);
 }
 
+.backpack-filters {
+  display: flex;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.backpack-filters button {
+  padding: 3px 7px;
+  border: 2px solid var(--wood-700);
+  border-radius: 6px;
+  background: rgba(30, 20, 12, 0.85);
+  color: #cbb489;
+  font: 7px/1 var(--pixel-font);
+  cursor: pointer;
+}
+
+/* Vinheta vermelha pulsante quando a vida está baixa (<25%) */
+.low-hp-vignette {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  pointer-events: none;
+  box-shadow: inset 0 0 90px 30px rgba(200, 30, 20, 0.55);
+  animation: low-hp-pulse 900ms ease-in-out infinite;
+}
+
+@keyframes low-hp-pulse {
+  0%, 100% { opacity: 0.45; }
+  50% { opacity: 1; }
+}
+
+/* Coordenadas no modo foto (tecla P) */
+.photo-coords {
+  position: fixed;
+  right: 10px;
+  bottom: 8px;
+  z-index: 70;
+  color: rgba(255, 240, 200, 0.85);
+  font: 8px/1.4 var(--pixel-font);
+  text-shadow: 1px 1px 0 #000;
+  pointer-events: none;
+}
+
+.splash__tip {
+  margin: 6px 0 0;
+  max-width: 520px;
+  color: #d8c49a;
+  font: 8px/1.6 var(--pixel-font);
+  text-shadow: 1px 1px 0 #000;
+  min-height: 13px;
+}
+
+.backpack-filters button.is-active {
+  border-color: var(--gold);
+  background: rgba(90, 60, 20, 0.9);
+  color: var(--gold);
+}
+
+/* Fixar item (★) no topo da mochila */
+.bag-slot { position: relative; }
+
+.bag-slot--pinned {
+  outline: 2px solid var(--gold);
+  outline-offset: -2px;
+}
+
+.bag-slot__pin {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  z-index: 2;
+  border: 0;
+  background: rgba(20, 12, 8, 0.75);
+  color: #8a7a5a;
+  font-size: 11px;
+  line-height: 1;
+  padding: 2px 3px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.bag-slot__pin.is-pinned {
+  color: var(--gold);
+  text-shadow: 0 0 4px rgba(232, 199, 121, 0.6);
+}
+
+/* ---------- Painel de ajuda (tecla ?) ---------- */
+.help-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  background: rgba(5, 3, 2, 0.72);
+}
+
+.help-overlay[hidden] { display: none; }
+
+.help-overlay__card {
+  width: min(560px, calc(100vw - 32px));
+  max-height: 84vh;
+  overflow: auto;
+  padding: 18px 20px;
+  border: 3px solid var(--wood-700);
+  border-radius: 12px;
+  background: linear-gradient(180deg, #241811, #17100a);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6), inset 0 0 0 2px rgba(232, 199, 121, 0.15);
+  text-align: center;
+}
+
+.help-overlay__card h2 {
+  margin: 0 0 12px;
+  color: var(--gold);
+  font: 14px/1.2 var(--pixel-font);
+  text-shadow: 2px 2px 0 var(--wood-900);
+}
+
+.help-overlay__keys {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px 14px;
+  margin-bottom: 14px;
+  text-align: left;
+}
+
+.help-overlay__keys div {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  color: #e3cfa5;
+  font: 8px/1.7 var(--pixel-font);
+}
+
+.help-overlay__keys b {
+  color: var(--gold);
+  white-space: nowrap;
+}
+
 .backpack-panel__grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -203,6 +341,30 @@
   color: #d7c39a;
   font: 7px/1.7 var(--pixel-font);
 }
+
+.backpack-upgrade {
+  display: grid;
+  gap: 5px;
+  margin-top: 8px;
+  padding: 8px;
+  border: 2px solid rgba(232, 199, 121, 0.55);
+  border-radius: 8px;
+  background: rgba(20, 12, 8, 0.72);
+}
+
+.backpack-upgrade__heading {
+  color: var(--gold);
+  font: 8px/1.2 var(--pixel-font);
+}
+
+.backpack-upgrade__details,
+.backpack-upgrade__cost {
+  color: #e3cfa5;
+  font: 7px/1.5 var(--pixel-font);
+}
+
+.backpack-upgrade__cost { color: #f2d58b; }
+.backpack-upgrade--max { opacity: 0.78; }
 
 @keyframes panel-in {
   from { opacity: 0; transform: translateY(-50%) translateX(-12px); }
@@ -687,7 +849,7 @@
 .building-menu .sell-panel { background: rgba(107, 74, 48, 0.1); border-color: var(--gold-2); }
 .building-menu .sell-panel h3 { color: #5a2f12; }
 .building-menu .qty-value { color: var(--ink); }
-.building-menu .sell-row button, .building-menu .qty-row button { min-height: 44px; }
+.building-menu .sell-row button, .building-menu .qty-row button { min-height: 48px; }
 .building-menu .building-menu__resource { grid-template-columns: 34px minmax(80px, 1.2fr) repeat(2, minmax(56px, 0.8fr)) repeat(4, minmax(72px, 1fr)); }
 @media (max-width: 560px) {
   .building-menu .building-menu__resource { grid-template-columns: 28px 1fr 1fr; }

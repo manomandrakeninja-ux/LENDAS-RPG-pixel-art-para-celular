@@ -121,13 +121,12 @@
   place-items: center;
   width: 56px;
   height: 56px;
-  min-width: 44px;
-  min-height: 44px;
+  min-width: 48px;
+  min-height: 48px;
   padding: 2px;
   /* A raridade vem na moldura pintada do ícone (G-armas); a borda do botão fica neutra. */
   border: 2px solid var(--wood-900);
-  /* Rodada 3: encaixe um degrau mais claro (madeira média) para a borda escura do ícone não sumir. */
-  background: radial-gradient(circle, #6b4a32 0%, #4e3524 78%);
+  background: rgba(20, 12, 8, 0.6);
   color: var(--parchment);
   cursor: pointer;
 }
@@ -313,7 +312,7 @@
 }
 
 .equipment__actions button {
-  min-height: 44px;
+  min-height: 48px;
   padding: 6px 10px;
   border: 2px solid var(--wood-900);
   background: var(--wood-700);

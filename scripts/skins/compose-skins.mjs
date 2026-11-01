@@ -31,11 +31,9 @@ const CAPE_RAMPS = {
  * Sobem um degrau de valor (só do pescoço para baixo: o rosto aprovado não muda).
  */
 const WARRIOR_LIFT = {
-  // Rodada 3: o corset vira a área clara contínua do peito/saiote (luminância >= 200).
-  '#f0dac6': '#fbf0e2', '#cba290': '#f4e4d2', '#94726d': '#d9bfae', // corset e saiote
+  '#f0dac6': '#fbf0e2', '#cba290': '#e8cdb6', '#94726d': '#b99a8c', // corset e saiote
   '#e0845c': '#f0a476', '#d2704e': '#e2885e', '#a95542': '#c46a4c', '#844036': '#a0533e' // pele
 };
-const CORSET_FRONT = { '#d9bfae': '#ecdccb', '#b99a8c': '#e8d4c2', '#e8cdb6': '#f4e4d2' };
 /** Cor para onde a luz de borda puxa (âmbar claro, como a luz da paleta). */
 const RIM_TO = [255, 246, 216];
 
@@ -134,8 +132,7 @@ export function compose(parts, k) {
     return out;
   }
 
-  const CAPE_KEEP = new Set([...WINE, ...Object.values(CAPE_RAMPS).flat()]);
-  function polish(im, { neckY, maxY = im.h, lift = null, gain = 0, rim = 0.32, liftBox = null }) {
+  function polish(im, { neckY, maxY = im.h, lift = null, gain = 0, rim = 0.32 }) {
     const out = clone(im);
     const solid = (x, y) => x >= 0 && y >= 0 && x < im.w && y < im.h && px(im, x, y)[3] > 127;
     const L = (c) => 0.299 * c[0] + 0.587 * c[1] + 0.114 * c[2];
@@ -153,9 +150,7 @@ export function compose(parts, k) {
         const [top, times] = [...count].sort((a, b) => b[1] - a[1])[0];
         if (times >= 2 && Math.abs(L(parse(top)) - L(c)) < 45) c2 = parse(top);
       }
-      const inBox = !liftBox || (x >= liftBox[0] && y >= liftBox[1] && x <= liftBox[2] && y <= liftBox[3]);
-      if (CAPE_KEEP.has(hexOf(c2))) { put(out, x, y, c2); return; }
-      if (lift && y <= maxY && inBox && lift[hexOf(c2)]) c2 = parse(lift[hexOf(c2)]);
+      if (lift && y <= maxY && lift[hexOf(c2)]) c2 = parse(lift[hexOf(c2)]);
       else if (gain && y <= maxY && L(c2) >= 28) c2 = c2.slice(0, 3).map((v, i) => Math.round(v + (RIM_TO[i] - v) * gain)).concat(255);
       put(out, x, y, c2);
     });
@@ -164,7 +159,6 @@ export function compose(parts, k) {
       each(base, (x, y, c) => {
         if (c[3] < 128 || y < neckY || L(c) < 28) return;
         const edgeOf = (dx, dy) => !solid(x + dx, y + dy) || (L(px(im, x + dx, y + dy)) < 28 && !solid(x + 2 * dx, y + 2 * dy));
-        if (CAPE_KEEP.has(hexOf(c))) return;
         if (edgeOf(-1, 0) || edgeOf(0, -1)) put(out, x, y, c.slice(0, 3).map((v, i) => Math.round(v + (RIM_TO[i] - v) * rim)).concat(255));
       });
     }
@@ -189,33 +183,6 @@ export function compose(parts, k) {
     return out;
   }
 
-  /**
-   * Cachos (rodada 3): o cabelo era um bloco escuro. Em uma grade de ~5 px, onde o cabelo é contínuo e
-   * longe da pele (o rosto aprovado não muda), desenha um cacho: arco de 3 px com luz âmbar no topo e
-   * 1 px de sombra embaixo. Só cores que a folha já tem.
-   */
-  const HAIR = new Set(['#684443', '#1e131c', '#281922', '#352027', '#150d16', '#4d3032', '#472023', '#33151b', '#0b0710', '#06030a']);
-  const SKIN = new Set(['#d2704e', '#a95542', '#e2885e', '#f0a476', '#c46a4c', '#844036', '#a0533e', '#e0845c']);
-  function curls(im, { top = 0, bottom, step = 5, seed = 0, extra = [], minHair = 8, avoid = null }) {
-    const hairSet = new Set([...HAIR, ...extra]);
-    const out = clone(im);
-    const at = (x, y) => (x >= 0 && y >= 0 && x < im.w && y < im.h ? px(im, x, y) : [0, 0, 0, 0]);
-    const hair = (x, y) => { const c = at(x, y); return c[3] > 127 && hairSet.has(hexOf(c)); };
-    const nearSkin = (x, y) => { for (let j = -2; j <= 2; j += 1) for (let i = -2; i <= 2; i += 1) { const c = at(x + i, y + j); if (c[3] > 127 && SKIN.has(hexOf(c))) return true; } return false; };
-    const lit = parse('#c46a4c'); const mid = parse('#844036'); const dark = parse('#06030a');
-    for (let gy = top + 2; gy <= bottom - 2; gy += step) {
-      for (let gx = 2; gx < im.w - 2; gx += step) {
-        const x = gx + ((gy * 7 + gx * 3 + seed) % 3) - 1; const y = gy + ((gx * 5 + seed) % 2);
-        if ([[0, 0], [-1, 0], [1, 0], [0, -1], [-1, -1], [1, -1], [0, 1], [-1, 1], [1, 1]].filter(([i, j]) => hair(x + i, y + j)).length < minHair) continue;
-        if (!hair(x, y) || !hair(x, y - 1) || nearSkin(x, y)) continue;
-        if (avoid && x >= avoid[0] - 2 && x <= avoid[2] + 2 && y >= avoid[1] - 2 && y <= avoid[3] + 2) continue;
-        put(out, x - 1, y, mid); put(out, x, y - 1, lit); put(out, x + 1, y - 1, mid); put(out, x + 1, y, mid);
-        put(out, x, y + 1, dark);
-      }
-    }
-    return out;
-  }
-
   const rigs = {};
   const rgb = (h) => parse(h);
   /** Uma direção: andar (0-3) + poses (4-11); devolve quadros e pontos da mão (em coordenadas do quadro). */
@@ -224,7 +191,7 @@ export function compose(parts, k) {
     const walkFrames = walk(base, legs);
     const frames = [...walkFrames];
     const style = { ...cfg.style, up: cfg.style.up.map(rgb), fore: cfg.style.fore.map(rgb), hand: cfg.style.hand.map(rgb), line: rgb(cfg.style.line) };
-    const full = { ...cfg, style, hip: legs.hip, mid: legs.mid, isTrail: (c) => CAPE_KEEP.has(hexOf(c)) || HAIR.has(hexOf(c)) };
+    const full = { ...cfg, style, hip: legs.hip, mid: legs.mid };
     const { frames: poses, hands } = buildPoses({ base, armless, cfg: full, ox, oy, k: { blank, put, px, clone }, FW, FH });
     for (let c = 4; c <= 11; c += 1) frames.push(poses[c]);
     const bob = [-1, 0, -1, 1];
@@ -278,73 +245,7 @@ export function compose(parts, k) {
     rigs[id] = out;
   };
   const sheets = {};
-  const SKIN_COLORS = new Set(['#d2704e', '#a95542', '#e2885e', '#f0a476', '#c46a4c', '#844036', '#a0533e', '#e0845c']);
-  const CURL_COLORS = new Set(['#c46a4c', '#844036', '#a0533e', '#06030a', '#0b0710']);
-  const HAIR_COLORS = new Set(['#684443', '#1e131c', '#281922', '#352027', '#150d16', '#4d3032', '#472023', '#33151b', '#0b0710', '#06030a']);
-  /** Fecha furos de 1-2 px dentro da silhueta (a capa de lado tinha pontos do chão aparecendo). */
-  const fillHoles = (f) => {
-    const out = clone(f);
-    for (let pass = 0; pass < 2; pass += 1) {
-      const src = clone(out);
-      each(src, (x, y, c) => {
-        if (c[3] > 127) return;
-        const n = [[1, 0], [-1, 0], [0, 1], [0, -1]].map(([dx, dy]) => (x + dx >= 0 && y + dy >= 0 && x + dx < f.w && y + dy < f.h ? px(src, x + dx, y + dy) : [0, 0, 0, 0])).filter((v) => v[3] > 127);
-        if (n.length < 3) return;
-        const dark = n.reduce((a, b) => (a[0] + a[1] + a[2] <= b[0] + b[1] + b[2] ? a : b));
-        put(out, x, y, n.length === 4 ? n[1] : dark);
-      });
-    }
-    return out;
-  };
-  /**
-   * Rodada 4: limpeza final da Guerreira. O sprite reduzido da referência tinha ~17 % de pixels soltos
-   * (cor diferente dos 8 vizinhos: pele/capa/couro misturados em manchas de 1-2 px). Cada pixel solto
-   * (e cada mancha de 2 px) vira a cor mais comum em volta, em 3 passes. Ficam de fora: a cabeça (rosto
-   * aprovado, olhos e franja: as 22 linhas de cima da silhueta), os cachos (cabelo e pontos âmbar) e o
-   * contorno escuro. Depois o contorno externo é fechado (1 px contínuo).
-   */
-  const despeckle = (f) => {
-    const out = clone(f);
-    const key = (c) => (c[3] > 127 ? (c[0] << 16) | (c[1] << 8) | c[2] : -1);
-    const Lc = (c) => 0.299 * c[0] + 0.587 * c[1] + 0.114 * c[2];
-    const at = (im, x, y) => (x >= 0 && y >= 0 && x < im.w && y < im.h ? px(im, x, y) : [0, 0, 0, 0]);
-    const N8 = [[-1, -1], [0, -1], [1, -1], [-1, 0], [1, 0], [-1, 1], [0, 1], [1, 1]];
-    let top = -1;
-    for (let y = 0; y < f.h && top < 0; y += 1) for (let x = 0; x < f.w; x += 1) if (px(f, x, y)[3] > 127) { top = y; break; }
-    if (top < 0) return out;
-    // Rosto: caixa da pele nas 22 linhas de cima da silhueta (+1 px), intocada.
-    let fx0 = f.w; let fy0 = f.h; let fx1 = -1; let fy1 = -1;
-    each(f, (x, y, c) => { if (c[3] > 127 && y <= top + 22 && SKIN_COLORS.has(hexOf(c))) { fx0 = Math.min(fx0, x); fx1 = Math.max(fx1, x); fy0 = Math.min(fy0, y); fy1 = Math.max(fy1, y); } });
-    const inFace = (x, y) => x >= fx0 - 1 && x <= fx1 + 1 && y >= fy0 - 1 && y <= fy1 + 1;
-    // Quase-pretos do contorno e das sombras do cabelo viram um tom só (eram 4-5 tons trocando a cada pixel).
-    const INK = parse('#0b0710');
-    each(f, (x, y, c) => { if (c[3] > 127 && Lc(c) < 14 && !inFace(x, y)) put(out, x, y, [...INK.slice(0, 3), c[3]]); });
-    const curl = (im, x, y, c) => {
-      if (!CURL_COLORS.has(hexOf(c))) return false;
-      let hair = 0; for (const [i, j] of N8) if (HAIR_COLORS.has(hexOf(at(im, x + i, y + j)))) hair += 1;
-      return hair >= 3;
-    };
-    const dist = (a, b) => (a[0] - b[0]) ** 2 * 0.3 + (a[1] - b[1]) ** 2 * 0.59 + (a[2] - b[2]) ** 2 * 0.11;
-    for (let pass = 0; pass < 4; pass += 1) {
-      const src = clone(out);
-      each(src, (x, y, c) => {
-        if (c[3] < 128 || inFace(x, y) || curl(src, x, y, c)) return;
-        const k = key(c);
-        const same = N8.filter(([i, j]) => key(at(src, x + i, y + j)) === k).length;
-        if (same > 0) return;
-        // Pixel solto: vira o vizinho opaco mais parecido (desempate: o mais comum em volta).
-        const count = new Map();
-        for (const [i, j] of N8) { const n = at(src, x + i, y + j); if (n[3] < 128) continue; const kk = key(n); count.set(kk, { n: (count.get(kk)?.n ?? 0) + 1, c: n }); }
-        let best = null; let bestScore = Infinity;
-        for (const e of count.values()) { const score = dist(e.c, c) / (1 + 0.5 * e.n); if (score < bestScore) { bestScore = score; best = e.c; } }
-        if (best) put(out, x, y, [...best.slice(0, 3), c[3]]);
-        else put(out, x, y, [0, 0, 0, 0]); // ponto flutuando no vazio (sobra da capa atrasada)
-      });
-    }
-    return out;
-  };
   const finish = (id, down, right, up) => {
-    if (id.startsWith('warrior')) for (const set of [down, right, up]) set.frames = set.frames.map(fillHoles).map(despeckle);
     const left = flipSet(right);
     sheets[id] = sheetOf([down.frames, left.frames, right.frames, up.frames]);
     return { down, left, right, up };
@@ -404,11 +305,9 @@ export function compose(parts, k) {
     const styleFor = (cfg) => cfg;
     for (const [id, color] of Object.entries(capes)) {
       const ramp = color && CAPE_RAMPS[color];
-      const f = curls(polish(smoothBelow(recolor(wFront, ramp, { top: 16, bottom: 50 }), C.down.neckY + 1), { neckY: C.down.neckY + 1, maxY: C.legs.down.hip + 7, lift: WARRIOR_LIFT, gain: 0.17 }), { bottom: 34, seed: 1, avoid: [25, 3, 40, 18] });
-      // Peito e saiote da frente: os 3 tons do corset viram claros (área clara contínua).
-      each(f, (x, y, c) => { if (x >= 21 && x <= 37 && y >= 20 && y <= 46 && CORSET_FRONT[hexOf(c)]) put(f, x, y, parse(CORSET_FRONT[hexOf(c)])); });
-      const s = curls(polish(smoothBelow(recolor(wSide, ramp, { top: 17, bottom: 50 }), C.right.neckY + 1), { neckY: C.right.neckY + 1, maxY: C.legs.right.hip + 6, lift: WARRIOR_LIFT, gain: 0.17 }), { bottom: 34, seed: 2 });
-      const b = curls(polish(smoothBelow(recolor(wBack, ramp, { top: 0, bottom: wBack.h }), C.up.neckY), { neckY: C.up.neckY, maxY: C.legs.up.hip + 4, lift: WARRIOR_LIFT, gain: 0.17 }), { bottom: 32, step: 4, seed: 3, minHair: 6, extra: ['#94726d', '#d9bfae', '#b99a8c'] });
+      const f = polish(smoothBelow(recolor(wFront, ramp, { top: 16, bottom: 50 }), C.down.neckY + 1), { neckY: C.down.neckY + 1, maxY: C.legs.down.hip + 7, lift: WARRIOR_LIFT, gain: 0.17 });
+      const s = polish(smoothBelow(recolor(wSide, ramp, { top: 17, bottom: 50 }), C.right.neckY + 1), { neckY: C.right.neckY + 1, maxY: C.legs.right.hip + 6, lift: WARRIOR_LIFT, gain: 0.17 });
+      const b = polish(smoothBelow(recolor(wBack, ramp, { top: 0, bottom: wBack.h }), C.up.neckY), { neckY: C.up.neckY, maxY: C.legs.up.hip + 4, lift: WARRIOR_LIFT, gain: 0.17 });
       const withHang = (armless, legs, cfg) => {
         const base = clone(armless);
         if (cfg.drawHang) {

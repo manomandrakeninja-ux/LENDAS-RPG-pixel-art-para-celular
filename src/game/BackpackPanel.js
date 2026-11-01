@@ -153,10 +153,11 @@ export class BackpackPanel {
         </div>`;
     }).join('');
     this.grid.innerHTML = slots;
-    this.summary.textContent = `${inventory.usedSlots}/${inventory.maxSlots} espaços • ${formatCount(inventory.total)}/${formatCount(inventory.totalCapacity)} itens`;
+    const camp = this.scene.camp;
+    const currentLevel = camp?.inventoryLevel ?? 1;
+    this.summary.textContent = `Nível ${currentLevel} • ${inventory.usedSlots}/${inventory.maxSlots} espaços • ${formatCount(inventory.total)}/${formatCount(inventory.totalCapacity)} itens`;
     // Botão de evolução da mochila (apenas perto do acampamento e enquanto houver próximo nível).
     let upgradeButton = '';
-    const camp = this.scene.camp;
     if (camp && camp.inventoryLevel < INVENTORY_MAX_LEVEL) {
       const nextLevel = camp.inventoryLevel + 1;
       const nextSlots = inventorySlotsForLevel(nextLevel);
@@ -165,9 +166,16 @@ export class BackpackPanel {
       const parts = Object.entries(cost ?? {}).map(([type, amount]) =>
         type === 'coins' ? `${amount} moedas` : `${amount} ${RESOURCE_TYPES[type]?.label ?? type}`
       );
-      upgradeButton = `<button type="button" class="button--primary" data-bag="upgrade" ${!canPay ? 'disabled' : ''}>
-        EVOLUIR MOCHILA → ${nextSlots} espaços • ${parts.join(' + ')}
-      </button>`;
+      upgradeButton = `<div class="backpack-upgrade">
+        <div class="backpack-upgrade__heading">EVOLUÇÃO DA MOCHILA</div>
+        <div class="backpack-upgrade__details">Nível ${camp.inventoryLevel} → ${nextLevel} | ${inventory.maxSlots} → ${nextSlots} espaços</div>
+        <div class="backpack-upgrade__cost">Custo: ${parts.join(' + ')}</div>
+        <button type="button" class="button--primary" data-bag="upgrade" ${!canPay ? 'disabled' : ''}>
+          ${canPay ? `EVOLUIR PARA ${nextSlots} ESPAÇOS` : 'RECURSOS INSUFICIENTES'}
+        </button>
+      </div>`;
+    } else if (camp) {
+      upgradeButton = '<div class="backpack-upgrade backpack-upgrade--max"><div class="backpack-upgrade__heading">MOCHILA NO MÁXIMO</div><div class="backpack-upgrade__details">36 espaços disponíveis</div></div>';
     }
     const gearButton = '<div class="backpack-panel__gear"><button type="button" data-bag="equipment">EQUIPAMENTO</button><small>Tecla V</small></div>';
     this.footer.innerHTML = (storeAll

@@ -11,8 +11,7 @@ export const HALO = {
   forge: ['#ffc825', '#ffa214', '#ff5000', '#e07438', '#c64524', '#8e251d', '#571c27'],
   lava: ['#ffa214', '#ff5000', '#c64524', '#8e251d', '#571c27'],
   crystal: ['#94fdff', '#00cdf9', '#0098dc', '#0069aa', '#00396d'],
-  // Rodada 4: sem branco no centro (virava um disco opaco); azul-claro que esfria para fora.
-  ice: ['#9cc8e6', '#0098dc', '#0069aa', '#00396d'],
+  ice: ['#ffffff', '#d5e8ef', '#9cc8e6', '#657392', '#424c6e'],
   shroom: ['#d3fc7e', '#99e65f', '#5ac54f', '#33984b', '#1e6f50'],
   torch: ['#ffeb57', '#ffc825', '#ffa214', '#e07438', '#c64524', '#8e251d']
 };
@@ -25,9 +24,8 @@ export const KIND = {
   lamp: { glow: 0.52, flicker: 0.05 },
   forge: { glow: 0.5, flicker: 0.05 },
   lava: { glow: 0.38, flicker: 0.04 },
-  // smooth: halo contínuo (sem degraus), para os cristais.
-  crystal: { glow: 0.46, flicker: 0.02, smooth: true },
-  ice: { glow: 0.46, flicker: 0.02, smooth: true },
+  crystal: { glow: 0.44, flicker: 0.02 },
+  ice: { glow: 0.44, flicker: 0.02 },
   shroom: { glow: 0.32, flicker: 0.03 }
 };
 
@@ -85,10 +83,7 @@ export function waveTone(x, y, frame) {
   const r = waveRadius(frame);
   const d = Math.hypot(x + 0.5 - WAVE_SIZE / 2, y + 0.5 - WAVE_SIZE / 2);
   const depth = r - d;
-  // Rodada 3: espessura variável ao longo do anel (não é mais um círculo perfeito).
-  const angle = Math.atan2(y + 0.5 - WAVE_SIZE / 2, x + 0.5 - WAVE_SIZE / 2);
-  const vary = 0.65 + 0.45 * Math.abs(Math.sin(angle * 3 + frame * 0.7)) + 0.15 * Math.sin(angle * 7);
-  const thin = (frame >= WAVE_FRAMES - 2 ? 0.6 : 1) * vary; // nos últimos quadros o anel afina
+  const thin = frame >= WAVE_FRAMES - 2 ? 0.6 : 1; // nos últimos quadros o anel afina
   if (depth < 0 || depth > 15 * thin) return -1;
   if (depth < 2) return 0;
   if (depth < 5 * thin) return 1;
@@ -112,11 +107,9 @@ export function swingArcTone(x, y, frame) {
   // Último quadro: só o fio de fora, se desfazendo do começo do arco para a frente.
   if (frame === 3 && (depth > 3.2 || angle < -0.6)) return -1;
   if (frame === 2 && angle < -1.2 && depth > 2.2) return -1;
-  // Rodada 3: núcleo branco só no meio do arco (as pontas afinam no tom da arma), borda de dentro
-  // pontilhada (lê como transparente).
-  if (depth < 1.2) return Math.abs(angle) < 0.95 ? 0 : 1;
+  if (depth < 1.2) return 0;
   if (depth < 2.8) return 1;
   if (inner - R > 1.2) return 2;
-  return (x + y) % 2 === 0 ? 3 : -1;
+  return 3;
 }
 

@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import { ACHIEVEMENTS, Achievements, completedSets, makeDailyQuests } from '../src/data/achievements.js';
 import { GEAR_ITEMS } from '../src/data/gear.js';
 
-test('cerca de 40 conquistas com ids únicos e título', () => {
-  assert.ok(ACHIEVEMENTS.length >= 38 && ACHIEVEMENTS.length <= 45);
+test('dezenas de conquistas com ids únicos e título', () => {
+  assert.ok(ACHIEVEMENTS.length >= 38 && ACHIEVEMENTS.length <= 80);
   assert.equal(new Set(ACHIEVEMENTS.map((a) => a.id)).size, ACHIEVEMENTS.length);
   assert.ok(ACHIEVEMENTS.every((a) => a.title && a.name));
 });
@@ -34,6 +34,22 @@ test('conquistas liberam por contador, nível e bestiário; título só se liber
   assert.equal(a.setTitle('ach5').ok, false);
   assert.equal(a.setTitle(fresh[0].id).ok, true);
   assert.ok(a.titleName);
+});
+
+test('conquistas novas: regiões, mortes, raids, arena, renascimento e LAN (só aviso/título)', () => {
+  const a = new Achievements();
+  a.note('deaths', 1);
+  a.note('raids', 3);
+  const fresh = a.check({ regions: 4, arena: 10, rebirths: 1, friends: 3, level: 1, bestiaryTotal: 1 });
+  const names = fresh.map((x) => x.name);
+  assert.ok(names.includes('Morrer 1 vez'), names.join(','));
+  assert.ok(names.includes('Repelir 3 ataques ao acampamento'), names.join(','));
+  assert.ok(names.includes('Descobrir 4 regiões do mundo'), names.join(','));
+  assert.ok(names.includes('Chegar à onda 10 da arena'), names.join(','));
+  assert.ok(names.includes('Renascer 1 vez'), names.join(','));
+  assert.ok(names.includes('Jogar em LAN com 3 amigos ao mesmo tempo'), names.join(','));
+  // nenhuma conquista dá item: são só统计/título
+  assert.ok(ACHIEVEMENTS.every((x) => !('reward' in x) && !('item' in x)));
 });
 
 test('save ida e volta e save antigo vazio', () => {

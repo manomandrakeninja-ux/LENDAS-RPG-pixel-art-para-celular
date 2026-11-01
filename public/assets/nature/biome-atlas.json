@@ -580,10 +580,9070 @@
     "h": 30
    }
   },
-  "shipwreck": {
+  "grass-tuft-0": {
    "frame": {
     "x": 32,
     "y": 328,
+    "w": 16,
+    "h": 10
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 16,
+    "h": 10
+   },
+   "sourceSize": {
+    "w": 16,
+    "h": 10
+   }
+  },
+  "grass-tuft-1": {
+   "frame": {
+    "x": 50,
+    "y": 328,
+    "w": 16,
+    "h": 10
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 16,
+    "h": 10
+   },
+   "sourceSize": {
+    "w": 16,
+    "h": 10
+   }
+  },
+  "flower-tuft-0": {
+   "frame": {
+    "x": 68,
+    "y": 328,
+    "w": 16,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 16,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 16,
+    "h": 12
+   }
+  },
+  "flower-tuft-1": {
+   "frame": {
+    "x": 86,
+    "y": 328,
+    "w": 16,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 16,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 16,
+    "h": 12
+   }
+  },
+  "snow-flower-0": {
+   "frame": {
+    "x": 104,
+    "y": 328,
+    "w": 14,
+    "h": 11
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 11
+   },
+   "sourceSize": {
+    "w": 14,
+    "h": 11
+   }
+  },
+  "snow-flower-1": {
+   "frame": {
+    "x": 120,
+    "y": 328,
+    "w": 14,
+    "h": 11
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 11
+   },
+   "sourceSize": {
+    "w": 14,
+    "h": 11
+   }
+  },
+  "dune-flower-0": {
+   "frame": {
+    "x": 136,
+    "y": 328,
+    "w": 14,
+    "h": 11
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 11
+   },
+   "sourceSize": {
+    "w": 14,
+    "h": 11
+   }
+  },
+  "dune-flower-1": {
+   "frame": {
+    "x": 152,
+    "y": 328,
+    "w": 14,
+    "h": 11
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 11
+   },
+   "sourceSize": {
+    "w": 14,
+    "h": 11
+   }
+  },
+  "swamp-flower-0": {
+   "frame": {
+    "x": 168,
+    "y": 328,
+    "w": 14,
+    "h": 11
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 11
+   },
+   "sourceSize": {
+    "w": 14,
+    "h": 11
+   }
+  },
+  "swamp-flower-1": {
+   "frame": {
+    "x": 184,
+    "y": 328,
+    "w": 14,
+    "h": 11
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 11
+   },
+   "sourceSize": {
+    "w": 14,
+    "h": 11
+   }
+  },
+  "ash-flower-0": {
+   "frame": {
+    "x": 200,
+    "y": 328,
+    "w": 14,
+    "h": 11
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 11
+   },
+   "sourceSize": {
+    "w": 14,
+    "h": 11
+   }
+  },
+  "ash-flower-1": {
+   "frame": {
+    "x": 216,
+    "y": 328,
+    "w": 14,
+    "h": 11
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 11
+   },
+   "sourceSize": {
+    "w": 14,
+    "h": 11
+   }
+  },
+  "jungle-flower-0": {
+   "frame": {
+    "x": 232,
+    "y": 328,
+    "w": 14,
+    "h": 11
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 11
+   },
+   "sourceSize": {
+    "w": 14,
+    "h": 11
+   }
+  },
+  "jungle-flower-1": {
+   "frame": {
+    "x": 248,
+    "y": 328,
+    "w": 14,
+    "h": 11
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 11
+   },
+   "sourceSize": {
+    "w": 14,
+    "h": 11
+   }
+  },
+  "beach-flower-0": {
+   "frame": {
+    "x": 264,
+    "y": 328,
+    "w": 14,
+    "h": 11
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 11
+   },
+   "sourceSize": {
+    "w": 14,
+    "h": 11
+   }
+  },
+  "beach-flower-1": {
+   "frame": {
+    "x": 280,
+    "y": 328,
+    "w": 14,
+    "h": 11
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 11
+   },
+   "sourceSize": {
+    "w": 14,
+    "h": 11
+   }
+  },
+  "forest-flower-0": {
+   "frame": {
+    "x": 296,
+    "y": 328,
+    "w": 14,
+    "h": 11
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 11
+   },
+   "sourceSize": {
+    "w": 14,
+    "h": 11
+   }
+  },
+  "forest-flower-1": {
+   "frame": {
+    "x": 312,
+    "y": 328,
+    "w": 14,
+    "h": 11
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 11
+   },
+   "sourceSize": {
+    "w": 14,
+    "h": 11
+   }
+  },
+  "valley-flower-0": {
+   "frame": {
+    "x": 328,
+    "y": 328,
+    "w": 14,
+    "h": 11
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 11
+   },
+   "sourceSize": {
+    "w": 14,
+    "h": 11
+   }
+  },
+  "valley-flower-1": {
+   "frame": {
+    "x": 344,
+    "y": 328,
+    "w": 14,
+    "h": 11
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 11
+   },
+   "sourceSize": {
+    "w": 14,
+    "h": 11
+   }
+  },
+  "pebbles-0": {
+   "frame": {
+    "x": 360,
+    "y": 328,
+    "w": 18,
+    "h": 8
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 18,
+    "h": 8
+   },
+   "sourceSize": {
+    "w": 18,
+    "h": 8
+   }
+  },
+  "pebbles-1": {
+   "frame": {
+    "x": 380,
+    "y": 328,
+    "w": 18,
+    "h": 8
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 18,
+    "h": 8
+   },
+   "sourceSize": {
+    "w": 18,
+    "h": 8
+   }
+  },
+  "frozen-log": {
+   "frame": {
+    "x": 400,
+    "y": 328,
+    "w": 60,
+    "h": 30
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 60,
+    "h": 30
+   },
+   "sourceSize": {
+    "w": 60,
+    "h": 30
+   }
+  },
+  "shell-0": {
+   "frame": {
+    "x": 462,
+    "y": 328,
+    "w": 10,
+    "h": 8
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 8
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 8
+   }
+  },
+  "shell-1": {
+   "frame": {
+    "x": 474,
+    "y": 328,
+    "w": 10,
+    "h": 8
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 8
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 8
+   }
+  },
+  "snow-mound-0": {
+   "frame": {
+    "x": 486,
+    "y": 328,
+    "w": 20,
+    "h": 10
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 20,
+    "h": 10
+   },
+   "sourceSize": {
+    "w": 20,
+    "h": 10
+   }
+  },
+  "snow-mound-1": {
+   "frame": {
+    "x": 2,
+    "y": 360,
+    "w": 20,
+    "h": 10
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 20,
+    "h": 10
+   },
+   "sourceSize": {
+    "w": 20,
+    "h": 10
+   }
+  },
+  "ember-0": {
+   "frame": {
+    "x": 24,
+    "y": 360,
+    "w": 10,
+    "h": 8
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 8
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 8
+   }
+  },
+  "ember-1": {
+   "frame": {
+    "x": 36,
+    "y": 360,
+    "w": 10,
+    "h": 8
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 8
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 8
+   }
+  },
+  "mud-puddle-0": {
+   "frame": {
+    "x": 48,
+    "y": 360,
+    "w": 22,
+    "h": 10
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 22,
+    "h": 10
+   },
+   "sourceSize": {
+    "w": 22,
+    "h": 10
+   }
+  },
+  "mud-puddle-1": {
+   "frame": {
+    "x": 72,
+    "y": 360,
+    "w": 22,
+    "h": 10
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 22,
+    "h": 10
+   },
+   "sourceSize": {
+    "w": 22,
+    "h": 10
+   }
+  },
+  "footprint-0": {
+   "frame": {
+    "x": 96,
+    "y": 360,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "footprint-1": {
+   "frame": {
+    "x": 108,
+    "y": 360,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "blooming-cactus": {
+   "frame": {
+    "x": 120,
+    "y": 360,
+    "w": 14,
+    "h": 20
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 20
+   },
+   "sourceSize": {
+    "w": 14,
+    "h": 20
+   }
+  },
+  "mushroom-cluster-0": {
+   "frame": {
+    "x": 136,
+    "y": 360,
+    "w": 18,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 18,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 18,
+    "h": 12
+   }
+  },
+  "mushroom-cluster-1": {
+   "frame": {
+    "x": 156,
+    "y": 360,
+    "w": 18,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 18,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 18,
+    "h": 12
+   }
+  },
+  "berry-bush-0": {
+   "frame": {
+    "x": 176,
+    "y": 360,
+    "w": 18,
+    "h": 14
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 18,
+    "h": 14
+   },
+   "sourceSize": {
+    "w": 18,
+    "h": 14
+   }
+  },
+  "berry-bush-1": {
+   "frame": {
+    "x": 196,
+    "y": 360,
+    "w": 18,
+    "h": 14
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 18,
+    "h": 14
+   },
+   "sourceSize": {
+    "w": 18,
+    "h": 14
+   }
+  },
+  "ice-shard-0": {
+   "frame": {
+    "x": 216,
+    "y": 360,
+    "w": 12,
+    "h": 16
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 12,
+    "h": 16
+   },
+   "sourceSize": {
+    "w": 12,
+    "h": 16
+   }
+  },
+  "ice-shard-1": {
+   "frame": {
+    "x": 230,
+    "y": 360,
+    "w": 12,
+    "h": 16
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 12,
+    "h": 16
+   },
+   "sourceSize": {
+    "w": 12,
+    "h": 16
+   }
+  },
+  "sand-ripple-0": {
+   "frame": {
+    "x": 244,
+    "y": 360,
+    "w": 24,
+    "h": 8
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 24,
+    "h": 8
+   },
+   "sourceSize": {
+    "w": 24,
+    "h": 8
+   }
+  },
+  "sand-ripple-1": {
+   "frame": {
+    "x": 270,
+    "y": 360,
+    "w": 24,
+    "h": 8
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 24,
+    "h": 8
+   },
+   "sourceSize": {
+    "w": 24,
+    "h": 8
+   }
+  },
+  "twisted-root-0": {
+   "frame": {
+    "x": 296,
+    "y": 360,
+    "w": 20,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 20,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 20,
+    "h": 12
+   }
+  },
+  "twisted-root-1": {
+   "frame": {
+    "x": 318,
+    "y": 360,
+    "w": 20,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 20,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 20,
+    "h": 12
+   }
+  },
+  "starfish-0": {
+   "frame": {
+    "x": 340,
+    "y": 360,
+    "w": 14,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 14,
+    "h": 12
+   }
+  },
+  "starfish-1": {
+   "frame": {
+    "x": 356,
+    "y": 360,
+    "w": 14,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 14,
+    "h": 12
+   }
+  },
+  "vine-0": {
+   "frame": {
+    "x": 372,
+    "y": 360,
+    "w": 10,
+    "h": 22
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 22
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 22
+   }
+  },
+  "vine-1": {
+   "frame": {
+    "x": 384,
+    "y": 360,
+    "w": 10,
+    "h": 22
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 22
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 22
+   }
+  },
+  "obsidian-shard-0": {
+   "frame": {
+    "x": 396,
+    "y": 360,
+    "w": 10,
+    "h": 14
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 14
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 14
+   }
+  },
+  "obsidian-shard-1": {
+   "frame": {
+    "x": 408,
+    "y": 360,
+    "w": 10,
+    "h": 14
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 14
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 14
+   }
+  },
+  "tide-puddle-0": {
+   "frame": {
+    "x": 420,
+    "y": 360,
+    "w": 20,
+    "h": 8
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 20,
+    "h": 8
+   },
+   "sourceSize": {
+    "w": 20,
+    "h": 8
+   }
+  },
+  "tide-puddle-1": {
+   "frame": {
+    "x": 442,
+    "y": 360,
+    "w": 20,
+    "h": 8
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 20,
+    "h": 8
+   },
+   "sourceSize": {
+    "w": 20,
+    "h": 8
+   }
+  },
+  "river-stone-0": {
+   "frame": {
+    "x": 464,
+    "y": 360,
+    "w": 16,
+    "h": 10
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 16,
+    "h": 10
+   },
+   "sourceSize": {
+    "w": 16,
+    "h": 10
+   }
+  },
+  "river-stone-1": {
+   "frame": {
+    "x": 482,
+    "y": 360,
+    "w": 16,
+    "h": 10
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 16,
+    "h": 10
+   },
+   "sourceSize": {
+    "w": 16,
+    "h": 10
+   }
+  },
+  "small-rock-0": {
+   "frame": {
+    "x": 2,
+    "y": 384,
+    "w": 12,
+    "h": 8
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 12,
+    "h": 8
+   },
+   "sourceSize": {
+    "w": 12,
+    "h": 8
+   }
+  },
+  "small-rock-1": {
+   "frame": {
+    "x": 16,
+    "y": 384,
+    "w": 12,
+    "h": 8
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 12,
+    "h": 8
+   },
+   "sourceSize": {
+    "w": 12,
+    "h": 8
+   }
+  },
+  "big-water-lily-0": {
+   "frame": {
+    "x": 30,
+    "y": 384,
+    "w": 22,
+    "h": 14
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 22,
+    "h": 14
+   },
+   "sourceSize": {
+    "w": 22,
+    "h": 14
+   }
+  },
+  "big-water-lily-1": {
+   "frame": {
+    "x": 54,
+    "y": 384,
+    "w": 22,
+    "h": 14
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 22,
+    "h": 14
+   },
+   "sourceSize": {
+    "w": 22,
+    "h": 14
+   }
+  },
+  "ice-spike-0": {
+   "frame": {
+    "x": 78,
+    "y": 384,
+    "w": 8,
+    "h": 14
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 8,
+    "h": 14
+   },
+   "sourceSize": {
+    "w": 8,
+    "h": 14
+   }
+  },
+  "ice-spike-1": {
+   "frame": {
+    "x": 88,
+    "y": 384,
+    "w": 8,
+    "h": 14
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 8,
+    "h": 14
+   },
+   "sourceSize": {
+    "w": 8,
+    "h": 14
+   }
+  },
+  "dune-wave-0": {
+   "frame": {
+    "x": 98,
+    "y": 384,
+    "w": 26,
+    "h": 10
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 26,
+    "h": 10
+   },
+   "sourceSize": {
+    "w": 26,
+    "h": 10
+   }
+  },
+  "dune-wave-1": {
+   "frame": {
+    "x": 126,
+    "y": 384,
+    "w": 26,
+    "h": 10
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 26,
+    "h": 10
+   },
+   "sourceSize": {
+    "w": 26,
+    "h": 10
+   }
+  },
+  "yellow-flower-0": {
+   "frame": {
+    "x": 154,
+    "y": 384,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "yellow-flower-1": {
+   "frame": {
+    "x": 166,
+    "y": 384,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "blue-mushroom-0": {
+   "frame": {
+    "x": 178,
+    "y": 384,
+    "w": 10,
+    "h": 10
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 10
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 10
+   }
+  },
+  "blue-mushroom-1": {
+   "frame": {
+    "x": 190,
+    "y": 384,
+    "w": 10,
+    "h": 10
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 10
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 10
+   }
+  },
+  "ember-flower-0": {
+   "frame": {
+    "x": 202,
+    "y": 384,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "ember-flower-1": {
+   "frame": {
+    "x": 214,
+    "y": 384,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "tall-grass-0": {
+   "frame": {
+    "x": 226,
+    "y": 384,
+    "w": 16,
+    "h": 14
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 16,
+    "h": 14
+   },
+   "sourceSize": {
+    "w": 16,
+    "h": 14
+   }
+  },
+  "tall-grass-1": {
+   "frame": {
+    "x": 244,
+    "y": 384,
+    "w": 16,
+    "h": 14
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 16,
+    "h": 14
+   },
+   "sourceSize": {
+    "w": 16,
+    "h": 14
+   }
+  },
+  "broken-anchor": {
+   "frame": {
+    "x": 262,
+    "y": 384,
+    "w": 16,
+    "h": 16
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 16,
+    "h": 16
+   },
+   "sourceSize": {
+    "w": 16,
+    "h": 16
+   }
+  },
+  "jungle-root-0": {
+   "frame": {
+    "x": 280,
+    "y": 384,
+    "w": 20,
+    "h": 10
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 20,
+    "h": 10
+   },
+   "sourceSize": {
+    "w": 20,
+    "h": 10
+   }
+  },
+  "jungle-root-1": {
+   "frame": {
+    "x": 302,
+    "y": 384,
+    "w": 20,
+    "h": 10
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 20,
+    "h": 10
+   },
+   "sourceSize": {
+    "w": 20,
+    "h": 10
+   }
+  },
+  "moss-pebble-0": {
+   "frame": {
+    "x": 324,
+    "y": 384,
+    "w": 12,
+    "h": 8
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 12,
+    "h": 8
+   },
+   "sourceSize": {
+    "w": 12,
+    "h": 8
+   }
+  },
+  "moss-pebble-1": {
+   "frame": {
+    "x": 338,
+    "y": 384,
+    "w": 12,
+    "h": 8
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 12,
+    "h": 8
+   },
+   "sourceSize": {
+    "w": 12,
+    "h": 8
+   }
+  },
+  "white-flower-0": {
+   "frame": {
+    "x": 352,
+    "y": 384,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "white-flower-1": {
+   "frame": {
+    "x": 364,
+    "y": 384,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "bark-scrap-0": {
+   "frame": {
+    "x": 376,
+    "y": 384,
+    "w": 16,
+    "h": 8
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 16,
+    "h": 8
+   },
+   "sourceSize": {
+    "w": 16,
+    "h": 8
+   }
+  },
+  "bark-scrap-1": {
+   "frame": {
+    "x": 394,
+    "y": 384,
+    "w": 16,
+    "h": 8
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 16,
+    "h": 8
+   },
+   "sourceSize": {
+    "w": 16,
+    "h": 8
+   }
+  },
+  "spiral-shell": {
+   "frame": {
+    "x": 412,
+    "y": 384,
+    "w": 12,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 12,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 12,
+    "h": 12
+   }
+  },
+  "lava-rock-0": {
+   "frame": {
+    "x": 426,
+    "y": 384,
+    "w": 16,
+    "h": 10
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 16,
+    "h": 10
+   },
+   "sourceSize": {
+    "w": 16,
+    "h": 10
+   }
+  },
+  "lava-rock-1": {
+   "frame": {
+    "x": 444,
+    "y": 384,
+    "w": 16,
+    "h": 10
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 16,
+    "h": 10
+   },
+   "sourceSize": {
+    "w": 16,
+    "h": 10
+   }
+  },
+  "pink-flower-0": {
+   "frame": {
+    "x": 462,
+    "y": 384,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "pink-flower-1": {
+   "frame": {
+    "x": 474,
+    "y": 384,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "rotten-log": {
+   "frame": {
+    "x": 2,
+    "y": 402,
+    "w": 26,
+    "h": 10
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 26,
+    "h": 10
+   },
+   "sourceSize": {
+    "w": 26,
+    "h": 10
+   }
+  },
+  "beach-boulder-0": {
+   "frame": {
+    "x": 30,
+    "y": 402,
+    "w": 18,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 18,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 18,
+    "h": 12
+   }
+  },
+  "beach-boulder-1": {
+   "frame": {
+    "x": 50,
+    "y": 402,
+    "w": 18,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 18,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 18,
+    "h": 12
+   }
+  },
+  "tall-cactus": {
+   "frame": {
+    "x": 70,
+    "y": 402,
+    "w": 14,
+    "h": 24
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 24
+   },
+   "sourceSize": {
+    "w": 14,
+    "h": 24
+   }
+  },
+  "sea-foam-0": {
+   "frame": {
+    "x": 86,
+    "y": 402,
+    "w": 22,
+    "h": 6
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 22,
+    "h": 6
+   },
+   "sourceSize": {
+    "w": 22,
+    "h": 6
+   }
+  },
+  "sea-foam-1": {
+   "frame": {
+    "x": 110,
+    "y": 402,
+    "w": 22,
+    "h": 6
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 22,
+    "h": 6
+   },
+   "sourceSize": {
+    "w": 22,
+    "h": 6
+   }
+  },
+  "reed-0": {
+   "frame": {
+    "x": 134,
+    "y": 402,
+    "w": 12,
+    "h": 20
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 12,
+    "h": 20
+   },
+   "sourceSize": {
+    "w": 12,
+    "h": 20
+   }
+  },
+  "reed-1": {
+   "frame": {
+    "x": 148,
+    "y": 402,
+    "w": 12,
+    "h": 20
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 12,
+    "h": 20
+   },
+   "sourceSize": {
+    "w": 12,
+    "h": 20
+   }
+  },
+  "purple-flower-0": {
+   "frame": {
+    "x": 162,
+    "y": 402,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "purple-flower-1": {
+   "frame": {
+    "x": 174,
+    "y": 402,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "blue-ice-0": {
+   "frame": {
+    "x": 186,
+    "y": 402,
+    "w": 14,
+    "h": 8
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 8
+   },
+   "sourceSize": {
+    "w": 14,
+    "h": 8
+   }
+  },
+  "blue-ice-1": {
+   "frame": {
+    "x": 202,
+    "y": 402,
+    "w": 14,
+    "h": 8
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 8
+   },
+   "sourceSize": {
+    "w": 14,
+    "h": 8
+   }
+  },
+  "dry-bush-2": {
+   "frame": {
+    "x": 218,
+    "y": 402,
+    "w": 18,
+    "h": 10
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 18,
+    "h": 10
+   },
+   "sourceSize": {
+    "w": 18,
+    "h": 10
+   }
+  },
+  "pale-stone-0": {
+   "frame": {
+    "x": 238,
+    "y": 402,
+    "w": 12,
+    "h": 8
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 12,
+    "h": 8
+   },
+   "sourceSize": {
+    "w": 12,
+    "h": 8
+   }
+  },
+  "pale-stone-1": {
+   "frame": {
+    "x": 252,
+    "y": 402,
+    "w": 12,
+    "h": 8
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 12,
+    "h": 8
+   },
+   "sourceSize": {
+    "w": 12,
+    "h": 8
+   }
+  },
+  "granite-0": {
+   "frame": {
+    "x": 266,
+    "y": 402,
+    "w": 16,
+    "h": 10
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 16,
+    "h": 10
+   },
+   "sourceSize": {
+    "w": 16,
+    "h": 10
+   }
+  },
+  "granite-1": {
+   "frame": {
+    "x": 284,
+    "y": 402,
+    "w": 16,
+    "h": 10
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 16,
+    "h": 10
+   },
+   "sourceSize": {
+    "w": 16,
+    "h": 10
+   }
+  },
+  "desert-bloom-0": {
+   "frame": {
+    "x": 302,
+    "y": 402,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "desert-bloom-1": {
+   "frame": {
+    "x": 314,
+    "y": 402,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "jungle-log": {
+   "frame": {
+    "x": 326,
+    "y": 402,
+    "w": 28,
+    "h": 10
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 28,
+    "h": 10
+   },
+   "sourceSize": {
+    "w": 28,
+    "h": 10
+   }
+  },
+  "snow-track-0": {
+   "frame": {
+    "x": 356,
+    "y": 402,
+    "w": 16,
+    "h": 8
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 16,
+    "h": 8
+   },
+   "sourceSize": {
+    "w": 16,
+    "h": 8
+   }
+  },
+  "snow-track-1": {
+   "frame": {
+    "x": 374,
+    "y": 402,
+    "w": 16,
+    "h": 8
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 16,
+    "h": 8
+   },
+   "sourceSize": {
+    "w": 16,
+    "h": 8
+   }
+  },
+  "tide-rock-0": {
+   "frame": {
+    "x": 392,
+    "y": 402,
+    "w": 14,
+    "h": 8
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 8
+   },
+   "sourceSize": {
+    "w": 14,
+    "h": 8
+   }
+  },
+  "tide-rock-1": {
+   "frame": {
+    "x": 408,
+    "y": 402,
+    "w": 14,
+    "h": 8
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 8
+   },
+   "sourceSize": {
+    "w": 14,
+    "h": 8
+   }
+  },
+  "red-cap-0": {
+   "frame": {
+    "x": 424,
+    "y": 402,
+    "w": 14,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 14,
+    "h": 12
+   }
+  },
+  "red-cap-1": {
+   "frame": {
+    "x": 440,
+    "y": 402,
+    "w": 14,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 14,
+    "h": 12
+   }
+  },
+  "carved-pebble-0": {
+   "frame": {
+    "x": 456,
+    "y": 402,
+    "w": 12,
+    "h": 8
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 12,
+    "h": 8
+   },
+   "sourceSize": {
+    "w": 12,
+    "h": 8
+   }
+  },
+  "carved-pebble-1": {
+   "frame": {
+    "x": 470,
+    "y": 402,
+    "w": 12,
+    "h": 8
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 12,
+    "h": 8
+   },
+   "sourceSize": {
+    "w": 12,
+    "h": 8
+   }
+  },
+  "floating-branch-0": {
+   "frame": {
+    "x": 484,
+    "y": 402,
+    "w": 20,
+    "h": 8
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 20,
+    "h": 8
+   },
+   "sourceSize": {
+    "w": 20,
+    "h": 8
+   }
+  },
+  "floating-branch-1": {
+   "frame": {
+    "x": 2,
+    "y": 428,
+    "w": 20,
+    "h": 8
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 20,
+    "h": 8
+   },
+   "sourceSize": {
+    "w": 20,
+    "h": 8
+   }
+  },
+  "snow-branch": {
+   "frame": {
+    "x": 24,
+    "y": 428,
+    "w": 22,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 22,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 22,
+    "h": 12
+   }
+  },
+  "pink-shell": {
+   "frame": {
+    "x": 48,
+    "y": 428,
+    "w": 10,
+    "h": 10
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 10
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 10
+   }
+  },
+  "green-stone-0": {
+   "frame": {
+    "x": 60,
+    "y": 428,
+    "w": 14,
+    "h": 9
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 9
+   },
+   "sourceSize": {
+    "w": 14,
+    "h": 9
+   }
+  },
+  "green-stone-1": {
+   "frame": {
+    "x": 76,
+    "y": 428,
+    "w": 14,
+    "h": 9
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 9
+   },
+   "sourceSize": {
+    "w": 14,
+    "h": 9
+   }
+  },
+  "orange-flower-0": {
+   "frame": {
+    "x": 92,
+    "y": 428,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "orange-flower-1": {
+   "frame": {
+    "x": 104,
+    "y": 428,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "dune-root": {
+   "frame": {
+    "x": 116,
+    "y": 428,
+    "w": 18,
+    "h": 8
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 18,
+    "h": 8
+   },
+   "sourceSize": {
+    "w": 18,
+    "h": 8
+   }
+  },
+  "carved-ice": {
+   "frame": {
+    "x": 136,
+    "y": 428,
+    "w": 14,
+    "h": 14
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 14
+   },
+   "sourceSize": {
+    "w": 14,
+    "h": 14
+   }
+  },
+  "dry-log": {
+   "frame": {
+    "x": 152,
+    "y": 428,
+    "w": 24,
+    "h": 9
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 24,
+    "h": 9
+   },
+   "sourceSize": {
+    "w": 24,
+    "h": 9
+   }
+  },
+  "driftwood": {
+   "frame": {
+    "x": 178,
+    "y": 428,
+    "w": 18,
+    "h": 6
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 18,
+    "h": 6
+   },
+   "sourceSize": {
+    "w": 18,
+    "h": 6
+   }
+  },
+  "lilac-flower-0": {
+   "frame": {
+    "x": 198,
+    "y": 428,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "lilac-flower-1": {
+   "frame": {
+    "x": 210,
+    "y": 428,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "forest-boulder": {
+   "frame": {
+    "x": 222,
+    "y": 428,
+    "w": 18,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 18,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 18,
+    "h": 12
+   }
+  },
+  "ash-spike-0": {
+   "frame": {
+    "x": 242,
+    "y": 428,
+    "w": 10,
+    "h": 18
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 18
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 18
+   }
+  },
+  "ash-spike-1": {
+   "frame": {
+    "x": 254,
+    "y": 428,
+    "w": 10,
+    "h": 18
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 18
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 18
+   }
+  },
+  "snow-hollow-0": {
+   "frame": {
+    "x": 266,
+    "y": 428,
+    "w": 16,
+    "h": 8
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 16,
+    "h": 8
+   },
+   "sourceSize": {
+    "w": 16,
+    "h": 8
+   }
+  },
+  "snow-hollow-1": {
+   "frame": {
+    "x": 284,
+    "y": 428,
+    "w": 16,
+    "h": 8
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 16,
+    "h": 8
+   },
+   "sourceSize": {
+    "w": 16,
+    "h": 8
+   }
+  },
+  "purple-shroom-0": {
+   "frame": {
+    "x": 302,
+    "y": 428,
+    "w": 10,
+    "h": 10
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 10
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 10
+   }
+  },
+  "purple-shroom-1": {
+   "frame": {
+    "x": 314,
+    "y": 428,
+    "w": 10,
+    "h": 10
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 10
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 10
+   }
+  },
+  "white-desert-flower-0": {
+   "frame": {
+    "x": 326,
+    "y": 428,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "white-desert-flower-1": {
+   "frame": {
+    "x": 338,
+    "y": 428,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "beach-gravel": {
+   "frame": {
+    "x": 350,
+    "y": 428,
+    "w": 18,
+    "h": 8
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 18,
+    "h": 8
+   },
+   "sourceSize": {
+    "w": 18,
+    "h": 8
+   }
+  },
+  "snow-pile-0": {
+   "frame": {
+    "x": 370,
+    "y": 428,
+    "w": 14,
+    "h": 8
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 8
+   },
+   "sourceSize": {
+    "w": 14,
+    "h": 8
+   }
+  },
+  "snow-pile-1": {
+   "frame": {
+    "x": 386,
+    "y": 428,
+    "w": 14,
+    "h": 8
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 8
+   },
+   "sourceSize": {
+    "w": 14,
+    "h": 8
+   }
+  },
+  "swamp-root": {
+   "frame": {
+    "x": 402,
+    "y": 428,
+    "w": 14,
+    "h": 10
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 10
+   },
+   "sourceSize": {
+    "w": 14,
+    "h": 10
+   }
+  },
+  "red-stone-0": {
+   "frame": {
+    "x": 418,
+    "y": 428,
+    "w": 14,
+    "h": 9
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 9
+   },
+   "sourceSize": {
+    "w": 14,
+    "h": 9
+   }
+  },
+  "red-stone-1": {
+   "frame": {
+    "x": 434,
+    "y": 428,
+    "w": 14,
+    "h": 9
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 9
+   },
+   "sourceSize": {
+    "w": 14,
+    "h": 9
+   }
+  },
+  "blue-snow-flower-0": {
+   "frame": {
+    "x": 450,
+    "y": 428,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "blue-snow-flower-1": {
+   "frame": {
+    "x": 462,
+    "y": 428,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "pale-bark": {
+   "frame": {
+    "x": 474,
+    "y": 428,
+    "w": 16,
+    "h": 7
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 16,
+    "h": 7
+   },
+   "sourceSize": {
+    "w": 16,
+    "h": 7
+   }
+  },
+  "dune-bloom": {
+   "frame": {
+    "x": 492,
+    "y": 428,
+    "w": 16,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 16,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 16,
+    "h": 12
+   }
+  },
+  "swamp-pebble-0": {
+   "frame": {
+    "x": 2,
+    "y": 448,
+    "w": 10,
+    "h": 7
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 7
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 7
+   }
+  },
+  "swamp-pebble-1": {
+   "frame": {
+    "x": 14,
+    "y": 448,
+    "w": 10,
+    "h": 7
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 7
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 7
+   }
+  },
+  "hot-ash-0": {
+   "frame": {
+    "x": 26,
+    "y": 448,
+    "w": 12,
+    "h": 8
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 12,
+    "h": 8
+   },
+   "sourceSize": {
+    "w": 12,
+    "h": 8
+   }
+  },
+  "hot-ash-1": {
+   "frame": {
+    "x": 40,
+    "y": 448,
+    "w": 12,
+    "h": 8
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 12,
+    "h": 8
+   },
+   "sourceSize": {
+    "w": 12,
+    "h": 8
+   }
+  },
+  "clear-ice-rock-0": {
+   "frame": {
+    "x": 54,
+    "y": 448,
+    "w": 14,
+    "h": 9
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 9
+   },
+   "sourceSize": {
+    "w": 14,
+    "h": 9
+   }
+  },
+  "clear-ice-rock-1": {
+   "frame": {
+    "x": 70,
+    "y": 448,
+    "w": 14,
+    "h": 9
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 9
+   },
+   "sourceSize": {
+    "w": 14,
+    "h": 9
+   }
+  },
+  "wreck-log": {
+   "frame": {
+    "x": 86,
+    "y": 448,
+    "w": 26,
+    "h": 10
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 26,
+    "h": 10
+   },
+   "sourceSize": {
+    "w": 26,
+    "h": 10
+   }
+  },
+  "jungle-bush-0": {
+   "frame": {
+    "x": 114,
+    "y": 448,
+    "w": 20,
+    "h": 14
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 20,
+    "h": 14
+   },
+   "sourceSize": {
+    "w": 20,
+    "h": 14
+   }
+  },
+  "jungle-bush-1": {
+   "frame": {
+    "x": 136,
+    "y": 448,
+    "w": 20,
+    "h": 14
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 20,
+    "h": 14
+   },
+   "sourceSize": {
+    "w": 20,
+    "h": 14
+   }
+  },
+  "desert-stone-0": {
+   "frame": {
+    "x": 158,
+    "y": 448,
+    "w": 14,
+    "h": 9
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 9
+   },
+   "sourceSize": {
+    "w": 14,
+    "h": 9
+   }
+  },
+  "desert-stone-1": {
+   "frame": {
+    "x": 174,
+    "y": 448,
+    "w": 14,
+    "h": 9
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 9
+   },
+   "sourceSize": {
+    "w": 14,
+    "h": 9
+   }
+  },
+  "ash-crystal-0": {
+   "frame": {
+    "x": 190,
+    "y": 448,
+    "w": 10,
+    "h": 14
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 14
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 14
+   }
+  },
+  "ash-crystal-1": {
+   "frame": {
+    "x": 202,
+    "y": 448,
+    "w": 10,
+    "h": 14
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 14
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 14
+   }
+  },
+  "yellow-swamp-flower-0": {
+   "frame": {
+    "x": 214,
+    "y": 448,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "yellow-swamp-flower-1": {
+   "frame": {
+    "x": 226,
+    "y": 448,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "snow-covered-rock": {
+   "frame": {
+    "x": 238,
+    "y": 448,
+    "w": 16,
+    "h": 10
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 16,
+    "h": 10
+   },
+   "sourceSize": {
+    "w": 16,
+    "h": 10
+   }
+  },
+  "dune-gravel": {
+   "frame": {
+    "x": 256,
+    "y": 448,
+    "w": 18,
+    "h": 8
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 18,
+    "h": 8
+   },
+   "sourceSize": {
+    "w": 18,
+    "h": 8
+   }
+  },
+  "wet-stone-0": {
+   "frame": {
+    "x": 276,
+    "y": 448,
+    "w": 14,
+    "h": 8
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 8
+   },
+   "sourceSize": {
+    "w": 14,
+    "h": 8
+   }
+  },
+  "wet-stone-1": {
+   "frame": {
+    "x": 292,
+    "y": 448,
+    "w": 14,
+    "h": 8
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 8
+   },
+   "sourceSize": {
+    "w": 14,
+    "h": 8
+   }
+  },
+  "lilac-ice-flower-0": {
+   "frame": {
+    "x": 308,
+    "y": 448,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "lilac-ice-flower-1": {
+   "frame": {
+    "x": 320,
+    "y": 448,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "pink-pebble": {
+   "frame": {
+    "x": 332,
+    "y": 448,
+    "w": 10,
+    "h": 7
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 7
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 7
+   }
+  },
+  "dry-branch": {
+   "frame": {
+    "x": 344,
+    "y": 448,
+    "w": 18,
+    "h": 10
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 18,
+    "h": 10
+   },
+   "sourceSize": {
+    "w": 18,
+    "h": 10
+   }
+  },
+  "tan-shroom-0": {
+   "frame": {
+    "x": 364,
+    "y": 448,
+    "w": 10,
+    "h": 10
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 10
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 10
+   }
+  },
+  "tan-shroom-1": {
+   "frame": {
+    "x": 376,
+    "y": 448,
+    "w": 10,
+    "h": 10
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 10
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 10
+   }
+  },
+  "pale-ash-rock": {
+   "frame": {
+    "x": 388,
+    "y": 448,
+    "w": 16,
+    "h": 10
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 16,
+    "h": 10
+   },
+   "sourceSize": {
+    "w": 16,
+    "h": 10
+   }
+  },
+  "pink-dune-flower-0": {
+   "frame": {
+    "x": 406,
+    "y": 448,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "pink-dune-flower-1": {
+   "frame": {
+    "x": 418,
+    "y": 448,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "swamp-gravel": {
+   "frame": {
+    "x": 430,
+    "y": 448,
+    "w": 16,
+    "h": 8
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 16,
+    "h": 8
+   },
+   "sourceSize": {
+    "w": 16,
+    "h": 8
+   }
+  },
+  "ice-log": {
+   "frame": {
+    "x": 448,
+    "y": 448,
+    "w": 26,
+    "h": 10
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 26,
+    "h": 10
+   },
+   "sourceSize": {
+    "w": 26,
+    "h": 10
+   }
+  },
+  "sea-grass-0": {
+   "frame": {
+    "x": 476,
+    "y": 448,
+    "w": 16,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 16,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 16,
+    "h": 12
+   }
+  },
+  "sea-grass-1": {
+   "frame": {
+    "x": 494,
+    "y": 448,
+    "w": 16,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 16,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 16,
+    "h": 12
+   }
+  },
+  "small-lava-rock-0": {
+   "frame": {
+    "x": 2,
+    "y": 464,
+    "w": 10,
+    "h": 7
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 7
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 7
+   }
+  },
+  "small-lava-rock-1": {
+   "frame": {
+    "x": 14,
+    "y": 464,
+    "w": 10,
+    "h": 7
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 7
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 7
+   }
+  },
+  "pink-swamp-flower-0": {
+   "frame": {
+    "x": 26,
+    "y": 464,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "pink-swamp-flower-1": {
+   "frame": {
+    "x": 38,
+    "y": 464,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "dark-river-stone": {
+   "frame": {
+    "x": 50,
+    "y": 464,
+    "w": 14,
+    "h": 9
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 9
+   },
+   "sourceSize": {
+    "w": 14,
+    "h": 9
+   }
+  },
+  "cracked-ice-0": {
+   "frame": {
+    "x": 66,
+    "y": 464,
+    "w": 16,
+    "h": 10
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 16,
+    "h": 10
+   },
+   "sourceSize": {
+    "w": 16,
+    "h": 10
+   }
+  },
+  "cracked-ice-1": {
+   "frame": {
+    "x": 84,
+    "y": 464,
+    "w": 16,
+    "h": 10
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 16,
+    "h": 10
+   },
+   "sourceSize": {
+    "w": 16,
+    "h": 10
+   }
+  },
+  "dark-bark": {
+   "frame": {
+    "x": 102,
+    "y": 464,
+    "w": 14,
+    "h": 8
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 8
+   },
+   "sourceSize": {
+    "w": 14,
+    "h": 8
+   }
+  },
+  "blue-gray-stone": {
+   "frame": {
+    "x": 118,
+    "y": 464,
+    "w": 14,
+    "h": 9
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 9
+   },
+   "sourceSize": {
+    "w": 14,
+    "h": 9
+   }
+  },
+  "lilac-dune-flower-0": {
+   "frame": {
+    "x": 134,
+    "y": 464,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "lilac-dune-flower-1": {
+   "frame": {
+    "x": 146,
+    "y": 464,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "green-beach-stone": {
+   "frame": {
+    "x": 158,
+    "y": 464,
+    "w": 14,
+    "h": 9
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 9
+   },
+   "sourceSize": {
+    "w": 14,
+    "h": 9
+   }
+  },
+  "gray-shroom-0": {
+   "frame": {
+    "x": 174,
+    "y": 464,
+    "w": 10,
+    "h": 10
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 10
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 10
+   }
+  },
+  "gray-shroom-1": {
+   "frame": {
+    "x": 186,
+    "y": 464,
+    "w": 10,
+    "h": 10
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 10
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 10
+   }
+  },
+  "wind-snow-0": {
+   "frame": {
+    "x": 198,
+    "y": 464,
+    "w": 20,
+    "h": 7
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 20,
+    "h": 7
+   },
+   "sourceSize": {
+    "w": 20,
+    "h": 7
+   }
+  },
+  "wind-snow-1": {
+   "frame": {
+    "x": 220,
+    "y": 464,
+    "w": 20,
+    "h": 7
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 20,
+    "h": 7
+   },
+   "sourceSize": {
+    "w": 20,
+    "h": 7
+   }
+  },
+  "orange-jungle-flower-0": {
+   "frame": {
+    "x": 242,
+    "y": 464,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "orange-jungle-flower-1": {
+   "frame": {
+    "x": 254,
+    "y": 464,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "light-ash-gravel": {
+   "frame": {
+    "x": 266,
+    "y": 464,
+    "w": 16,
+    "h": 8
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 16,
+    "h": 8
+   },
+   "sourceSize": {
+    "w": 16,
+    "h": 8
+   }
+  },
+  "white-swamp-flower-0": {
+   "frame": {
+    "x": 284,
+    "y": 464,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "white-swamp-flower-1": {
+   "frame": {
+    "x": 296,
+    "y": 464,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "light-dune-pebble": {
+   "frame": {
+    "x": 308,
+    "y": 464,
+    "w": 10,
+    "h": 7
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 7
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 7
+   }
+  },
+  "dry-sea-bush-0": {
+   "frame": {
+    "x": 320,
+    "y": 464,
+    "w": 16,
+    "h": 10
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 16,
+    "h": 10
+   },
+   "sourceSize": {
+    "w": 16,
+    "h": 10
+   }
+  },
+  "dry-sea-bush-1": {
+   "frame": {
+    "x": 338,
+    "y": 464,
+    "w": 16,
+    "h": 10
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 16,
+    "h": 10
+   },
+   "sourceSize": {
+    "w": 16,
+    "h": 10
+   }
+  },
+  "blush-forest-flower-0": {
+   "frame": {
+    "x": 356,
+    "y": 464,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "blush-forest-flower-1": {
+   "frame": {
+    "x": 368,
+    "y": 464,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "mint-ice-flower-0": {
+   "frame": {
+    "x": 380,
+    "y": 464,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "mint-ice-flower-1": {
+   "frame": {
+    "x": 392,
+    "y": 464,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "yellow-beach-stone": {
+   "frame": {
+    "x": 404,
+    "y": 464,
+    "w": 14,
+    "h": 9
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 9
+   },
+   "sourceSize": {
+    "w": 14,
+    "h": 9
+   }
+  },
+  "mossy-log": {
+   "frame": {
+    "x": 420,
+    "y": 464,
+    "w": 24,
+    "h": 9
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 24,
+    "h": 9
+   },
+   "sourceSize": {
+    "w": 24,
+    "h": 9
+   }
+  },
+  "light-blue-shroom-0": {
+   "frame": {
+    "x": 446,
+    "y": 464,
+    "w": 10,
+    "h": 10
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 10
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 10
+   }
+  },
+  "light-blue-shroom-1": {
+   "frame": {
+    "x": 458,
+    "y": 464,
+    "w": 10,
+    "h": 10
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 10
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 10
+   }
+  },
+  "round-dune-rock": {
+   "frame": {
+    "x": 470,
+    "y": 464,
+    "w": 16,
+    "h": 10
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 16,
+    "h": 10
+   },
+   "sourceSize": {
+    "w": 16,
+    "h": 10
+   }
+  },
+  "yellow-jungle-flower-0": {
+   "frame": {
+    "x": 488,
+    "y": 464,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "yellow-jungle-flower-1": {
+   "frame": {
+    "x": 500,
+    "y": 464,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "light-river-stone": {
+   "frame": {
+    "x": 2,
+    "y": 478,
+    "w": 14,
+    "h": 9
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 9
+   },
+   "sourceSize": {
+    "w": 14,
+    "h": 9
+   }
+  },
+  "deep-blue-ice-0": {
+   "frame": {
+    "x": 18,
+    "y": 478,
+    "w": 14,
+    "h": 9
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 9
+   },
+   "sourceSize": {
+    "w": 14,
+    "h": 9
+   }
+  },
+  "deep-blue-ice-1": {
+   "frame": {
+    "x": 34,
+    "y": 478,
+    "w": 14,
+    "h": 9
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 9
+   },
+   "sourceSize": {
+    "w": 14,
+    "h": 9
+   }
+  },
+  "light-beach-bark": {
+   "frame": {
+    "x": 50,
+    "y": 478,
+    "w": 16,
+    "h": 7
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 16,
+    "h": 7
+   },
+   "sourceSize": {
+    "w": 16,
+    "h": 7
+   }
+  },
+  "white-ash-flower-0": {
+   "frame": {
+    "x": 68,
+    "y": 478,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "white-ash-flower-1": {
+   "frame": {
+    "x": 80,
+    "y": 478,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "pink-dune-pebble": {
+   "frame": {
+    "x": 92,
+    "y": 478,
+    "w": 10,
+    "h": 7
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 7
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 7
+   }
+  },
+  "blue-swamp-flower-0": {
+   "frame": {
+    "x": 104,
+    "y": 478,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "blue-swamp-flower-1": {
+   "frame": {
+    "x": 116,
+    "y": 478,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "pale-green-stone": {
+   "frame": {
+    "x": 128,
+    "y": 478,
+    "w": 14,
+    "h": 9
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 9
+   },
+   "sourceSize": {
+    "w": 14,
+    "h": 9
+   }
+  },
+  "ash-log": {
+   "frame": {
+    "x": 144,
+    "y": 478,
+    "w": 24,
+    "h": 9
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 24,
+    "h": 9
+   },
+   "sourceSize": {
+    "w": 24,
+    "h": 9
+   }
+  },
+  "light-purple-flower-0": {
+   "frame": {
+    "x": 170,
+    "y": 478,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "light-purple-flower-1": {
+   "frame": {
+    "x": 182,
+    "y": 478,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "orange-swamp-flower-0": {
+   "frame": {
+    "x": 194,
+    "y": 478,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "orange-swamp-flower-1": {
+   "frame": {
+    "x": 206,
+    "y": 478,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "dark-dune-stone": {
+   "frame": {
+    "x": 218,
+    "y": 478,
+    "w": 14,
+    "h": 9
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 9
+   },
+   "sourceSize": {
+    "w": 14,
+    "h": 9
+   }
+  },
+  "flowered-snow": {
+   "frame": {
+    "x": 234,
+    "y": 478,
+    "w": 16,
+    "h": 9
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 16,
+    "h": 9
+   },
+   "sourceSize": {
+    "w": 16,
+    "h": 9
+   }
+  },
+  "ash-bark": {
+   "frame": {
+    "x": 252,
+    "y": 478,
+    "w": 14,
+    "h": 8
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 8
+   },
+   "sourceSize": {
+    "w": 14,
+    "h": 8
+   }
+  },
+  "rose-beach-stone": {
+   "frame": {
+    "x": 268,
+    "y": 478,
+    "w": 14,
+    "h": 9
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 9
+   },
+   "sourceSize": {
+    "w": 14,
+    "h": 9
+   }
+  },
+  "peach-forest-flower-0": {
+   "frame": {
+    "x": 284,
+    "y": 478,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "peach-forest-flower-1": {
+   "frame": {
+    "x": 296,
+    "y": 478,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "white-beach-pebble": {
+   "frame": {
+    "x": 308,
+    "y": 478,
+    "w": 10,
+    "h": 7
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 7
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 7
+   }
+  },
+  "pale-blue-ice": {
+   "frame": {
+    "x": 320,
+    "y": 478,
+    "w": 16,
+    "h": 8
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 16,
+    "h": 8
+   },
+   "sourceSize": {
+    "w": 16,
+    "h": 8
+   }
+  },
+  "forest-gravel": {
+   "frame": {
+    "x": 338,
+    "y": 478,
+    "w": 18,
+    "h": 8
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 18,
+    "h": 8
+   },
+   "sourceSize": {
+    "w": 18,
+    "h": 8
+   }
+  },
+  "red-dune-flower-0": {
+   "frame": {
+    "x": 358,
+    "y": 478,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "red-dune-flower-1": {
+   "frame": {
+    "x": 370,
+    "y": 478,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "pink-sea-bush-0": {
+   "frame": {
+    "x": 382,
+    "y": 478,
+    "w": 16,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 16,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 16,
+    "h": 12
+   }
+  },
+  "pink-sea-bush-1": {
+   "frame": {
+    "x": 400,
+    "y": 478,
+    "w": 16,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 16,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 16,
+    "h": 12
+   }
+  },
+  "gray-snow-rock": {
+   "frame": {
+    "x": 418,
+    "y": 478,
+    "w": 14,
+    "h": 9
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 9
+   },
+   "sourceSize": {
+    "w": 14,
+    "h": 9
+   }
+  },
+  "long-beach-log": {
+   "frame": {
+    "x": 434,
+    "y": 478,
+    "w": 30,
+    "h": 9
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 30,
+    "h": 9
+   },
+   "sourceSize": {
+    "w": 30,
+    "h": 9
+   }
+  },
+  "teal-swamp-flower-0": {
+   "frame": {
+    "x": 466,
+    "y": 478,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "teal-swamp-flower-1": {
+   "frame": {
+    "x": 478,
+    "y": 478,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "red-ash-rock": {
+   "frame": {
+    "x": 490,
+    "y": 478,
+    "w": 16,
+    "h": 10
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 16,
+    "h": 10
+   },
+   "sourceSize": {
+    "w": 16,
+    "h": 10
+   }
+  },
+  "pink-jungle-flower-0": {
+   "frame": {
+    "x": 2,
+    "y": 492,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "pink-jungle-flower-1": {
+   "frame": {
+    "x": 14,
+    "y": 492,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "gold-dune-pebble": {
+   "frame": {
+    "x": 26,
+    "y": 492,
+    "w": 10,
+    "h": 7
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 7
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 7
+   }
+  },
+  "pebbled-snow": {
+   "frame": {
+    "x": 38,
+    "y": 492,
+    "w": 16,
+    "h": 9
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 16,
+    "h": 9
+   },
+   "sourceSize": {
+    "w": 16,
+    "h": 9
+   }
+  },
+  "colorful-beach-gravel": {
+   "frame": {
+    "x": 56,
+    "y": 492,
+    "w": 18,
+    "h": 8
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 18,
+    "h": 8
+   },
+   "sourceSize": {
+    "w": 18,
+    "h": 8
+   }
+  },
+  "orange-ash-flower-0": {
+   "frame": {
+    "x": 76,
+    "y": 492,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "orange-ash-flower-1": {
+   "frame": {
+    "x": 88,
+    "y": 492,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "gold-swamp-flower-0": {
+   "frame": {
+    "x": 100,
+    "y": 492,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "gold-swamp-flower-1": {
+   "frame": {
+    "x": 112,
+    "y": 492,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "lilac-beach-stone": {
+   "frame": {
+    "x": 124,
+    "y": 492,
+    "w": 14,
+    "h": 9
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 9
+   },
+   "sourceSize": {
+    "w": 14,
+    "h": 9
+   }
+  },
+  "pink-ice": {
+   "frame": {
+    "x": 140,
+    "y": 492,
+    "w": 14,
+    "h": 9
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 9
+   },
+   "sourceSize": {
+    "w": 14,
+    "h": 9
+   }
+  },
+  "forest-branch": {
+   "frame": {
+    "x": 156,
+    "y": 492,
+    "w": 18,
+    "h": 10
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 18,
+    "h": 10
+   },
+   "sourceSize": {
+    "w": 18,
+    "h": 10
+   }
+  },
+  "white-dune-flower-0": {
+   "frame": {
+    "x": 176,
+    "y": 492,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "white-dune-flower-1": {
+   "frame": {
+    "x": 188,
+    "y": 492,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "yellow-forest-bush-0": {
+   "frame": {
+    "x": 200,
+    "y": 492,
+    "w": 18,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 18,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 18,
+    "h": 12
+   }
+  },
+  "yellow-forest-bush-1": {
+   "frame": {
+    "x": 220,
+    "y": 492,
+    "w": 18,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 18,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 18,
+    "h": 12
+   }
+  },
+  "green-beach-pebble": {
+   "frame": {
+    "x": 240,
+    "y": 492,
+    "w": 10,
+    "h": 7
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 7
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 7
+   }
+  },
+  "shattered-ice": {
+   "frame": {
+    "x": 252,
+    "y": 492,
+    "w": 18,
+    "h": 9
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 18,
+    "h": 9
+   },
+   "sourceSize": {
+    "w": 18,
+    "h": 9
+   }
+  },
+  "orange-shroom-0": {
+   "frame": {
+    "x": 272,
+    "y": 492,
+    "w": 10,
+    "h": 10
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 10
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 10
+   }
+  },
+  "orange-shroom-1": {
+   "frame": {
+    "x": 284,
+    "y": 492,
+    "w": 10,
+    "h": 10
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 10
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 10
+   }
+  },
+  "dark-round-dune-rock": {
+   "frame": {
+    "x": 296,
+    "y": 492,
+    "w": 16,
+    "h": 10
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 16,
+    "h": 10
+   },
+   "sourceSize": {
+    "w": 16,
+    "h": 10
+   }
+  },
+  "blue-forest-flower-0": {
+   "frame": {
+    "x": 314,
+    "y": 492,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "blue-forest-flower-1": {
+   "frame": {
+    "x": 326,
+    "y": 492,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "snow-gravel": {
+   "frame": {
+    "x": 338,
+    "y": 492,
+    "w": 18,
+    "h": 8
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 18,
+    "h": 8
+   },
+   "sourceSize": {
+    "w": 18,
+    "h": 8
+   }
+  },
+  "big-shell": {
+   "frame": {
+    "x": 358,
+    "y": 492,
+    "w": 14,
+    "h": 10
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 10
+   },
+   "sourceSize": {
+    "w": 14,
+    "h": 10
+   }
+  },
+  "dry-ash-bush-0": {
+   "frame": {
+    "x": 374,
+    "y": 492,
+    "w": 16,
+    "h": 10
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 16,
+    "h": 10
+   },
+   "sourceSize": {
+    "w": 16,
+    "h": 10
+   }
+  },
+  "dry-ash-bush-1": {
+   "frame": {
+    "x": 392,
+    "y": 492,
+    "w": 16,
+    "h": 10
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 16,
+    "h": 10
+   },
+   "sourceSize": {
+    "w": 16,
+    "h": 10
+   }
+  },
+  "dark-jungle-pebble": {
+   "frame": {
+    "x": 410,
+    "y": 492,
+    "w": 10,
+    "h": 7
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 7
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 7
+   }
+  },
+  "magenta-dune-flower-0": {
+   "frame": {
+    "x": 422,
+    "y": 492,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "magenta-dune-flower-1": {
+   "frame": {
+    "x": 434,
+    "y": 492,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "blue-beach-pebble": {
+   "frame": {
+    "x": 446,
+    "y": 492,
+    "w": 10,
+    "h": 7
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 7
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 7
+   }
+  },
+  "blue-flowered-snow": {
+   "frame": {
+    "x": 458,
+    "y": 492,
+    "w": 16,
+    "h": 9
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 16,
+    "h": 9
+   },
+   "sourceSize": {
+    "w": 16,
+    "h": 9
+   }
+  },
+  "green-shroom-0": {
+   "frame": {
+    "x": 476,
+    "y": 492,
+    "w": 10,
+    "h": 10
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 10
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 10
+   }
+  },
+  "green-shroom-1": {
+   "frame": {
+    "x": 488,
+    "y": 492,
+    "w": 10,
+    "h": 10
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 10
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 10
+   }
+  },
+  "mossy-jungle-stone": {
+   "frame": {
+    "x": 2,
+    "y": 506,
+    "w": 14,
+    "h": 9
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 9
+   },
+   "sourceSize": {
+    "w": 14,
+    "h": 9
+   }
+  },
+  "teal-forest-flower-0": {
+   "frame": {
+    "x": 18,
+    "y": 506,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "teal-forest-flower-1": {
+   "frame": {
+    "x": 30,
+    "y": 506,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "gray-dune-pebble": {
+   "frame": {
+    "x": 42,
+    "y": 506,
+    "w": 10,
+    "h": 7
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 7
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 7
+   }
+  },
+  "lilac-ice": {
+   "frame": {
+    "x": 54,
+    "y": 506,
+    "w": 14,
+    "h": 9
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 9
+   },
+   "sourceSize": {
+    "w": 14,
+    "h": 9
+   }
+  },
+  "dark-beach-log": {
+   "frame": {
+    "x": 70,
+    "y": 506,
+    "w": 26,
+    "h": 10
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 26,
+    "h": 10
+   },
+   "sourceSize": {
+    "w": 26,
+    "h": 10
+   }
+  },
+  "pink-ash-flower-0": {
+   "frame": {
+    "x": 98,
+    "y": 506,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "pink-ash-flower-1": {
+   "frame": {
+    "x": 110,
+    "y": 506,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "dark-purple-swamp-flower-0": {
+   "frame": {
+    "x": 122,
+    "y": 506,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "dark-purple-swamp-flower-1": {
+   "frame": {
+    "x": 134,
+    "y": 506,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "dark-green-beach-stone": {
+   "frame": {
+    "x": 146,
+    "y": 506,
+    "w": 14,
+    "h": 9
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 9
+   },
+   "sourceSize": {
+    "w": 14,
+    "h": 9
+   }
+  },
+  "dark-pebbled-snow": {
+   "frame": {
+    "x": 162,
+    "y": 506,
+    "w": 16,
+    "h": 9
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 16,
+    "h": 9
+   },
+   "sourceSize": {
+    "w": 16,
+    "h": 9
+   }
+  },
+  "pink-shroom-0": {
+   "frame": {
+    "x": 180,
+    "y": 506,
+    "w": 10,
+    "h": 10
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 10
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 10
+   }
+  },
+  "pink-shroom-1": {
+   "frame": {
+    "x": 192,
+    "y": 506,
+    "w": 10,
+    "h": 10
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 10
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 10
+   }
+  },
+  "dry-dune-bush-0": {
+   "frame": {
+    "x": 204,
+    "y": 506,
+    "w": 16,
+    "h": 10
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 16,
+    "h": 10
+   },
+   "sourceSize": {
+    "w": 16,
+    "h": 10
+   }
+  },
+  "dry-dune-bush-1": {
+   "frame": {
+    "x": 222,
+    "y": 506,
+    "w": 16,
+    "h": 10
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 16,
+    "h": 10
+   },
+   "sourceSize": {
+    "w": 16,
+    "h": 10
+   }
+  },
+  "coral-beach-flower-0": {
+   "frame": {
+    "x": 240,
+    "y": 506,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "coral-beach-flower-1": {
+   "frame": {
+    "x": 252,
+    "y": 506,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "lavender-dune-stone": {
+   "frame": {
+    "x": 264,
+    "y": 506,
+    "w": 14,
+    "h": 9
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 9
+   },
+   "sourceSize": {
+    "w": 14,
+    "h": 9
+   }
+  },
+  "pink-flowered-snow": {
+   "frame": {
+    "x": 280,
+    "y": 506,
+    "w": 16,
+    "h": 9
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 16,
+    "h": 9
+   },
+   "sourceSize": {
+    "w": 16,
+    "h": 9
+   }
+  },
+  "navy-shroom-0": {
+   "frame": {
+    "x": 298,
+    "y": 506,
+    "w": 10,
+    "h": 10
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 10
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 10
+   }
+  },
+  "navy-shroom-1": {
+   "frame": {
+    "x": 310,
+    "y": 506,
+    "w": 10,
+    "h": 10
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 10
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 10
+   }
+  },
+  "flowered-ash-bush-0": {
+   "frame": {
+    "x": 322,
+    "y": 506,
+    "w": 18,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 18,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 18,
+    "h": 12
+   }
+  },
+  "flowered-ash-bush-1": {
+   "frame": {
+    "x": 342,
+    "y": 506,
+    "w": 18,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 18,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 18,
+    "h": 12
+   }
+  },
+  "coral-jungle-flower-0": {
+   "frame": {
+    "x": 362,
+    "y": 506,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "coral-jungle-flower-1": {
+   "frame": {
+    "x": 374,
+    "y": 506,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "gold-beach-pebble": {
+   "frame": {
+    "x": 386,
+    "y": 506,
+    "w": 10,
+    "h": 7
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 7
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 7
+   }
+  },
+  "teal-ice": {
+   "frame": {
+    "x": 398,
+    "y": 506,
+    "w": 14,
+    "h": 9
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 9
+   },
+   "sourceSize": {
+    "w": 14,
+    "h": 9
+   }
+  },
+  "lilac-dune-gravel": {
+   "frame": {
+    "x": 414,
+    "y": 506,
+    "w": 18,
+    "h": 8
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 18,
+    "h": 8
+   },
+   "sourceSize": {
+    "w": 18,
+    "h": 8
+   }
+  },
+  "yellow-ash-flower-0": {
+   "frame": {
+    "x": 434,
+    "y": 506,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "yellow-ash-flower-1": {
+   "frame": {
+    "x": 446,
+    "y": 506,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "coral-swamp-flower-0": {
+   "frame": {
+    "x": 458,
+    "y": 506,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "coral-swamp-flower-1": {
+   "frame": {
+    "x": 470,
+    "y": 506,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "teal-beach-stone": {
+   "frame": {
+    "x": 482,
+    "y": 506,
+    "w": 14,
+    "h": 9
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 9
+   },
+   "sourceSize": {
+    "w": 14,
+    "h": 9
+   }
+  },
+  "yellow-flowered-snow": {
+   "frame": {
+    "x": 2,
+    "y": 520,
+    "w": 16,
+    "h": 9
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 16,
+    "h": 9
+   },
+   "sourceSize": {
+    "w": 16,
+    "h": 9
+   }
+  },
+  "pale-dune-log": {
+   "frame": {
+    "x": 20,
+    "y": 520,
+    "w": 26,
+    "h": 10
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 26,
+    "h": 10
+   },
+   "sourceSize": {
+    "w": 26,
+    "h": 10
+   }
+  },
+  "hot-pink-flower-0": {
+   "frame": {
+    "x": 48,
+    "y": 520,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "hot-pink-flower-1": {
+   "frame": {
+    "x": 60,
+    "y": 520,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "coral-dune-flower-0": {
+   "frame": {
+    "x": 72,
+    "y": 520,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "coral-dune-flower-1": {
+   "frame": {
+    "x": 84,
+    "y": 520,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "coral-beach-stone": {
+   "frame": {
+    "x": 96,
+    "y": 520,
+    "w": 14,
+    "h": 9
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 9
+   },
+   "sourceSize": {
+    "w": 14,
+    "h": 9
+   }
+  },
+  "green-flowered-snow": {
+   "frame": {
+    "x": 112,
+    "y": 520,
+    "w": 16,
+    "h": 9
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 16,
+    "h": 9
+   },
+   "sourceSize": {
+    "w": 16,
+    "h": 9
+   }
+  },
+  "coral-shroom-0": {
+   "frame": {
+    "x": 130,
+    "y": 520,
+    "w": 10,
+    "h": 10
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 10
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 10
+   }
+  },
+  "coral-shroom-1": {
+   "frame": {
+    "x": 142,
+    "y": 520,
+    "w": 10,
+    "h": 10
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 10
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 10
+   }
+  },
+  "white-flowered-swamp-bush-0": {
+   "frame": {
+    "x": 154,
+    "y": 520,
+    "w": 18,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 18,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 18,
+    "h": 12
+   }
+  },
+  "white-flowered-swamp-bush-1": {
+   "frame": {
+    "x": 174,
+    "y": 520,
+    "w": 18,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 18,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 18,
+    "h": 12
+   }
+  },
+  "turquoise-forest-flower-0": {
+   "frame": {
+    "x": 194,
+    "y": 520,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "turquoise-forest-flower-1": {
+   "frame": {
+    "x": 206,
+    "y": 520,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "coral-beach-pebble": {
+   "frame": {
+    "x": 218,
+    "y": 520,
+    "w": 10,
+    "h": 7
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 7
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 7
+   }
+  },
+  "coral-ice": {
+   "frame": {
+    "x": 230,
+    "y": 520,
+    "w": 14,
+    "h": 9
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 9
+   },
+   "sourceSize": {
+    "w": 14,
+    "h": 9
+   }
+  },
+  "green-beach-gravel": {
+   "frame": {
+    "x": 246,
+    "y": 520,
+    "w": 18,
+    "h": 8
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 18,
+    "h": 8
+   },
+   "sourceSize": {
+    "w": 18,
+    "h": 8
+   }
+  },
+  "teal-ash-flower-0": {
+   "frame": {
+    "x": 266,
+    "y": 520,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "teal-ash-flower-1": {
+   "frame": {
+    "x": 278,
+    "y": 520,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "turquoise-swamp-flower-0": {
+   "frame": {
+    "x": 290,
+    "y": 520,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "turquoise-swamp-flower-1": {
+   "frame": {
+    "x": 302,
+    "y": 520,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "coral-dune-pebble": {
+   "frame": {
+    "x": 314,
+    "y": 520,
+    "w": 10,
+    "h": 7
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 7
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 7
+   }
+  },
+  "turquoise-ice": {
+   "frame": {
+    "x": 326,
+    "y": 520,
+    "w": 14,
+    "h": 9
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 9
+   },
+   "sourceSize": {
+    "w": 14,
+    "h": 9
+   }
+  },
+  "rotten-forest-log": {
+   "frame": {
+    "x": 342,
+    "y": 520,
+    "w": 26,
+    "h": 10
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 26,
+    "h": 10
+   },
+   "sourceSize": {
+    "w": 26,
+    "h": 10
+   }
+  },
+  "gold-jungle-flower-0": {
+   "frame": {
+    "x": 370,
+    "y": 520,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "gold-jungle-flower-1": {
+   "frame": {
+    "x": 382,
+    "y": 520,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "lilac-beach-flower-0": {
+   "frame": {
+    "x": 394,
+    "y": 520,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "lilac-beach-flower-1": {
+   "frame": {
+    "x": 406,
+    "y": 520,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "turquoise-dune-stone": {
+   "frame": {
+    "x": 418,
+    "y": 520,
+    "w": 14,
+    "h": 9
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 9
+   },
+   "sourceSize": {
+    "w": 14,
+    "h": 9
+   }
+  },
+  "turquoise-flowered-snow": {
+   "frame": {
+    "x": 434,
+    "y": 520,
+    "w": 16,
+    "h": 9
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 16,
+    "h": 9
+   },
+   "sourceSize": {
+    "w": 16,
+    "h": 9
+   }
+  },
+  "violet-shroom-0": {
+   "frame": {
+    "x": 452,
+    "y": 520,
+    "w": 10,
+    "h": 10
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 10
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 10
+   }
+  },
+  "violet-shroom-1": {
+   "frame": {
+    "x": 464,
+    "y": 520,
+    "w": 10,
+    "h": 10
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 10
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 10
+   }
+  },
+  "coral-ash-flower-0": {
+   "frame": {
+    "x": 476,
+    "y": 520,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "coral-ash-flower-1": {
+   "frame": {
+    "x": 488,
+    "y": 520,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "lilac-swamp-flower-0": {
+   "frame": {
+    "x": 500,
+    "y": 520,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "lilac-swamp-flower-1": {
+   "frame": {
+    "x": 2,
+    "y": 534,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "turquoise-beach-pebble": {
+   "frame": {
+    "x": 14,
+    "y": 534,
+    "w": 10,
+    "h": 7
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 7
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 7
+   }
+  },
+  "dark-lilac-ice": {
+   "frame": {
+    "x": 26,
+    "y": 534,
+    "w": 14,
+    "h": 9
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 9
+   },
+   "sourceSize": {
+    "w": 14,
+    "h": 9
+   }
+  },
+  "pale-ash-log": {
+   "frame": {
+    "x": 42,
+    "y": 534,
+    "w": 26,
+    "h": 10
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 26,
+    "h": 10
+   },
+   "sourceSize": {
+    "w": 26,
+    "h": 10
+   }
+  },
+  "turquoise-jungle-flower-0": {
+   "frame": {
+    "x": 70,
+    "y": 534,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "turquoise-jungle-flower-1": {
+   "frame": {
+    "x": 82,
+    "y": 534,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "turquoise-dune-flower-0": {
+   "frame": {
+    "x": 94,
+    "y": 534,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "turquoise-dune-flower-1": {
+   "frame": {
+    "x": 106,
+    "y": 534,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "dark-lilac-beach-stone": {
+   "frame": {
+    "x": 118,
+    "y": 534,
+    "w": 14,
+    "h": 9
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 9
+   },
+   "sourceSize": {
+    "w": 14,
+    "h": 9
+   }
+  },
+  "lilac-flowered-snow": {
+   "frame": {
+    "x": 134,
+    "y": 534,
+    "w": 16,
+    "h": 9
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 16,
+    "h": 9
+   },
+   "sourceSize": {
+    "w": 16,
+    "h": 9
+   }
+  },
+  "turquoise-shroom-0": {
+   "frame": {
+    "x": 152,
+    "y": 534,
+    "w": 10,
+    "h": 10
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 10
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 10
+   }
+  },
+  "turquoise-shroom-1": {
+   "frame": {
+    "x": 164,
+    "y": 534,
+    "w": 10,
+    "h": 10
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 10
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 10
+   }
+  },
+  "lilac-forest-flower-0": {
+   "frame": {
+    "x": 176,
+    "y": 534,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "lilac-forest-flower-1": {
+   "frame": {
+    "x": 188,
+    "y": 534,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "green-beach-flower-0": {
+   "frame": {
+    "x": 200,
+    "y": 534,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "green-beach-flower-1": {
+   "frame": {
+    "x": 212,
+    "y": 534,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "lilac-dune-stone": {
+   "frame": {
+    "x": 224,
+    "y": 534,
+    "w": 14,
+    "h": 9
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 9
+   },
+   "sourceSize": {
+    "w": 14,
+    "h": 9
+   }
+  },
+  "pale-teal-ice": {
+   "frame": {
+    "x": 240,
+    "y": 534,
+    "w": 14,
+    "h": 9
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 9
+   },
+   "sourceSize": {
+    "w": 14,
+    "h": 9
+   }
+  },
+  "lilac-shroom-0": {
+   "frame": {
+    "x": 256,
+    "y": 534,
+    "w": 10,
+    "h": 10
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 10
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 10
+   }
+  },
+  "lilac-shroom-1": {
+   "frame": {
+    "x": 268,
+    "y": 534,
+    "w": 10,
+    "h": 10
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 10
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 10
+   }
+  },
+  "green-ash-flower-0": {
+   "frame": {
+    "x": 280,
+    "y": 534,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "green-ash-flower-1": {
+   "frame": {
+    "x": 292,
+    "y": 534,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "light-coral-dune-flower-0": {
+   "frame": {
+    "x": 304,
+    "y": 534,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "light-coral-dune-flower-1": {
+   "frame": {
+    "x": 316,
+    "y": 534,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "light-green-beach-stone": {
+   "frame": {
+    "x": 328,
+    "y": 534,
+    "w": 14,
+    "h": 9
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 9
+   },
+   "sourceSize": {
+    "w": 14,
+    "h": 9
+   }
+  },
+  "coral-flowered-snow": {
+   "frame": {
+    "x": 344,
+    "y": 534,
+    "w": 16,
+    "h": 9
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 16,
+    "h": 9
+   },
+   "sourceSize": {
+    "w": 16,
+    "h": 9
+   }
+  },
+  "teal-swamp-shroom-0": {
+   "frame": {
+    "x": 362,
+    "y": 534,
+    "w": 10,
+    "h": 10
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 10
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 10
+   }
+  },
+  "teal-swamp-shroom-1": {
+   "frame": {
+    "x": 374,
+    "y": 534,
+    "w": 10,
+    "h": 10
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 10
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 10
+   }
+  },
+  "flowered-dune-bush-0": {
+   "frame": {
+    "x": 386,
+    "y": 534,
+    "w": 18,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 18,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 18,
+    "h": 12
+   }
+  },
+  "flowered-dune-bush-1": {
+   "frame": {
+    "x": 406,
+    "y": 534,
+    "w": 18,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 18,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 18,
+    "h": 12
+   }
+  },
+  "green-swamp-flower-0": {
+   "frame": {
+    "x": 426,
+    "y": 534,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "green-swamp-flower-1": {
+   "frame": {
+    "x": 438,
+    "y": 534,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "light-lilac-beach-pebble": {
+   "frame": {
+    "x": 450,
+    "y": 534,
+    "w": 10,
+    "h": 7
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 7
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 7
+   }
+  },
+  "green-ice": {
+   "frame": {
+    "x": 462,
+    "y": 534,
+    "w": 14,
+    "h": 9
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 9
+   },
+   "sourceSize": {
+    "w": 14,
+    "h": 9
+   }
+  },
+  "muddy-swamp-log": {
+   "frame": {
+    "x": 478,
+    "y": 534,
+    "w": 26,
+    "h": 10
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 26,
+    "h": 10
+   },
+   "sourceSize": {
+    "w": 26,
+    "h": 10
+   }
+  },
+  "light-green-forest-flower-0": {
+   "frame": {
+    "x": 2,
+    "y": 548,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "light-green-forest-flower-1": {
+   "frame": {
+    "x": 14,
+    "y": 548,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "sea-green-dune-flower-0": {
+   "frame": {
+    "x": 26,
+    "y": 548,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "sea-green-dune-flower-1": {
+   "frame": {
+    "x": 38,
+    "y": 548,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "sea-green-beach-stone": {
+   "frame": {
+    "x": 50,
+    "y": 548,
+    "w": 14,
+    "h": 9
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 9
+   },
+   "sourceSize": {
+    "w": 14,
+    "h": 9
+   }
+  },
+  "dark-teal-ice": {
+   "frame": {
+    "x": 66,
+    "y": 548,
+    "w": 14,
+    "h": 9
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 9
+   },
+   "sourceSize": {
+    "w": 14,
+    "h": 9
+   }
+  },
+  "light-green-shroom-0": {
+   "frame": {
+    "x": 82,
+    "y": 548,
+    "w": 10,
+    "h": 10
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 10
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 10
+   }
+  },
+  "light-green-shroom-1": {
+   "frame": {
+    "x": 94,
+    "y": 548,
+    "w": 10,
+    "h": 10
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 10
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 10
+   }
+  },
+  "sea-green-ash-flower-0": {
+   "frame": {
+    "x": 106,
+    "y": 548,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "sea-green-ash-flower-1": {
+   "frame": {
+    "x": 118,
+    "y": 548,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "sea-green-beach-flower-0": {
+   "frame": {
+    "x": 130,
+    "y": 548,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "sea-green-beach-flower-1": {
+   "frame": {
+    "x": 142,
+    "y": 548,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "green-dune-stone": {
+   "frame": {
+    "x": 154,
+    "y": 548,
+    "w": 14,
+    "h": 9
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 9
+   },
+   "sourceSize": {
+    "w": 14,
+    "h": 9
+   }
+  },
+  "sea-green-flowered-snow": {
+   "frame": {
+    "x": 170,
+    "y": 548,
+    "w": 16,
+    "h": 9
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 16,
+    "h": 9
+   },
+   "sourceSize": {
+    "w": 16,
+    "h": 9
+   }
+  },
+  "sea-green-swamp-shroom-0": {
+   "frame": {
+    "x": 188,
+    "y": 548,
+    "w": 10,
+    "h": 10
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 10
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 10
+   }
+  },
+  "sea-green-swamp-shroom-1": {
+   "frame": {
+    "x": 200,
+    "y": 548,
+    "w": 10,
+    "h": 10
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 10
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 10
+   }
+  },
+  "sea-green-jungle-flower-0": {
+   "frame": {
+    "x": 212,
+    "y": 548,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "sea-green-jungle-flower-1": {
+   "frame": {
+    "x": 224,
+    "y": 548,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "sea-green-swamp-flower-0": {
+   "frame": {
+    "x": 236,
+    "y": 548,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "sea-green-swamp-flower-1": {
+   "frame": {
+    "x": 248,
+    "y": 548,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "light-green-beach-pebble": {
+   "frame": {
+    "x": 260,
+    "y": 548,
+    "w": 10,
+    "h": 7
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 7
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 7
+   }
+  },
+  "light-green-ice": {
+   "frame": {
+    "x": 272,
+    "y": 548,
+    "w": 14,
+    "h": 9
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 9
+   },
+   "sourceSize": {
+    "w": 14,
+    "h": 9
+   }
+  },
+  "muddy-beach-log": {
+   "frame": {
+    "x": 288,
+    "y": 548,
+    "w": 26,
+    "h": 10
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 26,
+    "h": 10
+   },
+   "sourceSize": {
+    "w": 26,
+    "h": 10
+   }
+  },
+  "light-green-ash-flower-0": {
+   "frame": {
+    "x": 316,
+    "y": 548,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "light-green-ash-flower-1": {
+   "frame": {
+    "x": 328,
+    "y": 548,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "light-green-dune-flower-0": {
+   "frame": {
+    "x": 340,
+    "y": 548,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "light-green-dune-flower-1": {
+   "frame": {
+    "x": 352,
+    "y": 548,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "dark-sea-green-beach-stone": {
+   "frame": {
+    "x": 364,
+    "y": 548,
+    "w": 14,
+    "h": 9
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 9
+   },
+   "sourceSize": {
+    "w": 14,
+    "h": 9
+   }
+  },
+  "light-green-flowered-snow": {
+   "frame": {
+    "x": 380,
+    "y": 548,
+    "w": 16,
+    "h": 9
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 16,
+    "h": 9
+   },
+   "sourceSize": {
+    "w": 16,
+    "h": 9
+   }
+  },
+  "dark-sea-green-swamp-shroom-0": {
+   "frame": {
+    "x": 398,
+    "y": 548,
+    "w": 10,
+    "h": 10
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 10
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 10
+   }
+  },
+  "dark-sea-green-swamp-shroom-1": {
+   "frame": {
+    "x": 410,
+    "y": 548,
+    "w": 10,
+    "h": 10
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 10
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 10
+   }
+  },
+  "light-green-jungle-flower-0": {
+   "frame": {
+    "x": 422,
+    "y": 548,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "light-green-jungle-flower-1": {
+   "frame": {
+    "x": 434,
+    "y": 548,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "light-green-beach-flower-0": {
+   "frame": {
+    "x": 446,
+    "y": 548,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "light-green-beach-flower-1": {
+   "frame": {
+    "x": 458,
+    "y": 548,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "sea-green-dune-stone": {
+   "frame": {
+    "x": 470,
+    "y": 548,
+    "w": 14,
+    "h": 9
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 9
+   },
+   "sourceSize": {
+    "w": 14,
+    "h": 9
+   }
+  },
+  "pale-green-ice": {
+   "frame": {
+    "x": 486,
+    "y": 548,
+    "w": 14,
+    "h": 9
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 9
+   },
+   "sourceSize": {
+    "w": 14,
+    "h": 9
+   }
+  },
+  "light-green-swamp-shroom-0": {
+   "frame": {
+    "x": 2,
+    "y": 562,
+    "w": 10,
+    "h": 10
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 10
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 10
+   }
+  },
+  "light-green-swamp-shroom-1": {
+   "frame": {
+    "x": 14,
+    "y": 562,
+    "w": 10,
+    "h": 10
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 10
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 10
+   }
+  },
+  "light-sea-green-ash-flower-0": {
+   "frame": {
+    "x": 26,
+    "y": 562,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "light-sea-green-ash-flower-1": {
+   "frame": {
+    "x": 38,
+    "y": 562,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "light-green-swamp-flower-0": {
+   "frame": {
+    "x": 50,
+    "y": 562,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "light-green-swamp-flower-1": {
+   "frame": {
+    "x": 62,
+    "y": 562,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "light-sea-green-beach-pebble": {
+   "frame": {
+    "x": 74,
+    "y": 562,
+    "w": 10,
+    "h": 7
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 7
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 7
+   }
+  },
+  "light-sea-green-ice": {
+   "frame": {
+    "x": 86,
+    "y": 562,
+    "w": 14,
+    "h": 9
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 9
+   },
+   "sourceSize": {
+    "w": 14,
+    "h": 9
+   }
+  },
+  "mossy-jungle-log": {
+   "frame": {
+    "x": 102,
+    "y": 562,
+    "w": 26,
+    "h": 10
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 26,
+    "h": 10
+   },
+   "sourceSize": {
+    "w": 26,
+    "h": 10
+   }
+  },
+  "pale-green-ash-flower-0": {
+   "frame": {
+    "x": 130,
+    "y": 562,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "pale-green-ash-flower-1": {
+   "frame": {
+    "x": 142,
+    "y": 562,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "pale-green-beach-flower-0": {
+   "frame": {
+    "x": 154,
+    "y": 562,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "pale-green-beach-flower-1": {
+   "frame": {
+    "x": 166,
+    "y": 562,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "light-green-dune-stone": {
+   "frame": {
+    "x": 178,
+    "y": 562,
+    "w": 14,
+    "h": 9
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 9
+   },
+   "sourceSize": {
+    "w": 14,
+    "h": 9
+   }
+  },
+  "pale-green-flowered-snow": {
+   "frame": {
+    "x": 194,
+    "y": 562,
+    "w": 16,
+    "h": 9
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 16,
+    "h": 9
+   },
+   "sourceSize": {
+    "w": 16,
+    "h": 9
+   }
+  },
+  "light-sea-green-swamp-shroom-0": {
+   "frame": {
+    "x": 212,
+    "y": 562,
+    "w": 10,
+    "h": 10
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 10
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 10
+   }
+  },
+  "light-sea-green-swamp-shroom-1": {
+   "frame": {
+    "x": 224,
+    "y": 562,
+    "w": 10,
+    "h": 10
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 10
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 10
+   }
+  },
+  "pale-green-jungle-flower-0": {
+   "frame": {
+    "x": 236,
+    "y": 562,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "pale-green-jungle-flower-1": {
+   "frame": {
+    "x": 248,
+    "y": 562,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "pale-green-dune-flower-0": {
+   "frame": {
+    "x": 260,
+    "y": 562,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "pale-green-dune-flower-1": {
+   "frame": {
+    "x": 272,
+    "y": 562,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "pale-green-beach-stone": {
+   "frame": {
+    "x": 284,
+    "y": 562,
+    "w": 14,
+    "h": 9
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 9
+   },
+   "sourceSize": {
+    "w": 14,
+    "h": 9
+   }
+  },
+  "pale-green-ice-2": {
+   "frame": {
+    "x": 300,
+    "y": 562,
+    "w": 14,
+    "h": 9
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 9
+   },
+   "sourceSize": {
+    "w": 14,
+    "h": 9
+   }
+  },
+  "pale-swamp-log": {
+   "frame": {
+    "x": 316,
+    "y": 562,
+    "w": 26,
+    "h": 10
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 26,
+    "h": 10
+   },
+   "sourceSize": {
+    "w": 26,
+    "h": 10
+   }
+  },
+  "pale-green-forest-flower-0": {
+   "frame": {
+    "x": 344,
+    "y": 562,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "pale-green-forest-flower-1": {
+   "frame": {
+    "x": 356,
+    "y": 562,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "pale-lilac-swamp-flower-0": {
+   "frame": {
+    "x": 368,
+    "y": 562,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "pale-lilac-swamp-flower-1": {
+   "frame": {
+    "x": 380,
+    "y": 562,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "pale-lilac-beach-pebble": {
+   "frame": {
+    "x": 392,
+    "y": 562,
+    "w": 10,
+    "h": 7
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 7
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 7
+   }
+  },
+  "pale-lilac-ice": {
+   "frame": {
+    "x": 404,
+    "y": 562,
+    "w": 14,
+    "h": 9
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 9
+   },
+   "sourceSize": {
+    "w": 14,
+    "h": 9
+   }
+  },
+  "lilac-dune-log": {
+   "frame": {
+    "x": 420,
+    "y": 562,
+    "w": 26,
+    "h": 10
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 26,
+    "h": 10
+   },
+   "sourceSize": {
+    "w": 26,
+    "h": 10
+   }
+  },
+  "pale-lilac-forest-flower-0": {
+   "frame": {
+    "x": 448,
+    "y": 562,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "pale-lilac-forest-flower-1": {
+   "frame": {
+    "x": 460,
+    "y": 562,
+    "w": 10,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 10,
+    "h": 12
+   }
+  },
+  "shipwreck": {
+   "frame": {
+    "x": 2,
+    "y": 576,
     "w": 116,
     "h": 70
    },
@@ -602,8 +9662,8 @@
   },
   "sea-rock": {
    "frame": {
-    "x": 150,
-    "y": 328,
+    "x": 120,
+    "y": 576,
     "w": 44,
     "h": 32
    },
@@ -622,8 +9682,8 @@
   },
   "charred-tree": {
    "frame": {
-    "x": 196,
-    "y": 328,
+    "x": 166,
+    "y": 576,
     "w": 60,
     "h": 84
    },
@@ -642,8 +9702,8 @@
   },
   "obsidian": {
    "frame": {
-    "x": 258,
-    "y": 328,
+    "x": 228,
+    "y": 576,
     "w": 44,
     "h": 48
    },
@@ -662,8 +9722,8 @@
   },
   "lava-vent": {
    "frame": {
-    "x": 304,
-    "y": 328,
+    "x": 274,
+    "y": 576,
     "w": 40,
     "h": 30
    },
@@ -682,8 +9742,8 @@
   },
   "fire-crystal": {
    "frame": {
-    "x": 346,
-    "y": 328,
+    "x": 316,
+    "y": 576,
     "w": 34,
     "h": 40
    },
@@ -702,8 +9762,8 @@
   },
   "ash-bush": {
    "frame": {
-    "x": 382,
-    "y": 328,
+    "x": 352,
+    "y": 576,
     "w": 30,
     "h": 22
    },
@@ -722,8 +9782,8 @@
   },
   "cave-earth": {
    "frame": {
-    "x": 2,
-    "y": 414,
+    "x": 384,
+    "y": 576,
     "w": 104,
     "h": 80
    },
@@ -742,8 +9802,8 @@
   },
   "cave-swamp": {
    "frame": {
-    "x": 108,
-    "y": 414,
+    "x": 2,
+    "y": 662,
     "w": 104,
     "h": 80
    },
@@ -762,8 +9822,8 @@
   },
   "cave-ice": {
    "frame": {
-    "x": 214,
-    "y": 414,
+    "x": 108,
+    "y": 662,
     "w": 104,
     "h": 80
    },
@@ -782,8 +9842,8 @@
   },
   "cave-tomb": {
    "frame": {
-    "x": 320,
-    "y": 414,
+    "x": 214,
+    "y": 662,
     "w": 104,
     "h": 80
    },
@@ -802,8 +9862,8 @@
   },
   "cave-sea": {
    "frame": {
-    "x": 2,
-    "y": 496,
+    "x": 320,
+    "y": 662,
     "w": 104,
     "h": 80
    },
@@ -822,8 +9882,8 @@
   },
   "cave-fire": {
    "frame": {
-    "x": 108,
-    "y": 496,
+    "x": 2,
+    "y": 744,
     "w": 104,
     "h": 80
    },
@@ -842,8 +9902,8 @@
   },
   "stalagmite-earth": {
    "frame": {
-    "x": 214,
-    "y": 496,
+    "x": 108,
+    "y": 744,
     "w": 26,
     "h": 42
    },
@@ -862,8 +9922,8 @@
   },
   "stalagmite-swamp": {
    "frame": {
-    "x": 242,
-    "y": 496,
+    "x": 136,
+    "y": 744,
     "w": 26,
     "h": 42
    },
@@ -882,8 +9942,8 @@
   },
   "stalagmite-ice": {
    "frame": {
-    "x": 270,
-    "y": 496,
+    "x": 164,
+    "y": 744,
     "w": 26,
     "h": 42
    },
@@ -902,8 +9962,8 @@
   },
   "stalagmite-tomb": {
    "frame": {
-    "x": 298,
-    "y": 496,
+    "x": 192,
+    "y": 744,
     "w": 26,
     "h": 42
    },
@@ -922,8 +9982,8 @@
   },
   "stalagmite-sea": {
    "frame": {
-    "x": 326,
-    "y": 496,
+    "x": 220,
+    "y": 744,
     "w": 26,
     "h": 42
    },
@@ -942,8 +10002,8 @@
   },
   "stalagmite-fire": {
    "frame": {
-    "x": 354,
-    "y": 496,
+    "x": 248,
+    "y": 744,
     "w": 26,
     "h": 42
    },
@@ -962,8 +10022,8 @@
   },
   "stairs-down": {
    "frame": {
-    "x": 382,
-    "y": 496,
+    "x": 276,
+    "y": 744,
     "w": 48,
     "h": 48
    },
@@ -982,8 +10042,8 @@
   },
   "stairs-up": {
    "frame": {
-    "x": 432,
-    "y": 496,
+    "x": 326,
+    "y": 744,
     "w": 48,
     "h": 48
    },
@@ -1002,8 +10062,8 @@
   },
   "pier": {
    "frame": {
-    "x": 2,
-    "y": 578,
+    "x": 376,
+    "y": 744,
     "w": 48,
     "h": 48
    },
@@ -1022,8 +10082,8 @@
   },
   "boat": {
    "frame": {
-    "x": 52,
-    "y": 578,
+    "x": 2,
+    "y": 826,
     "w": 100,
     "h": 56
    },
@@ -1042,8 +10102,8 @@
   },
   "signpost": {
    "frame": {
-    "x": 154,
-    "y": 578,
+    "x": 104,
+    "y": 826,
     "w": 30,
     "h": 36
    },
@@ -1060,10 +10120,30 @@
     "h": 36
    }
   },
+  "village-house": {
+   "frame": {
+    "x": 136,
+    "y": 826,
+    "w": 48,
+    "h": 42
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 48,
+    "h": 42
+   },
+   "sourceSize": {
+    "w": 48,
+    "h": 42
+   }
+  },
   "boss-chest": {
    "frame": {
     "x": 186,
-    "y": 578,
+    "y": 826,
     "w": 42,
     "h": 34
    },
@@ -1083,7 +10163,7 @@
   "bones": {
    "frame": {
     "x": 230,
-    "y": 578,
+    "y": 826,
     "w": 30,
     "h": 18
    },
@@ -1103,7 +10183,7 @@
   "node-iron": {
    "frame": {
     "x": 262,
-    "y": 578,
+    "y": 826,
     "w": 34,
     "h": 28
    },
@@ -1123,7 +10203,7 @@
   "node-coal": {
    "frame": {
     "x": 298,
-    "y": 578,
+    "y": 826,
     "w": 34,
     "h": 28
    },
@@ -1143,7 +10223,7 @@
   "node-gold": {
    "frame": {
     "x": 334,
-    "y": 578,
+    "y": 826,
     "w": 34,
     "h": 28
    },
@@ -1163,7 +10243,7 @@
   "node-crystal": {
    "frame": {
     "x": 370,
-    "y": 578,
+    "y": 826,
     "w": 34,
     "h": 28
    },
@@ -1183,7 +10263,7 @@
   "node-magmaCore": {
    "frame": {
     "x": 406,
-    "y": 578,
+    "y": 826,
     "w": 34,
     "h": 28
    },
@@ -1203,7 +10283,7 @@
   "node-food": {
    "frame": {
     "x": 442,
-    "y": 578,
+    "y": 826,
     "w": 30,
     "h": 22
    },
@@ -1223,7 +10303,7 @@
   "lily-0": {
    "frame": {
     "x": 474,
-    "y": 578,
+    "y": 826,
     "w": 30,
     "h": 20
    },
@@ -1243,7 +10323,7 @@
   "lily-1": {
    "frame": {
     "x": 2,
-    "y": 636,
+    "y": 884,
     "w": 30,
     "h": 20
    },
@@ -1263,7 +10343,7 @@
   "cave-crystal": {
    "frame": {
     "x": 34,
-    "y": 636,
+    "y": 884,
     "w": 34,
     "h": 34
    },
@@ -1288,7 +10368,7 @@
   "format": "RGBA8888",
   "size": {
    "w": 512,
-   "h": 672
+   "h": 920
   },
   "scale": "1"
  }

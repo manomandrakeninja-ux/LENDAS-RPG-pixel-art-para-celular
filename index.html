@@ -126,6 +126,7 @@
       <div class="splash__bottom">
         <div class="splash__bar"><div id="splash-fill" class="splash__fill"></div></div>
         <p id="splash-status" class="splash__status">CARREGANDO...</p>
+        <p id="splash-tip" class="splash__tip"></p>
         <p id="splash-version" class="splash__version">v.1.10.25</p>
       </div>
     </section>
@@ -213,6 +214,11 @@
           <div>
             <h2 id="backpack-title" class="backpack-panel__title">Mochila</h2>
             <p id="backpack-summary" class="backpack-panel__summary"></p>
+            <div id="backpack-filters" class="backpack-filters" role="group" aria-label="Filtrar itens">
+              <button type="button" data-filter="all" class="is-active">TODOS</button>
+              <button type="button" data-filter="usable">USÁVEIS</button>
+              <button type="button" data-filter="material">MATERIAIS</button>
+            </div>
           </div>
           <button id="backpack-close" class="panel-close" type="button" aria-label="Fechar mochila">✕</button>
         </header>
@@ -240,6 +246,15 @@
       </div>
       <button id="store-all-action" class="store-all-action" type="button" hidden>GUARDAR TUDO</button>
       <button id="world-action" class="world-action" type="button">ATACAR</button>
+      <div id="photo-coords" class="photo-coords" hidden></div>
+      <div id="low-hp-vignette" class="low-hp-vignette" hidden></div>
+      <section id="help-overlay" class="help-overlay" role="dialog" aria-modal="true" aria-labelledby="help-title" hidden>
+        <div class="help-overlay__card">
+          <h2 id="help-title">AJUDA — TECLAS</h2>
+          <div id="help-keys" class="help-overlay__keys"></div>
+          <button id="help-close" type="button" class="button--primary">FECHAR (? ou ESC)</button>
+        </div>
+      </section>
     </div>
     <script type="module" src="/src/main.js"></script>
   </body>

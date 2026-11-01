@@ -3,7 +3,6 @@ import { RESOURCE_TYPES, WORLD } from './config.js';
 import { FULL_WORLD, VALLEY } from '../data/worldRegions.js';
 import { NIGHT_RESOURCES } from '../data/nightResources.js';
 import { RESOURCE_NODES } from '../data/resources.js';
-import { KEY_HINT_SCALE, KEY_HINT_STYLE } from './worldText.js';
 
 const rand = (min, max) => Math.random() * (max - min) + min;
 
@@ -48,12 +47,12 @@ export class World {
       const x = rand(40, width - 40);
       const y = rand(40, height - 40);
       if (Phaser.Math.Distance.Between(x, y, camp.x, camp.y) < 470) continue;
-      // Três variantes de pinheiro (assimetrias e alturas diferentes), alternadas.
-      const variant = ['', '-b', '-c'][i % 3];
-      const tree = this.scene.add.sprite(x, y, 'nature', `pine${variant}-0`)
+      // Duas variantes de pinheiro (assimetrias diferentes), alternadas.
+      const variantB = i % 2 === 1;
+      const tree = this.scene.add.sprite(x, y, 'nature', variantB ? 'pine-b-0' : 'pine-0')
         .setOrigin(0.5, 0.88)
         .setDepth(y + 10)
-        .play(`pine-sway${variant}`);
+        .play(variantB ? 'pine-sway-b' : 'pine-sway');
       // Tronco sólido.
       this.scene.obstacles?.add(x, y - 2, 10, 7);
       if (i % 7 === 0) {
@@ -63,7 +62,7 @@ export class World {
       } else if (i % 11 === 0) {
         tree.setTexture('nature', 'fruit-tree').stop();
       } else if (i % 5 === 0) {
-        tree.setTexture('nature', `pine${variant}-1`).stop();
+        tree.setTexture('nature', variantB ? 'pine-b-1' : 'pine-1').stop();
       }
       this.trees.push({ x, y, kind: tree.frame.name.startsWith('pine') ? 'pine' : tree.frame.name });
       this.treeSprites.push(tree);
@@ -138,7 +137,10 @@ export class World {
       ease: 'Sine.easeInOut'
     });
     if (this.scene.gfx?.backgroundAnimations === false) bob.pause();
-    const hint = this.scene.add.text(x, y - 25, 'E', KEY_HINT_STYLE).setScale(KEY_HINT_SCALE).setOrigin(0.5).setDepth(y + 30).setVisible(false);
+    const hint = this.scene.add.text(x, y - 25, 'E', {
+      fontFamily: 'Press Start 2P', fontSize: '8px', color: '#fff3cf',
+      backgroundColor: '#26392dcc', padding: { x: 4, y: 3 }
+    }).setOrigin(0.5).setDepth(y + 30).setVisible(false);
     const amountConfig = options.definition ?? (nightOnly ? NIGHT_RESOURCES[type] : RESOURCE_NODES[type]);
     const amount = amountConfig
       ? Phaser.Math.Between(amountConfig.amount[0], amountConfig.amount[1])
@@ -180,6 +182,21 @@ export class World {
     return cells;
   }
 
+  /** Neblina de exploração salva como pares [col,row] — compacto e sem strings. */
+  serializeFog() {
+    return this.getRevealedCells().map((cell) => [cell.column, cell.row]);
+  }
+
+  restoreFog(saved) {
+    if (!Array.isArray(saved)) return;
+    for (const entry of saved) {
+      if (Array.isArray(entry) && Number.isFinite(entry[0]) && Number.isFinite(entry[1])) {
+        this.revealedCells.add(`${entry[0]},${entry[1]}`);
+      }
+    }
+    this.lastRevealKey = '';
+  }
+
   nearbyResource(x, y, range = 58) {
     let closest = null;
     let distance = range;
@@ -192,6 +209,13 @@ export class World {
       }
     }
     return closest;
+  }
+
+  /** Todos os recursos visíveis num raio, do mais perto ao mais longe (loot rápido com R). */
+  nearbyResources(x, y, range = 100) {
+    return [...this.resources, ...this.nightResources]
+      .filter((resource) => resource.node.visible && Phaser.Math.Distance.Between(x, y, resource.x, resource.y) <= range)
+      .sort((a, b) => Phaser.Math.Distance.Between(x, y, a.x, a.y) - Phaser.Math.Distance.Between(x, y, b.x, b.y));
   }
 
   harvest(resource) {

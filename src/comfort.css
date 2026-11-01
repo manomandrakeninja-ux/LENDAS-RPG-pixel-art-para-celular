@@ -115,6 +115,33 @@
   cursor: pointer;
 }
 
+.region-card__actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.region-card__actions button {
+  flex: 1;
+  padding: 7px 4px;
+  border: 2px solid #6b4a2a;
+  border-radius: 7px;
+  background: #7a5434;
+  color: #ffe9c4;
+  font: 9px var(--pixel-font);
+  cursor: pointer;
+}
+
+.region-card__actions button[data-travel-go] {
+  background: #2f6b3a;
+  border-color: #1d4525;
+}
+
+.region-card__actions button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 /* Joystick à direita: botões de ação passam para a esquerda. */
 .touch-controls.stick-right .touch-stick-zone {
   left: auto;

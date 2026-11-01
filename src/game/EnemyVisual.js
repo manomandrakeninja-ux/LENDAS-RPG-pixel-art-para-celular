@@ -418,51 +418,6 @@ export function drawEnemyFrame(kind, size, frame, elite = false) {
   return canvas.outline();
 }
 
-/**
- * Rodada 3: o Senhor do Abismo e o Dragão eram dois vermelhos iguais lado a lado. O Senhor do Abismo vai
- * para roxo-preto; o vermelho fica só nos detalhes claros (olhos, brasas, luz de borda).
- */
-const HUE_SHIFT = { abyssLord: { from: [330, 30], to: 282, keepLuma: 165, dim: 0.82 } };
-function shiftHue(data, { from, to, keepLuma, dim }) {
-  for (let i = 0; i < data.length; i += 4) {
-    if (data[i + 3] < 8) continue;
-    const r = data[i] / 255; const g = data[i + 1] / 255; const b = data[i + 2] / 255;
-    const max = Math.max(r, g, b); const min = Math.min(r, g, b); const d = max - min;
-    if (d < 0.08 || max === 0) continue;
-    let h = max === r ? 60 * (((g - b) / d) % 6) : max === g ? 60 * ((b - r) / d + 2) : 60 * ((r - g) / d + 4);
-    if (h < 0) h += 360;
-    if (!(h >= from[0] || h <= from[1])) continue;
-    if (0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2] >= keepLuma) continue;
-    const v = max * dim; const sat = d / max * 0.85; const c = v * sat;
-    const hp = to / 60; const x = c * (1 - Math.abs((hp % 2) - 1)); const m = v - c;
-    const [rr, gg, bb] = hp < 1 ? [c, x, 0] : hp < 2 ? [x, c, 0] : hp < 3 ? [0, c, x] : hp < 4 ? [0, x, c] : hp < 5 ? [x, 0, c] : [c, 0, x];
-    data[i] = Math.round((rr + m) * 255); data[i + 1] = Math.round((gg + m) * 255); data[i + 2] = Math.round((bb + m) * 255);
-  }
-}
-
-/**
- * Verdes sobre o chão verde (slime, cobra, sapo, goblin...): a borda de baixo e da direita ganha um
- * contorno de 2 px escuro puxado para o azul-roxo da paleta, que separa a silhueta da grama.
- */
-const GREEN_ON_GREEN = new Set(['slime', 'snake', 'frog', 'goblin', 'cobra', 'treant', 'zombie', 'swampSlime', 'bogFrog']);
-function coolOutline(data, size) {
-  const opaque = (x, y) => x >= 0 && y >= 0 && x < size && y < size && data[(y * size + x) * 4 + 3] > 127;
-  const edge = [];
-  for (let y = 0; y < size; y += 1) for (let x = 0; x < size; x += 1) {
-    if (!opaque(x, y)) continue;
-    const outRight = !opaque(x + 1, y); const outDown = !opaque(x, y + 1); const outLeft = !opaque(x - 1, y); const outUp = !opaque(x, y - 1);
-    if (outRight || outDown) edge.push([x, y, 0.62]);
-    else if (!opaque(x + 2, y) || !opaque(x, y + 2)) edge.push([x, y, 0.3]);
-    else if (outLeft || outUp) edge.push([x, y, 0.35]);
-  }
-  for (const [x, y, k] of edge) {
-    const i = (y * size + x) * 4;
-    data[i] = Math.round(data[i] * (1 - k) + 26 * k);
-    data[i + 1] = Math.round(data[i + 1] * (1 - k) + 22 * k);
-    data[i + 2] = Math.round(data[i + 2] * (1 - k) + 54 * k);
-  }
-}
-
 /** Tamanho do desenho do inimigo (px). */
 export function enemyCanvasSize(kind, elite = false) {
   const placeholder = ENEMY_TYPES[kind]?.placeholder;
@@ -489,8 +444,6 @@ function ensureCanvasTexture(scene, kind, elite) {
     context.clearRect(0, 0, size * count, size);
     for (let frame = 0; frame < count; frame += 1) {
       const pixels = drawEnemyFrame(kind, size, frame, elite);
-      if (HUE_SHIFT[kind]) shiftHue(pixels.data, HUE_SHIFT[kind]);
-      if (GREEN_ON_GREEN.has(kind)) coolOutline(pixels.data, size);
       context.putImageData(new ImageData(quantizePixels(pixels).data, size, size), frame * size, 0);
     }
     texture.setFilter(Phaser.Textures.FilterMode.NEAREST);

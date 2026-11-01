@@ -91,9 +91,8 @@ export class PixelEffects {
       '.122222.',
       '........'
     ]);
-    // Rodada 3: faíscas vivem 250-340 ms (ainda visíveis na captura de +110 ms).
     this.sparkEmitter = scene.add.particles(0, 0, spark, {
-      lifespan: { min: 250, max: 340 },
+      lifespan: { min: 150, max: 300 },
       speed: { min: 45, max: 130 },
       angle: { min: 0, max: 360 },
       scale: 1,
@@ -176,6 +175,22 @@ export class PixelEffects {
     }
   }
 
+  /** Rastro fantasma da esquiva: brilho azul-claro que desaparece rápido. */
+  spawnDodgeGhost(x, y) {
+    const ghost = this.scene.add.ellipse(x, y - 8, 26, 34, 0xbfe8ff, 0.35)
+      .setDepth(OVERLAY_DEPTH + 4100)
+      .setBlendMode(Phaser.BlendModes.ADD);
+    this.scene.hudCamera?.ignore(ghost);
+    this.scene.tweens.add({
+      targets: ghost,
+      scaleX: 1.25,
+      scaleY: 1.1,
+      alpha: 0,
+      duration: 240,
+      onComplete: () => ghost.destroy()
+    });
+  }
+
   spawnSlash(x, y, angle, size = 1) {
     const slash = this.scene.add.sprite(x, y, 'vfx', 'slash-0')
       .setOrigin(0.5)
@@ -239,23 +254,49 @@ export class PixelEffects {
     this.dustEmitter.emitParticleAt(x, y + 4, 5);
   }
 
+  /** Grito (Z): anel roxo expansivo até o alcance + clarão violeta no centro. */
+  spawnShout(x, y, radius = 300) {
+    const scene = this.scene;
+    const graphics = scene.add.graphics().setDepth(OVERLAY_DEPTH + 4195);
+    scene.hudCamera?.ignore(graphics);
+    let r = 24;
+    const step = () => {
+      r += (radius - 24) / 18;
+      const alpha = Math.max(0, 1 - r / radius);
+      graphics.clear();
+      graphics.lineStyle(Math.max(1, 8 * alpha), 0xc86bff, alpha);
+      graphics.beginPath();
+      graphics.arc(x, y, r, 0, Math.PI * 2);
+      graphics.stroke();
+      graphics.fillStyle(0x8a2be2, alpha * 0.22);
+      graphics.fillCircle(x, y, r);
+      if (r < radius) scene.time.delayedCall(16, step);
+      else graphics.destroy();
+    };
+    step();
+    const flash = scene.add.image(x, y - 6, 'vfx', 'ring-1')
+      .setDepth(OVERLAY_DEPTH + 4196)
+      .setScale(0.8)
+      .setTint(0xc86bff)
+      .setBlendMode(Phaser.BlendModes.ADD);
+    scene.hudCamera?.ignore(flash);
+    scene.tweens.add({ targets: flash, scale: 3.2, alpha: 0, duration: 380, ease: 'Quad.easeOut', onComplete: () => flash.destroy() });
+  }
+
   /** Especial: onda de choque de 3 tons que corre até o alcance, clarão no centro e faíscas para fora. */
   spawnSpecial(x, y) {
     const scene = this.scene;
     const key = ensureWave(scene);
-    // Rodada 3: a onda passa POR BAIXO do herói (profundidade do chão em volta dele) e a 60 %.
     const wave = scene.add.sprite(x, y + 2, key, 0)
       .setOrigin(0.5)
-      .setDepth(y - 2)
-      .setAlpha(0.6)
+      .setDepth(OVERLAY_DEPTH + 4190)
       .setBlendMode(Phaser.BlendModes.ADD);
     scene.hudCamera?.ignore(wave);
     wave.play(key);
     scene.tweens.add({ targets: wave, alpha: 0, delay: 220, duration: 100, onComplete: () => wave.destroy() });
 
     const flash = scene.add.image(x, y - 6, 'vfx', 'ring-1')
-      .setDepth(y - 1)
-      .setAlpha(0.7)
+      .setDepth(OVERLAY_DEPTH + 4191)
       .setScale(0.6)
       .setTint(0xffeb57)
       .setBlendMode(Phaser.BlendModes.ADD);
@@ -290,7 +331,7 @@ export class PixelEffects {
       .setScale(1)
       .setBlendMode(Phaser.BlendModes.ADD);
     this.scene.hudCamera?.ignore(flash);
-    this.scene.time.delayedCall(100, () => flash.destroy());
+    this.scene.time.delayedCall(80, () => flash.destroy());
   }
 
   spawnDamage(x, y, amount, tint = '#fff0b8') {
@@ -390,5 +431,11 @@ export class PixelEffects {
     this.dustEmitter.setParticleTint(0x9ed47a);
     this.dustEmitter.emitParticleAt(x, y, 8);
     this.spawnHit(x, y, 0xa9e28a, 5);
+  }
+
+  /** Poeira do passo ao andar/correr (montado levanta mais). */
+  spawnStepDust(x, y, mounted = false) {
+    this.dustEmitter.setParticleTint(mounted ? 0xd8c8a8 : 0xcbb89a);
+    this.dustEmitter.emitParticleAt(x + Phaser.Math.Between(-4, 4), y, mounted ? 3 : 2);
   }
 }

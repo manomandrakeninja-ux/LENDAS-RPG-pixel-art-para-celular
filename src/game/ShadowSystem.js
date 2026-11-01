@@ -7,7 +7,7 @@ import { fitScreenRect } from './cameraZoom.js';
 // Também dá um leve tom de cor à manhã (dourado) e ao fim da tarde (laranja).
 
 // Roxo-azulado da paleta-mestre (#1a1932): a sombra longa não fica cinza neutro.
-const SHADOW_RGB = [26, 25, 50];
+const SHADOW_COLOR = 0x1a1932;
 // A sombra longa fica mais curta e mais clara; quem "assenta" o objeto é a sombra de contato.
 const LONG_LENGTH = 0.8;
 const LONG_ALPHA = 0.78;
@@ -19,23 +19,6 @@ const CONTACT_STRONG_CORE = [14, 7, 27, 0.72];
 const CONTACT_STRONG_MID = [26, 25, 50, 0.58];
 // Texturas que já trazem a sombra de contato desenhada no sprite.
 const BAKED_CONTACT = new Set(['buildings']);
-
-// Margem da sombra suave (px) e borrão de caixa (2 passes) usado nela.
-const SOFT_PAD = 10;
-function blurField(src, w, h, r) {
-  const a = new Float32Array(w * h); const b = new Float32Array(w * h);
-  const pass = (from, to, horizontal) => {
-    const n = horizontal ? w : h; const lines = horizontal ? h : w;
-    for (let l = 0; l < lines; l += 1) {
-      const at = (i) => (horizontal ? l * w + Math.min(n - 1, Math.max(0, i)) : Math.min(n - 1, Math.max(0, i)) * w + l);
-      let sum = 0;
-      for (let i = -r; i <= r; i += 1) sum += from[at(i)];
-      for (let i = 0; i < n; i += 1) { to[at(i)] = sum / (2 * r + 1); sum += from[at(i + r + 1)] - from[at(i - r)]; }
-    }
-  };
-  pass(src, a, true); pass(a, b, false); pass(b, a, true); pass(a, b, false);
-  return b;
-}
 
 /** Gera (uma vez) a textura da elipse de contato com w x h pixels. */
 export function contactTexture(scene, width, height, strong = false) {
@@ -81,58 +64,14 @@ export class ShadowSystem {
     this.timer = 0;
   }
 
-  /**
-   * Silhueta da sombra longa, suave e orgânica (rodada 4). A borda pontilhada da rodada 3 ainda lia como
-   * polígono: agora a silhueta é borrada (pouco perto da base, muito na ponta, como a penumbra de verdade),
-   * com uma ondulação leve no contorno, e a textura ganha margem para o borrão não ser cortado.
-   */
-  ditherKey(image) {
-    const key = `shadow-soft:${image.texture.key}:${image.frame.name}`;
-    const textures = this.scene.textures;
-    if (textures.exists(key)) return key;
-    const frame = image.frame;
-    const w = Math.max(1, frame.cutWidth); const h = Math.max(1, frame.cutHeight);
-    const P = SOFT_PAD; const W = w + P * 2; const H = h + P * 2;
-    const canvas = textures.createCanvas(key, W, H);
-    const context = canvas.getContext();
-    context.drawImage(frame.source.image, frame.cutX, frame.cutY, w, h, P, P, w, h);
-    const data = context.getImageData(0, 0, W, H);
-    const d = data.data;
-    const mask = new Float32Array(W * H);
-    for (let k = 0; k < W * H; k += 1) mask[k] = d[k * 4 + 3] > 96 ? 1 : 0;
-    const near = blurField(mask, W, H, 2);
-    const far = blurField(mask, W, H, 7);
-    for (let y = 0; y < H; y += 1) {
-      // y = 0 é a ponta da sombra (a imagem é virada): mais borrada lá.
-      const t = Math.min(1, Math.max(0, 1 - (y - P) / Math.max(1, h)));
-      for (let x = 0; x < W; x += 1) {
-        const k = y * W + x;
-        const wobble = 0.08 * (Math.sin(x * 0.45 + y * 0.21) + Math.sin(y * 0.37 - x * 0.18));
-        const v = near[k] * (1 - t) + far[k] * t + wobble * Math.min(near[k], 1 - near[k]) * 2;
-        const a = Math.min(1, Math.max(0, (v - 0.12) / 0.6));
-        // Cor já na textura (com tintFill a borda semitransparente saía clara, puxada para o branco).
-        d[k * 4] = SHADOW_RGB[0]; d[k * 4 + 1] = SHADOW_RGB[1]; d[k * 4 + 2] = SHADOW_RGB[2]; d[k * 4 + 3] = Math.round(a * a * (3 - 2 * a) * 255);
-      }
-    }
-    context.putImageData(data, 0, 0);
-    canvas.refresh();
-    return key;
-  }
-
-  /** Origem da sombra na textura com margem (mesmo ponto de apoio do prédio). */
-  softOrigin(shadow, image) {
-    const w = image.frame.cutWidth; const h = image.frame.cutHeight;
-    shadow.setOrigin((image.originX * w + SOFT_PAD) / (w + SOFT_PAD * 2), (image.originY * h + SOFT_PAD) / (h + SOFT_PAD * 2));
-  }
-
   register(images = []) {
     for (const image of images) {
       if (!image?.active || this.entries.has(image)) continue;
-      const shadow = this.scene.add.image(image.x, image.y, this.ditherKey(image))
+      const shadow = this.scene.add.image(image.x, image.y, image.texture.key, image.frame.name)
+        .setOrigin(image.originX, image.originY)
+        .setTintFill(SHADOW_COLOR)
         .setDepth(-998);
       this.scene.hudCamera?.ignore(shadow);
-      shadow.sourceFrame = image.frame.name;
-      this.softOrigin(shadow, image);
       this.apply(shadow);
       this.entries.set(image, shadow);
       if (!BAKED_CONTACT.has(image.texture.key)) this.addContact(image);
@@ -234,7 +173,7 @@ export class ShadowSystem {
         this.contacts.delete(image);
         continue;
       }
-      if (shadow.sourceFrame !== image.frame.name) { shadow.setTexture(this.ditherKey(image)); shadow.sourceFrame = image.frame.name; this.softOrigin(shadow, image); }
+      if (shadow.frame.name !== image.frame.name) shadow.setFrame(image.frame.name);
       shadow.setPosition(image.x, image.y).setVisible(image.visible && !this.simple);
       this.apply(shadow);
       const contact = this.contacts.get(image);

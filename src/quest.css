@@ -77,8 +77,7 @@
   padding: 8px 12px;
   border: 2px solid #8a6440;
   border-radius: 8px;
-  /* Rodada 4: fundo opaco (com 92 % o botão SETA e a missão apareciam por trás, como texto fantasma). */
-  background: rgb(36, 25, 15);
+  background: rgba(36, 25, 15, 0.92);
   color: #f4e6c6;
   font: 8px/1.5 var(--pixel-font);
   text-align: center;
@@ -438,6 +437,50 @@
   color: #e3cfa5;
 }
 
+.quest-discovery {
+  border-radius: 6px;
+  padding: 8px 10px;
+  background: rgba(20, 16, 14, 0.35);
+}
+
+.quest-discovery h4 {
+  margin: 0 0 4px;
+}
+
+.quest-poi-list {
+  margin: 0;
+  padding-left: 18px;
+  line-height: 1.9;
+  color: #f4e6c6;
+}
+
+.quest-skill {
+  display: grid;
+  gap: 4px;
+}
+
+.quest-skill__name {
+  color: #f4e6c6;
+}
+
+.quest-skill__bar {
+  height: 8px;
+  border: 1px solid #6b4a2a;
+  border-radius: 4px;
+  background: rgba(20, 16, 14, 0.6);
+  overflow: hidden;
+}
+
+.quest-skill__bar i {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #8a5fd0, #c86bff);
+}
+
+.quest-skill small {
+  color: #cbb489;
+}
+
 .quest-seals,
 .quest-npcs {
   display: flex;
@@ -709,7 +752,7 @@ body.is-phone .quest-tracker h3 {
 .quest-chapter__text button {
   align-self: flex-end;
   margin-top: auto;
-  min-height: 44px;
+  min-height: 48px;
   padding: 12px 20px;
   border: 2px solid var(--gold-dark);
   border-radius: 9px;
@@ -765,12 +808,7 @@ body.is-phone .quest-tracker h3 {
 @media (max-width: 560px) and (orientation: portrait) {
   .quest-chapter__card {
     grid-template-columns: 1fr;
-    /* Rodada 3: a ilustração ocupa metade do cartão (antes 38 % e sobrava cartão vazio embaixo). */
-    grid-template-rows: 50% minmax(0, 1fr);
-  }
-
-  .quest-chapter__art img {
-    object-position: 50% 72%;
+    grid-template-rows: 38% minmax(0, 1fr);
   }
 }
 

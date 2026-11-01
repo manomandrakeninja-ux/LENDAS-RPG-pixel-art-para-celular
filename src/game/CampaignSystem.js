@@ -279,10 +279,7 @@ export class CampaignSystem {
     const marker = scene.add.text(x, top - 16, '', {
       fontSize: '8px', color: '#ffd76b', stroke: '#2a1d14', strokeThickness: 4
     }).setOrigin(0.5).setDepth(y + 901);
-    // Rodada 4: o "!" fica ao lado do nome (WorldTexts posiciona) e pulsa no lugar, sem cortar o rótulo.
-    label.avoidSprites = true;
-    label.sideMarker = marker;
-    scene.tweens.add({ targets: marker, alpha: 0.55, duration: 650, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+    scene.tweens.add({ targets: marker, y: marker.y - 3, duration: 650, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
     scene.hudCamera?.ignore([sprite, label, marker]);
     this.npcs.set(id, { id, sprite, label, marker, x, y });
   }

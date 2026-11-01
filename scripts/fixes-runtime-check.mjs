@@ -1,7 +1,7 @@
 import { check, runInChrome } from './runtime-harness.mjs';
 
 // Correções de 25/10: cliques não atravessam menus, pausa automática, receitas, baú de monstro e menu compacto.
-await runInChrome({ name: 'fixes', port: 9387, width: 1280, height: 800 }, async ({ evaluate, inScene, send, capture, freshStart, delay }) => {
+await runInChrome({ name: 'fixes', port: 9387, width: 1280, height: 800 }, async ({ evaluate, inScene, send, capture, freshStart, reload, delay }) => {
   const clickAt = async (x, y) => {
     await send('Input.dispatchMouseEvent', { type: 'mouseMoved', x, y });
     await send('Input.dispatchMouseEvent', { type: 'mousePressed', x, y, button: 'left', clickCount: 1 });
@@ -103,6 +103,24 @@ await runInChrome({ name: 'fixes', port: 9387, width: 1280, height: 800 }, async
   });
   check(chest.dropped && chest.gainedCoins >= 10 && chest.gainedItems > 0 && chest.remaining === 0 && chest.message.includes('Baú'),
     `Baú do monstro: ${JSON.stringify(chest)}`);
-  return { afterClicks, box, paused, running, dialogPause, recipe, chest };
+
+  // 5. Toast de conquista estilo Steam: desbloquear uma conquista faz o aviso subir no canto da tela.
+  const toast = await inScene(async (scene) => {
+    scene.achievements.note('kills', 1);
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    const el = document.querySelector('.achievement-toast');
+    return { present: Boolean(el), visible: Boolean(el?.classList.contains('is-visible')), text: el?.textContent ?? '' };
+  });
+  check(toast.present && toast.visible && toast.text.includes('Caçador Novato'),
+    `Toast de conquista não apareceu/subiu: ${JSON.stringify(toast)}`);
+  await capture('conquista-toast.png');
+
+  // 6. Boot noturno: save com fase "night" deve ligar audio.night já no create (sem esperar troca de fase).
+  await inScene((scene) => { scene.dayNight.cycleTime = 240; scene.save(); return true; });
+  await reload();
+  const night = await inScene((scene) => ({ phase: scene.timeState.phase, audioNight: scene.audio?.night ?? null }));
+  check(night.phase === 'night' && night.audioNight === true, `Boot noturno não ligou audio.night: ${JSON.stringify(night)}`);
+
+  return { afterClicks, box, paused, running, dialogPause, recipe, chest, toast, night };
 });
 console.log('Correções OK.');

@@ -1,8 +1,10 @@
 import Phaser from 'phaser';
 import {
-  BLOCKING, BOAT_FARE, DUNGEONS, CAVES_BY_ID, CAVE_NODES, DOCKS, FULL_WORLD, NODE_REGROW_DAYS, OASES, OVERWORLD,
-  REGION_INFO, REGION_NODES, ROOM_COLS, T, TERRAIN_NODES, TILE, buildTerrainGrid, dungeonLevelRange, dockPosition, regionAt, roomAt
+  BLOCKING, BOAT_FARE, DUNGEONS, CAVES_BY_ID, CAVE_NODES, DOCKS, FAST_TRAVEL_COST, FULL_WORLD, NODE_REGROW_DAYS, OASES, OVERWORLD,
+  REGION_INFO, REGION_NODES, ROADS, ROAD_SIGNS, ROOM_COLS, T, TERRAIN_NODES, TILE, TREASURE_SPOTS, VILLAGES, buildTerrainGrid, compass8, dungeonLevelRange, dockPosition, pointOnRoad, regionAt, roadAt, roomAt
 } from '../data/worldRegions.js';
+import { VILLAGERS } from '../data/villagers.js';
+import { drawVillager } from '../art/person.js';
 import { UNDER_SUBTILES, layoutTiles, underName } from '../data/terrainLayout.js';
 import { hash } from '../art/pixel.js';
 import { ENEMY_TYPES } from '../data/enemies.js';
@@ -31,14 +33,14 @@ const INTERACT_RANGE = 70;
 
 // Objetos por terreno: [frame, peso, sólido?]. Sólido = base que bloqueia (largura, altura).
 const PROPS = {
-  [T.FOREST]: { density: 0.2, list: [['ancient-oak-0', 1, [18, 10]], ['ancient-oak-1', 1, [18, 10]], ['mossy-pine-0', 2, [10, 7]], ['mossy-pine-1', 2, [10, 7]], ['giant-mushroom', 0.6, [10, 6]], ['fern', 3], ['fallen-log', 0.6, [40, 10]], ['mossy-rock', 1, [24, 10]]] },
-  [T.SWAMP]: { density: 0.13, list: [['willow', 1.4, [14, 9]], ['dead-tree', 1.4, [10, 7]], ['reeds', 3], ['swamp-shroom', 1.2], ['bog-log', 0.5, [40, 10]], ['mossy-rock', 0.5, [24, 10]]] },
-  [T.SNOW]: { density: 0.12, list: [['snow-pine-0', 2, [10, 7]], ['snow-pine-1', 2, [10, 7]], ['ice-crystal', 1, [16, 8]], ['snow-rock', 1.4, [28, 10]], ['frozen-bush', 1.4]] },
-  [T.SAND]: { density: 0.05, list: [['cactus', 2, [12, 7]], ['cactus-small', 2, [10, 6]], ['desert-rock', 1, [40, 12]], ['skull', 0.7], ['dry-bush', 2], ['ruin-pillar', 0.3, [18, 8]], ['ruin-pillar-broken', 0.4, [18, 8]]] },
-  [T.DUNE]: { density: 0.018, list: [['dry-bush', 1], ['skull', 0.4], ['cactus-small', 0.5, [10, 6]]] },
-  [T.BEACH]: { density: 0.04, list: [['palm-0', 1.5, [8, 6]], ['palm-1', 1.5, [8, 6]], ['sea-rock', 1, [28, 10]], ['big-flower', 0.3]] },
-  [T.JUNGLE]: { density: 0.13, list: [['palm-0', 1.5, [8, 6]], ['palm-1', 1.5, [8, 6]], ['tropical-bush', 3], ['big-flower', 2], ['sea-rock', 0.4, [28, 10]]] },
-  [T.ASH]: { density: 0.09, list: [['charred-tree', 2, [10, 7]], ['obsidian', 2, [28, 12]], ['lava-vent', 1], ['fire-crystal', 0.8, [14, 8]], ['ash-bush', 2]] }
+  [T.FOREST]: { density: 0.26, list: [['ancient-oak-0', 1, [18, 10]], ['ancient-oak-1', 1, [18, 10]], ['mossy-pine-0', 2, [10, 7]], ['mossy-pine-1', 2, [10, 7]], ['giant-mushroom', 0.6, [10, 6]], ['fern', 3], ['fallen-log', 0.6, [40, 10]], ['mossy-rock', 1, [24, 10]], ['grass-tuft-0', 4], ['grass-tuft-1', 4], ['flower-tuft-0', 1.2], ['flower-tuft-1', 1.2], ['forest-flower-0', 0.8], ['forest-flower-1', 0.8], ['pebbles-0', 0.7], ['pebbles-1', 0.7], ['mushroom-cluster-0', 0.5], ['mushroom-cluster-1', 0.5], ['berry-bush-0', 0.6], ['berry-bush-1', 0.6], ['yellow-flower-0', 0.7], ['yellow-flower-1', 0.7], ['bark-scrap-0', 0.5], ['bark-scrap-1', 0.5], ['pink-flower-0', 0.6], ['pink-flower-1', 0.6], ['rotten-log', 0.4, [30, 9]], ['red-cap-0', 0.4], ['red-cap-1', 0.4], ['tan-shroom-0', 0.4], ['tan-shroom-1', 0.4], ['orange-shroom-0', 0.4], ['orange-shroom-1', 0.4], ['pink-shroom-0', 0.4], ['pink-shroom-1', 0.4], ['coral-shroom-0', 0.4], ['coral-shroom-1', 0.4], ['violet-shroom-0', 0.4], ['violet-shroom-1', 0.4], ['lilac-shroom-0', 0.4], ['lilac-shroom-1', 0.4], ['light-green-shroom-0', 0.4], ['light-green-shroom-1', 0.4], ['mossy-log', 0.35, [28, 8]], ['light-purple-flower-0', 0.5], ['light-purple-flower-1', 0.5], ['peach-forest-flower-0', 0.5], ['peach-forest-flower-1', 0.5], ['blue-forest-flower-0', 0.5], ['blue-forest-flower-1', 0.5], ['teal-forest-flower-0', 0.5], ['teal-forest-flower-1', 0.5], ['hot-pink-flower-0', 0.5], ['hot-pink-flower-1', 0.5], ['turquoise-forest-flower-0', 0.5], ['turquoise-forest-flower-1', 0.5], ['lilac-forest-flower-0', 0.5], ['lilac-forest-flower-1', 0.5], ['light-green-forest-flower-0', 0.5], ['light-green-forest-flower-1', 0.5], ['pale-green-forest-flower-0', 0.5], ['pale-green-forest-flower-1', 0.5], ['pale-lilac-forest-flower-0', 0.5], ['pale-lilac-forest-flower-1', 0.5], ['dark-bark', 0.5], ['blush-forest-flower-0', 0.5], ['blush-forest-flower-1', 0.5], ['forest-gravel', 0.6], ['forest-branch', 0.5], ['yellow-forest-bush-0', 0.5], ['yellow-forest-bush-1', 0.5], ['rotten-forest-log', 0.3, [30, 9]], ['forest-boulder', 0.3, [14, 8]]] },
+  [T.SWAMP]: { density: 0.17, list: [['willow', 1.4, [14, 9]], ['dead-tree', 1.4, [10, 7]], ['reeds', 3], ['swamp-shroom', 1.2], ['bog-log', 0.5, [40, 10]], ['mossy-rock', 0.5, [24, 10]], ['grass-tuft-0', 3], ['flower-tuft-1', 0.6], ['swamp-flower-0', 0.6], ['swamp-flower-1', 0.6], ['mud-puddle-0', 0.5], ['mud-puddle-1', 0.5], ['twisted-root-0', 0.5], ['twisted-root-1', 0.5], ['river-stone-0', 0.5, [10, 6]], ['river-stone-1', 0.5, [10, 6]], ['blue-mushroom-0', 0.5], ['blue-mushroom-1', 0.5], ['moss-pebble-0', 0.6], ['moss-pebble-1', 0.6], ['reed-0', 0.7], ['reed-1', 0.7], ['green-stone-0', 0.5, [10, 6]], ['green-stone-1', 0.5, [10, 6]], ['lilac-flower-0', 0.5], ['lilac-flower-1', 0.5], ['swamp-root', 0.5], ['swamp-pebble-0', 0.5], ['swamp-pebble-1', 0.5], ['yellow-swamp-flower-0', 0.5], ['yellow-swamp-flower-1', 0.5], ['swamp-gravel', 0.6], ['pink-swamp-flower-0', 0.5], ['pink-swamp-flower-1', 0.5], ['dark-river-stone', 0.5, [10, 6]], ['gray-shroom-0', 0.4], ['gray-shroom-1', 0.4], ['green-shroom-0', 0.4], ['green-shroom-1', 0.4], ['navy-shroom-0', 0.4], ['navy-shroom-1', 0.4], ['turquoise-shroom-0', 0.4], ['turquoise-shroom-1', 0.4], ['teal-swamp-shroom-0', 0.4], ['teal-swamp-shroom-1', 0.4], ['sea-green-swamp-shroom-0', 0.4], ['sea-green-swamp-shroom-1', 0.4], ['dark-sea-green-swamp-shroom-0', 0.4], ['dark-sea-green-swamp-shroom-1', 0.4], ['light-green-swamp-shroom-0', 0.4], ['light-green-swamp-shroom-1', 0.4], ['light-sea-green-swamp-shroom-0', 0.4], ['light-sea-green-swamp-shroom-1', 0.4], ['white-swamp-flower-0', 0.5], ['white-swamp-flower-1', 0.5], ['light-blue-shroom-0', 0.4], ['light-blue-shroom-1', 0.4], ['light-river-stone', 0.5, [10, 6]], ['blue-swamp-flower-0', 0.5], ['blue-swamp-flower-1', 0.5], ['orange-swamp-flower-0', 0.5], ['orange-swamp-flower-1', 0.5], ['teal-swamp-flower-0', 0.5], ['teal-swamp-flower-1', 0.5], ['gold-swamp-flower-0', 0.5], ['gold-swamp-flower-1', 0.5], ['dark-purple-swamp-flower-0', 0.5], ['dark-purple-swamp-flower-1', 0.5], ['coral-swamp-flower-0', 0.5], ['coral-swamp-flower-1', 0.5], ['turquoise-swamp-flower-0', 0.5], ['turquoise-swamp-flower-1', 0.5], ['lilac-swamp-flower-0', 0.5], ['lilac-swamp-flower-1', 0.5], ['green-swamp-flower-0', 0.5], ['green-swamp-flower-1', 0.5], ['sea-green-swamp-flower-0', 0.5], ['sea-green-swamp-flower-1', 0.5], ['light-green-swamp-flower-0', 0.5], ['light-green-swamp-flower-1', 0.5], ['pale-lilac-swamp-flower-0', 0.5], ['pale-lilac-swamp-flower-1', 0.5], ['muddy-swamp-log', 0.3, [30, 9]], ['pale-swamp-log', 0.3, [30, 9]], ['white-flowered-swamp-bush-0', 0.4], ['white-flowered-swamp-bush-1', 0.4]] },
+  [T.SNOW]: { density: 0.15, list: [['snow-pine-0', 2, [10, 7]], ['snow-pine-1', 2, [10, 7]], ['ice-crystal', 1, [16, 8]], ['snow-rock', 1.4, [28, 10]], ['frozen-bush', 1.4], ['grass-tuft-1', 1.5], ['snow-flower-0', 0.8], ['snow-flower-1', 0.8], ['pebbles-0', 0.5], ['pebbles-1', 0.5], ['frozen-log', 0.5, [40, 10]], ['snow-mound-0', 0.6], ['snow-mound-1', 0.6], ['ice-shard-0', 0.6, [6, 10]], ['ice-shard-1', 0.6, [6, 10]], ['ice-spike-0', 0.6, [4, 8]], ['ice-spike-1', 0.6, [4, 8]], ['white-flower-0', 0.6], ['white-flower-1', 0.6], ['blue-ice-0', 0.5], ['blue-ice-1', 0.5], ['snow-track-0', 0.6], ['snow-track-1', 0.6], ['snow-branch', 0.4, [24, 10]], ['carved-ice', 0.4, [10, 10]], ['snow-hollow-0', 0.5], ['snow-hollow-1', 0.5], ['snow-pile-0', 0.5], ['snow-pile-1', 0.5], ['blue-snow-flower-0', 0.5], ['blue-snow-flower-1', 0.5], ['clear-ice-rock-0', 0.5, [10, 6]], ['clear-ice-rock-1', 0.5, [10, 6]], ['snow-covered-rock', 0.4, [12, 7]], ['lilac-ice-flower-0', 0.5], ['lilac-ice-flower-1', 0.5], ['ice-log', 0.35, [30, 9]], ['cracked-ice-0', 0.5], ['cracked-ice-1', 0.5], ['wind-snow-0', 0.5], ['wind-snow-1', 0.5], ['mint-ice-flower-0', 0.5], ['mint-ice-flower-1', 0.5], ['deep-blue-ice-0', 0.5], ['deep-blue-ice-1', 0.5], ['flowered-snow', 0.5], ['pale-blue-ice', 0.5], ['gray-snow-rock', 0.5, [10, 6]], ['pebbled-snow', 0.5], ['pink-ice', 0.4, [10, 6]], ['shattered-ice', 0.5], ['snow-gravel', 0.6], ['blue-flowered-snow', 0.5], ['lilac-ice', 0.4, [10, 6]], ['dark-pebbled-snow', 0.5], ['pink-flowered-snow', 0.5], ['teal-ice', 0.4, [10, 6]], ['yellow-flowered-snow', 0.5], ['green-flowered-snow', 0.5], ['coral-ice', 0.4, [10, 6]], ['turquoise-ice', 0.4, [10, 6]], ['turquoise-flowered-snow', 0.5], ['dark-lilac-ice', 0.4, [10, 6]], ['lilac-flowered-snow', 0.5], ['pale-teal-ice', 0.4, [10, 6]], ['coral-flowered-snow', 0.5], ['green-ice', 0.4, [10, 6]], ['dark-teal-ice', 0.4, [10, 6]], ['sea-green-flowered-snow', 0.5], ['light-green-ice', 0.4, [10, 6]], ['light-green-flowered-snow', 0.5], ['pale-green-ice', 0.4, [10, 6]], ['light-sea-green-ice', 0.4, [10, 6]], ['pale-green-flowered-snow', 0.5], ['pale-green-ice-2', 0.4, [10, 6]], ['pale-lilac-ice', 0.4, [10, 6]]] },
+  [T.SAND]: { density: 0.07, list: [['cactus', 2, [12, 7]], ['cactus-small', 2, [10, 6]], ['desert-rock', 1, [40, 12]], ['skull', 0.7], ['dry-bush', 2], ['ruin-pillar', 0.3, [18, 8]], ['ruin-pillar-broken', 0.4, [18, 8]], ['grass-tuft-0', 1.5], ['dune-flower-0', 0.7], ['dune-flower-1', 0.7], ['pebbles-0', 0.6], ['pebbles-1', 0.6], ['blooming-cactus', 0.4, [12, 7]], ['tall-cactus', 0.35, [10, 12]], ['footprint-0', 0.4], ['footprint-1', 0.4], ['desert-bloom-0', 0.5], ['desert-bloom-1', 0.5], ['carved-pebble-0', 0.5], ['carved-pebble-1', 0.5], ['dry-log', 0.4, [28, 8]], ['white-desert-flower-0', 0.5], ['white-desert-flower-1', 0.5], ['desert-stone-0', 0.5, [10, 6]], ['desert-stone-1', 0.5, [10, 6]], ['pink-dune-flower-0', 0.5], ['pink-dune-flower-1', 0.5], ['lilac-dune-flower-0', 0.5], ['lilac-dune-flower-1', 0.5], ['red-dune-flower-0', 0.5], ['red-dune-flower-1', 0.5], ['white-dune-flower-0', 0.5], ['white-dune-flower-1', 0.5], ['magenta-dune-flower-0', 0.5], ['magenta-dune-flower-1', 0.5], ['coral-dune-flower-0', 0.5], ['coral-dune-flower-1', 0.5], ['turquoise-dune-flower-0', 0.5], ['turquoise-dune-flower-1', 0.5], ['light-coral-dune-flower-0', 0.5], ['light-coral-dune-flower-1', 0.5], ['sea-green-dune-flower-0', 0.5], ['sea-green-dune-flower-1', 0.5], ['light-green-dune-flower-0', 0.5], ['light-green-dune-flower-1', 0.5], ['green-dune-stone', 0.5, [10, 6]], ['sea-green-dune-stone', 0.5, [10, 6]], ['light-green-dune-stone', 0.5, [10, 6]], ['pale-green-dune-flower-0', 0.5], ['pale-green-dune-flower-1', 0.5], ['lilac-dune-stone', 0.5, [10, 6]], ['flowered-dune-bush-0', 0.4], ['flowered-dune-bush-1', 0.4]] },
+  [T.DUNE]: { density: 0.03, list: [['dry-bush', 1], ['skull', 0.4], ['cactus-small', 0.5, [10, 6]], ['grass-tuft-1', 1], ['dune-flower-0', 0.5], ['dune-flower-1', 0.5], ['footprint-0', 0.5], ['footprint-1', 0.5], ['small-rock-0', 0.5], ['small-rock-1', 0.5], ['dune-wave-0', 0.6], ['dune-wave-1', 0.6], ['tall-grass-0', 0.6], ['tall-grass-1', 0.6], ['dry-bush-2', 0.7], ['dune-root', 0.5], ['dune-bloom', 0.5], ['dune-gravel', 0.6], ['dry-branch', 0.5], ['light-dune-pebble', 0.6], ['round-dune-rock', 0.4, [12, 7]], ['pink-dune-pebble', 0.6], ['dark-dune-stone', 0.5, [10, 6]], ['gold-dune-pebble', 0.6], ['dark-round-dune-rock', 0.4, [12, 7]], ['gray-dune-pebble', 0.6], ['dry-dune-bush-0', 0.5], ['dry-dune-bush-1', 0.5], ['lavender-dune-stone', 0.5, [10, 6]], ['lilac-dune-gravel', 0.6], ['coral-dune-pebble', 0.6], ['turquoise-dune-stone', 0.5, [10, 6]], ['lilac-dune-log', 0.3, [30, 9]], ['pale-dune-log', 0.3, [30, 9]]] },
+  [T.BEACH]: { density: 0.06, list: [['palm-0', 1.5, [8, 6]], ['palm-1', 1.5, [8, 6]], ['sea-rock', 1, [28, 10]], ['big-flower', 0.3], ['flower-tuft-0', 1.5], ['grass-tuft-0', 2], ['beach-flower-0', 0.7], ['beach-flower-1', 0.7], ['shell-0', 0.6], ['shell-1', 0.6], ['sand-ripple-0', 0.8], ['sand-ripple-1', 0.8], ['starfish-0', 0.4], ['starfish-1', 0.4], ['tide-puddle-0', 0.4], ['tide-puddle-1', 0.4], ['broken-anchor', 0.25, [12, 10]], ['spiral-shell', 0.4], ['beach-boulder-0', 0.3, [14, 8]], ['beach-boulder-1', 0.3, [14, 8]], ['sea-foam-0', 0.5], ['sea-foam-1', 0.5], ['pale-stone-0', 0.5], ['pale-stone-1', 0.5], ['tide-rock-0', 0.5, [10, 6]], ['tide-rock-1', 0.5, [10, 6]], ['pink-shell', 0.4], ['driftwood', 0.4], ['beach-gravel', 0.6], ['pale-bark', 0.4], ['wreck-log', 0.3, [30, 9]], ['wet-stone-0', 0.5, [10, 6]], ['wet-stone-1', 0.5, [10, 6]], ['pink-pebble', 0.5], ['sea-grass-0', 0.6], ['sea-grass-1', 0.6], ['shipwreck', 0.2, [30, 12]], ['blue-gray-stone', 0.5, [10, 6]], ['green-beach-stone', 0.5, [10, 6]], ['dry-sea-bush-0', 0.5], ['dry-sea-bush-1', 0.5], ['yellow-beach-stone', 0.5, [10, 6]], ['light-beach-bark', 0.4], ['pale-green-stone', 0.5, [10, 6]], ['rose-beach-stone', 0.5, [10, 6]], ['white-beach-pebble', 0.6], ['pink-sea-bush-0', 0.5], ['pink-sea-bush-1', 0.5], ['long-beach-log', 0.25, [34, 8]], ['colorful-beach-gravel', 0.6], ['lilac-beach-stone', 0.5, [10, 6]], ['green-beach-pebble', 0.6], ['big-shell', 0.35, [10, 8]], ['blue-beach-pebble', 0.6], ['dark-beach-log', 0.25, [30, 9]], ['dark-green-beach-stone', 0.5, [10, 6]], ['coral-beach-flower-0', 0.5], ['coral-beach-flower-1', 0.5], ['gold-beach-pebble', 0.6], ['teal-beach-stone', 0.5, [10, 6]], ['coral-beach-stone', 0.5, [10, 6]], ['coral-beach-pebble', 0.6], ['green-beach-gravel', 0.6], ['turquoise-beach-pebble', 0.6], ['dark-lilac-beach-stone', 0.5, [10, 6]], ['light-lilac-beach-pebble', 0.6], ['light-green-beach-pebble', 0.6], ['muddy-beach-log', 0.25, [30, 9]], ['lilac-beach-flower-0', 0.5], ['lilac-beach-flower-1', 0.5], ['green-beach-flower-0', 0.5], ['green-beach-flower-1', 0.5], ['light-green-beach-stone', 0.5, [10, 6]], ['sea-green-beach-stone', 0.5, [10, 6]], ['sea-green-beach-flower-0', 0.5], ['sea-green-beach-flower-1', 0.5], ['dark-sea-green-beach-stone', 0.5, [10, 6]], ['light-green-beach-flower-0', 0.5], ['light-green-beach-flower-1', 0.5], ['pale-green-beach-flower-0', 0.5], ['pale-green-beach-flower-1', 0.5], ['pale-green-beach-stone', 0.5, [10, 6]], ['pale-lilac-beach-pebble', 0.6], ['light-sea-green-beach-pebble', 0.6]] },
+  [T.JUNGLE]: { density: 0.17, list: [['palm-0', 1.5, [8, 6]], ['palm-1', 1.5, [8, 6]], ['tropical-bush', 3], ['big-flower', 2], ['sea-rock', 0.4, [28, 10]], ['grass-tuft-0', 3], ['grass-tuft-1', 3], ['flower-tuft-1', 2], ['jungle-flower-0', 0.8], ['jungle-flower-1', 0.8], ['vine-0', 0.7], ['vine-1', 0.7], ['jungle-root-0', 0.5], ['jungle-root-1', 0.5], ['purple-flower-0', 0.6], ['purple-flower-1', 0.6], ['jungle-log', 0.4, [32, 9]], ['purple-shroom-0', 0.4], ['purple-shroom-1', 0.4], ['jungle-bush-0', 0.6], ['jungle-bush-1', 0.6], ['orange-jungle-flower-0', 0.5], ['orange-jungle-flower-1', 0.5], ['yellow-jungle-flower-0', 0.5], ['yellow-jungle-flower-1', 0.5], ['pink-jungle-flower-0', 0.5], ['pink-jungle-flower-1', 0.5], ['coral-jungle-flower-0', 0.5], ['coral-jungle-flower-1', 0.5], ['gold-jungle-flower-0', 0.5], ['gold-jungle-flower-1', 0.5], ['turquoise-jungle-flower-0', 0.5], ['turquoise-jungle-flower-1', 0.5], ['mossy-jungle-log', 0.3, [30, 9]], ['sea-green-jungle-flower-0', 0.5], ['sea-green-jungle-flower-1', 0.5], ['light-green-jungle-flower-0', 0.5], ['light-green-jungle-flower-1', 0.5], ['pale-green-jungle-flower-0', 0.5], ['pale-green-jungle-flower-1', 0.5], ['dark-jungle-pebble', 0.6], ['mossy-jungle-stone', 0.5, [10, 6]]] },
+  [T.ASH]: { density: 0.11, list: [['charred-tree', 2, [10, 7]], ['obsidian', 2, [28, 12]], ['lava-vent', 1], ['fire-crystal', 0.8, [14, 8]], ['ash-bush', 2], ['grass-tuft-1', 0.8], ['ash-flower-0', 0.5], ['ash-flower-1', 0.5], ['pebbles-0', 0.5], ['pebbles-1', 0.5], ['ember-0', 0.8], ['ember-1', 0.8], ['obsidian-shard-0', 0.5, [5, 8]], ['obsidian-shard-1', 0.5, [5, 8]], ['ember-flower-0', 0.5], ['ember-flower-1', 0.5], ['lava-rock-0', 0.5, [12, 6]], ['lava-rock-1', 0.5, [12, 6]], ['granite-0', 0.5, [12, 6]], ['granite-1', 0.5, [12, 6]], ['orange-flower-0', 0.5], ['orange-flower-1', 0.5], ['ash-spike-0', 0.5, [5, 10]], ['ash-spike-1', 0.5, [5, 10]], ['red-stone-0', 0.5, [10, 6]], ['red-stone-1', 0.5, [10, 6]], ['hot-ash-0', 0.6], ['hot-ash-1', 0.6], ['ash-crystal-0', 0.4, [5, 8]], ['ash-crystal-1', 0.4, [5, 8]], ['pale-ash-rock', 0.4, [12, 7]], ['small-lava-rock-0', 0.5], ['small-lava-rock-1', 0.5], ['light-ash-gravel', 0.6], ['white-ash-flower-0', 0.5], ['white-ash-flower-1', 0.5], ['ash-log', 0.35, [28, 8]], ['ash-bark', 0.5], ['red-ash-rock', 0.4, [12, 7]], ['orange-ash-flower-0', 0.5], ['orange-ash-flower-1', 0.5], ['dry-ash-bush-0', 0.5], ['dry-ash-bush-1', 0.5], ['pink-ash-flower-0', 0.5], ['pink-ash-flower-1', 0.5], ['flowered-ash-bush-0', 0.4], ['flowered-ash-bush-1', 0.4], ['pale-ash-log', 0.3, [30, 9]], ['yellow-ash-flower-0', 0.5], ['yellow-ash-flower-1', 0.5], ['teal-ash-flower-0', 0.5], ['teal-ash-flower-1', 0.5], ['coral-ash-flower-0', 0.5], ['coral-ash-flower-1', 0.5], ['green-ash-flower-0', 0.5], ['green-ash-flower-1', 0.5], ['sea-green-ash-flower-0', 0.5], ['sea-green-ash-flower-1', 0.5], ['light-green-ash-flower-0', 0.5], ['light-green-ash-flower-1', 0.5], ['light-sea-green-ash-flower-0', 0.5], ['light-sea-green-ash-flower-1', 0.5], ['pale-green-ash-flower-0', 0.5], ['pale-green-ash-flower-1', 0.5]] },
 };
 const NODE_DENSITY = 0.011;
 // Objetos que brilham no escuro (iluminam a noite e as cavernas).
@@ -67,6 +69,10 @@ export class RegionWorld {
     this.discovered = new Set(Array.isArray(saved?.discovered) ? saved.discovered : ['vale']);
     this.bosses = { ...(saved?.bosses ?? {}) };
     this.chests = new Set(Array.isArray(saved?.chests) ? saved.chests : []);
+    // Dia em que cada baú do mundo foi saqueado (baú reabastece 3 dias depois).
+    this.chestDays = { ...(saved?.chestDays ?? {}) };
+    this.travelerGifts = new Set(Array.isArray(saved?.travelerGifts) ? saved.travelerGifts : []);
+    this.travelers = [];
     this.grid = buildTerrainGrid();
     this.layout = layoutTiles(this.grid, WORLD.camp);
     this.rooms = new Map(this.grid.rooms.map((room) => [`${room.cave}:${room.floor}`, room]));
@@ -234,6 +240,96 @@ export class RegionWorld {
       this.addHint(captain, position.x - 30, position.y - (painted ? 64 : 40), dock.name);
       scene.hudCamera?.ignore([pier, boat, captain]);
     }
+    // Placas de sinalização ao longo das estradas (indicam o destino e a distância).
+    for (const sign of ROAD_SIGNS) {
+      if (!scene.textures.exists('biome')) continue;
+      const sprite = scene.add.image(sign.x, sign.y, 'biome', 'signpost').setOrigin(0.5, 0.9).setDepth(sign.y);
+      scene.hudCamera?.ignore(sprite);
+      this.features.push({ type: 'sign', sign, x: sign.x, y: sign.y + 4, sprite, label: `LER PLACA • ${sign.label}` });
+      this.addHint(sprite, sign.x, sign.y - Math.round(sprite.displayHeight * 0.9) - 10, sign.label);
+    }
+    // Moradores dos vilarejos nomeados: ficam parados perto das casas e conversam com E.
+    VILLAGES.forEach((village, index) => {
+      const def = VILLAGERS[index % VILLAGERS.length];
+      for (const frame of [0, 1]) {
+        const key = `villager-${village.id}-${frame}`;
+        if (!scene.textures.exists(key)) {
+          const pixels = drawVillager(def.palette, def.prop, frame);
+          const texture = scene.textures.createCanvas(key, pixels.width, pixels.height);
+          texture.getContext().putImageData(new ImageData(pixels.data, pixels.width, pixels.height), 0, 0);
+          texture.setFilter(Phaser.Textures.FilterMode.NEAREST);
+          texture.refresh();
+        }
+      }
+      const animKey = `villager-${village.id}-idle`;
+      if (!scene.anims.exists(animKey)) {
+        scene.anims.create({ key: animKey, frames: [{ key: `villager-${village.id}-0` }, { key: `villager-${village.id}-1` }], frameRate: 2, repeat: -1 });
+      }
+      const npc = scene.add.sprite(village.x, village.y + 30, `villager-${village.id}-0`).setOrigin(0.5, 0.86).setDepth(village.y + 30);
+      npc.play(animKey);
+      const npcShadow = scene.add.ellipse(village.x, village.y + 34, 22, 7, 0x000000, 0.26).setDepth(village.y - 1);
+      scene.hudCamera?.ignore([npc, npcShadow]);
+      this.features.push({ type: 'villager', village, x: village.x, y: village.y + 30, sprite: npc, label: `CONVERSAR • ${village.name}` });
+      this.addHint(npc, village.x, village.y - 40, village.name);
+      // Cama na primeira casa do vilarejo: permite dormir até amanhecer fora do acampamento.
+      const [bedDx, bedDy] = village.houses[0];
+      const bedX = village.x + bedDx;
+      const bedY = village.y + bedDy + 18;
+      this.features.push({ type: 'bed', village, x: bedX, y: bedY, label: `DORMIR ATÉ AMANHECER • ${village.name}` });
+      // Pedra rúnica na praça do vilarejo: abençoa com +50% XP até o fim do dia (1x por dia).
+      const runeX = village.x + 56;
+      const runeY = village.y + 52;
+      const runeSprite = scene.add.image(runeX, runeY, 'biome', 'ruin-pillar').setOrigin(0.5, 0.9).setDepth(runeY);
+      scene.hudCamera?.ignore([runeSprite]);
+      this.addHint(runeSprite, runeX, runeY - Math.round(runeSprite.displayHeight * 0.9) - 10, 'Pedra Rúnica');
+      this.features.push({ type: 'rune', village, x: runeX, y: runeY, sprite: runeSprite, label: `💠 TOCAR A PEDRA RÚNICA • ${village.name}` });
+    });
+    // Viajantes que caminham pelas estradas (ida e volta) e conversam/trocam com E.
+    const travelerRoads = [ROADS[0], ROADS[2], ROADS[3], ROADS[4]].filter(Boolean);
+    const travelerLines = [
+      'Andei a estrada inteira esta semana. Se vir fumaça, é acampamento bom.',
+      'Dizem que tem baú escondido longe das estradas... procure nos cantos do mapa.',
+      'Cuidado à noite: as criaturas do brejo e do deserto ficam ousadas.',
+      'Compro peles e minério! Pago em moedas na hora.'
+    ];
+    this.travelers = travelerRoads.map((road, index) => {
+      const id = `viajante-${index}`;
+      const def = VILLAGERS[(index + 2) % VILLAGERS.length];
+      for (const frame of [0, 1]) {
+        const key = `villager-${id}-${frame}`;
+        if (!scene.textures.exists(key)) {
+          const pixels = drawVillager(def.palette, def.prop, frame);
+          const texture = scene.textures.createCanvas(key, pixels.width, pixels.height);
+          texture.getContext().putImageData(new ImageData(pixels.data, pixels.width, pixels.height), 0, 0);
+          texture.setFilter(Phaser.Textures.FilterMode.NEAREST);
+          texture.refresh();
+        }
+      }
+      const animKey = `villager-${id}-walk`;
+      if (!scene.anims.exists(animKey)) {
+        scene.anims.create({ key: animKey, frames: [{ key: `villager-${id}-0` }, { key: `villager-${id}-1` }], frameRate: 5, repeat: -1 });
+      }
+      const start = pointOnRoad(road, 0.2 + index * 0.3);
+      const sprite = scene.add.sprite(start.x, start.y, `villager-${id}-0`).setOrigin(0.5, 0.86).setDepth(start.y).play(animKey);
+      const shadow = scene.add.ellipse(start.x, start.y + 4, 22, 7, 0x000000, 0.26).setDepth(start.y - 1);
+      scene.hudCamera?.ignore([sprite, shadow]);
+      const traveler = { id, road, t: 0.2 + index * 0.3, dir: index % 2 === 0 ? 1 : -1, speed: 24 + index * 4, sprite, shadow, lines: travelerLines };
+      this.features.push({ type: 'traveler', traveler, get x() { return traveler.sprite.x; }, get y() { return traveler.sprite.y; }, sprite, label: 'CONVERSAR • VIAJANTE' });
+      this.addHint(sprite, start.x, start.y - 40, 'Viajante');
+      return traveler;
+    });
+    // Baús de tesouro escondidos no overworld (longe do acampamento e dos POIs).
+    for (const spot of TREASURE_SPOTS) {
+      const sprite = scene.add.image(spot.x, spot.y, 'biome', 'boss-chest').setOrigin(0.5, 0.85).setScale(1.1).setDepth(spot.y);
+      scene.hudCamera?.ignore(sprite);
+      const feature = { type: 'chest', spot, x: spot.x, y: spot.y, sprite, label: 'ABRIR BAÚ' };
+      if (this.chests.has(spot.id)) {
+        feature.opened = true;
+        sprite.setTint(0x777777);
+      }
+      this.features.push(feature);
+      this.addHint(sprite, spot.x, spot.y - 34, 'Baú');
+    }
     // Escadas e baús das salas das cavernas.
     for (const room of this.grid.rooms) {
       const cave = CAVES_BY_ID[room.cave];
@@ -282,7 +378,9 @@ export class RegionWorld {
     let best = null;
     let bestDistance = range;
     for (const feature of this.features) {
-      if (feature.type === 'chest' && feature.opened) continue;
+      // Baú de mundo (com spot) continua interagível depois de aberto (reabastece em 3 dias);
+      // baú de chefe/torre abre só uma vez.
+      if (feature.type === 'chest' && feature.opened && !feature.spot) continue;
       const distance = Phaser.Math.Distance.Between(x, y, feature.x, feature.y);
       if (distance < bestDistance) {
         best = feature;
@@ -303,8 +401,151 @@ export class RegionWorld {
       if (feature.room.floor === 0) this.leaveCave();
       else this.enterCave(feature.cave.id, feature.room.floor - 1, { fromBelow: true });
     } else if (feature.type === 'dock') this.openBoat(feature.dock);
-    else if (feature.type === 'chest') this.openBossChest(feature);
+    else if (feature.type === 'chest') feature.spot ? this.openWorldChest(feature) : this.openBossChest(feature);
+    else if (feature.type === 'sign') this.readSign(feature.sign);
+    else if (feature.type === 'villager') this.talkToVillager(feature.village);
+    else if (feature.type === 'traveler') this.talkToTraveler(feature.traveler);
+    else if (feature.type === 'bed') this.scene.sleepAtBed(feature.village);
+    else if (feature.type === 'rune') this.scene.touchRuneStone(feature.village);
     return true;
+  }
+
+  /** Viajante na estrada: 1 presente grátis por dia; depois abre a lojinha itinerante. */
+  talkToTraveler(traveler) {
+    const scene = this.scene;
+    const line = traveler.lines[Math.floor(Math.random() * traveler.lines.length)];
+    const day = scene.timeState?.dayCount ?? 1;
+    const giftKey = `${traveler.id}:${day}`;
+    if (!this.travelerGifts.has(giftKey)) {
+      this.travelerGifts.add(giftKey);
+      if (Math.random() < 0.5) {
+        const coins = Phaser.Math.Between(5, 12);
+        scene.economy?.addCoins?.(coins);
+        scene.ui.showMessage(`🧳 Viajante: "${line}" Toma ${coins} moedas pela conversa!`);
+        scene.audio?.playCoin?.();
+      } else {
+        const type = ['wood', 'stone', 'herb', 'fiber'][Math.floor(Math.random() * 4)];
+        const amount = Phaser.Math.Between(2, 4);
+        if (scene.inventory?.add(type, amount)) {
+          scene.ui.showMessage(`🧳 Viajante: "${line}" Toma ${amount} ${type}!`);
+          scene.audio?.playCollect?.();
+        } else scene.ui.showMessage(`🧳 Viajante: "${line}"`);
+      }
+      scene.save?.();
+      return;
+    }
+    // Lojinha itinerante (compartilhada com os vilarejos).
+    this.openShop('viajante', `🧳 Viajante: "${line}" — O que vai ser, forasteiro?`);
+  }
+
+  /** Loja simples por moedas: poção, comida e tocha (viajantes e vilarejos). */
+  openShop(speaker, title) {
+    const scene = this.scene;
+    const ui = scene.campaign?.ui;
+    if (!ui?.dialogue) {
+      scene.ui.showMessage(title);
+      scene.audio?.playPick?.();
+      return;
+    }
+    const coins = scene.economy?.coins ?? 0;
+    const titleWithCoins = `${title} (🪙 ${coins})`;
+    const offers = [
+      { label: 'POÇÃO DE VIDA • 15 moedas', price: 15, type: 'potion' },
+      { label: 'COMIDA • 8 moedas', price: 8, type: 'food' },
+      { label: 'TOCHA • 5 moedas', price: 5, type: 'torch' }
+    ].map((offer) => ({
+      label: offer.label,
+      primary: true,
+      disabled: coins < offer.price,
+      action: () => {
+        if (scene.economy?.spendCoins?.(offer.price) && scene.inventory?.add(offer.type, 1)) {
+          scene.ui.showMessage(`🛒 Comprou ${offer.type} na loja do ${speaker}!`);
+          scene.audio?.playCoin?.();
+          scene.save?.();
+        } else {
+          scene.ui.showMessage('Mochila cheia ou sem moedas!');
+        }
+      }
+    }));
+    offers.push({ label: 'SÓ CONVERSAR', action: () => scene.ui.showMessage(title) });
+    ui.dialogue(speaker, titleWithCoins, offers);
+  }
+
+  /** Baú escondido no overworld: saque único com equipamento; reabastece com moedas 3 dias depois. */
+  openWorldChest(feature) {
+    const scene = this.scene;
+    const region = feature.spot.region;
+    const info = REGION_INFO[region];
+    const level = info?.levelRange?.[1] ?? 10;
+    const day = scene.timeState?.dayCount ?? 1;
+    const openedDay = this.chestDays[feature.spot.id];
+    if (this.chests.has(feature.spot.id)) {
+      // Já saqueado: só volta a dar loot 3 dias depois (só moedas, sem equipamento).
+      if (openedDay === undefined || day - openedDay < 3) {
+        scene.ui.showMessage('Esse baú já foi saqueado. Os saqueadores voltam em alguns dias...');
+        scene.audio?.playDeny?.();
+        return;
+      }
+      const coins = 10 + Math.round(level * 0.8) + Math.floor(Math.random() * 8);
+      scene.economy?.addCoins?.(coins);
+      this.chestDays[feature.spot.id] = day;
+      feature.sprite.clearTint();
+      scene.effects?.spawnHarvest?.(feature.x, feature.y - 10, 0xffd76b);
+      scene.audio?.playChest?.();
+      scene.ui.showMessage(`Baú reabastecido em ${info?.name ?? region}! +${coins} moedas`);
+      scene.save?.();
+      return;
+    }
+    const coins = 25 + Math.round(level * 2.5) + Math.floor(Math.random() * 20);
+    scene.economy?.addCoins?.(coins);
+    let extra = '';
+    if (Math.random() < 0.35) {
+      const drops = rollGearDrop({ region, level, boss: `world:${feature.spot.id}` });
+      for (const drop of drops.slice(0, 1)) {
+        const item = scene.gear?.add(drop.id, drop.rarity);
+        if (item) {
+          extra = ` • ${RARITIES[drop.rarity].name}: ${GEAR_ITEMS[drop.id].name}`;
+          window.dispatchEvent(new CustomEvent('lendas:gear'));
+        }
+      }
+    }
+    feature.opened = true;
+    this.chests.add(feature.spot.id);
+    this.chestDays[feature.spot.id] = day;
+    feature.sprite.setTint(0x777777);
+    scene.effects?.spawnHarvest?.(feature.x, feature.y - 10, 0xffd76b);
+    scene.audio?.playChest?.();
+    const xp = 10 + level * 2;
+    scene.ui.showMessage(`Baú escondido em ${info?.name ?? region}! +${coins} moedas${extra} • +${xp} XP`);
+    scene.grantExperience?.(xp, true);
+    scene.save?.();
+  }
+
+  /** Fala com o morador de um vilarejo: linha + descoberta + lojinha da vila. */
+  talkToVillager(village) {
+    const scene = this.scene;
+    const line = village.lines[Math.floor(Math.random() * village.lines.length)];
+    if (!this.discovered.has(`vila:${village.id}`)) {
+      this.discovered.add(`vila:${village.id}`);
+      scene.campaign?.ui?.toast?.(`Descoberto: ${village.name}`, 'gold');
+      scene.grantExperience?.(15, true);
+      scene.save?.();
+    }
+    // Vilarejos têm commerce local: mesma lojinha do viajante, com fala do morador.
+    this.openShop('morador', `🧑 ${village.name}: "${line}" — A lojinha da vila tá aberta!`);
+  }
+
+  /** Placa de estrada: diz para onde fica o destino e a quantos metros. */
+  readSign(sign) {
+    const scene = this.scene;
+    const player = scene.player;
+    const poi = sign.poi ?? { x: sign.x, y: sign.y, name: sign.label };
+    const dx = poi.x - player.x;
+    const dy = poi.y - player.y;
+    const meters = Math.max(0, Math.round((Math.hypot(dx, dy) / TILE) * 10));
+    const compass = compass8(dx, dy);
+    scene.ui.showMessage(`🪧 Placa: ${poi.name} fica a ${meters} m para ${compass}.`);
+    scene.audio?.playPick?.();
   }
 
   // ---------- Barco ----------
@@ -338,6 +579,47 @@ export class RegionWorld {
       scene.ui.showMessage(`Você desembarcou no ${dock.name}.`);
       scene.audio?.playCollect?.();
     });
+  }
+
+  /**
+   * Viagem rápida pelo mapa (M): teleporta até um local já descoberto.
+   * target: { type: 'camp' } ou { type: 'feature', feature } (caverna/torre/porto).
+   * O acampamento é grátis; os demais custam FAST_TRAVEL_COST moedas.
+   */
+  fastTravelTo(target) {
+    const scene = this.scene;
+    const player = scene.player;
+    let dest;
+    let name;
+    if (target.type === 'camp') {
+      dest = { x: WORLD.camp.x, y: WORLD.camp.y + 85 };
+      name = 'Acampamento';
+    } else {
+      const feature = target.feature;
+      if (feature.type === 'dock') {
+        const position = dockPosition(feature.dock);
+        dest = { x: position.x, y: position.y - 20 };
+        name = feature.dock.name;
+      } else {
+        dest = { x: feature.cave.entrance.x, y: feature.cave.entrance.y + 46 };
+        name = feature.cave.name;
+      }
+    }
+    if (player && Math.hypot(player.x - dest.x, player.y - dest.y) < 160) {
+      scene.ui.showMessage('Você já está perto desse lugar.');
+      return false;
+    }
+    const cost = target.type === 'camp' ? 0 : FAST_TRAVEL_COST;
+    if (cost > 0 && !scene.economy?.spendCoins?.(cost)) {
+      scene.ui.showMessage(`Viagem rápida para ${name} custa ${cost} moedas e você não tem.`);
+      return false;
+    }
+    this.teleport(dest.x, dest.y, () => {
+      scene.ui.showMessage(cost > 0 ? `Viajou até ${name} (−${cost} moedas).` : `Voltou ao ${name}.`);
+      scene.audio?.playCollect?.();
+      scene.save?.();
+    });
+    return true;
   }
 
   teleport(x, y, onArrive = null, bounds = null) {
@@ -535,7 +817,7 @@ export class RegionWorld {
   }
 
   placeBossChest(cave, room) {
-    if (this.features.some((feature) => feature.type === 'chest' && feature.cave.id === cave.id)) return;
+    if (this.features.some((feature) => feature.type === 'chest' && feature.cave?.id === cave.id)) return;
     const exit = this.roomPoint(room, room.plan.exit);
     const x = exit.x + TILE;
     const y = exit.y;
@@ -624,7 +906,12 @@ export class RegionWorld {
         if (kind === T.VALLEY || kind === T.VOID || kind === T.WALL) continue;
         if (kind === T.MURK) {
           // Nenúfares soltos na água parada.
-          if (hash(col, row, 231) < 0.22) props.push({ frame: `lily-${hash(col, row, 232) < 0.5 ? 0 : 1}`, x: col * TILE + TILE / 2 + (hash(col, row, 233) - 0.5) * 26, y: row * TILE + TILE / 2 + (hash(col, row, 234) - 0.5) * 26, flat: true });
+          if (hash(col, row, 231) < 0.22) {
+            const big = hash(col, row, 235) < 0.18;
+            props.push({ frame: big ? `big-water-lily-${hash(col, row, 236) < 0.5 ? 0 : 1}` : `lily-${hash(col, row, 232) < 0.5 ? 0 : 1}`, x: col * TILE + TILE / 2 + (hash(col, row, 233) - 0.5) * 26, y: row * TILE + TILE / 2 + (hash(col, row, 234) - 0.5) * 26, flat: true });
+          } else if (hash(col, row, 237) < 0.08) {
+            props.push({ frame: `floating-branch-${hash(col, row, 238) < 0.5 ? 0 : 1}`, x: col * TILE + TILE / 2 + (hash(col, row, 239) - 0.5) * 26, y: row * TILE + TILE / 2 + (hash(col, row, 240) - 0.5) * 26, flat: true });
+          }
           continue;
         }
         const x = col * TILE + TILE / 2 + (hash(col, row, 203) - 0.5) * 22;
@@ -659,6 +946,19 @@ export class RegionWorld {
         if (nodeTable && hash(col, row, 216) < NODE_DENSITY) {
           nodes.push({ id: `n${col}_${row}`, type: pickWeighted(nodeTable, hash(col, row, 217)), x, y });
         }
+      }
+    }
+    // Casas dos vilarejos nomeados (sólidas): entram no bloco onde ficam.
+    const chunkLeft = cx * CHUNK * TILE;
+    const chunkTop = cy * CHUNK * TILE;
+    const chunkRight = chunkLeft + CHUNK * TILE;
+    const chunkBottom = chunkTop + CHUNK * TILE;
+    for (const village of VILLAGES) {
+      for (const [dx, dy] of village.houses) {
+        const x = village.x + dx;
+        const y = village.y + dy;
+        if (x < chunkLeft - 60 || x > chunkRight + 60 || y < chunkTop - 60 || y > chunkBottom + 60) continue;
+        props.push({ frame: 'village-house', x, y, solid: [36, 14] });
       }
     }
     // As transições entre regiões são franjas na camada de cima do chão (buildTilemap).
@@ -780,8 +1080,19 @@ export class RegionWorld {
         if (!this.discovered.has(key)) {
           this.discovered.add(key);
           this.scene.showEpic?.(info.name.toUpperCase(), `${info.banner} Nível sugerido: ${info.levels}.`, 4200);
+          this.scene.achievements?.checkAchievements(); // conquistas de região descoberta
+          // Descoberta vale XP e entra na aba "Descobertas" do diário (L).
+          this.scene.grantExperience?.(30, true);
+          this.scene.campaign?.ui?.refresh?.();
           this.scene.save?.();
         } else this.scene.ui.showMessage(`— ${info.name} —`);
+        // Aviso de região perigosa: nível sugerido muito acima do nível do jogador.
+        const playerLevel = this.scene.progression?.level ?? 1;
+        const minLevel = info.levelRange?.[0] ?? 0;
+        if (minLevel >= playerLevel + 6) {
+          this.scene.showEpic?.('⚠️ REGIÃO PERIGOSA', `${info.name}: nível sugerido ${info.levels}, você é nível ${playerLevel}. Cuidado!`, 4200);
+          this.scene.audio?.playRoar?.();
+        }
       }
     }
     const hazard = REGION_INFO[key]?.hazard;
@@ -821,6 +1132,9 @@ export class RegionWorld {
     const view = this.scene.cameras.main.worldView;
     const lights = [];
     const visible = (x, y) => x > view.x - 120 && x < view.right + 120 && y > view.y - 120 && y < view.bottom + 120;
+    // O jogador carrega uma tocha: halo quente própria (entra primeiro para não ser cortado pelo limite).
+    const player = this.scene.player;
+    if (player) lights.push({ x: player.x, y: player.y - 6, radius: 120, kind: 'torch' });
     for (const feature of this.features) {
       if (feature.type === 'dock' || !visible(feature.x, feature.y)) continue;
       // Entrada de caverna: braseiro na boca (halo quente que guia o jogador à noite).
@@ -838,10 +1152,11 @@ export class RegionWorld {
     return lights.slice(0, 24);
   }
 
-  /** Lodo deixa mais lento; gelo e o resto, velocidade normal. */
+  /** Lodo deixa mais lento; estrada de terra batida deixa 30% mais rápido. */
   speedFactorAt(x, y) {
     const terrain = this.terrainAtPoint(x, y);
-    return terrain === T.MURK ? 0.62 : 1;
+    const mud = terrain === T.MURK ? 0.62 : 1;
+    return mud * (roadAt(x, y) ? 1.3 : 1);
   }
 
   update(delta) {
@@ -858,7 +1173,24 @@ export class RegionWorld {
       this.updateHints();
     }
     this.updateRegion(delta);
+    this.updateTravelers(delta);
     this.updateBossFight(delta);
+  }
+
+  /** Viajantes andam pelas estradas de ida e volta, mudando de direção nas pontas. */
+  updateTravelers(delta) {
+    if (!this.travelers?.length) return;
+    const seconds = delta / 1000;
+    for (const traveler of this.travelers) {
+      if (!traveler.sprite?.active) continue;
+      traveler.t += traveler.dir * (traveler.speed * seconds) / 2400;
+      if (traveler.t >= 1) { traveler.t = 1; traveler.dir = -1; }
+      if (traveler.t <= 0) { traveler.t = 0; traveler.dir = 1; }
+      const point = pointOnRoad(traveler.road, traveler.t);
+      traveler.sprite.setPosition(point.x, point.y).setDepth(point.y);
+      // Sombra de contato acompanha o viajante.
+      traveler.shadow?.setPosition(point.x, point.y + 4).setDepth(point.y - 1);
+    }
   }
 
   serialize() {
@@ -866,7 +1198,9 @@ export class RegionWorld {
       harvested: this.harvested,
       discovered: [...this.discovered],
       bosses: this.bosses,
-      chests: [...this.chests]
+      chests: [...this.chests],
+      chestDays: this.chestDays,
+      travelerGifts: [...this.travelerGifts]
     };
   }
 }

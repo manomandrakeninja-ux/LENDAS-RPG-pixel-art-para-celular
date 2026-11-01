@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   LEGACY_SAVE_KEY_V2,
+  createSaveEnvelope,
   loadSaveDetailed,
   migrateSave,
   migrateV1ToV2,
@@ -112,6 +113,59 @@ test('save v2 preserves farm, market, crafting and storage state', () => {
   assert.equal(migrated.camp.storage.iron, 4);
   assert.equal(migrated.farm.plots[0].crop, 'wheat');
   assert.equal(migrated.market.offers[0].quantity, 2);
+});
+
+test('waypoint personalizado sobrevive às migrações de save (v1 e v2)', () => {
+  const v1 = migrateV1ToV2({ version: 1, waypoint: { x: 5000, y: 3000 } });
+  assert.deepEqual(v1.waypoint, { x: 5000, y: 3000 });
+  const v2 = migrateSave({ version: SAVE_VERSION, waypoint: { x: 1440, y: 1080 } });
+  assert.deepEqual(v2.waypoint, { x: 1440, y: 1080 });
+  // Sem waypoint ou inválido vira null.
+  assert.equal(migrateSave({ version: SAVE_VERSION }).waypoint, null);
+  assert.equal(migrateSave({ version: SAVE_VERSION, waypoint: { x: NaN, y: 3 } }).waypoint, null);
+  assert.equal(migrateV1ToV2({ version: 1 }).waypoint, null);
+});
+
+test('save antigo (pré-experimento) migra sem erros e ganha defaults dos campos novos', () => {
+  // Um save v2 antigo, sem runeDay/chestDays/travelerGifts etc., deve ser aceito intacto.
+  const old = migrateSave({ version: SAVE_VERSION, player: { health: 50, maxHealth: 100, attack: 10, defense: 2 }, time: { dayCount: 3, cycleTime: 5 } });
+  assert.equal(old.player.health, 50);
+  assert.equal(old.waypoint, null);
+  assert.ok(typeof old === 'object' && old.version === SAVE_VERSION);
+  // Envelope JSON completo (com campos novos ausentes) passa no roundtrip sem quebrar.
+  const env = createSaveEnvelope(migrateSave({ version: SAVE_VERSION, runeDay: 4 }));
+  const back = migrateSave(JSON.parse(JSON.stringify(env)));
+  assert.equal(back.runeDay ?? 0, 4);
+  assert.equal(migrateSave({ version: SAVE_VERSION }).runeDay ?? 0, 0);
+});
+
+test('roundtrip v2: save completo (skills, waypoint, regiões, viajantes) sobrevive a migrateSave', () => {
+  const full = migrateSave({
+    version: SAVE_VERSION,
+    time: { cycleTime: 10, dayCount: 7 },
+    player: { health: 80, maxHealth: 120, attack: 20, defense: 5 },
+    skills: { blade: 450, archery: 120 },
+    waypoint: { x: 9000, y: 5000 },
+    regions: {
+      harvested: { 'n1_2': 5 },
+      discovered: ['vale', 'antiga', 'vila:vila-penhasco'],
+      bosses: { 'orc-cave': 6 },
+      chests: ['w10_20', 'orc-cave'],
+      travelerGifts: ['viajante-0:7']
+    },
+    economy: { coins: 321 }
+  });
+  // Nada se perde no roundtrip.
+  assert.deepEqual(full.waypoint, { x: 9000, y: 5000 });
+  assert.deepEqual(full.skills, { blade: 450, archery: 120 });
+  assert.equal(full.regions.chests.length, 2);
+  assert.deepEqual(full.regions.travelerGifts, ['viajante-0:7']);
+  assert.equal(full.economy.coins, 321);
+  assert.equal(full.player.maxHealth, 120);
+  // E a envelope nova mantém a versão.
+  const envelope = createSaveEnvelope(full);
+  assert.equal(envelope.version, SAVE_VERSION);
+  assert.ok(envelope.savedAt);
 });
 
 test('future save versions are rejected instead of being silently downgraded', () => {

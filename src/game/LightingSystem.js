@@ -12,7 +12,6 @@ const LAVA_KIND = T.LAVA;
 // - `glow`: halo quente aditivo (fogueira, tochas, lampiões, forja, lava, cristais) com a
 //   rampa da própria fonte (núcleo amarelo → âmbar → laranja → brasa) e tremulação.
 const CELL = 4;
-const MASK_LEVELS = 40;
 const NIGHT_ALPHA = 200;
 // '#0e071b' (fundo) e '#1a1932' (borda da luz): noite puxando para roxo, como as sombras.
 const DARK_DEEP = [14, 7, 27];
@@ -307,22 +306,9 @@ export class LightingSystem {
           const distance = Math.sqrt((x + 0.5 - cx) ** 2 + ((y + 0.5 - cy) * 1.15) ** 2);
           if (distance >= reach) continue;
           const index = y * width + x;
-          // Rodada 4: 40 degraus (antes 12) — os anéis de 12 degraus apareciam como bandas na neve.
-          // Cristais abrem a escuridão só pela metade e sem núcleo cheio: quem colore o chão é o halo azul
-          // (com a abertura cheia a neve virava um disco branco em volta do cristal).
-          const band = kind?.smooth ? 0.55 * (1 - (distance / reach) ** 2) ** 2 : lightBand(distance, radius, falloff, MASK_LEVELS);
+          const band = lightBand(distance, radius, falloff);
           if (band > light[index]) light[index] = band;
           if (!ramp || distance >= glowReach) continue;
-          if (kind.smooth) {
-            // Cristais: halo frio, contínuo (sem disco nem degraus) e mais fraco no centro para o cristal
-            // continuar legível dentro dele; a cor desliza pela rampa em vez de pular de tom.
-            const g = 1 - distance / glowReach;
-            const pos = (1 - g) * (ramp.length - 1);
-            const lo = ramp[Math.floor(pos)]; const hi = ramp[Math.min(ramp.length - 1, Math.floor(pos) + 1)]; const f = pos - Math.floor(pos);
-            const amount = g * g * (3 - 2 * g) * strength;
-            for (let c = 0; c < 3; c += 1) glow[index * 3 + c] += (lo[c] + (hi[c] - lo[c]) * f) * amount;
-            continue;
-          }
           const g = Math.ceil((1 - distance / glowReach) * GLOW_LEVELS) / GLOW_LEVELS;
           const step = Math.min(ramp.length - 1, Math.floor((1 - g) * ramp.length));
           const amount = g * g * strength;
@@ -354,8 +340,7 @@ export class LightingSystem {
         const index = y * width + x;
         const lit = light[index];
         const rim = Math.max(0, Math.hypot(nx * 0.9, ny) - 0.72) / 0.6;
-        // Vinheta contínua (os 6 degraus viravam anéis largos na neve).
-        const vignette = Math.min(1, rim) ** 1.5 * vignetteMax;
+        const vignette = Math.ceil(Math.min(1, rim) * 6) / 6 * vignetteMax;
         const alpha = (night + vignette) * (1 - lit);
         const mix = Math.min(1, lit * 1.6);
         const offset = index * 4;
@@ -382,36 +367,6 @@ export class LightingSystem {
     this.glowContext.putImageData(halo, 0, 0);
     this.glowTexture.refresh();
   }
-  /** Lava no modo Leve: o mesmo campo da lava pintada, aplicado sobre a máscara e o halo já desenhados. */
-  lightLavaSimple(camera, glowScale, t) {
-    const width = this.width; const height = this.height; const n = width * height;
-    if (!this.simpleLight || this.simpleLight.length !== n) { this.simpleLight = new Float32Array(n); this.simpleGlow = new Float32Array(n * 3); }
-    const light = this.simpleLight; const glow = this.simpleGlow;
-    light.fill(0); glow.fill(0);
-    this.lightLava(light, glow, camera, glowScale, t);
-    let any = false;
-    for (let i = 0; i < n; i += 1) if (light[i] > 0) { any = true; break; }
-    if (!any) return;
-    this.context.globalCompositeOperation = 'source-over';
-    this.glowContext.globalCompositeOperation = 'source-over';
-    const mask = this.context.getImageData(0, 0, width, height);
-    const halo = this.glowContext.getImageData(0, 0, width, height);
-    const m = mask.data; const h = halo.data;
-    for (let i = 0; i < n; i += 1) {
-      const lit = light[i];
-      if (!lit) continue;
-      const o = i * 4;
-      m[o + 3] = Math.round(m[o + 3] * (1 - lit));
-      const peak = Math.max(glow[i * 3], glow[i * 3 + 1], glow[i * 3 + 2]);
-      if (peak <= 0) continue;
-      const a = Math.min(255, peak) / 255; const base = h[o + 3] / 255; const out = Math.min(1, a + base * (1 - a));
-      for (let c = 0; c < 3; c += 1) h[o + c] = Math.round(((glow[i * 3 + c] / peak) * 255 * a + h[o + c] * base * (1 - a)) / Math.max(out, 1e-3));
-      h[o + 3] = Math.round(out * 255);
-    }
-    this.context.putImageData(mask, 0, 0);
-    this.glowContext.putImageData(halo, 0, 0);
-  }
-
   /**
    * Luz simples (modo Leve): a escuridão da noite é um retângulo com gradientes radiais "furados" em volta das
    * fontes de luz, e o halo quente é uma soma de gradientes. Sem passar por cada pixel em JavaScript.
@@ -465,7 +420,7 @@ export class LightingSystem {
       if (night > 0.01) hole(cx, cy, radius * 0.6, radius + falloff);
       if (kind) {
         const ramp = HALO_RGB[source.kind] ?? HALO_RGB.lamp;
-        halo(cx, cy, (radius + falloff * 0.5) * 0.9, kind.smooth ? ramp[0] : ramp[Math.min(2, ramp.length - 1)], Math.min(1, kind.glow * glowScale * flicker * 0.5));
+        halo(cx, cy, (radius + falloff * 0.5) * 0.9, ramp[Math.min(2, ramp.length - 1)], Math.min(1, kind.glow * glowScale * flicker * 0.5));
       }
     }
     const area = this.camp.getLightArea?.();
@@ -477,9 +432,6 @@ export class LightingSystem {
       if (night > 0.01) hole(cx, cy, radius, radius + fade);
       halo(cx, cy, radius + fade, HALO_RGB.lamp[2], 0.1 * glowScale);
     }
-    // Rodada 4: a lava também acende no modo Leve (antes só o modo Alto a iluminava e, com o modo
-    // escolhido pelo fps, a lava ficava marrom à noite em aparelhos mais lentos).
-    if (night > 0.01) this.lightLavaSimple(camera, glowScale, t);
     // Vinheta fixa nos cantos.
     context.globalCompositeOperation = 'source-over';
     const vignette = (18 + 30 * level) / 255;

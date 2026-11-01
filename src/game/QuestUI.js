@@ -2,7 +2,8 @@ import { BUILDING_DEFS } from '../data/buildings.js';
 import { FARM_CROPS, ANIMAL_PRODUCTS, FORGE_RECIPES } from '../data/buildingSystems.js';
 import { CAMPAIGN_TITLE, CHAPTERS, LORE, MISSIONS, MISSIONS_BY_ID, NPCS, REGIONS, SEALS, SITES } from '../data/campaign.js';
 import { CHAPTER_STORY, SPEAKERS } from '../data/story.js';
-import { CAVES_BY_ID as DUNGEONS_BY_ID } from '../data/worldRegions.js';
+import { CAVES_BY_ID as DUNGEONS_BY_ID, REGION_INFO } from '../data/worldRegions.js';
+import { SKILLS, SKILL_MAX_LEVEL, skillLevelForXp, skillXpForLevel } from '../data/skills.js';
 import { ENEMY_TYPES } from '../data/enemies.js';
 import { RESOURCE_TYPES } from './config.js';
 import { resourceIconHtml, textureUrl } from './iconUrls.js';
@@ -220,11 +221,12 @@ export class QuestUI {
   renderJournal() {
     const state = this.state;
     const current = state.currentChapter;
-    const tabs = [['campaign', 'Campanha'], ['daily', 'Diárias'], ['records', 'Registros']]
+    const tabs = [['campaign', 'Campanha'], ['daily', 'Diárias'], ['discoveries', 'Descobertas'], ['records', 'Registros']]
       .map(([id, label]) => `<button type="button" data-q-tab="${id}" aria-selected="${this.tab === id}">${label}</button>`).join('');
     let body = '';
     if (this.tab === 'campaign') body = this.renderCampaign(current);
     else if (this.tab === 'daily') body = this.renderDaily();
+    else if (this.tab === 'discoveries') body = this.renderDiscoveries();
     else body = this.renderRecords();
     this.journal.innerHTML = `
       <div class="quest-journal__window">
@@ -342,7 +344,23 @@ export class QuestUI {
       <div class="quest-npc"><img class="pixel-icon" src="${textureUrl(this.scene, `npc-${id}-0`)}" alt=""><span>${escapeHtml(NPCS[id].name)}</span></div>`).join('');
     const lore = state.lore.map((key) => LORE[key]).filter(Boolean).map((entry) => `
       <article class="quest-lore"><h4>${escapeHtml(entry.title)}</h4><p>${escapeHtml(entry.text)}</p></article>`).join('') || '<p class="quest-empty">Nenhum registro ainda.</p>';
+    // Skills por uso: barras de progresso treinadas em combate (Lâmina, Arco, Esquiva, Bloqueio).
+    const skills = Object.entries(SKILLS).map(([key, def]) => {
+      const xp = this.scene.skills?.xp?.[key] ?? 0;
+      const level = skillLevelForXp(xp);
+      const maxed = level >= SKILL_MAX_LEVEL;
+      const current = skillXpForLevel(level);
+      const next = skillXpForLevel(level + 1);
+      const pct = maxed ? 100 : Math.min(100, Math.round(((xp - current) / Math.max(1, next - current)) * 100));
+      return `<div class="quest-skill">
+        <span class="quest-skill__name">${def.icon} ${def.name} <b>Nv ${level}${maxed ? ' (MÁX)' : ''}</b></span>
+        <div class="quest-skill__bar"><i style="width:${pct}%"></i></div>
+        <small>${def.desc}</small>
+      </div>`;
+    }).join('');
     return `
+      <h4 class="quest-section">Skills — treinam com o uso em combate</h4>
+      <div class="quest-daily-grid">${skills}</div>
       <h4 class="quest-section">Selos elementais (${state.seals.length}/5)</h4>
       <div class="quest-seals">${seals}</div>
       <h4 class="quest-section">Moradores • ${state.residents + 1} no acampamento${state.choice ? ` • Decisão: ${{ restore: 'restaurar o guardião', destroy: 'destruir o Golem', free: 'libertar o Coração' }[state.choice]}` : ''}</h4>
@@ -356,6 +374,32 @@ export class QuestUI {
         <button type="button" data-q-story="${chapter.number}">${chapter.number}. ${escapeHtml(chapter.title)}</button>`).join('')}</div>
       <h4 class="quest-section">Registros da história</h4>
       ${lore}`;
+  }
+
+  /** Aba Descobertas: regiões e locais já visitados no mundo grande (com cor da região). */
+  renderDiscoveries() {
+    const discovered = this.scene.regionWorld?.discovered ?? new Set();
+    const regionKeys = Object.keys(REGION_INFO).filter((key) => key !== 'caverna' && key !== 'mar');
+    const regions = regionKeys
+      .filter((key) => discovered.has(key))
+      .map((key) => {
+        const info = REGION_INFO[key];
+        return `<article class="quest-lore quest-discovery" style="border-left:4px solid ${info.color}">
+          <h4>${escapeHtml(info.name)}</h4>
+          <p>Nível ${escapeHtml(info.levels)}${info.banner ? ` — ${escapeHtml(info.banner)}` : ''}</p>
+        </article>`;
+      }).join('');
+    const renderer = this.scene.ui?.mapRenderer;
+    const pois = (this.scene.regionWorld?.features ?? [])
+      .filter((feature) => (feature.type === 'cave' || feature.type === 'dock') && (!renderer || renderer.isExplored(feature.x, feature.y)))
+      .map((feature) => `<li>${feature.cave ? `${feature.cave.tower ? '🏰' : '🕳️'} ${escapeHtml(feature.cave.name)}` : `⚓ ${escapeHtml(feature.dock.name)}`}</li>`)
+      .join('');
+    const found = regionKeys.filter((key) => discovered.has(key)).length;
+    return `
+      <h4 class="quest-section">Regiões descobertas (${found}/${regionKeys.length}) — cada nova região vale +30 XP</h4>
+      <div class="quest-daily-grid">${regions || '<p class="quest-empty">Explore o mundo para descobrir regiões novas.</p>'}</div>
+      <h4 class="quest-section">Locais descobertos — abra o mapa (M) e clique no anel dourado para viajar</h4>
+      <ul class="quest-poi-list">${pois || '<p class="quest-empty">Nenhum local marcado ainda.</p>'}</ul>`;
   }
 
   handleJournalClick(event) {
@@ -429,10 +473,7 @@ export class QuestUI {
     this.toastQueue ??= [];
     const visible = [...this.toasts.children].filter((el) => !el.classList.contains('is-leaving'));
     if (visible.some((el) => el.textContent === text) || this.toastQueue.some((t) => t.text === text)) return;
-    // Fila única com o aviso do jogo (UI.showMessage, ex.: "Torre de Vigia melhorada"): ele ocupa 1 das 2 vagas.
-    const banner = this.scene?.ui?.message;
-    const limit = banner && banner.alpha > 0.05 && banner.text ? 1 : 2;
-    if (visible.length >= limit) { this.toastQueue.push({ text, tone }); return; }
+    if (visible.length >= 2) { this.toastQueue.push({ text, tone }); return; }
     const item = document.createElement('div');
     item.className = `quest-toast ${tone ? `quest-toast--${tone}` : ''}`;
     item.textContent = text;
@@ -443,12 +484,6 @@ export class QuestUI {
       const next = this.toastQueue.shift();
       if (next) this.toast(next.text, next.tone);
     }, 3200);
-  }
-
-  /** O aviso do jogo entrou: com 2 avisos na tela, o mais antigo sai antes da hora (nunca 3 faixas). */
-  yieldSlot() {
-    const visible = [...(this.toasts?.children ?? [])].filter((el) => !el.classList.contains('is-leaving'));
-    if (visible.length >= 2) visible[0].classList.add('is-leaving');
   }
 
   showReward(mission, rewards, lore) {

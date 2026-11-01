@@ -164,16 +164,34 @@ await runInChrome({ name: 'raid', port: 9352 }, async ({ inScene, capture, fresh
   await capture('raid-game-over.png');
 
   await inScene(() => document.getElementById('game-over-restart').click());
-  await delay(1500);
-  const restarted = await inScene((scene) => ({
-    gameOver: scene.gameOver,
-    hidden: document.getElementById('game-over').hidden,
-    day: scene.dayNight.dayCount,
-    durability: { ...scene.camp.durability },
-    warning: Boolean(scene.raid.warning)
-  }));
+  // Espera o scene.restart() recriar a cena de verdade (polling tolerando contexto destruído no meio
+  // do restart) e, assim que pronta, congela a contagem do aviso do ataque: sem isso um invasor
+  // podia causar dano entre o restore do snapshot e a leitura do durability (race → flake).
+  let restarted = null;
+  for (let attempt = 0; attempt < 60; attempt += 1) {
+    await delay(300);
+    try {
+      restarted = await inScene((scene) => {
+        const hidden = document.getElementById('game-over').hidden;
+        const ready = !scene.gameOver && hidden && Boolean(scene.camp?.durability) && Boolean(scene.dayNight);
+        if (ready && scene.raid?.warning) scene.raid.warning.remainingMs = 1e9;
+        return {
+          ready,
+          gameOver: scene.gameOver,
+          hidden,
+          day: scene.dayNight?.dayCount,
+          durability: scene.camp?.durability ? { ...scene.camp.durability } : {},
+          warning: Boolean(scene.raid?.warning)
+        };
+      });
+    } catch {
+      restarted = null; // "Execution context destroyed" no meio do scene.restart: tenta de novo.
+    }
+    if (restarted?.ready && Object.values(restarted.durability).every((value) => value === 100)) break;
+  }
+  if (!restarted) throw new Error('Recomeço não detectado após o polling do scene.restart.');
   check(!restarted.gameOver && restarted.hidden && restarted.day === 20, `Recomeço falhou: ${JSON.stringify(restarted)}`);
-  check(Object.values(restarted.durability).every((value) => value === 100), 'O recomeço deveria voltar com os prédios inteiros.');
+  check(Object.values(restarted.durability).every((value) => value === 100), `O recomeço deveria voltar com os prédios inteiros: ${JSON.stringify(restarted)}`);
   check(restarted.warning, 'O ataque do dia 20 deveria recomeçar.');
   return { warning, started, atWall, death, victory, buildings, defeat, restarted };
 });

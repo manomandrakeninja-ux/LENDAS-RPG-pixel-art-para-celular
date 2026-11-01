@@ -159,21 +159,6 @@ export class VillagerManager {
     }
   }
 
-  /**
-   * Rodada 4: morador ou NPC parado logo na frente do herói (mais embaixo na tela, cobrindo o corpo dele)
-   * fica translúcido, como a copa das árvores e a muralha: o herói nunca some atrás de alguém.
-   */
-  fadeInFrontOfHero(player) {
-    if (!player) return;
-    const fade = (object, x, y) => {
-      const front = y > player.y + 2 && y - player.y < 46 && Math.abs(x - player.x) < 24;
-      const alpha = front ? 0.45 : 1;
-      if (object.alpha !== alpha) object.setAlpha(alpha);
-    };
-    for (const villager of this.villagers.values()) fade(villager.container, villager.container.x, villager.container.y);
-    for (const npc of this.scene.campaign?.npcs?.values?.() ?? []) if (npc.sprite?.active) fade(npc.sprite, npc.sprite.x, npc.sprite.y);
-  }
-
   /** Inimigo mais próximo que está ameaçando o acampamento. */
   nearestThreat(villager) {
     const center = this.center;
@@ -221,7 +206,6 @@ export class VillagerManager {
     const now = this.scene.time.now;
     const player = this.scene.player;
     this.nextBubble();
-    this.fadeInFrontOfHero(player);
     for (const villager of this.villagers.values()) {
       const { container } = villager;
       const body = container.body;

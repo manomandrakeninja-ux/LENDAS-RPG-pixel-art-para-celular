@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { collectWorldMapMarkers } from '../src/game/WorldMapOverlay.js';
+import { collectWorldMapMarkers } from '../src/game/worldMapMarkers.js';
 import { WORLD } from '../src/game/config.js';
 
 test('world map includes only discovered collection structures and uncollected chests', () => {

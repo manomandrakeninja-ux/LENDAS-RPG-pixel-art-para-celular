@@ -120,7 +120,10 @@ test('refazer talentos: custo nível x 50 (mín. 100) e pontos voltam para escol
 });
 
 test('torres: uma por região fora do Vale, 3-4 andares, mais fortes a cada andar e salas cabem no mundo', () => {
-  assert.deepEqual(TOWERS.map((tower) => tower.region).sort(), ['antiga', 'areia', 'brasa', 'brejo', 'esmeralda', 'gelo']);
+  // Toda região fora do Vale tem pelo menos uma torre (o mapa grande adiciona torres extras).
+  for (const region of ['antiga', 'areia', 'brasa', 'brejo', 'esmeralda', 'gelo']) {
+    assert.ok(TOWERS.some((tower) => tower.region === region), `torre em ${region}`);
+  }
   for (const tower of TOWERS) {
     assert.ok(tower.floors >= 3 && tower.floors <= 4, tower.id);
     assert.equal(regionAt(tower.entrance.x, tower.entrance.y), tower.region, tower.id);
