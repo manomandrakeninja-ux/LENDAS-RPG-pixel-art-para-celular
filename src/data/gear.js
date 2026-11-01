@@ -21,7 +21,7 @@ export const RARITIES = Object.freeze({
 });
 
 export const GEAR_BAG_SIZE = 30;
-export const MAX_GEAR_LEVEL = 150;
+export const MAX_GEAR_LEVEL = 200;
 /** A loja do Ferreiro só vende os tiers até este nível. */
 export const SHOP_MAX_LEVEL = 30;
 const STATS = ['attack', 'defense', 'maxHealth', 'speedPercent', 'fireResistance'];
@@ -102,7 +102,20 @@ const TIERS = [
   { key: 'titanico', name: 'Titânico', level: 150, colors: ['#5a3d29', '#ffd38a'], perk: 'maxHealth', bonus: ['attack', 'defense', 'maxHealth'],
     armor: ['Elmo Titânico', 'Couraça Titânica', 'Grevas Titânicas', 'Botas Titânicas'],
     weapons: [[null, 'Espada Titânica', 'sword'], [null, 'Martelo Titânico', 'club']],
-    shield: [null, 'Escudo Titânico'], ring: [null, 'Anel Titânico'], amulet: [null, 'Amuleto Titânico'] }
+    shield: [null, 'Escudo Titânico'], ring: [null, 'Anel Titânico'], amulet: [null, 'Amuleto Titânico'] },
+  // ===== TIERS ENDGAME (pós-renascimento, nível 150+) =====
+  { key: 'eterno', name: 'Eterno', level: 160, colors: ['#2a3a5a', '#6ad0ff'], perk: 'attack', bonus: ['attack', 'maxHealth', 'defense'],
+    armor: ['Elmo Eterno', 'Couraça Eterna', 'Grevas Eternas', 'Botas Eternas'],
+    weapons: [[null, 'Lâmina Eterna', 'sword'], [null, 'Arco Eterno', 'bow']],
+    shield: [null, 'Escudo Eterno'], ring: [null, 'Anel Eterno'], amulet: [null, 'Amuleto Eterno'] },
+  { key: 'cosmico', name: 'Cósmico', level: 175, colors: ['#1a0a3a', '#c05aff'], perk: 'maxHealth', bonus: ['attack', 'defense', 'maxHealth', 'speedPercent'],
+    armor: ['Elmo Cósmico', 'Couraça Cósmica', 'Grevas Cósmicas', 'Botas Cósmicas'],
+    weapons: [[null, 'Foehn Cósmico', 'sword'], [null, 'Cajado Estelar', 'staff']],
+    shield: [null, 'Escudo Cósmico'], ring: [null, 'Anel Cósmico'], amulet: [null, 'Amuleto Cósmico'] },
+  { key: 'divino', name: 'Divino', level: 200, colors: ['#fff8e0', '#ffd060'], perk: 'maxHealth', bonus: ['attack', 'defense', 'maxHealth', 'speedPercent', 'fireResistance'],
+    armor: ['Elmo Divino', 'Couraça Divina', 'Grevas Divinas', 'Botas Divinas'],
+    weapons: [[null, 'Excalibur Divina', 'sword'], [null, 'Tridente Divino', 'trident']],
+    shield: [null, 'Escudo Divino'], ring: [null, 'Anel Divino'], amulet: [null, 'Amuleto Divino'] }
 ];
 
 /** Região onde o tier "mora" (a que contém o nível dele; acima da última, a Ilha de Brasa). */

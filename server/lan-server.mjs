@@ -21,7 +21,7 @@ export function acceptKey(key) {
 export function sanitizeName(name) {
   const clean = String(name ?? '')
     .replace(/[<>&"'\\]/g, '')
-    .replace(/[\x00-\x1f]/g, '')
+    .replace(/[\x00-\x1f\x7f-\x9f\u2028\u2029\uFEFF]/g, '')
     .replace(/\s+/g, ' ')
     .trim();
   return (clean || 'Viajante').slice(0, MAX_NAME);
@@ -37,7 +37,8 @@ export function sanitizeState(msg = {}) {
     x: Math.max(-1e6, Math.min(1e6, num(msg.x))),
     y: Math.max(-1e6, Math.min(1e6, num(msg.y))),
     a: String(msg.a ?? 'idle').slice(0, 16),
-    hp: Math.max(0, Math.min(1e6, num(msg.hp, 100)))
+    hp: Math.max(0, Math.min(1e6, num(msg.hp, 100))),
+    maxHp: Math.max(1, Math.min(1e6, num(msg.maxHp, 100)))
   };
 }
 
@@ -105,7 +106,7 @@ export function parseFrames(buffer) {
 // ---------- lobby (lógica pura, coberta por testes) ----------
 
 export function publicPlayer(p) {
-  return { id: p.id, name: p.name, skin: p.skin, x: p.x, y: p.y, a: p.a, hp: p.hp };
+  return { id: p.id, name: p.name, skin: p.skin, x: p.x, y: p.y, a: p.a, hp: p.hp, maxHp: p.maxHp ?? 100 };
 }
 
 export function createLobby(maxPlayers = MAX_PLAYERS) {
@@ -156,6 +157,7 @@ export function createLobby(maxPlayers = MAX_PLAYERS) {
 /**
  * Trata uma mensagem de um cliente já conectado.
  * Devolve [{ to: 'sender' | 'others', except?, msg }] para o servidor enviar.
+ * Tipos aceitos: state, mapPing, ping (keepalive).
  */
 export function handleClientMessage(lobby, id, raw) {
   let msg;
@@ -165,11 +167,21 @@ export function handleClientMessage(lobby, id, raw) {
     return [];
   }
   if (!msg || typeof msg !== 'object' || typeof msg.t !== 'string') return [];
+  // Lista branca de tipos — qualquer outro é ignorado (segurança).
+  if (!['state', 'mapPing', 'ping'].includes(msg.t)) return [];
   if (msg.t === 'state') {
     const player = lobby.state(id, msg);
     if (!player) return [];
-    const { x, y, a, hp } = sanitizeState(msg);
-    return [{ to: 'others', except: id, msg: { t: 'state', id, x, y, a, hp } }];
+    const { x, y, a, hp, maxHp } = sanitizeState(msg);
+    return [{ to: 'others', except: id, msg: { t: 'state', id, x, y, a, hp, maxHp } }];
+  }
+  if (msg.t === 'mapPing') {
+    // Ping no mapa: valida coordenadas e label, faz broadcast para os outros.
+    const x = Math.max(-1e6, Math.min(1e6, Number(msg.x) || 0));
+    const y = Math.max(-1e6, Math.min(1e6, Number(msg.y) || 0));
+    const label = String(msg.label ?? '📍').replace(/[<>&"']/g, '').slice(0, 4) || '📍';
+    lobby.touch(id);
+    return [{ to: 'others', except: id, msg: { t: 'mapPing', id, x, y, label } }];
   }
   if (msg.t === 'ping') {
     lobby.touch(id);
@@ -216,24 +228,56 @@ export async function createLanServer({ port = DEFAULT_PORT, host = '0.0.0.0', l
   };
 
   server.on('upgrade', (req, socket) => {
+    // Segurança: só aceita WebSocket se o Origin for localhost ou da mesma rede (previne CSWSH).
+    const origin = String(req.headers.origin ?? '');
+    const host = String(req.headers.host ?? '');
+    const originHost = origin.replace(/^https?:\/\//, '').split(':')[0];
+    const isLocal = !origin || originHost === 'localhost' || originHost === '127.0.0.1' || originHost === host.split(':')[0];
+    if (!isLocal) {
+      socket.write('HTTP/1.1 403 Forbidden\r\n\r\n');
+      socket.destroy();
+      return;
+    }
     const key = req.headers['sec-websocket-key'];
     if (!key || String(req.headers.upgrade).toLowerCase() !== 'websocket') {
       socket.destroy();
       return;
     }
-    socket.write(
-      'HTTP/1.1 101 Switching Protocols\r\n' +
-      'Upgrade: websocket\r\n' +
-      'Connection: Upgrade\r\n' +
-      `Sec-WebSocket-Accept: ${acceptKey(key)}\r\n\r\n`
-    );
+    try {
+      socket.write(
+        'HTTP/1.1 101 Switching Protocols\r\n' +
+        'Upgrade: websocket\r\n' +
+        'Connection: Upgrade\r\n' +
+        `Sec-WebSocket-Accept: ${acceptKey(key)}\r\n\r\n`
+      );
+    } catch {
+      socket.destroy();
+      return;
+    }
     socket.setNoDelay(true);
-    const client = { socket, id: null, buffer: Buffer.alloc(0) };
+    // Cap de conexões simultâneas (previne DoS por flood de handshakes).
+    if (clients.size >= MAX_PLAYERS * 2) {
+      socket.write('HTTP/1.1 503 Service Unavailable\r\n\r\n');
+      socket.destroy();
+      return;
+    }
+    const client = { socket, id: null, buffer: Buffer.alloc(0), msgCount: 0, windowStart: Date.now() };
     clients.add(client);
 
     socket.on('data', (chunk) => {
       client.buffer = Buffer.concat([client.buffer, chunk]);
       if (client.buffer.length > MAX_MSG * 8) {
+        socket.destroy();
+        return;
+      }
+      // Rate limiting: máx 60 mensagens por segundo por cliente.
+      const now = Date.now();
+      if (now - client.windowStart >= 1000) {
+        client.msgCount = 0;
+        client.windowStart = now;
+      }
+      client.msgCount += 1;
+      if (client.msgCount > 60) {
         socket.destroy();
         return;
       }

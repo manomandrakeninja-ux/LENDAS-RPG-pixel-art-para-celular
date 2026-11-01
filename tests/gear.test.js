@@ -22,7 +22,7 @@ test('equipamento: todo conjunto tem as 4 peças e toda região tem o que dropar
   for (const cave of CAVES) assert.ok(Object.values(GEAR_ITEMS).some((item) => item.boss === cave.boss), cave.boss);
   for (const item of Object.values(GEAR_ITEMS)) {
     assert.ok(GEAR_SLOTS.includes(item.slot), item.id);
-    assert.ok(item.level >= 1 && item.level <= 150, item.id);
+    assert.ok(item.level >= 1 && item.level <= 200, item.id);
     assert.ok(item.colors?.length === 2, item.id);
   }
 });
@@ -86,15 +86,15 @@ test('drops: comuns raros, elites mais, chefes sempre deixam 2 peças', () => {
   assert.equal(GEAR_ITEMS[boss[0].id].boss, 'dragon');
 });
 
-test('tiers: 18 conjuntos, ~170 peças, ~45 armas, bônus e preços crescem com o tier', () => {
+test('tiers: 21 conjuntos (18 originais + 3 endgame), ~180 peças, ~48 armas, bônus e preços crescem com o tier', () => {
   const items = Object.values(GEAR_ITEMS);
-  assert.equal(Object.keys(GEAR_SETS).length, 18);
-  assert.ok(items.length >= 165 && items.length <= 185, String(items.length));
+  assert.equal(Object.keys(GEAR_SETS).length, 21);
+  assert.ok(items.length >= 175 && items.length <= 215, String(items.length));
   const weapons = items.filter((item) => item.slot === 'weapon').length;
-  assert.ok(weapons >= 42 && weapons <= 50, String(weapons));
+  assert.ok(weapons >= 44 && weapons <= 55, String(weapons));
   const sets = Object.values(GEAR_SETS).sort((a, b) => a.level - b.level);
   assert.equal(sets[0].level, 1);
-  assert.equal(sets.at(-1).level, 150);
+  assert.equal(sets.at(-1).level, 200);
   for (let i = 1; i < sets.length; i += 1) {
     assert.ok(sets[i].level > sets[i - 1].level);
     for (const stat of Object.keys(sets[i].bonus)) if (sets[i - 1].bonus[stat]) assert.ok(sets[i].bonus[stat] >= sets[i - 1].bonus[stat], stat);

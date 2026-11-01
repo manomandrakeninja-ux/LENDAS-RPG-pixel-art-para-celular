@@ -171,6 +171,13 @@ export class RegionWorld {
     scene.hudCamera?.ignore([this.underLayer, this.groundLayer, this.overlayLayer2, this.overlayLayer]);
   }
 
+  /** Modo gráfico Leve: esconde as camadas de detalhe do chão (overlay) para renderizar menos tiles. */
+  setLightGroundMode(light) {
+    if (!this.overlayLayer) return;
+    this.overlayLayer.setVisible(!light);
+    this.overlayLayer2?.setVisible(!light);
+  }
+
   drawUnderFrame(frame) {
     const source = this.scene.textures.get('terrain-tiles').getSourceImage();
     const context = this.underTexture.getContext();
@@ -395,6 +402,8 @@ export class RegionWorld {
     const player = this.scene.player;
     const feature = this.nearestFeature(player.x, player.y);
     if (!feature) return false;
+    // Placa é só informação: se há veio, árvore ou pedra ao alcance, o botão de ação coleta em vez de ler.
+    if (feature.type === 'sign' && this.scene.harvestStructures?.nearest(player.x, player.y)) return false;
     if (feature.type === 'cave') this.enterCave(feature.cave.id, 0);
     else if (feature.type === 'down') this.enterCave(feature.cave.id, feature.room.floor + 1);
     else if (feature.type === 'up') {
@@ -1148,6 +1157,10 @@ export class RegionWorld {
         if (!visible(prop.x, prop.y)) continue;
         lights.push({ x: prop.x, y: prop.y - 10, radius: prop.frame.startsWith('stalagmite') ? 34 : prop.frame === 'ice-crystal' || prop.frame === 'cave-crystal' ? 74 : 58, kind: PROP_LIGHT_KIND[prop.frame] ?? null });
       }
+    }
+    // Faróis acesos (Waylights) iluminam a região à noite.
+    for (const light of this.scene.waylights?.lightSources?.() ?? []) {
+      if (visible(light.x, light.y)) lights.push(light);
     }
     return lights.slice(0, 24);
   }

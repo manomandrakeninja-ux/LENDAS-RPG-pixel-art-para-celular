@@ -19,18 +19,35 @@ export function canRebirth(level, count) {
 export const ARENA_CONFIG = Object.freeze({
   rewardEvery: 5,
   // Chefes por faixa de onda: espécies de níveis cada vez mais altos.
-  roster: Object.freeze(['orcChief', 'hydra', 'ghostCaptain', 'frostGiant', 'pharaoh', 'dragon', 'cinderGiant', 'hellWarden', 'abyssLord'])
+  // Acima da onda 50 entram os lendários (voidDragon, celestial, elderGod).
+  roster: Object.freeze(['orcChief', 'hydra', 'ghostCaptain', 'frostGiant', 'pharaoh', 'dragon', 'cinderGiant', 'hellWarden', 'abyssLord', 'voidDragon', 'celestialKnight', 'elderGod']),
+  legendaryFromWave: 50
 });
 
 /** Chefes de uma onda (1, 2, 3...): espécie, nível, vida e dano extras. */
 export function arenaWave(wave, playerLevel = 1) {
   const w = Math.max(1, Math.floor(Number(wave) || 1));
-  const count = Math.min(4, 1 + Math.floor((w - 1) / 5));
-  const level = Math.min(150, Math.max(10, Math.floor(Number(playerLevel) || 1)) + Math.floor(w * 1.5));
+  const count = Math.min(5, 1 + Math.floor((w - 1) / 4)); // ondas altas = até 5 chefes
+  const baseLevel = Math.floor(Number(playerLevel) || 1);
+  // Acima da onda 50, o nível dos chefes pode passar de 150 (desafio endgame).
+  const level = w >= ARENA_CONFIG.legendaryFromWave
+    ? baseLevel + Math.floor(w * 2) + 50
+    : Math.min(150, Math.max(10, baseLevel) + Math.floor(w * 1.5));
   const bosses = [];
   for (let i = 0; i < count; i += 1) {
-    const slot = Math.min(ARENA_CONFIG.roster.length - 1, Math.floor((w - 1) / 3) + i);
-    bosses.push({ kind: ARENA_CONFIG.roster[slot], level, health: 1.5 + w * 0.2, damage: 1 + w * 0.05 });
+    let slot;
+    if (w >= ARENA_CONFIG.legendaryFromWave) {
+      // Nas ondas lendárias, usa os 3 últimos da roster (voidDragon, celestialKnight, elderGod).
+      slot = ARENA_CONFIG.roster.length - 1 - (i % 3);
+    } else {
+      slot = Math.min(ARENA_CONFIG.roster.length - 4, Math.floor((w - 1) / 3) + i);
+    }
+    bosses.push({
+      kind: ARENA_CONFIG.roster[slot],
+      level,
+      health: 1.5 + w * 0.25,
+      damage: 1 + w * 0.06
+    });
   }
   return bosses;
 }

@@ -9,7 +9,7 @@ test('os 3 modos existem e ficam do mais pesado para o mais leve', () => {
   assert.equal(high.renderScale, 1);
   assert.equal(high.lightSimple, false);
   assert.equal(high.backgroundAnimations, true);
-  assert.equal(light.renderScale, 0.75);
+  assert.equal(light.renderScale, 0.6);
   assert.equal(light.lightSimple, true);
   assert.equal(light.simpleShadows, true);
   assert.equal(light.backgroundAnimations, false);

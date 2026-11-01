@@ -8,7 +8,7 @@ import { MAP_SCALE, MapRenderer } from './MapRenderer.js';
 import { HOTKEY_ITEMS } from '../data/consumables.js';
 import { quantizePixels } from '../art/palette.js';
 import { OVERLAY_DEPTH } from './depths.js';
-import { REGION_INFO } from '../data/worldRegions.js';
+import { REGION_INFO, ROAD_SIGNS, roadAt, compass8 } from '../data/worldRegions.js';
 import { WEATHER_ICONS } from '../data/weather.js';
 
 const TEXT_STYLE = {
@@ -563,8 +563,27 @@ export class GameUI {
     g.closePath();
     g.fillPath();
     const meters = Math.max(0, Math.round((dist / WORLD.tileSize) * 10));
-    this.compassText.setText(`${(target.name ?? 'OBJETIVO').toUpperCase()} • ${meters} m`);
+    let label = `${(target.name ?? 'OBJETIVO').toUpperCase()} • ${meters} m`;
+    // Na estrada, a bússola também aponta para a placa mais próxima (dica de direção).
+    const roadHint = this.roadSignHint(player);
+    if (roadHint) label += `\n🪧 ${roadHint}`;
+    this.compassText.setText(label);
     this.compassText.setPosition(cx, cy + 24);
+  }
+
+  /** Placa de estrada mais próxima do herói: "<nome> • X m p/ o <direção>" ou null. */
+  roadSignHint(player) {
+    if (!player || !player.x || !roadAt(player.x, player.y)) return null;
+    let best = null;
+    let bestDist = 460;
+    for (const sign of ROAD_SIGNS) {
+      const d = Math.hypot(sign.x - player.x, sign.y - player.y);
+      if (d < bestDist) { bestDist = d; best = sign; }
+    }
+    if (!best) return null;
+    const meters = Math.max(10, Math.round((bestDist / WORLD.tileSize) * 10));
+    const dir = compass8(best.x - player.x, best.y - player.y);
+    return `${best.label} • ${meters} m p/ o ${dir}`;
   }
 
   /** Barra de Fúria (Grito, tecla Z): abaixo do HUD; dourada e piscando quando pronta. */

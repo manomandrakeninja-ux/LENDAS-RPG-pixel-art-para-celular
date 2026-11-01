@@ -10,11 +10,14 @@ export const WORLD_MAP_MARKER_TYPES = Object.freeze({
   enemy: 'enemy',
   player: 'player',
   mine: 'mine',
-  dungeon: 'dungeon'
+  dungeon: 'dungeon',
+  waylight: 'waylight',
+  curiosity: 'curiosity'
 });
 
 // A mina aparece sempre (ícone especial); a masmorra, depois que o acampamento fica completo.
-export function collectWorldMapMarkers({ structures = [], enemies = [], boss = null, player, dungeonRevealed = false } = {}) {
+// waylights/curiosities: marcadores extras vindos dos sistemas novos (faróis e curiosidades).
+export function collectWorldMapMarkers({ structures = [], enemies = [], boss = null, player, dungeonRevealed = false, waylights = [], curiosities = [] } = {}) {
   const discoveredStructures = structures.filter((structure) => structure?.discovered && structure.type !== 'mineMarker');
   const mine = structures.find((structure) => structure?.type === 'mineMarker');
   return {
@@ -50,6 +53,14 @@ export function collectWorldMapMarkers({ structures = [], enemies = [], boss = n
       ...(boss && !boss.dead
         ? [{ x: boss.x, y: boss.y, type: WORLD_MAP_MARKER_TYPES.enemy }]
         : [])
-    ]
+    ],
+    waylights: waylights.map((w) => ({
+      x: w.x, y: w.y, type: WORLD_MAP_MARKER_TYPES.waylight, lit: Boolean(w.lit)
+    })),
+    curiosities: curiosities
+      .filter((c) => c.found || c.rumoured)
+      .map((c) => ({
+        x: c.x, y: c.y, type: WORLD_MAP_MARKER_TYPES.curiosity, found: Boolean(c.found)
+      }))
   };
 }

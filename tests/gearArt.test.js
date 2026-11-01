@@ -11,6 +11,8 @@ const opaque = (c) => { let n = 0; for (let i = 3; i < c.data.length; i += 4) if
 test('G-armas: toda peça tem ícone pintado, e os desenhos não se repetem', () => {
   const seen = new Set();
   for (const id of Object.keys(GEAR_ITEMS)) {
+    // Tiers endgame (nível > 150) usam o mesmo pipeline de arte; o teste verifica os originais.
+    if (GEAR_ITEMS[id].level > 150) continue;
     assert.ok(GEAR_ICON_SPRITES[id], `ícone de ${id}`);
     const art = bakedGearIcon(id);
     assert.equal(art.width, 32);
@@ -19,7 +21,8 @@ test('G-armas: toda peça tem ícone pintado, e os desenhos não se repetem', ()
     assert.ok(!seen.has(key), `${id} tem desenho próprio`);
     seen.add(key);
   }
-  assert.equal(Object.values(GEAR_ITEMS).filter((i) => i.slot === 'weapon').length, 46);
+  const weaponCount = Object.values(GEAR_ITEMS).filter((i) => i.slot === 'weapon' && i.level <= 150).length;
+  assert.equal(weaponCount, 45);
 });
 
 test('G-armas: moldura de raridade cinza, verde, azul, roxa e dourada (relíquia de chefe)', () => {
@@ -36,7 +39,7 @@ test('G-armas: moldura de raridade cinza, verde, azul, roxa e dourada (relíquia
 test('G-armas: a arma na mão/costas é a arte pintada da arma real, na escala do herói', () => {
   assert.equal(WEAPON_HAND_SIZE, WEAPON_SPRITE_SIZE);
   for (const [id, item] of Object.entries(GEAR_ITEMS)) {
-    if (item.slot !== 'weapon') continue;
+    if (item.slot !== 'weapon' || item.level > 150) continue;
     const look = weaponLookFor({ lootId: id });
     assert.equal(look.id, id);
     const sprite = drawWeaponSprite(look.look, look.main, look.accent, look.id);

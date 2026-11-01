@@ -39,16 +39,16 @@ export const GRAPHICS_PROFILES = Object.freeze({
     backgroundAnimations: true
   }),
   light: Object.freeze({
-    renderScale: 0.75,
-    lightInterval: 200,
-    lightSimple: true,
-    particleScale: 0.25,
-    rainDrops: 30,
-    enemyLimitScale: 0.6,
-    farUpdateEvery: 6,
-    farUpdateReach: 1,
-    simpleShadows: true,
-    backgroundAnimations: false
+    renderScale: 0.6,       // resolução interna 60% (mais agressivo que 75%)
+    lightInterval: 250,     // luz noturna atualizada a cada 250 ms
+    lightSimple: true,      // gradiente fixo barato no lugar da máscara por fonte
+    particleScale: 0.15,    // quase sem partículas ambientais
+    rainDrops: 20,          // chuva mínima
+    enemyLimitScale: 0.5,   // metade dos inimigos simultâneos
+    farUpdateEvery: 8,      // inimigos distantes atualizam a cada 8 quadros
+    farUpdateReach: 0.9,    // "longe" = além de 0.9x o alcance
+    simpleShadows: true,    // só sombras de contato, sem sombra do sol
+    backgroundAnimations: false // sem animações de fundo (água, fumaça)
   })
 });
 

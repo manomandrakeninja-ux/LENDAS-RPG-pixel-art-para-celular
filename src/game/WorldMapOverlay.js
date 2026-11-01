@@ -82,6 +82,50 @@ function drawMarker(context, marker, toX, toY, icons = {}) {
     context.fillStyle = marker.type === WORLD_MAP_MARKER_TYPES.dungeon ? '#a8343c' : '#8a5a2a';
     context.fillRect(-7, -7, 14, 14);
     context.strokeRect(-7, -7, 14, 14);
+  } else if (marker.type === WORLD_MAP_MARKER_TYPES.waylight) {
+    // Farol: chama dourada acesa ou círculo cinza apagado.
+    if (marker.lit) {
+      context.fillStyle = '#ffd76b';
+      context.beginPath();
+      context.moveTo(0, -9);
+      context.quadraticCurveTo(7, -2, 0, 8);
+      context.quadraticCurveTo(-7, -2, 0, -9);
+      context.fill();
+      context.stroke();
+      context.fillStyle = '#fff0b0';
+      context.beginPath();
+      context.arc(0, 1, 3, 0, Math.PI * 2);
+      context.fill();
+    } else {
+      context.strokeStyle = '#8a8f96';
+      context.beginPath();
+      context.arc(0, 0, 6, 0, Math.PI * 2);
+      context.stroke();
+    }
+  } else if (marker.type === WORLD_MAP_MARKER_TYPES.curiosity) {
+    // Curiosidade: estrela dourada (achada) ou "?" cinza (só rumor).
+    if (marker.found) {
+      context.fillStyle = '#ffd76b';
+      context.beginPath();
+      for (let i = 0; i < 8; i += 1) {
+        const r = i % 2 === 0 ? 8 : 3.4;
+        const a = (Math.PI / 4) * i - Math.PI / 2;
+        const px = Math.cos(a) * r;
+        const py = Math.sin(a) * r;
+        if (i === 0) context.moveTo(px, py); else context.lineTo(px, py);
+      }
+      context.closePath();
+      context.fill();
+      context.stroke();
+    } else {
+      context.fillStyle = '#9fb4c8';
+      context.font = '10px "Press Start 2P", monospace';
+      context.textAlign = 'center';
+      context.textBaseline = 'middle';
+      context.fillText('?', 0, 1);
+      context.textAlign = 'left';
+      context.textBaseline = 'alphabetic';
+    }
   } else {
     // Estrutura descoberta: selo verde a tinta.
     context.beginPath();
@@ -490,7 +534,9 @@ export class WorldMapOverlay {
       enemies: this.scene.enemies ?? [],
       boss: this.scene.boss ?? null,
       player: this.surfacePlayer(),
-      dungeonRevealed: Boolean(this.scene.camp?.dungeonRevealed || this.scene.camp?.defense?.dragonRadar)
+      dungeonRevealed: Boolean(this.scene.camp?.dungeonRevealed || this.scene.camp?.defense?.dragonRadar),
+      waylights: this.scene.waylights?.mapMarkers?.() ?? [],
+      curiosities: this.scene.curiosities?.mapMarkers?.() ?? []
     });
     drawMarker(context, markers.camp, toX, toY, this.icons);
     if (markers.mine) drawMarker(context, markers.mine, toX, toY, this.icons);
@@ -498,6 +544,8 @@ export class WorldMapOverlay {
     markers.structures.forEach((marker) => drawMarker(context, marker, toX, toY, this.icons));
     markers.chests.forEach((marker) => drawMarker(context, marker, toX, toY, this.icons));
     markers.strongEnemies.forEach((marker) => drawMarker(context, marker, toX, toY, this.icons));
+    markers.waylights.forEach((marker) => drawMarker(context, marker, toX, toY, this.icons));
+    markers.curiosities.forEach((marker) => drawMarker(context, marker, toX, toY, this.icons));
     const invasion = this.scene.invasion;
     let invasionMarkers = 0;
     if (invasion?.active) {

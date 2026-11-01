@@ -58,8 +58,8 @@ test('sanitizeName limpa HTML/controle e limita a 16', () => {
 });
 
 test('sanitizeState limita números e devolve padrão para porcaria', () => {
-  assert.deepEqual(sanitizeState({ x: 10, y: -5, a: 'walk', hp: 80 }), { x: 10, y: -5, a: 'walk', hp: 80 });
-  assert.deepEqual(sanitizeState({ x: 'abc', y: NaN, a: null, hp: 1e9 }), { x: 0, y: 0, a: 'idle', hp: 1e6 });
+  assert.deepEqual(sanitizeState({ x: 10, y: -5, a: 'walk', hp: 80 }), { x: 10, y: -5, a: 'walk', hp: 80, maxHp: 100 });
+  assert.deepEqual(sanitizeState({ x: 'abc', y: NaN, a: null, hp: 1e9 }), { x: 0, y: 0, a: 'idle', hp: 1e6, maxHp: 100 });
   assert.ok(sanitizeState({ x: 1e12 }).x <= 1e6);
 });
 
@@ -82,7 +82,7 @@ test('lobby: entra, recebe roster, estado é retransmitido só para os outros, s
   assert.equal(out.length, 1);
   assert.equal(out[0].to, 'others');
   assert.equal(out[0].except, a.player.id);
-  assert.deepEqual(out[0].msg, { t: 'state', id: a.player.id, x: 100, y: 200, a: 'walk', hp: 55 });
+  assert.deepEqual(out[0].msg, { t: 'state', id: a.player.id, x: 100, y: 200, a: 'walk', hp: 55, maxHp: 100 });
   // ping volta pong para o próprio remetente
   const pong = handleClientMessage(lobby, a.player.id, JSON.stringify({ t: 'ping', ts: 7 }));
   assert.deepEqual(pong, [{ to: 'sender', msg: { t: 'pong', ts: 7 } }]);

@@ -1,5 +1,6 @@
 import { Enemy } from './Enemies.js';
 import { Arena } from '../data/rebirth.js';
+import { ENEMY_TYPES } from '../data/enemies.js';
 
 // Arena de chefes perto da Fogueira: ondas de chefes cada vez mais fortes, com recorde salvo.
 
@@ -45,6 +46,36 @@ export class ArenaSystem {
       this.bosses.push(enemy);
     });
     scene.ui?.showMessage(`Arena: onda ${this.state.wave} (${specs.length} ${specs.length > 1 ? 'chefes' : 'chefe'})`);
+  }
+
+  /**
+   * Invoca um chefe único à escolha (estilo "monster trials" do Monster Culler):
+   * começa a arena na onda 0 com um único elite da espécie escolhida, 2.2x de vida.
+   */
+  summonBoss(kind) {
+    const scene = this.scene;
+    const def = ENEMY_TYPES[kind];
+    if (!def) return { ok: false, message: 'Espécie desconhecida.' };
+    if (this.state.active) return { ok: false, message: 'Termine a onda atual primeiro (ou saia da arena).' };
+    this.state.start();
+    this.state.wave = 0;
+    const level = Math.max(1, (scene.progression?.level ?? 1) + 2);
+    const camp = scene.camp;
+    const enemy = new Enemy(scene, camp.x + 190, camp.y + 40, kind, { elite: true, level, name: `Chefe invocado (${ENEMY_TYPES[kind]?.name ?? kind})` });
+    enemy.isArenaBoss = true;
+    enemy.ignoresSafeZone = true;
+    enemy.noFlee = true;
+    enemy.perception = 900;
+    enemy.maxHealth = Math.round(enemy.maxHealth * 2.2);
+    enemy.health = enemy.maxHealth;
+    enemy.damage = Math.round(enemy.damage * 1.4);
+    scene.enemies.push(enemy);
+    scene.hudCamera?.ignore(enemy);
+    this.bosses.push(enemy);
+    scene.ui?.showMessage(`🏟️ Arena: chefe invocado — ${enemy.name} (Nv${level})!`);
+    scene.audio?.playRoar?.();
+    scene.save?.();
+    return { ok: true };
   }
 
   update(delta) {

@@ -2,6 +2,7 @@
 // mostra os outros jogadores da mesma rede no mundo, cada um com o nome embaixo do avatar.
 // Desligado por padrão; liga pelo painel 🌐 ou pelos parâmetros ?lan=ws://...&lanName=...
 import { PixelCanvas } from '../art/pixel.js';
+import { OVERLAY_DEPTH } from './depths.js';
 
 const LS_KEY = 'lendas-lan';
 const SEND_HZ = 10;
@@ -24,7 +25,7 @@ export function saveLanPrefs(prefs) {
 export function sanitizeName(name) {
   const clean = String(name ?? '')
     .replace(/[<>&"'\\]/g, '')
-    .replace(/[\x00-\x1f]/g, '')
+    .replace(/[\x00-\x1f\x7f-\x9f\u2028\u2029\uFEFF]/g, '')
     .replace(/\s+/g, ' ')
     .trim();
   return (clean || 'Viajante').slice(0, 16);
@@ -287,8 +288,8 @@ export class LanSync {
       return;
     }
     this.ws = ws;
-    const timeout = setTimeout(() => {
-      if (!this.connected) {
+    this.connectTimer = setTimeout(() => {
+      if (!this.connected && this.ws === ws) {
         this.status = 'offline';
         this.lastError = 'tempo esgotado';
         this.refreshPanel();
@@ -296,19 +297,24 @@ export class LanSync {
       }
     }, 8000);
     ws.addEventListener('open', () => {
+      if (this.ws !== ws) return; // conexão antiga: ignorar
       ws.send(JSON.stringify({ t: 'hello', name: this.name, skin: String(nameHue(this.name)) }));
     });
     ws.addEventListener('message', (event) => {
+      if (this.ws !== ws) return; // conexão antiga: ignorar
+      // Limite de tamanho: servidor malicioso não pode floodar com mensagem gigante.
+      if (typeof event.data !== 'string' || event.data.length > 4096) return;
       let msg;
       try {
-        msg = JSON.parse(String(event.data));
+        msg = JSON.parse(event.data);
       } catch {
         return;
       }
       this.onMessage(msg);
     });
     ws.addEventListener('close', () => {
-      clearTimeout(timeout);
+      clearTimeout(this.connectTimer);
+      if (this.ws !== ws) return; // conexão antiga: não tocar no estado atual
       const wasConnected = this.connected;
       this.connected = false;
       this.ws = null;
@@ -319,12 +325,14 @@ export class LanSync {
       this.refreshPanel();
     });
     ws.addEventListener('error', () => {
+      if (this.ws !== ws) return;
       this.lastError = 'falha ao conectar';
       this.refreshPanel();
     });
   }
 
   disconnect() {
+    clearTimeout(this.connectTimer);
     if (this.ws) {
       try { this.ws.close(); } catch { /* */ }
     }
@@ -347,7 +355,8 @@ export class LanSync {
         this.status = `conectado como ${this.name} (id ${msg.id})`;
         this.lastError = '';
         this.clearRemotes();
-        for (const player of msg.players ?? []) this.upsertRemote(player);
+        // Validação: só aceita array de jogadores (servidor malicioso não pode injetar estrutura estranha).
+        if (Array.isArray(msg.players)) for (const player of msg.players) this.upsertRemote(player);
         break;
       case 'join':
         if (msg.p) this.upsertRemote(msg.p);
@@ -357,6 +366,9 @@ export class LanSync {
         break;
       case 'leave':
         this.removeRemote(msg.id);
+        break;
+      case 'mapPing':
+        this.showRemotePing(msg);
         break;
       case 'full':
         this.status = 'offline';
@@ -369,18 +381,24 @@ export class LanSync {
   }
 
   upsertRemote(player) {
+    if (!player || player.id == null) return null;
+    // Limite de remotos: servidor malicioso não pode floodar com milhares de joins.
+    if (!this.remotes.has(player.id) && this.remotes.size >= 64) return null;
     const name0 = sanitizeName(player.name);
     this.seenNames.add(name0);
     this.scene.achievements?.checkAchievements(); // conquista de jogar em LAN com amigos
+    const clamp = (v, max = 1e6) => Math.max(-max, Math.min(max, Number(v) || 0));
     const existing = this.remotes.get(player.id);
     if (existing) {
       existing.name = sanitizeName(player.name);
-      existing.tx = Number(player.x) || 0;
-      existing.ty = Number(player.y) || 0;
-      existing.a = String(player.a ?? 'idle');
-      existing.hp = Number(player.hp) || 0;
+      existing.tx = clamp(player.x);
+      existing.ty = clamp(player.y);
+      existing.a = String(player.a ?? 'idle').slice(0, 16);
+      existing.hp = clamp(player.hp, 1e6);
+      existing.maxHp = Math.max(1, clamp(player.maxHp, 1e6)) || existing.maxHp || 100;
       existing.lastSeen = Date.now();
       existing.label?.setText(existing.name);
+      this.updateRemoteHp(existing);
       return existing;
     }
     const name = sanitizeName(player.name);
@@ -396,6 +414,9 @@ export class LanSync {
       stroke: '#140f14',
       strokeThickness: 3
     }).setDepth(5001).setOrigin(0.5, 0);
+    // Barra de vida do amigo (fundo escuro + preenchimento verde/vermelho).
+    const hpBg = scene.add.rectangle(0, 0, 28, 4, 0x140f14, 0.8).setDepth(5001).setOrigin(0.5, 0);
+    const hpFill = scene.add.rectangle(0, 0, 26, 2, 0x5ac54f, 1).setDepth(5002).setOrigin(0, 0.5);
     const remote = {
       name,
       x: Number(player.x) || 0,
@@ -404,11 +425,15 @@ export class LanSync {
       ty: Number(player.y) || 0,
       a: String(player.a ?? 'idle'),
       hp: Number(player.hp) || 0,
+      maxHp: Number(player.maxHp) || 100,
       sprite,
       label,
+      hpBg,
+      hpFill,
       lastSeen: Date.now()
     };
     this.positionRemote(remote);
+    this.updateRemoteHp(remote);
     this.remotes.set(player.id, remote);
     return remote;
   }
@@ -416,11 +441,21 @@ export class LanSync {
   applyRemoteState(msg) {
     const remote = this.remotes.get(msg.id);
     if (!remote) return;
-    remote.tx = Number(msg.x) || 0;
-    remote.ty = Number(msg.y) || 0;
-    remote.a = String(msg.a ?? 'idle');
-    remote.hp = Number(msg.hp) || 0;
+    const clamp = (v, max = 1e6) => Math.max(-max, Math.min(max, Number(v) || 0));
+    remote.tx = clamp(msg.x);
+    remote.ty = clamp(msg.y);
+    remote.a = String(msg.a ?? 'idle').slice(0, 16);
+    remote.hp = clamp(msg.hp, 1e6);
+    remote.maxHp = Math.max(1, clamp(msg.maxHp, 1e6)) || remote.maxHp || 100;
     remote.lastSeen = Date.now();
+    this.updateRemoteHp(remote);
+  }
+
+  updateRemoteHp(remote) {
+    if (!remote.hpFill) return;
+    const ratio = Math.max(0, Math.min(1, remote.hp / (remote.maxHp || 100)));
+    remote.hpFill.setScale(ratio, 1);
+    remote.hpFill.setFillStyle(ratio > 0.5 ? 0x5ac54f : ratio > 0.25 ? 0xf2c45c : 0xe05040);
   }
 
   removeRemote(id) {
@@ -428,6 +463,8 @@ export class LanSync {
     if (!remote) return;
     remote.sprite?.destroy();
     remote.label?.destroy();
+    remote.hpBg?.destroy();
+    remote.hpFill?.destroy();
     this.remotes.delete(id);
   }
 
@@ -438,6 +475,10 @@ export class LanSync {
   positionRemote(remote) {
     remote.sprite?.setPosition(remote.x, remote.y - 8);
     remote.label?.setPosition(remote.x, remote.y + 14);
+    remote.hpBg?.setPosition(remote.x, remote.y - 22);
+    if (remote.hpFill) {
+      remote.hpFill.setPosition(remote.x - 13, remote.y - 22);
+    }
   }
 
   /** Chamado a cada frame pelo GameScene: envia o estado local (10 Hz) e interpola os remotos. */
@@ -467,8 +508,42 @@ export class LanSync {
       x: Math.round(player.x),
       y: Math.round(player.y),
       a: anim,
-      hp: Math.round(player.health ?? 0)
+      hp: Math.round(player.health ?? 0),
+      maxHp: Math.round(player.maxHealth ?? 100)
     }));
+  }
+
+  /** Envia uma marcação no mapa para os outros jogadores (tecla U no modo LAN). */
+  sendMapPing() {
+    const player = this.scene.player;
+    if (!player || !this.connected || this.ws?.readyState !== WebSocket.OPEN) return;
+    this.ws.send(JSON.stringify({
+      t: 'mapPing',
+      x: Math.round(player.x),
+      y: Math.round(player.y),
+      label: '📍'
+    }));
+    this.scene.ui?.showMessage('📍 Marcação enviada para os outros jogadores!');
+  }
+
+  /** Mostra uma marcação temporária no mundo quando outro jogador envia ping. */
+  showRemotePing(msg) {
+    const x = Number(msg.x) || 0;
+    const y = Number(msg.y) || 0;
+    const label = String(msg.label ?? '📍').slice(0, 4);
+    const text = this.scene.add.text(x, y - 30, label, {
+      fontFamily: '"Press Start 2P"',
+      fontSize: '16px'
+    }).setDepth(OVERLAY_DEPTH_TMP).setOrigin(0.5);
+    const ring = this.scene.add.circle(x, y, 16, 0xffe08a, 0.3).setDepth(OVERLAY_DEPTH_TMP - 1).setStrokeStyle(2, 0xffe08a, 0.8);
+    this.scene.tweens.add({
+      targets: [text, ring],
+      alpha: 0,
+      scale: ring ? 2 : 1.5,
+      duration: 4000,
+      onComplete: () => { text.destroy(); ring?.destroy(); }
+    });
+    this.scene.ui?.showMessage(`${label} Um jogador marcou um local no mapa!`);
   }
 
   /** Força o envio imediato (usado pelos testes). */
@@ -476,3 +551,6 @@ export class LanSync {
     if (this.connected && this.ws?.readyState === WebSocket.OPEN) this.sendState();
   }
 }
+
+// Import local para não poluir o topo do arquivo.
+import { OVERLAY_DEPTH as OVERLAY_DEPTH_TMP } from './depths.js';

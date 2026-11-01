@@ -42,6 +42,12 @@ export class Companions {
     this.active = this.owned.includes(saved?.active) ? saved.active : null;
     this.eggs = Math.max(0, Math.min(99, Math.floor(Number(saved?.eggs) || 0)));
     this.mounted = Boolean(saved?.mounted);
+    // Comando do mascote ativo (tecla X): 'active' segue e ataca; 'wait' fica parado num ponto.
+    this.command = saved?.command === 'wait' ? 'wait' : 'active';
+    const wp = saved?.waitPoint;
+    this.waitPoint = wp && Number.isFinite(wp.x) && Number.isFinite(wp.y)
+      ? { x: Math.round(wp.x), y: Math.round(wp.y) }
+      : null;
   }
 
   has(id) { return this.owned.includes(id); }
@@ -102,7 +108,24 @@ export class Companions {
     return this.mounted && mountUnlocked(level) ? MOUNT_SPEED : 1;
   }
 
+  /** X rápido: mascote volta a seguir e atacar. */
+  rally() {
+    this.command = 'active';
+    this.waitPoint = null;
+    return { ok: true, message: 'Mascote agrupado: voltando a lutar ao seu lado.' };
+  }
+
+  /** X segurado: mascote fica esperando no ponto atual. */
+  waitHere(x, y) {
+    this.command = 'wait';
+    this.waitPoint = { x: Math.round(x), y: Math.round(y) };
+    return { ok: true, message: 'Mascote esperando aqui.' };
+  }
+
   serialize() {
-    return { owned: [...this.owned], active: this.active, eggs: this.eggs, mounted: this.mounted };
+    return {
+      owned: [...this.owned], active: this.active, eggs: this.eggs, mounted: this.mounted,
+      command: this.command, waitPoint: this.waitPoint ? { ...this.waitPoint } : null
+    };
   }
 }

@@ -85,6 +85,8 @@ export class GraphicsManager {
     scene.shadows?.setProfile?.(profile);
     scene.world?.setBackgroundAnimations?.(profile.backgroundAnimations);
     scene.harvestStructures?.setBackgroundAnimations?.(profile.backgroundAnimations);
+    // Modo Leve: esconde camadas de detalhe do chão (menos tiles renderizados = mais FPS).
+    scene.regionWorld?.setLightGroundMode?.(mode === 'light');
   }
 
   applyFpsCap(capped) {

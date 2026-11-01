@@ -25,11 +25,16 @@ export async function encodeBackup(rawSave) {
 export async function decodeBackup(code) {
   const text = String(code ?? '').replace(/\s+/g, '');
   if (!text.startsWith(BACKUP_PREFIX)) throw new Error('Código inválido: não parece um backup do LENDAS.');
+  // Limite de tamanho da entrada: previne bomba de descompressão (DoS).
+  if (text.length > 2_000_000) throw new Error('Código muito grande (máx. 2 MB).');
   let json;
   try {
     const bytes = await pipe(fromBase64(text.slice(BACKUP_PREFIX.length)), new DecompressionStream('deflate-raw'));
+    // Limite do resultado descomprimido: save cabe em ~10 MB; além disso é bomba.
+    if (bytes.length > 16_000_000) throw new Error('Código expande para mais de 16 MB — recusado.');
     json = new TextDecoder().decode(bytes);
-  } catch {
+  } catch (e) {
+    if (e?.message?.includes('16 MB')) throw e;
     throw new Error('Código corrompido ou incompleto.');
   }
   let data;

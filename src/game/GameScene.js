@@ -61,7 +61,7 @@ import { GearSystem } from './GearSystem.js';
 import { EquipmentPanel } from './EquipmentPanel.js';
 import { GEAR_ITEMS, RARITIES, blessingPrice, rollGearDrop } from '../data/gear.js';
 import { JEWELS, rollJewelDrop } from '../data/enhance.js';
-import { OVERWORLD_ROWS, REGION_INFO, TILE, WORLD_COLS, roadAt } from '../data/worldRegions.js';
+import { OVERWORLD_ROWS, REGION_INFO, TILE, WORLD_COLS, roadAt, T, terrainAt } from '../data/worldRegions.js';
 import { ExperiencePickups } from './ExperiencePickups.js';
 import { LevelUpOverlay } from './LevelUpOverlay.js';
 import { EconomySystem } from './EconomySystem.js';
@@ -73,6 +73,15 @@ import { RaidDirector } from './RaidDirector.js';
 import { createGameAnimations, preloadGameAssets } from './assets.js';
 import { TORCH_RECIPE } from '../data/itemCatalog.js';
 import { ItemInfoPanel } from './ItemInfoPanel.js';
+import { ActiveSkillsSystem } from './ActiveSkillsSystem.js';
+import { RoadEncounterSystem } from './RoadEncounterSystem.js';
+import { CuriositySystem } from './CuriositySystem.js';
+import { WaylightSystem } from './WaylightSystem.js';
+import { CampIncidentSystem } from './CampIncidentSystem.js';
+import { FishingSystem } from './FishingSystem.js';
+import { nextLockTarget } from '../data/lockOn.js';
+import { CURIOSITIES } from '../data/curiosities.js';
+import { WAYLIGHT_BONUS_XP } from '../data/waylights.js';
 import { VillagerManager } from './Villagers.js';
 import { SettingsPanel } from './SettingsPanel.js';
 import { loadSettings } from './Settings.js';
@@ -196,6 +205,16 @@ export class GameScene extends Phaser.Scene {
     this.eventSlowUntil = 0;
     this.eventSlowRegenUntil = 0;
     this.randomEventMs = Phaser.Math.Between(45000, 90000);
+    // Eventos ambientais visuais (eclipse, cardume, meteoro) — só no overworld.
+    this.ambientBirdMs = 60_000 + Math.random() * 90_000;
+    this.ambientMeteorMs = 120_000 + Math.random() * 180_000;
+    this.ambientEclipseMs = 300_000 + Math.random() * 300_000;
+    this.activeBirdFlock = null;
+    this.activeMeteorSprite = null;
+    this.eclipseOverlay = null;
+    this.eclipseT = 0;
+    // Modo foto expandido: filtro e moldura.
+    this.photoFilter = 'none'; // none | bw | sepia | vignette | frame
     // Medidor de desempenho leve (ring buffer dos últimos 120 frames) — legível no console via window.__lendasPerf.
     this.frameTimes = [];
     window.__lendasPerf = () => {
@@ -225,6 +244,18 @@ export class GameScene extends Phaser.Scene {
     this.achievements.refreshDaily();
     this.achievements.syncTitle();
     this.arena = new ArenaSystem(this, saved?.arena);
+    // Sistemas inspirados nos jogos de referência (lock-on, skills 6-9, encontros de estrada,
+    // curiosidades, faróis, incidentes no acampamento e pesca).
+    this.activeSkills = new ActiveSkillsSystem(this, saved?.activeSkills);
+    this.roadEncounters = new RoadEncounterSystem(this);
+    this.curiosities = new CuriositySystem(this, saved?.curiosities);
+    this.waylights = new WaylightSystem(this, saved?.waylights);
+    this.incidents = new CampIncidentSystem(this, saved?.incidents);
+    this.fishing = new FishingSystem(this);
+    this.lockTarget = null;
+    this.lockRing = null;
+    this.eliteLabels = new Map();
+    this.xHoldAt = 0;
     this.enemyDirector.populate(this.timeState);
     this.camp.defense.setupEnemyCollision(this.enemies);
     this.effects = new PixelEffects(this);
@@ -342,7 +373,21 @@ export class GameScene extends Phaser.Scene {
     this.input.keyboard.on('keydown-H', () => { if (!this.overlayBlocked()) this.companions.summonMount(); });
     // P: modo foto (esconde toda a HUD para tirar print; P de novo volta).
     this.photoMode = false;
+    this.photoFilter = 'none';
+    // Restaura HUD DOM e canvas caso a cena tenha reiniciado com photoMode ligado (evita soft-lock).
+    this.applyPhotoFilterOff();
+    for (const el of document.querySelectorAll('#game > *')) {
+      if (el.tagName === 'CANVAS') continue;
+      if (el.dataset.prevDisplay !== undefined) {
+        el.style.display = el.dataset.prevDisplay;
+        delete el.dataset.prevDisplay;
+      } else {
+        el.style.display = '';
+      }
+    }
     this.input.keyboard.on('keydown-P', () => { if (this.photoMode || !this.overlayBlocked()) this.togglePhotoMode(); });
+    // F dentro do modo foto: troca o filtro visual (normal → P&B → sépia → vinheta → moldura).
+    this.input.keyboard.on('keydown-F', () => { if (this.photoMode) this.cyclePhotoFilter(); });
     // R: loot rápido — coleta de uma vez todos os recursos simples perto.
     this.input.keyboard.on('keydown-R', () => { if (!this.overlayBlocked()) this.collectAllNearby(); });
     // N: dormir até de manhã (só perto da fogueira do acampamento).
@@ -351,6 +396,35 @@ export class GameScene extends Phaser.Scene {
     this.input.keyboard.on('keydown-Y', () => this.recallCamp());
     // Grito (Fus Ro Dah): ultimate na tecla Z, carregado pela barra de Fúria (dano causado/recebido).
     this.input.keyboard.on('keydown-Z', () => this.shout());
+    // O: no modo foto, troca o filtro visual (normal → P&B → sépia → vinheta → moldura).
+    this.input.keyboard.on('keydown-O', () => { if (this.photoMode) this.cyclePhotoFilter(); });
+    // U: envia marcação no mapa para outros jogadores no modo LAN.
+    this.input.keyboard.on('keydown-U', () => { if (!this.overlayBlocked()) this.lan?.sendMapPing?.(); });
+    // Tab: lock-on — trava o próximo inimigo no alcance e cicla entre eles.
+    this.input.keyboard.on('keydown-TAB', (event) => {
+      event?.preventDefault?.();
+      if (!this.overlayBlocked()) this.cycleLock();
+    });
+    // 6-9: skills ativas (Bola de Fogo, Muralha, Cura, Onda Devastadora).
+    const SKILL_KEYS = { SIX: 0, SEVEN: 1, EIGHT: 2, NINE: 3 };
+    for (const [keyName, slot] of Object.entries(SKILL_KEYS)) {
+      this.input.keyboard.on(`keydown-${keyName}`, () => {
+        if (!this.overlayBlocked()) this.activeSkills?.castSlot(slot);
+      });
+    }
+    // X: comando do mascote — toque rápido = agrupar; segurar >= 500 ms = esperar aqui.
+    this.input.keyboard.on('keydown-X', (event) => {
+      if (event?.repeat) return;
+      this.xHoldAt = this.time.now;
+    });
+    this.input.keyboard.on('keyup-X', () => {
+      if (!this.xHoldAt) return;
+      const held = this.time.now - this.xHoldAt;
+      this.xHoldAt = 0;
+      if (this.overlayBlocked()) return;
+      if (held >= 500) this.companions?.action('waitHere');
+      else this.companions?.action('rally');
+    });
     // Ataque, especial, esquiva, interagir e poção: teclas configuráveis (Ajustes → Teclas).
     this.applyKeybinds(loadKeybinds());
     this.input.keyboard.on('keydown', (event) => {
@@ -766,7 +840,7 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
-  updateFrame(_time, delta) {
+  updateFrame(time, delta) {
     // Ring buffer de ms/frame (máx 120) para o medidor __lendasPerf.
     this.frameTimes.push(delta);
     if (this.frameTimes.length > 120) this.frameTimes.shift();
@@ -829,6 +903,8 @@ export class GameScene extends Phaser.Scene {
         this.randomEventMs = Phaser.Math.Between(70000, 140000);
         this.randomEvent();
       }
+      // Eventos visuais de ambiente (não dão recompensa, só atmosphere).
+      try { this.updateAmbientEvents(delta); } catch (e) { console.error('[LENDAS] ambientEvents:', e); }
     }
     // Ambiente sonoro segue a região e o dia/noite (vento + pássaros/grilos).
     this.audio.setAmbience(this.regionWorld.currentRegion(), this.timeState.isNight);
@@ -880,6 +956,16 @@ export class GameScene extends Phaser.Scene {
       this.updateGolemLock();
       this.boss?.update(delta, this.player);
       this.campaign?.update(delta);
+      // Sistemas dos jogos de referência (skills 6-9, estrada, curiosidades, faróis, incidentes, pesca).
+      this.activeSkills?.update(delta);
+      this.roadEncounters?.update(delta);
+      this.roadEncounters?.updateMarker();
+      this.curiosities?.update(delta);
+      this.waylights?.update(delta);
+      this.incidents?.update(delta);
+      this.fishing?.update(delta);
+      this.updateLockRing();
+      this.updateEliteLabels();
     }
 
     this.updateMining(delta);
@@ -997,6 +1083,8 @@ export class GameScene extends Phaser.Scene {
       this.ui.showMessage('Um viajante chegou à fogueira com uma missão.');
     }
     this.raid.checkDay(day);
+    // Incidente diário do acampamento (fogo, lobo no curral, morador ferido).
+    this.incidents?.maybeSpawn(day);
     if (this.achievements?.refreshDaily()) this.ui.showMessage("Novas missões do dia (tecla T).");
     this.invasion.checkDay(day);
     this.announceXpEvent();
@@ -1107,7 +1195,9 @@ export class GameScene extends Phaser.Scene {
     this.audio.playSwing();
     if (this.mining) this.cancelMining();
     const thrown = this.gear?.weapon?.thrown ? this.gear.weapon : null;
-    const target = this.nearestEnemy(thrown ? thrown.range * TILE : COMBAT_CONFIG.basicAttackRange);
+    // Lock-on (Tab): se houver alvo travado vivo, o ataque corpo a corpo mira nele.
+    const locked = this.lockTarget?.active && !this.lockTarget?.dead ? this.lockTarget : null;
+    const target = locked ?? this.nearestEnemy(thrown ? thrown.range * TILE : COMBAT_CONFIG.basicAttackRange);
     const facing = this.player.facing ?? { x: 0, y: 1 };
     const swingAngle = target
       ? Phaser.Math.Angle.Between(this.player.x, this.player.y - 8, target.x, target.y - 8)
@@ -1140,10 +1230,11 @@ export class GameScene extends Phaser.Scene {
       this.effects.spawnSwingTrail(this.player.x, this.player.y, angle, false, this.player.animator?.weaponLook);
       return;
     }
-    const damage = Math.min(target.health, attack);
+    const hitAmount = this.bossWeakAmount(target, attack);
+    const damage = Math.min(target.health, hitAmount);
     this.effects.spawnSwingTrail(this.player.x, this.player.y, angle, finisher, this.player.animator?.weaponLook);
     this.effects.spawnSlash(target.x, target.y - 10, angle, finisher ? 2 : 1);
-    const killed = target.hit(attack, angle);
+    const killed = target.hit(hitAmount, angle);
     this.player.addShoutCharge(finisher ? COMBAT_CONFIG.shout.chargePerFinisher : COMBAT_CONFIG.shout.chargePerHit);
     this.grantSkillXp('blade', finisher ? 9 : 6);
     if (thrown) {
@@ -1224,9 +1315,10 @@ export class GameScene extends Phaser.Scene {
   damageEnemy(enemy, amount, options = {}) {
     if (!enemy?.active || enemy.dead || amount <= 0) return false;
     if (this.bossIsProtected(enemy)) return false;
-    const damage = Math.min(enemy.health, Math.round(amount));
-    const killed = enemy.hit(Math.round(amount), null);
-    this.effects.spawnDamage(enemy.x, enemy.y - 18, damage, options.color);
+    const hitAmount = this.bossWeakAmount(enemy, Math.round(amount));
+    const damage = Math.min(enemy.health, hitAmount);
+    const killed = enemy.hit(hitAmount, null);
+    this.effects.spawnDamage(enemy.x, enemy.y - 18, damage, hitAmount > amount ? '#ffd76b' : options.color);
     if (options.weapon) this.applyWeaponEffects(enemy, damage, killed);
     if (killed) {
       this.defeatEnemy(enemy);
@@ -1313,6 +1405,99 @@ export class GameScene extends Phaser.Scene {
       if (killed) this.defeatEnemy(enemy);
     });
     this.showEpic?.('FUS RO DAH!', targets.length ? `${targets.length} ${targets.length === 1 ? 'inimigo empurrado' : 'inimigos empurrados'}!` : 'A onda de choque varre a área.', 1800);
+  }
+
+  /** Tab: trava no inimigo mais próximo (ou cicla para o seguinte) dentro do alcance. */
+  cycleLock() {
+    if (this.gameOver) return;
+    const candidates = [...this.enemies, ...(this.boss && !this.boss.dead ? [this.boss] : [])];
+    this.lockTarget = nextLockTarget(candidates, this.lockTarget, this.player.x, this.player.y, 520);
+    if (this.lockTarget) {
+      this.ui.showMessage(`🎯 Alvo travado: ${this.lockTarget.name ?? 'inimigo'} (ataque mira nele automaticamente)`);
+      this.audio?.playPick?.();
+    }
+  }
+
+  /** Anel verde pulsante sobre o alvo travado; some se o alvo morrer/sair de cena. */
+  updateLockRing() {
+    if (!this.lockTarget || !this.lockTarget.active || this.lockTarget.dead) {
+      this.lockTarget = null;
+      this.lockRing?.setVisible(false);
+      return;
+    }
+    this.lockRing ??= this.add.graphics().setDepth(9000);
+    this.lockRing.clear();
+    this.lockRing.lineStyle(2, 0x5aff8a, 0.9);
+    this.lockRing.strokeCircle(this.lockTarget.x, this.lockTarget.y - 10, 26 + Math.sin(this.time.now / 160) * 3);
+    this.lockRing.setVisible(true);
+  }
+
+  /** Se o golpe for no ponto fraco do Golem (círculo no peito), dobra o dano e avisa. */
+  bossWeakAmount(enemy, amount) {
+    if (enemy !== this.boss || !BOSS_CONFIG.weakPoint || enemy.dead) return amount;
+    const wp = BOSS_CONFIG.weakPoint;
+    const d = Phaser.Math.Distance.Between(this.player.x, this.player.y, enemy.x + wp.dx, enemy.y + wp.dy);
+    if (d <= wp.radius) {
+      this.effects.spawnDamage(enemy.x + wp.dx, enemy.y + wp.dy - 20, 'PONTO FRACO!', '#ffd76b');
+      return Math.round(amount * wp.multiplier);
+    }
+    return amount;
+  }
+
+  /** Etiqueta "Nome • NvX" sobre cada elite visível (estilo nameplate de RPG). */
+  updateEliteLabels() {
+    const view = this.cameras.main.worldView;
+    const seen = new Set();
+    for (const enemy of this.enemies) {
+      if (!enemy.active || enemy.dead || !enemy.isElite) continue;
+      if (enemy.x < view.x - 60 || enemy.x > view.right + 60 || enemy.y < view.y - 60 || enemy.y > view.bottom + 60) continue;
+      seen.add(enemy);
+      let label = this.eliteLabels.get(enemy);
+      if (!label) {
+        label = this.add.text(enemy.x, enemy.y - 44, '', {
+          fontFamily: 'Press Start 2P', fontSize: '8px', color: '#ffd76b',
+          stroke: '#140f14', strokeThickness: 3
+        }).setOrigin(0.5);
+        this.eliteLabels.set(enemy, label);
+      }
+      label.setText(`${enemy.name} • Nv${enemy.level}`);
+      label.setPosition(enemy.x, enemy.y - 44);
+      label.setVisible(true);
+    }
+    for (const [enemy, label] of this.eliteLabels) {
+      if (!seen.has(enemy)) {
+        label.destroy();
+        this.eliteLabels.delete(enemy);
+      }
+    }
+  }
+
+  /** Observar estrelas à noite perto da fogueira: buff de XP + rumores de curiosidades no mapa. */
+  stargaze() {
+    const phase = this.dayNight?.getState?.().phase ?? 'day';
+    if (phase !== 'night' && phase !== 'dusk') {
+      this.ui.showMessage('Só dá para observar as estrelas à noite.');
+      return { ok: false };
+    }
+    if (!this.camp.isNear(this.player.x, this.player.y)) {
+      this.ui.showMessage('Fique perto da fogueira do acampamento para observar o céu.');
+      return { ok: false };
+    }
+    this.buffs.apply('starryEyes', { durationMs: 300000 });
+    const p = this.player;
+    const near = [...CURIOSITIES]
+      .filter((c) => !this.curiosities.tracker.discovered.has(c.id))
+      .sort((a, b) => Math.hypot(a.x - p.x, a.y - p.y) - Math.hypot(b.x - p.x, b.y - p.y))
+      .slice(0, 3);
+    for (const c of near) this.curiosities.tracker.rumour(c.id);
+    this.curiosities.syncMarkers();
+    this.player.recalculateEquipment(this.camp.equipment);
+    this.effects?.spawnHarvest(p.x, p.y - 30, 0x9fb8ff);
+    this.showEpic?.('🔭 OBSERVANDO AS ESTRELAS', '+10% XP por 5 minutos. O céu mostrou rumores no mapa (M).', 4200);
+    this.ui.showMessage('🔭 Olhos Estrelados: +10% XP por 5 min!');
+    this.audio?.playLevelUp?.();
+    this.save();
+    return { ok: true };
   }
 
   /** Aplica as teclas de ação (esquiva usa uma tecla do Phaser; as outras vêm do evento keydown). */
@@ -1505,8 +1690,13 @@ export class GameScene extends Phaser.Scene {
   }
 
   /** Arena de chefes: começa ou desiste. */
-  arenaAction(kind) {
+  arenaAction(kind, arg) {
     if (kind === 'start') return this.arena.start();
+    if (kind === 'summon') {
+      const result = this.arena.summonBoss(arg);
+      if (!result.ok) this.ui?.showMessage(result.message);
+      return result.ok;
+    }
     this.arena.end('Você deixou a arena.');
     return true;
   }
@@ -1570,7 +1760,19 @@ export class GameScene extends Phaser.Scene {
     // No modo foto mostramos só as coordenadas (canto inferior direito) — útil para registrar lugares.
     this.photoCoords = document.getElementById('photo-coords');
     if (this.photoCoords) this.photoCoords.hidden = !this.photoMode;
-    if (this.photoMode) this.ui.showMessage('📷 Modo foto ativado — aperte P para voltar');
+    if (this.photoMode) {
+      this.ui.showMessage('📷 Modo foto — aperte P para voltar, O para trocar filtro');
+      this.applyPhotoFilter();
+    } else {
+      this.applyPhotoFilterOff();
+    }
+  }
+
+  applyPhotoFilterOff() {
+    const canvas = this.game.canvas;
+    if (canvas) canvas.style.filter = '';
+    const game = document.getElementById('game');
+    if (game) { game.style.border = ''; game.style.boxShadow = ''; }
   }
 
   /** Seta na borda da tela → direção do waypoint quando ele está fora da visão (muda de lado ao passar por ele). */
@@ -1642,9 +1844,15 @@ export class GameScene extends Phaser.Scene {
         ['G', 'Montar/desmontar'],
         ['H', 'Convocar o cavalo e montar'],
         ['Z', 'GRITO FUS RO DAH! (barra de Fúria cheia)'],
+        ['Tab', 'Travar alvo (lock-on; ataque mira nele)'],
+        ['6 … 9', 'Skills ativas (fogo, muralha, cura, onda)'],
+        ['X', 'Mascote: toque = agrupar · segurar = esperar aqui'],
+        ['E (perto)', 'Farol apagado, pescaria no píer, incidente "!" no acampamento'],
         ['R', 'Loot rápido (pega tudo perto)'],
         ['Y', 'Voltar ao acampamento (60 s de cooldown)'],
         ['P', 'Modo foto (esconde a HUD)'],
+        ['O', 'No modo foto: trocar filtro (normal/P&B/sépia/vinheta/moldura)'],
+        ['U', 'Marcar local no mapa (LAN: outros jogadores veem)'],
         ['?', 'Esta ajuda']
       ];
       this.helpKeys.innerHTML = rows.map(([key, label]) => `<div><span>${label}</span><b>${key}</b></div>`).join('');
@@ -2118,6 +2326,11 @@ export class GameScene extends Phaser.Scene {
     // Evento "XP em dobro" (dia 7, 14...), bônus de novato da Fogueira e pedra rúnica (não acumulam entre si no máx? acumulam o rúnico).
     let boosted = Math.round((Number(amount) || 0) * this.xpBoost.multiplier(this.timeState?.dayCount ?? 1));
     if (this.runeDay === (this.timeState?.dayCount ?? 1)) boosted = Math.round(boosted * 1.5);
+    // Farol aceso na região atual: +10% XP (bônus não acumula com o rúnico, mas soma aqui).
+    const region = this.regionWorld?.currentRegion?.();
+    if (region && this.waylights?.tracker?.isLit(region)) boosted = Math.round(boosted * (1 + WAYLIGHT_BONUS_XP));
+    // Buff "Olhos Estrelados" (observar estrelas à noite): +10% XP.
+    if (this.buffs?.has('starryEyes')) boosted = Math.round(boosted * 1.10);
     amount = boosted;
     const result = this.progression.addXp(amount);
     this.player.recalculateEquipment(this.camp.equipment);
@@ -2340,6 +2553,10 @@ export class GameScene extends Phaser.Scene {
   interact() {
     if (this.mining || this.overlayBlocked() || this.campaign?.ui?.isOpen) return;
     if (this.campaign?.interact()) return;
+    // Incidente no acampamento (marcador "!"), farol apagado e pesca no píer — antes do resto.
+    if (this.incidents?.interact(this.player)) return;
+    if (this.waylights?.interact(this.player)) return;
+    if (this.fishing?.interact(this.player)) return;
     if (this.regionWorld?.interact()) return;
     const resource = this.world.nearbyResource(this.player.x, this.player.y);
     const structure = this.harvestStructures.nearest(this.player.x, this.player.y);
@@ -3272,8 +3489,201 @@ export class GameScene extends Phaser.Scene {
       companions: this.companions?.serialize(),
       achievements: this.achievements?.serialize(),
       arena: this.arena?.serialize(),
+      curiosities: this.curiosities?.serialize(),
+      waylights: this.waylights?.serialize(),
+      incidents: this.incidents?.serialize(),
       hero: { gender: this.heroGender }
     });
+  }
+
+  // ========== EVENTOS AMBIENTAIS VISUAIS ==========
+
+  /** Atualiza eclipse, cardume e meteoro — chamado só no overworld sem pausa. */
+  updateAmbientEvents(delta) {
+    const cam = this.cameras.main;
+    const region = this.regionWorld?.currentRegion?.();
+    const isNight = this.timeState?.isNight;
+
+    // --- Cardume de pássaros (de dia, regiões abertas) ---
+    this.ambientBirdMs -= delta;
+    if (this.ambientBirdMs <= 0) {
+      this.ambientBirdMs = 90_000 + Math.random() * 120_000;
+      if (!isNight && ['vale', 'floresta', 'praia', 'areia', 'antiga'].includes(region)) this.spawnBirdFlock();
+    }
+    if (this.activeBirdFlock) {
+      const flock = this.activeBirdFlock;
+      flock.x += flock.speed * (delta / 1000);
+      let anyVisible = false;
+      for (const b of flock.birds) {
+        b.sprite.x = flock.x + b.ox;
+        b.sprite.y = flock.baseY + b.oy + Math.sin((flock.x + b.ox) * 0.02) * 6;
+        if (b.sprite.x > cam.scrollX - 60 && b.sprite.x < cam.scrollX + cam.width + 60) anyVisible = true;
+      }
+      if (!anyVisible) {
+        for (const b of flock.birds) b.sprite.destroy();
+        this.activeBirdFlock = null;
+      }
+    }
+
+    // --- Meteoro (à noite) ---
+    this.ambientMeteorMs -= delta;
+    if (this.ambientMeteorMs <= 0) {
+      this.ambientMeteorMs = 150_000 + Math.random() * 240_000;
+      if (isNight) this.spawnMeteor();
+    }
+    if (this.activeMeteorSprite) {
+      const m = this.activeMeteorSprite;
+      m.x += m.vx * (delta / 1000);
+      m.y += m.vy * (delta / 1000);
+      m.sprite.setPosition(m.x, m.y).setRotation(Math.atan2(m.vy, m.vx));
+      if (m.x < cam.scrollX - 100 || m.x > cam.scrollX + cam.width + 100 || m.y > cam.scrollY + cam.height + 100) {
+        m.sprite.destroy();
+        this.activeMeteorSprite = null;
+      }
+    }
+
+    // --- Eclipse solar (de dia, raro) ---
+    this.ambientEclipseMs -= delta;
+    if (this.ambientEclipseMs <= 0) {
+      this.ambientEclipseMs = 420_000 + Math.random() * 480_000;
+      if (!isNight) this.spawnEclipse();
+    }
+    if (this.eclipseOverlay) {
+      this.eclipseT += delta;
+      const progress = this.eclipseT / 12_000;
+      let dark = 0;
+      if (progress < 0.3) dark = (progress / 0.3) * 0.55;
+      else if (progress < 0.7) dark = 0.55;
+      else dark = 0.55 * Math.max(0, 1 - (progress - 0.7) / 0.3);
+      this.eclipseOverlay.setFillStyle(0x080818, dark);
+      // Segue a câmera.
+      this.eclipseOverlay.setPosition(cam.scrollX + cam.width / 2, cam.scrollY + cam.height / 2);
+      this.eclipseOverlay.setSize(cam.width, cam.height);
+      if (progress >= 1) {
+        this.eclipseOverlay.destroy();
+        this.eclipseOverlay = null;
+        this.ui?.showMessage('☀️ O eclipse passou...');
+      }
+    }
+  }
+
+  spawnBirdFlock() {
+    const cam = this.cameras.main;
+    const key = this.ensureBirdTexture();
+    const count = 5 + Math.floor(Math.random() * 6);
+    const fromLeft = Math.random() < 0.5;
+    const baseY = cam.scrollY + 30 + Math.random() * 120;
+    const startX = fromLeft ? cam.scrollX - 40 : cam.scrollX + cam.width + 40;
+    const birds = [];
+    for (let i = 0; i < count; i += 1) {
+      const sprite = this.add.image(0, 0, key)
+        .setDepth(OVERLAY_DEPTH + 4200)
+        .setScale(1.6)
+        .setFlipX(!fromLeft);
+      this.hudCamera?.ignore(sprite);
+      birds.push({ sprite, ox: (fromLeft ? -1 : 1) * (i * 22 + Math.random() * 10), oy: (Math.random() - 0.5) * 30 });
+    }
+    this.activeBirdFlock = { birds, x: startX, baseY, speed: (fromLeft ? 1 : -1) * (120 + Math.random() * 60) };
+  }
+
+  ensureBirdTexture() {
+    const key = 'ambient-bird';
+    if (this.textures.exists(key)) return key;
+    const px = new PixelCanvas(8, 5);
+    px.line(1, 2, 4, 0, '#1a1020');
+    px.line(4, 0, 7, 2, '#1a1020');
+    px.pixel(3, 2, '#1a1020');
+    px.pixel(4, 2, '#1a1020');
+    const canvas = document.createElement('canvas');
+    canvas.width = 8; canvas.height = 5;
+    canvas.getContext('2d').putImageData(new ImageData(px.data, 8, 5), 0, 0);
+    this.textures.addCanvas(key, canvas);
+    return key;
+  }
+
+  spawnMeteor() {
+    const cam = this.cameras.main;
+    const key = this.ensureMeteorTexture();
+    const startX = cam.scrollX + Math.random() * cam.width;
+    const startY = cam.scrollY - 20;
+    const speed = 400 + Math.random() * 300;
+    const dirX = Math.random() < 0.5 ? 1 : -1;
+    const sprite = this.add.image(startX, startY, key)
+      .setDepth(OVERLAY_DEPTH + 4201)
+      .setScale(2);
+    this.hudCamera?.ignore(sprite);
+    this.activeMeteorSprite = {
+      sprite, x: startX, y: startY,
+      vx: dirX * speed * 0.6, vy: speed * 0.8
+    };
+    this.ui?.showMessage('☄️ Um meteoro cruza o céu...');
+  }
+
+  ensureMeteorTexture() {
+    const key = 'ambient-meteor';
+    if (this.textures.exists(key)) return key;
+    const px = new PixelCanvas(24, 6);
+    const tones = ['#fff8e0', '#ffd060', '#ff9040', '#c05030', '#803020'];
+    for (let i = 0; i < 20; i += 1) {
+      const t = Math.min(tones.length - 1, Math.floor(i / 4));
+      px.pixel(i, 2 + (i % 3 === 0 ? -1 : i % 3 === 1 ? 0 : 1), tones[t]);
+    }
+    px.pixel(21, 2, '#ffffff');
+    px.pixel(22, 2, '#fff8e0');
+    px.pixel(23, 2, '#ffd060');
+    px.pixel(22, 1, '#fff8e0');
+    px.pixel(22, 3, '#ffd060');
+    const canvas = document.createElement('canvas');
+    canvas.width = 24; canvas.height = 6;
+    canvas.getContext('2d').putImageData(new ImageData(px.data, 24, 6), 0, 0);
+    this.textures.addCanvas(key, canvas);
+    return key;
+  }
+
+  spawnEclipse() {
+    const cam = this.cameras.main;
+    this.eclipseOverlay = this.add.rectangle(
+      cam.scrollX + cam.width / 2, cam.scrollY + cam.height / 2,
+      cam.width, cam.height, 0x080818, 0
+    ).setScrollFactor(1).setDepth(OVERLAY_DEPTH + 4500);
+    this.eclipseT = 0;
+    this.ui?.showMessage('🌑 ECLIPSE SOLAR! O dia escurece por alguns segundos...');
+    this.audio?.playRoar?.();
+  }
+
+  // ========== MODO FOTO EXPANDIDO ==========
+
+  /** Avança o filtro do modo foto: none → bw → sepia → vignette → frame → none. */
+  cyclePhotoFilter() {
+    const order = ['none', 'bw', 'sepia', 'vignette', 'frame'];
+    const idx = order.indexOf(this.photoFilter);
+    this.photoFilter = order[(idx + 1) % order.length];
+    this.applyPhotoFilter();
+    const labels = { none: 'Normal', bw: 'Preto e branco', sepia: 'Sépia', vignette: 'Vinheta', frame: 'Moldura' };
+    this.ui?.showMessage(`📷 Filtro: ${labels[this.photoFilter]}`);
+  }
+
+  applyPhotoFilter() {
+    const canvas = this.game.canvas;
+    if (!canvas) return;
+    switch (this.photoFilter) {
+      case 'bw': canvas.style.filter = 'grayscale(1) contrast(1.1)'; break;
+      case 'sepia': canvas.style.filter = 'sepia(0.7) contrast(1.05)'; break;
+      case 'vignette': canvas.style.filter = 'brightness(0.95) contrast(1.1)'; break;
+      case 'frame': canvas.style.filter = 'contrast(1.05) saturate(1.1)'; break;
+      default: canvas.style.filter = '';
+    }
+    // Moldura: adiciona uma borda decorativa no modo foto.
+    const game = document.getElementById('game');
+    if (game) {
+      if (this.photoFilter === 'frame' && this.photoMode) {
+        game.style.border = '12px solid #2a1a0e';
+        game.style.boxShadow = 'inset 0 0 0 2px #e8c779, 0 0 40px rgba(0,0,0,0.8)';
+      } else {
+        game.style.border = '';
+        game.style.boxShadow = '';
+      }
+    }
   }
 }
 

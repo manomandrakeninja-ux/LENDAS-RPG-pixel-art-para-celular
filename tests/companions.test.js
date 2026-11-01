@@ -42,7 +42,26 @@ test('save ida e volta e saves inválidos/antigos', () => {
   c.mounted = true;
   assert.deepEqual(new Companions(c.serialize()).serialize(), c.serialize());
   const empty = new Companions(undefined);
-  assert.deepEqual(empty.serialize(), { owned: [], active: null, eggs: 0, mounted: false });
+  assert.deepEqual(empty.serialize(), { owned: [], active: null, eggs: 0, mounted: false, command: 'active', waitPoint: null });
   assert.equal(new Companions({ owned: ['x', 'fairy'], active: 'wolfpup' }).active, null);
   assert.ok(petAbility('magpie') && petAbility('phoenix').power > 0);
+});
+
+test('comando do mascote: agrupar (X) e esperar aqui (X segurado), com save', () => {
+  const c = new Companions();
+  assert.equal(c.command, 'active');
+  const w = c.waitHere(100, 200);
+  assert.ok(w.ok && c.command === 'wait' && c.waitPoint.x === 100 && c.waitPoint.y === 200);
+  const r = c.rally();
+  assert.ok(r.ok && c.command === 'active' && c.waitPoint === null);
+  // Ida e volta pelo save preserva o comando.
+  c.waitHere(50, 60);
+  const restored = new Companions(c.serialize());
+  assert.equal(restored.command, 'wait');
+  assert.deepEqual(restored.waitPoint, { x: 50, y: 60 });
+  // Save com waitPoint inválido: comando vale, ponto cai para null; sem command cai no padrão 'active'.
+  const bad = new Companions({ owned: [], command: 'wait', waitPoint: { x: NaN, y: 1 } });
+  assert.equal(bad.command, 'wait');
+  assert.equal(bad.waitPoint, null);
+  assert.equal(new Companions({ owned: [] }).command, 'active');
 });

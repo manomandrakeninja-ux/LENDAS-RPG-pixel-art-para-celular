@@ -64,6 +64,9 @@ export class BiomeBoss extends Phaser.GameObjects.Container {
       yoyo: true,
       repeat: -1
     });
+    // Ponto fraco pulsante (BOSS_CONFIG.weakPoint): círculo no peito do golem.
+    this.weakMarker = scene.add.graphics();
+    this.add(this.weakMarker);
     if (this.dead) this.setVisible(false);
   }
 
@@ -118,7 +121,23 @@ export class BiomeBoss extends Phaser.GameObjects.Container {
       this.updatePattern(delta, player);
     }
     this.updateProjectiles(delta, player);
+    this.drawWeakMarker();
     this.setDepth(this.y + 30);
+  }
+
+  /** Círculo pulsante no ponto fraco do golem (dano dobrado ali). */
+  drawWeakMarker() {
+    const wp = BOSS_CONFIG.weakPoint;
+    const g = this.weakMarker;
+    if (!wp || this.dead) { g.clear(); return; }
+    const pulse = 1 + Math.sin(this.scene.time.now / 240) * 0.15;
+    g.clear();
+    g.lineStyle(3, 0xffd76b, 0.95);
+    g.strokeCircle(wp.dx, wp.dy, wp.radius * 0.45 * pulse);
+    g.fillStyle(0xffb04a, 0.5);
+    g.fillCircle(wp.dx, wp.dy, 7 * pulse);
+    g.lineStyle(2, 0xfff0b0, 0.8);
+    g.strokeCircle(wp.dx, wp.dy, 11 * pulse);
   }
 
   startPattern(pattern) {

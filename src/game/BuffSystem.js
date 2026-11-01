@@ -12,7 +12,11 @@ export const BUFF_DEFINITIONS = Object.freeze({
   dailyAttack: { name: 'Bênção: Ataque', effects: { attack: HOUSE.dailyBuffs.attack.attack } },
   dailyDefense: { name: 'Bênção: Defesa', effects: { defense: HOUSE.dailyBuffs.defense.defense } },
   dailyHealth: { name: 'Bênção: Vida', effects: { maxHealth: HOUSE.dailyBuffs.health.maxHealth } },
-  dailySpeed: { name: 'Bênção: Velocidade', effects: { speedPercent: HOUSE.dailyBuffs.speed.speedPercent } }
+  dailySpeed: { name: 'Bênção: Velocidade', effects: { speedPercent: HOUSE.dailyBuffs.speed.speedPercent } },
+  // Skill ativa 7 (Muralha Arcana): +60% de defesa por 8 s.
+  ward: { name: 'Muralha Arcana', effects: { defensePercent: 0.6 }, durationMs: 8000 },
+  // Observar estrelas na fogueira à noite: +10% XP por 5 min (lido em GameScene.grantExperience).
+  starryEyes: { name: 'Olhos Estrelados', effects: { xpPercent: 0.10 }, durationMs: 300000 }
 });
 
 export const DAILY_BUFF_IDS = Object.freeze({
@@ -23,7 +27,7 @@ export const DAILY_BUFF_IDS = Object.freeze({
 });
 
 const EMPTY_EFFECTS = Object.freeze({
-  attack: 0, defense: 0, attackPercent: 0, defensePercent: 0, maxHealth: 0, speedPercent: 0, regenPerSecond: 0
+  attack: 0, defense: 0, attackPercent: 0, defensePercent: 0, maxHealth: 0, speedPercent: 0, regenPerSecond: 0, xpPercent: 0
 });
 
 export class BuffSystem {

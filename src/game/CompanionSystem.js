@@ -135,6 +135,8 @@ export class CompanionSystem {
     this.bob = 0;
     this.px = 0;
     this.py = 0;
+    // Anel dourado no ponto onde o mascote foi mandado esperar (X segurado).
+    this.waitRing = scene.add.graphics();
   }
 
   serialize() { return this.state.serialize(); }
@@ -152,6 +154,8 @@ export class CompanionSystem {
     } else if (kind === 'hatch') result = state.hatch();
     else if (kind === 'summon') result = state.summon(arg);
     else if (kind === 'mount') result = state.toggleMount(scene.progression.level);
+    else if (kind === 'rally') result = state.rally();
+    else if (kind === 'waitHere') result = state.waitHere(scene.player.x - 20, scene.player.y + 8);
     else result = { ok: false, message: '' };
     scene.ui?.showMessage(result.message);
     if (result.ok) {
@@ -342,10 +346,20 @@ export class CompanionSystem {
       this.placeMount(player, delta, this.stillMs < 90);
     }
     const sprite = this.petSprite;
+    // Comando "esperar aqui" (X segurado): o mascote vai até o ponto e fica parado lá, sem atacar.
+    const waiting = this.state.command === 'wait' && this.state.waitPoint;
+    if (waiting) {
+      this.waitRing.clear();
+      this.waitRing.lineStyle(2, 0xffd76b, 0.9);
+      this.waitRing.strokeCircle(this.state.waitPoint.x, this.state.waitPoint.y + 6, 18);
+      this.waitRing.setDepth(this.state.waitPoint.y + 4);
+    } else {
+      this.waitRing.clear();
+    }
     if (!sprite) return;
     this.bob += delta;
-    const tx = player.x - 20;
-    const ty = player.y + 8;
+    const tx = waiting ? this.state.waitPoint.x : player.x - 20;
+    const ty = waiting ? this.state.waitPoint.y : player.y + 8;
     const distance = Phaser.Math.Distance.Between(this.px, this.py, tx, ty);
     if (distance > 240) {
       this.px = tx;
@@ -366,7 +380,7 @@ export class CompanionSystem {
     }
     const lift = flying ? -10 + Math.sin(this.bob / 220) * 3 : -Math.abs(Math.sin(this.bob / 160)) * 1.5;
     sprite.setPosition(this.px, this.py + lift).setDepth(this.py + 8);
-    if (!paused) this.runAbility(delta, player);
+    if (!paused && !waiting) this.runAbility(delta, player);
   }
 
   runAbility(delta, player) {

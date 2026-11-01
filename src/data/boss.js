@@ -20,7 +20,13 @@ export const BOSS_CONFIG = Object.freeze({
   rareItemAmount: 1,
   coinDrop: 50,
   recipeId: 'titanBlade',
-  patterns: Object.freeze(['charge', 'slam', 'volley'])
+  patterns: Object.freeze(['charge', 'slam', 'volley']),
+  // Ponto fraco (estilo "mirar no olho" do Dragon's Dogma): golpes que acertarem dentro do
+  // círculo no peito do golem (calculado a partir da posição dele) causam dano dobrado.
+  weakPoint: Object.freeze({
+    dx: 0, dy: -34, radius: 44, multiplier: 2,
+    label: 'Cristal incandescente no peito'
+  })
 });
 
 export const BOSS_CAMP_DISTANCE = Math.hypot(

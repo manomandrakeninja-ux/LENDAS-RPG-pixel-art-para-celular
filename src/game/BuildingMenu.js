@@ -113,10 +113,14 @@ export class BuildingMenu {
         'pet-buy': () => this.scene.companions?.action('buy', button.dataset.arg),
         'pet-summon': () => this.scene.companions?.action('summon', button.dataset.arg),
         'pet-hatch': () => this.scene.companions?.action('hatch'),
+        'pet-rally': () => this.scene.companions?.action('rally'),
+        'pet-wait': () => this.scene.companions?.action('waitHere'),
         'mount-toggle': () => this.scene.companions?.action('mount'),
         'rebirth': () => this.scene.rebirthHero?.(),
         'arena-start': () => this.scene.arenaAction?.('start'),
         'arena-leave': () => this.scene.arenaAction?.('leave'),
+        'arena-summon': () => this.scene.arenaAction?.('summon', this.content.querySelector('[data-arena-kind]')?.value),
+        'stargaze': () => this.scene.stargaze?.(),
         'respec-talents': () => this.scene.respecTalents?.(),
         'claim-xp-bonus': () => this.scene.claimXpBonus?.(),
         'hunt-accept': () => this.scene.huntAction?.('accept', button.dataset.arg),
@@ -482,6 +486,11 @@ export class BuildingMenu {
   arenaCard() {
     const arena = this.scene.arena;
     if (!arena) return '';
+    // Invocar um chefe único à escolha (estilo "monster trials"): espèces de nível 6+.
+    const summonOptions = Object.entries(ENEMY_TYPES)
+      .filter(([, def]) => (def.level ?? 1) >= 6)
+      .map(([kind, def]) => `<option value="${kind}">${escapeHtml(def.name)} (nv ${def.level})</option>`)
+      .join('');
     return `
         <article class="building-menu__card" data-arena>
           <h2>Arena de chefes</h2>
@@ -490,7 +499,9 @@ export class BuildingMenu {
           <div class="building-menu__actions">
             ${arena.active
               ? '<button type="button" data-action="arena-leave">DESISTIR</button>'
-              : '<button type="button" class="button--primary" data-action="arena-start">ENTRAR NA ARENA</button>'}
+              : `<button type="button" class="button--primary" data-action="arena-start">ENTRAR NA ARENA</button>
+                 <select data-arena-kind style="max-width:150px">${summonOptions}</select>
+                 <button type="button" data-action="arena-summon">INVOCAR CHEFE</button>`}
           </div>
         </article>`;
   }
@@ -515,11 +526,20 @@ export class BuildingMenu {
     const mount = mountUnlocked(level)
       ? `<button type="button" class="button--primary" data-action="mount-toggle">${state.mounted ? 'DESMONTAR' : 'MONTAR'} (tecla G)</button>`
       : `<button type="button" disabled>MONTARIA NO NÍVEL ${MOUNT_LEVEL}</button>`;
+    // Comandos do mascote ativo (tecla X): toque rápido = agrupar; segurar = esperar aqui.
+    const commands = state.active
+      ? `<div class="building-menu__actions">
+           <button type="button" data-action="pet-rally">AGRUPAR (X)</button>
+           <button type="button" data-action="pet-wait">ESPERAR AQUI (segurar X)</button>
+         </div>
+         <div class="building-menu__stat">Comando atual: ${state.command === 'wait' ? 'esperando aqui' : 'seguindo e atacando'}</div>`
+      : '';
     return `
         <article class="building-menu__card" data-companions>
           <h2>Mascotes e montaria</h2>
           <p>Mascotes seguem você e ajudam. Chefes podem deixar um ovo raro. A montaria dá +35% de velocidade e some ao levar dano.</p>
           ${rows}
+          ${commands}
           <div class="building-menu__actions">
             <button type="button" data-action="pet-hatch" ${disabled(state.eggs <= 0)}>CHOCAR OVO (${state.eggs})</button>
             ${mount}
@@ -592,6 +612,7 @@ export class BuildingMenu {
     const camp = this.camp;
     if (this.tab === 'traveler') return this.renderCampfireTraveler();
     const cook = BUILDING_DEFS.campfire.cookRecipe;
+    const isNight = ['night', 'dusk'].includes(scene.dayNight?.getState?.().phase ?? 'day');
     const canCook = camp.unlocked('campfire', 'cook');
     const revive = camp.unlocked('campfire', 'unlimitedRevive')
       ? 'ilimitada'
@@ -632,6 +653,13 @@ export class BuildingMenu {
           <div class="building-menu__stat">${this.costHtml(cook.cost)}</div>
           <div class="building-menu__actions">
             <button type="button" data-action="cook" ${disabled(!canCook || !camp.canPay(cook.cost))}>COZINHAR POÇÃO</button>
+          </div>
+        </article>
+        <article class="building-menu__card" data-stargaze>
+          <h2>Observar estrelas</h2>
+          <p>À noite, perto da fogueira: +10% XP por 5 min e o céu revela rumores no mapa (tecla M).</p>
+          <div class="building-menu__actions">
+            <button type="button" class="button--primary" data-action="stargaze" ${disabled(!isNight)}>🔭 OBSERVAR ESTRELAS</button>
           </div>
         </article>
       </div>
