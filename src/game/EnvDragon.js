@@ -1,6 +1,6 @@
 import { OVERLAY_DEPTH } from './depths.js';
 
-// Dragao ambiental: spritesheet pixel art 4x1 carregada em assets.js.
+// Dragao ambiental: spritesheet pixel art 16x1 carregada em assets.js.
 const TEXTURE_KEY = 'env-dragon';
 const ANIMATION_KEY = 'env-dragon-fly';
 
@@ -8,8 +8,8 @@ function ensureDragonAnimation(scene) {
   if (!scene.anims.exists(ANIMATION_KEY)) {
     scene.anims.create({
       key: ANIMATION_KEY,
-      frames: scene.anims.generateFrameNumbers(TEXTURE_KEY, { start: 0, end: 3 }),
-      frameRate: 8,
+      frames: scene.anims.generateFrameNumbers(TEXTURE_KEY, { start: 0, end: 15 }),
+      frameRate: 12,
       repeat: -1
     });
   }
@@ -54,7 +54,7 @@ export class EnvDragon {
     ensureDragonAnimation(scene);
     const sprite = scene.add.sprite(x, y, TEXTURE_KEY, 0)
       .setDepth(OVERLAY_DEPTH + 4300)
-      .setScale(0.19)
+      .setScale(0.82)
       .setFlipX(!fromLeft);
     sprite.play(ANIMATION_KEY);
     scene.hudCamera?.ignore(sprite);

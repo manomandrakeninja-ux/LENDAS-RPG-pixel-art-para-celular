@@ -81,8 +81,8 @@ export const ASSET_CONFIG = {
     kind: 'spritesheet',
     key: 'env-dragon',
     file: 'assets/vfx/env-dragon.png',
-    frameWidth: 512,
-    frameHeight: 512
+    frameWidth: 192,
+    frameHeight: 96
   }
 };
 
