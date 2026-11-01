@@ -366,7 +366,10 @@ export class GameUI {
       this.coinLabel.setPosition(left + 20, top + 117);
       this.statusLabel.setPosition(left, top + 136);
     }
-    for (const item of [this.xpLabel, this.dayLabel, this.statusLabel, this.mapLabel]) item?.setVisible(!phone);
+    for (const item of [this.xpLabel, this.dayLabel, this.statusLabel]) item?.setVisible(!phone);
+    // O título identifica o minimapa no celular; sem ele o quadro parece um
+    // painel vazio quando os botões de toque estão recolhidos.
+    this.mapLabel.setVisible(true).setFontSize(phone ? '6px' : '8px');
     (this.oreCounters ?? []).forEach((counter, index) => {
       counter.icon.setVisible(!phone).setPosition(left + 138 + index * 58, top + 121);
       counter.label.setVisible(!phone).setPosition(left + 150 + index * 58, top + 117);
