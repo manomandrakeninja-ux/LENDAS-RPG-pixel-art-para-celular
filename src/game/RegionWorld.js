@@ -5,7 +5,7 @@ import {
 } from '../data/worldRegions.js';
 import { VILLAGERS } from '../data/villagers.js';
 import { drawVillager } from '../art/person.js';
-import { UNDER_SUBTILES, layoutTiles, underName } from '../data/terrainLayout.js';
+import { UNDER_SUBTILES, VALLEY_PATH_START, layoutTiles, underName } from '../data/terrainLayout.js';
 import { hash } from '../art/pixel.js';
 import { ENEMY_TYPES } from '../data/enemies.js';
 import { levelInRange } from '../data/enemyScaling.js';
@@ -27,6 +27,12 @@ const TERRAIN_GID = 100;
 const UNDER_GID = 3000;
 const EXTRUDE = 1;
 const HINT_RANGE = 120;
+// Decoração do Vale: chance por ladrilho de grama (soma ~3,5%) e tipos do atlas 'vale-decor' (v03, flores e cogumelos).
+const VALE_CAMP = { x: 1440, y: 1080 };
+const DECOR_KINDS = [
+  { prefix: 'flor-', count: 3, chance: 0.025 },
+  { prefix: 'cogumelo-', count: 2, chance: 0.01 }
+];
 const SUBS = UNDER_SUBTILES * UNDER_SUBTILES;
 // Camada de baixo: mar (bloqueia), mar sob a borda, lava (bloqueia), lava sob a borda, lodo e gelo.
 const UNDER_SLOTS = [[T.SEA, true], [T.SEA, false], [T.LAVA, true], [T.LAVA, false], [T.MURK, false], [T.ICE, false]];
@@ -119,11 +125,11 @@ export class RegionWorld {
     this.map = map;
     // Evita sangramento de pixels entre células do atlas quando a câmera se move
     // em posições fracionárias (as linhas finas apareciam entre terrenos).
-    scene.textures.get('grass')?.setFilter(Phaser.Textures.FilterMode.NEAREST);
     // Atlas com 1 px de borda repetida por ladrilho: com zoom fracionário (PC, 1,5x) a GPU lia o ladrilho
     // vizinho do atlas e desenhava uma linha de 1 px (ex.: azul de água) nas emendas do chão.
     const terrainKey = this.extrudeTileset('terrain-tiles');
-    const grass = map.addTilesetImage('grass', 'grass', TILE, TILE, 0, 0, GRASS_GID);
+    const grassKey = this.extrudeTileset('grass', { keepSource: true });
+    const grass = map.addTilesetImage('grass', grassKey, TILE, TILE, EXTRUDE, EXTRUDE * 2, GRASS_GID);
     const terrain = map.addTilesetImage('terrain', terrainKey, TILE, TILE, EXTRUDE, EXTRUDE * 2, TERRAIN_GID);
     // Textura da camada animada: um quadro de cada tipo lado a lado, redesenhada a cada passo.
     if (scene.textures.exists('under-tiles')) scene.textures.remove('under-tiles');
@@ -188,10 +194,10 @@ export class RegionWorld {
   }
 
   /** Copia o atlas com margem EXTRUDE e espaçamento 2*EXTRUDE, repetindo a borda de cada ladrilho; descarta o original. */
-  extrudeTileset(key) {
+  extrudeTileset(key, { keepSource = false } = {}) {
     const scene = this.scene;
     const source = scene.textures.get(key).getSourceImage();
-    this.terrainSource = source;
+    if (!keepSource) this.terrainSource = source; // a animação do chão lê só a folha do terreno
     const cols = Math.floor(source.width / TILE);
     const rows = Math.floor(source.height / TILE);
     const step = TILE + EXTRUDE * 2;
@@ -219,7 +225,7 @@ export class RegionWorld {
     }
     texture.setFilter(Phaser.Textures.FilterMode.NEAREST);
     texture.refresh();
-    scene.textures.remove(key); // libera a cópia original da GPU (a imagem fica em this.terrainSource)
+    if (!keepSource) scene.textures.remove(key); // libera a cópia original da GPU (a imagem fica em this.terrainSource)
     return outKey;
   }
 
@@ -957,7 +963,11 @@ export class RegionWorld {
       for (let col = cx * CHUNK; col < Math.min(cols, (cx + 1) * CHUNK); col += 1) {
         const cell = row * cols + col;
         const kind = terrain[cell];
-        if (kind === T.VALLEY || kind === T.VOID || kind === T.WALL) continue;
+        if (kind === T.VALLEY) {
+          this.planValleyDecor(props, col, row, cell, avoid);
+          continue;
+        }
+        if (kind === T.VOID || kind === T.WALL) continue;
         if (kind === T.MURK) {
           // Nenúfares soltos na água parada.
           if (hash(col, row, 231) < 0.22) {
@@ -1019,6 +1029,47 @@ export class RegionWorld {
     return { props, nodes };
   }
 
+  /** Decoração de grama do Vale: determinística por ladrilho, fora da trilha, do acampamento, das vilas e dos pontos de interesse. */
+  planValleyDecor(props, col, row, cell, avoid) {
+    const { cols, rows } = this.grid;
+    const roll = hash(col, row, 300);
+    if (roll >= DECOR_KINDS.reduce((sum, kind) => sum + kind.chance, 0)) return;
+    // Trilha e a borda dela ficam limpas (ladrilhos vizinhos inclusive).
+    for (let dy = -1; dy <= 1; dy += 1) {
+      for (let dx = -1; dx <= 1; dx += 1) {
+        const nc = col + dx;
+        const nr = row + dy;
+        if (nc < 0 || nr < 0 || nc >= cols || nr >= rows) continue;
+        const ground = this.layout.ground[nr * cols + nc];
+        if (typeof ground === 'number' && ground >= VALLEY_PATH_START && ground < VALLEY_PATH_START + 12) return;
+      }
+    }
+    const x = col * TILE + TILE / 2 + (hash(col, row, 301) - 0.5) * 30;
+    const y = row * TILE + TILE / 2 + (hash(col, row, 302) - 0.5) * 30;
+    if (Math.hypot(x - VALE_CAMP.x, y - VALE_CAMP.y) < 320) return;
+    if (VILLAGES.some((village) => Math.hypot(x - village.x, y - village.y) < 140)) return;
+    if (avoid.some((point) => Math.hypot(x - point.x, y - point.y) < TILE * 3)) return;
+    let acc = 0;
+    for (const kind of DECOR_KINDS) {
+      acc += kind.chance;
+      if (roll < acc) {
+        const index = Math.floor(hash(col, row, 305) * kind.count) + 1;
+        props.push({ frame: `${kind.prefix}${String(index).padStart(2, '0')}`, x, y, flat: true, atlas: 'vale-decor', decor: true });
+        return;
+      }
+    }
+  }
+
+  /** Decoração não nasce sobre coleta, missões, NPCs ou pontos de ação (muda em jogo, por isso checa ao ativar o bloco). */
+  decorBlocked(x, y) {
+    const scene = this.scene;
+    const near = (px, py, range) => Math.hypot(px - x, py - y) < range;
+    for (const structure of scene.harvestStructures?.state?.structures ?? []) if (near(structure.x, structure.y, 90)) return true;
+    for (const site of scene.campaign?.sites?.values?.() ?? []) if (near(site.def.x, site.def.y, 56)) return true;
+    for (const npc of scene.campaign?.npcs?.values?.() ?? []) if (near(npc.x, npc.y, 48)) return true;
+    return false;
+  }
+
   activateChunk(cx, cy) {
     const key = this.chunkKey(cx, cy);
     const chunk = this.chunks.get(key) ?? { plan: this.planChunk(cx, cy), objects: [], bodies: [], resources: [] };
@@ -1028,7 +1079,8 @@ export class RegionWorld {
     const scene = this.scene;
     const created = [];
     for (const prop of chunk.plan.props) {
-      const image = scene.add.image(prop.x, prop.y, 'biome', prop.frame).setOrigin(0.5, 0.92).setDepth(prop.flat ? -997 : prop.y);
+      if (prop.decor && this.decorBlocked(prop.x, prop.y)) continue;
+      const image = scene.add.image(prop.x, prop.y, prop.atlas ?? 'biome', prop.frame).setOrigin(0.5, 0.92).setDepth(prop.flat ? -997 : prop.y);
       image.castsShadow = Boolean(prop.solid);
       created.push(image);
       if (prop.solid) chunk.bodies.push(scene.obstacles.add(prop.x, prop.y - prop.solid[1] / 2, prop.solid[0], prop.solid[1]));

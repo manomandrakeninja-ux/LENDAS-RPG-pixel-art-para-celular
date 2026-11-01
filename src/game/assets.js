@@ -53,6 +53,13 @@ export const ASSET_CONFIG = {
     frameWidth: 16,
     frameHeight: 16
   },
+  // Decoração do Vale (flores e cogumelos, ref 24 px reduzida): atlas v03; ver art-pro/experiments/decor_ref.
+  valeDecor: {
+    kind: 'atlas',
+    key: 'vale-decor',
+    texture: 'assets/decor/vale-decor__atlas__v03.png',
+    data: 'assets/decor/vale-decor__atlas__v03.json'
+  },
   nature: {
     kind: 'atlas',
     key: 'nature',
