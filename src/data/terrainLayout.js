@@ -157,6 +157,27 @@ export function layoutTiles(grid, camp) {
       ground[index] = terrain[index] === T.VALLEY ? variant : baseName(terrain[index], variant);
     }
   }
+  // Bordas orgânicas entre estrada (ROAD) e grama plana do Vale: a célula troca o ladrilho por uma versão com
+  // fronteira curva (ver src/art/organicEdges.js). Usa uma foto do chão antes da troca, para não depender da ordem.
+  const plainGround = ground.slice();
+  const roadPlain = (i) => typeof plainGround[i] === 'string' && plainGround[i].startsWith('base-16-');
+  const grassPlain = (i) => typeof plainGround[i] === 'number' && plainGround[i] < VALLEY_PATH_START;
+  for (let row = 0; row < rows; row += 1) {
+    for (let col = 0; col < cols; col += 1) {
+      const index = row * cols + col;
+      const kind = terrain[index];
+      const sides = [[row - 1, col, 1], [row, col + 1, 2], [row + 1, col, 4], [row, col - 1, 8]];
+      if (kind === T.ROAD && roadPlain(index)) {
+        let mask = 0;
+        for (const [r, c, bit] of sides) if (r >= 0 && c >= 0 && r < rows && c < cols && terrain[r * cols + c] === T.VALLEY && grassPlain(r * cols + c)) mask |= bit;
+        if (mask) ground[index] = `orgr-${Number(plainGround[index].split('-')[2])}-${mask}-${row % 5}-${col % 5}`;
+      } else if (kind === T.VALLEY && grassPlain(index)) {
+        let mask = 0;
+        for (const [r, c, bit] of sides) if (r >= 0 && c >= 0 && r < rows && c < cols && terrain[r * cols + c] === T.ROAD && roadPlain(r * cols + c)) mask |= bit;
+        if (mask) ground[index] = `orgg-${plainGround[index]}-${mask}-${row % 5}-${col % 5}`;
+      }
+    }
+  }
   // Camada de cima: franja do vizinho de prioridade maior; sem franja, decoração solta (tufos, flores, seixos).
   for (let row = 0; row < rows; row += 1) {
     for (let col = 0; col < cols; col += 1) {

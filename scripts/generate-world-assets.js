@@ -3,6 +3,7 @@ import path from 'node:path';
 import { PixelCanvas } from '../src/art/pixel.js';
 import { DECOR_KINDS, TILE_PX, UNDER_FRAME_COUNT, UNDER_KINDS, drawBaseTile, drawDecorTile, drawEdgeTile, drawFringeTile, drawUnderTile, drawWallTile } from '../src/art/terrain.js';
 import { BIOME_PROP_ENTRIES } from '../src/art/biomeProps.js';
+import { drawOrganicTile } from '../src/art/organicEdges.js';
 import { T, buildTerrainGrid } from '../src/data/worldRegions.js';
 import { BASE_VARIANTS, DECOR_VARIANTS, UNDER_SUBTILES, baseName, decorName, layoutTiles, underName } from '../src/data/terrainLayout.js';
 import { writePng } from './png.js';
@@ -31,6 +32,10 @@ export function generateWorldAssets() {
   const grid = buildTerrainGrid();
   const { ground, overlay, overlay2 } = layoutTiles(grid, { x: 1440, y: 1080 });
   for (const name of ground) {
+    if (typeof name === 'string' && (name.startsWith('orgr-') || name.startsWith('orgg-'))) {
+      add(name, () => drawOrganicTile(name));
+      continue;
+    }
     if (typeof name === 'string' && name.startsWith('wall')) {
       const [kind, variant, rim] = name.split('-');
       add(name, () => drawWallTile(kind === 'wallface', Number(variant), Number(rim)));
