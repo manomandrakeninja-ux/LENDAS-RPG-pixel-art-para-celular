@@ -25,6 +25,24 @@ export class GameUI {
     this.storeAllAvailable = false;
     this.messageTimer = null;
     this.worldAction = document.getElementById('world-action');
+    this.gatherAction = document.getElementById('gather-action');
+    const gather = () => { if (!this.scene.overlayBlocked()) this.scene.performContextAction(); };
+    const gatherDown = (event) => {
+      event.preventDefault();
+      this.scene.audio?.unlock();
+      this.scene.actionHeld = true;
+      gather();
+    };
+    const gatherRelease = () => { this.scene.actionHeld = false; };
+    const gatherClick = (event) => { if (event.detail === 0) gather(); };
+    this.gatherAction.addEventListener('pointerdown', gatherDown);
+    this.gatherAction.addEventListener('click', gatherClick);
+    this.gatherAction.addEventListener('pointerleave', gatherRelease);
+    this.scene.events.once('shutdown', () => {
+      this.gatherAction.removeEventListener('pointerdown', gatherDown);
+      this.gatherAction.removeEventListener('click', gatherClick);
+      this.gatherAction.removeEventListener('pointerleave', gatherRelease);
+    });
     this.storeAllAction = document.getElementById('store-all-action');
     this.bossHealth = document.getElementById('boss-health');
     this.bossHealthName = document.getElementById('boss-health-name');
@@ -37,16 +55,15 @@ export class GameUI {
     this.worldAction.addEventListener('pointerdown', (event) => {
       event.preventDefault();
       lastPointerAction = performance.now();
-      this.scene.actionHeld = true;
       // Com controles de toque ligados, o TouchControls já faz a ação no pointerdown.
-      if (!this.scene.touch?.enabled) this.scene.performContextAction();
+      if (!this.scene.touch?.enabled && !this.scene.overlayBlocked()) this.scene.attackNearby();
     });
     const release = () => { this.scene.actionHeld = false; };
     for (const type of ['pointerup', 'pointercancel']) window.addEventListener(type, release);
     this.worldAction.addEventListener('pointerleave', release);
     this.worldAction.addEventListener('click', (event) => {
       // O toque/clique já agiu no pointerdown; aqui só vale teclado (Enter/Espaço no botão).
-      if (performance.now() - lastPointerAction > 800) this.scene.performContextAction();
+      if (event.detail === 0 && !this.scene.overlayBlocked()) this.scene.attackNearby();
     });
     this.storeAllAction.addEventListener('click', () => this.scene.storeAllAtCamp());
     this.ensureResourceIconTextures();
@@ -512,12 +529,14 @@ export class GameUI {
     if (phone) hint = '';
     this.hint.setText(hint).setVisible(hint !== '');
     this.worldAction.hidden = this.buildingMenuOpen;
+    this.gatherAction.hidden = this.buildingMenuOpen;
     this.storeAllAvailable = storeAllAvailable;
     this.storeAllAction.hidden = !storeAllAvailable || this.buildingMenuOpen ||
       (Boolean(this.scene.touch?.enabled) && inventory.total === 0);
     this.storeAllAction.disabled = inventory.total === 0;
     this.storeAllAction.textContent = inventory.total > 0 ? 'GUARDAR TUDO' : 'MOCHILA VAZIA';
-    this.worldAction.textContent = questTarget
+    this.worldAction.textContent = 'ATACAR';
+    this.gatherAction.textContent = questTarget
       ? questTarget.label.split(' ')[0].toUpperCase()
       : nearestStructure
       ? `${HARVEST_STRUCTURE_TYPES[nearestStructure.type].requiresPickaxe ? 'MINERAR' : 'COLETAR'} ${HARVEST_STRUCTURE_TYPES[nearestStructure.type].label.toUpperCase()}`
@@ -525,7 +544,7 @@ export class GameUI {
         ? `${mines(nearestResource) ? 'MINERAR' : 'COLETAR'} ${RESOURCE_TYPES[nearestResource.type].label.toUpperCase()}`
         : nearestBackpack
           ? (nearestBackpack.kind === 'chest' ? 'ABRIR BAÚ' : 'RECUPERAR MOCHILA')
-          : 'ATACAR';
+          : 'COLETAR / MINERAR';
 
     this.statusLabel.setText(this.statusText(time));
     this.updateCompass(player);

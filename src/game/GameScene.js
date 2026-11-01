@@ -2688,6 +2688,7 @@ export class GameScene extends Phaser.Scene {
   onBuildingMenuStateChanged(open) {
     this.ui.buildingMenuOpen = open;
     this.ui.worldAction.hidden = open;
+    this.ui.gatherAction.hidden = open;
   }
 
   /** Cobra do conjunto mochila + armazém + moedas. */
@@ -2934,6 +2935,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   performContextAction() {
+    if (this.overlayBlocked()) return;
     if (this.campaign?.nearestInteraction() || this.regionWorld?.nearestFeature(this.player.x, this.player.y)) {
       this.interact();
       return;
@@ -2941,7 +2943,7 @@ export class GameScene extends Phaser.Scene {
     if (this.world.nearbyResource(this.player.x, this.player.y) ||
         this.harvestStructures.nearest(this.player.x, this.player.y) ||
         this.deathBackpacks.nearest(this.player.x, this.player.y)) this.interact();
-    else this.attackNearby();
+    else this.ui.showMessage('Aproxime-se de um recurso para coletar ou minerar.');
   }
 
   restAtHouse() {
