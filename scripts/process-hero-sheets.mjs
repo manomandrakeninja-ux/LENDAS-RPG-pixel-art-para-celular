@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import { PNG } from 'pngjs';
-import { PALETTE } from '../src/art/palette.js';
+import { PALETTE, quantizePixels } from '../src/art/palette.js';
 
 const sourceDir = 'C:/Users/Lucas Eduardo/.codex/generated_images/01a1952a-131e-7f10-8ca8-ad311549c526';
 const outDir = 'public/assets/characters';
@@ -31,15 +31,36 @@ const nearest = (r, g, b) => {
 };
 
 for (const [key, file] of Object.entries(jobs)) {
+  if (process.argv.length > 2 && !process.argv.slice(2).includes(key)) continue;
   const source = PNG.sync.read(fs.readFileSync(`${sourceDir}/${file}`));
+  const corrected = key === 'player-warrior' || key === 'player-warrior-green';
   const cellW = source.width / cols;
   const cellH = source.height / rows;
   const out = new PNG({ width: frameW * cols, height: frameH * rows, colorType: 6 });
   for (let row = 0; row < rows; row += 1) {
+    // These source sheets contain 13 unevenly spaced poses, not 12 cells.
+    const runs = [];
+    let start = -1;
+    if (corrected) for (let x = 0; x <= source.width; x += 1) {
+      let count = 0;
+      for (let y = row * cellH; y < (row + 1) * cellH; y += 1) {
+        if (x < source.width && source.data[(y * source.width + x) * 4 + 3] > 128) count += 1;
+      }
+      if (count >= 3 && start < 0) start = x;
+      if (count < 3 && start >= 0) {
+        if (x - start > 11) runs.push([start, x - 1]);
+        start = -1;
+      }
+    }
+    if (corrected && runs.length !== 13) throw new Error(`${key}: expected 13 isolated poses in row ${row}`);
     for (let col = 0; col < cols; col += 1) {
+      // Omit the extra recovery pose, retaining hurt and blink at 10/11.
+      const pose = col < 10 ? col : col + 1;
+      const originX = corrected ? runs[pose][0] : col * cellW;
+      const width = corrected ? runs[pose][1] - originX + 1 : cellW;
       let minX = cellW; let minY = cellH; let maxX = -1; let maxY = -1;
-      for (let y = 0; y < cellH; y += 1) for (let x = 0; x < cellW; x += 1) {
-        if (source.data[((row * cellH + y) * source.width + col * cellW + x) * 4 + 3] > 20) { minX = Math.min(minX, x); minY = Math.min(minY, y); maxX = Math.max(maxX, x); maxY = Math.max(maxY, y); }
+      for (let y = 0; y < cellH; y += 1) for (let x = 0; x < width; x += 1) {
+        if (source.data[((row * cellH + y) * source.width + originX + x) * 4 + 3] > 128) { minX = Math.min(minX, x); minY = Math.min(minY, y); maxX = Math.max(maxX, x); maxY = Math.max(maxY, y); }
       }
       if (maxX < 0) continue;
       const sw = maxX - minX + 1; const sh = maxY - minY + 1;
@@ -50,10 +71,26 @@ for (const [key, file] of Object.entries(jobs)) {
       for (let y = 0; y < dh; y += 1) for (let x = 0; x < dw; x += 1) {
         const sx = Math.min(sw - 1, Math.floor(x * sw / dw));
         const sy = Math.min(sh - 1, Math.floor(y * sh / dh));
-        const from = ((row * cellH + minY + sy) * source.width + col * cellW + minX + sx) * 4;
+        const from = ((row * cellH + minY + sy) * source.width + originX + minX + sx) * 4;
         const at = ((dy + y) * out.width + dx + x) * 4;
         out.data[at] = source.data[from]; out.data[at + 1] = source.data[from + 1]; out.data[at + 2] = source.data[from + 2]; out.data[at + 3] = source.data[from + 3];
       }
+    }
+  }
+  if (corrected) {
+    // Preserve the cloth's green hue: unconstrained quantization maps its
+    // dark, saturated shades to gray/black (or cyan) instead of the cape ramp.
+    const cloth = new Map();
+    if (key === 'player-warrior-green') for (let i = 0; i < out.data.length; i += 4) {
+      const [r, g, b, a] = out.data.subarray(i, i + 4);
+      if (a >= 128 && g > r * 1.22 && g > b * 1.12 && g - r >= 6) {
+        cloth.set(i, g < 28 ? '#134c4c' : g < 55 ? '#1e6f50' : '#33984b');
+      }
+    }
+    quantizePixels(out);
+    for (const [i, hex] of cloth) {
+      const color = Number.parseInt(hex.slice(1), 16);
+      out.data[i] = color >> 16; out.data[i + 1] = (color >> 8) & 255; out.data[i + 2] = color & 255;
     }
   }
   for (let i = 0; i < out.data.length; i += 4) {

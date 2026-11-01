@@ -51,6 +51,18 @@ test('skins: cada cor de capa tem a sua folha', () => {
   assert.equal(new Set(sheets).size, 4);
 });
 
+test('guerreira verde: capa permanece verde em todas as poses e direcoes', () => {
+  const png = sheetOf('warrior-green');
+  for (let d = 0; d < 4; d += 1) for (let f = 0; f < HERO_COLS; f += 1) {
+    const data = frameOf(png, d, f);
+    let green = 0;
+    for (let i = 0; i < data.length; i += 4) {
+      if (data[i + 3] && data[i + 1] > 80 && data[i + 1] > data[i] * 1.5 && data[i + 1] > data[i + 2] * 1.2) green += 1;
+    }
+    assert.ok(green >= 30, `d${d} f${f}: capa sem verde (${green})`);
+  }
+});
+
 test('skins: textura, quadro e valor seguro', () => {
   assert.equal(HERO_SKINS.length, 7);
   assert.equal(heroTexture('swordsman'), 'player-swordsman');
