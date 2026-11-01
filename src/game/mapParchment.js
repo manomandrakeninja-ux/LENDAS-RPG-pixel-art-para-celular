@@ -5,19 +5,19 @@ import { hash } from '../art/pixel.js';
 
 // Cor da aguada de cada terreno, força da aguada e altura (para a sombra de encosta).
 export const PARCHMENT = {
-  [T.VALLEY]: { color: [138, 160, 92], wash: 0.42, lift: 0.18 },
-  [T.FOREST]: { color: [82, 112, 70], wash: 0.56, lift: 0.3 },
-  [T.JUNGLE]: { color: [98, 138, 74], wash: 0.5, lift: 0.26 },
-  [T.SWAMP]: { color: [110, 116, 76], wash: 0.5, lift: 0.08 },
+  [T.VALLEY]: { color: [112, 158, 74], wash: 0.46, lift: 0.18 },
+  [T.FOREST]: { color: [48, 104, 62], wash: 0.58, lift: 0.3 },
+  [T.JUNGLE]: { color: [62, 132, 58], wash: 0.54, lift: 0.26 },
+  [T.SWAMP]: { color: [92, 112, 64], wash: 0.52, lift: 0.08 },
   [T.MURK]: { color: [86, 96, 70], wash: 0.56, lift: 0.06 },
-  [T.SNOW]: { color: [238, 242, 240], wash: 0.62, lift: 0.95 },
-  [T.ICE]: { color: [168, 200, 214], wash: 0.5, lift: 0.7 },
-  [T.SAND]: { color: [214, 176, 108], wash: 0.48, lift: 0.22 },
-  [T.DUNE]: { color: [204, 162, 92], wash: 0.52, lift: 0.34 },
+  [T.SNOW]: { color: [228, 242, 246], wash: 0.64, lift: 0.95 },
+  [T.ICE]: { color: [138, 190, 218], wash: 0.54, lift: 0.7 },
+  [T.SAND]: { color: [226, 164, 82], wash: 0.52, lift: 0.22 },
+  [T.DUNE]: { color: [194, 126, 68], wash: 0.54, lift: 0.34 },
   [T.BEACH]: { color: [236, 212, 156], wash: 0.36, lift: 0.04 },
-  [T.ASH]: { color: [112, 88, 80], wash: 0.56, lift: 0.6 },
-  [T.LAVA]: { color: [204, 78, 36], wash: 0.7, lift: 0.5 },
-  [T.SEA]: { color: [102, 148, 160], wash: 0.5, lift: 0 },
+  [T.ASH]: { color: [96, 76, 72], wash: 0.58, lift: 0.6 },
+  [T.LAVA]: { color: [238, 82, 28], wash: 0.74, lift: 0.5 },
+  [T.SEA]: { color: [56, 126, 158], wash: 0.56, lift: 0 },
   [T.CAVE]: { color: [146, 124, 104], wash: 0.42, lift: 0.3 },
   [T.WALL]: { color: [84, 68, 60], wash: 0.6, lift: 0.5 },
   [T.VOID]: { color: [168, 140, 104], wash: 0.4, lift: 0 }
@@ -110,7 +110,7 @@ export function paintParchment(context, W, H, kindOf) {
 
 /** Símbolos pintados espalhados pelo terreno (só onde o bioma é largo o bastante). */
 function drawSymbols(context, W, H, kindAt) {
-  const step = 15;
+  const step = 12;
   for (let gy = 0; gy < H; gy += step) {
     for (let gx = 0; gx < W; gx += step) {
       const x = gx + Math.floor(hash(gx, gy, 51) * step * 0.8);

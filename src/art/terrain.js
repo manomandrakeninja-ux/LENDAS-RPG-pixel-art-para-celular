@@ -18,12 +18,12 @@ const LAST = S - 1;
 
 // Rampas: [fundo, sombra, base, luz, brilho, faísca].
 const RAMP = {
-  [T.VALLEY]: ['#134c4c', '#1e6f50', '#33984b', '#5ac54f', '#99e65f', '#d3fc7e'],
-  [T.FOREST]: ['#0c2e44', '#134c4c', '#1e6f50', '#33984b', '#5ac54f', '#99e65f'],
+  [T.VALLEY]: ['#103d32', '#1b6337', '#338d43', '#5fbb4c', '#8ed95b', '#d3fc7e'],
+  [T.FOREST]: ['#134c4c', '#1e6f50', '#33984b', '#5ac54f', '#99e65f', '#d3fc7e'],
   [T.JUNGLE]: ['#134c4c', '#1e6f50', '#33984b', '#5ac54f', '#99e65f', '#d3fc7e'],
-  [T.SWAMP]: ['#2d2e25', '#494834', '#1e6f50', '#33984b', '#5ac54f', '#99e65f'],
+  [T.SWAMP]: ['#2d2e25', '#494834', '#1e6f50', '#33984b', '#99e65f', '#d3fc7e'],
   [T.SNOW]: ['#657392', '#92a1b9', '#9cc8e6', '#d5e8ef', '#ffffff', '#ffffff'],
-  [T.SAND]: ['#8a4836', '#ad7954', '#cba36f', '#f6ca9f', '#f9e6cf', '#ffffff'],
+  [T.SAND]: ['#5d2c28', '#ad7954', '#e69c69', '#f6ca9f', '#ffc825', '#ffffff'],
   [T.DUNE]: ['#5d2c28', '#8a4836', '#ad7954', '#cba36f', '#e69c69', '#f6ca9f'],
   [T.BEACH]: ['#ad7954', '#cba36f', '#f6ca9f', '#f9e6cf', '#ffffff', '#ffffff'],
   [T.ASH]: ['#0e071b', '#1c121c', '#272727', '#2d2e25', '#3d3d3d', '#5d5d5d'],
@@ -147,7 +147,7 @@ function calmField(kind, variant) {
 }
 
 /** Tom do chão de grama (índice da rampa) em 2 valores: manchas largas, como na referência. */
-const GRASS_LEVELS = { [T.VALLEY]: [2, 3], [T.JUNGLE]: [2, 3], [T.FOREST]: [1, 2], [T.SWAMP]: [1, 2] };
+const GRASS_LEVELS = { [T.VALLEY]: [2, 4], [T.JUNGLE]: [2, 4], [T.FOREST]: [2, 3], [T.SWAMP]: [1, 3] };
 const grassLevel = (kind, t) => GRASS_LEVELS[kind][t < 0.5 ? 0 : 1];
 
 function calmGrassFloor(canvas, kind, field) {
@@ -367,13 +367,34 @@ function base(canvas, kind, variant) {
     const calm = calmOf(kind, variant);
     calmGrassFloor(canvas, kind, calm);
     const options = {
-      [T.VALLEY]: { density: 0.68, size: 1 },
-      [T.FOREST]: { density: 0.55, size: 1 },
-      [T.JUNGLE]: { density: 0.64, size: 2 },
+      [T.VALLEY]: { density: 0.94, size: 1 },
+      [T.FOREST]: { density: 0.72, size: 1 },
+      [T.JUNGLE]: { density: 0.78, size: 2 },
       [T.SWAMP]: { density: 0.7, size: 0 }
     }[kind];
     calmTufts(canvas, kind, calm, core, options);
-    if (kind === T.FOREST) {
+    if (kind === T.VALLEY) {
+      // Gramado naturalista: florais e seixos em pequenos grupos, com manchas de terra entre a grama.
+      if (core === 1 || core === 2) {
+        const px = 12 + core * 7;
+        const py = 27 - core * 3;
+        canvas.ellipse(px, py, 7 + core, 3 + (core % 2), '#8a4836');
+        canvas.ellipse(px, py, 5 + core, 2, '#ad7954');
+        canvas.pixel(px - 2, py - 2, '#f6ca9f');
+        for (let dx = -10; dx <= 10; dx += 1) {
+          if (hash(dx, core, s) > 0.42) canvas.pixel(px + dx, py + 3 + Math.round(Math.sin(dx * 0.6)), ramp[2]);
+        }
+      }
+      scatterInner(s + 17, 11 + core, (x, y, i) => {
+        if (i % 3 === 0) flower(canvas, x, y, (i + core) % FLOWERS.length, ramp[1]);
+        else if (i % 3 === 1) pebble(canvas, x, y, i % 2, WARM_STONE, ramp[1]);
+        else tuftAt(canvas, x, y, ramp, s + i, { count: 7, min: 3, max: 6, spread: 3 });
+      }, 6);
+      scatterInner(s + 23, 5, (x, y, i) => {
+        for (let dx = -2; dx <= 2; dx += 1) canvas.pixel(x + dx, y, i % 2 ? ramp[3] : ramp[4]);
+        canvas.pixel(x, y - 2, ramp[5]);
+      }, 9);
+    } else if (kind === T.FOREST) {
       // Folhas caídas e gravetos no miolo.
       scatterInner(s + 1, 2 + core, (x, y, i) => {
         const leaf = ['#8a4836', '#bf6f4a', '#5d2c28', '#e07438'][(i + core) % 4];

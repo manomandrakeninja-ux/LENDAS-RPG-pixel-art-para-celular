@@ -18,7 +18,7 @@ export function generateWorldAssets() {
   const add = (name, draw) => {
     if (!tiles.has(name)) tiles.set(name, draw);
   };
-  for (const kind of [T.FOREST, T.SWAMP, T.SNOW, T.SAND, T.DUNE, T.BEACH, T.JUNGLE, T.ASH, T.CAVE, T.ROAD]) {
+  for (const kind of [T.VALLEY, T.FOREST, T.SWAMP, T.SNOW, T.SAND, T.DUNE, T.BEACH, T.JUNGLE, T.ASH, T.CAVE, T.ROAD]) {
     for (let variant = 0; variant < BASE_VARIANTS; variant += 1) add(baseName(kind, variant), () => drawBaseTile(kind, variant));
   }
   for (const kind of UNDER_KINDS) {

@@ -30,6 +30,7 @@ const SUBS = UNDER_SUBTILES * UNDER_SUBTILES;
 const UNDER_SLOTS = [[T.SEA, true], [T.SEA, false], [T.LAVA, true], [T.LAVA, false], [T.MURK, false], [T.ICE, false]];
 const ACTIVE_MARGIN = 420;
 const INTERACT_RANGE = 70;
+const PROPS_DENSITY_BOOST = 1.22;
 
 // Objetos por terreno: [frame, peso, sólido?]. Sólido = base que bloqueia (largura, altura).
 const PROPS = {
@@ -939,7 +940,7 @@ export class RegionWorld {
         if (under[cell] >= 0 && kind !== T.BEACH) continue;
         if (under[cell] >= 0 && hash(col, row, 215) > 0.3) continue;
         const table = PROPS[kind];
-        if (table && hash(col, row, 201) < table.density) {
+        if (table && hash(col, row, 201) < Math.min(0.42, table.density * PROPS_DENSITY_BOOST)) {
           let entry = pick(table.list, hash(col, row, 202));
           // Coqueiros em volta dos oásis.
           if (kind === T.SAND && OASES.some((oasis) => Math.hypot(x - oasis.x, y - oasis.y) < oasis.r + 120)) entry = ['palm-0', 1, [8, 6]];
