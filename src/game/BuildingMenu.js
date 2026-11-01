@@ -123,6 +123,7 @@ export class BuildingMenu {
         'hunt-accept': () => this.scene.huntAction?.('accept', button.dataset.arg),
         'hunt-turnin': () => this.scene.huntAction?.('turnin'),
         'hunt-abandon': () => this.scene.huntAction?.('abandon')
+        , 'collect-auxiliary': () => this.scene.collectAuxiliary?.(button.dataset.arg)
       }[button.dataset.action];
       const result = direct ? direct() : this.scene.buildingMenuAction?.(button.dataset.action, button.dataset.arg, button.dataset.arg2);
       this.scene.lastBuildingMessage = result?.message ?? this.scene.lastBuildingMessage ?? '';
@@ -282,6 +283,11 @@ export class BuildingMenu {
     const definition = AUXILIARY_BUILDINGS[building];
     const cost = this.camp.auxiliaryUpgradeCostFor(building);
     const canUpgrade = cost && this.camp.canPay(cost);
+    const stockTypes = building === 'sawmill' ? ['wood'] : ['stone', 'iron', 'coal'];
+    const stock = stockTypes
+      .filter((type) => (this.camp.auxiliaryStock[type] ?? 0) > 0)
+      .map((type) => `${this.camp.auxiliaryStock[type]} ${resourceLabel(type)}`)
+      .join(' · ') || 'vazio';
     const roadmap = Array.from({ length: MAX_BUILDING_LEVEL }, (_, index) => {
       const target = index + 1;
       const state = target <= level ? 'done' : target === level + 1 ? 'next' : 'locked';
@@ -290,8 +296,9 @@ export class BuildingMenu {
     return `<div class="building-menu__grid"><article class="building-menu__card building-menu__card--wide">
       <h2>${escapeHtml(definition.name)} • nível ${level}/${MAX_BUILDING_LEVEL}</h2>
       <p>${escapeHtml(auxiliaryLevelDescription(building, level))}</p>
+      <div class="building-menu__stat">Estoque pronto para coleta: ${escapeHtml(stock)}</div>
       <div class="building-menu__stat">Próximo: ${cost ? this.costHtml(cost) : 'NÍVEL MÁXIMO'}</div>
-      <div class="building-menu__actions"><button type="button" class="button--primary" data-action="upgrade" data-arg="${building}" ${disabled(!canUpgrade)}>${cost ? `MELHORAR PARA NÍVEL ${level + 1}` : 'NÍVEL MÁXIMO'}</button></div>
+      <div class="building-menu__actions"><button type="button" data-action="collect-auxiliary" data-arg="${building}">COLETAR PRODUÇÃO</button><button type="button" class="button--primary" data-action="upgrade" data-arg="${building}" ${disabled(!canUpgrade)}>${cost ? `MELHORAR PARA NÍVEL ${level + 1}` : 'NÍVEL MÁXIMO'}</button></div>
       <ol class="building-menu__roadmap">${roadmap}</ol>
     </article></div>`;
   }

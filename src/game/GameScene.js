@@ -2611,6 +2611,13 @@ export class GameScene extends Phaser.Scene {
     return result;
   }
 
+  collectAuxiliary(key) {
+    const result = this.camp.collectAuxiliary(key);
+    if (result.ok) this.save();
+    this.ui.showMessage(result.message);
+    return result;
+  }
+
   /** Todos os 7 prédios no nível 10: mensagem épica e masmorra marcada no mapa. */
   completeCamp() {
     this.camp.dungeonRevealed = true;

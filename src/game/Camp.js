@@ -58,6 +58,7 @@ export class Camp {
       this.levels[key] = clampLevel(key, raw ?? BUILDING_DEFS[key].startLevel);
     }
     this.auxiliaryLevels = Object.fromEntries(AUXILIARY_ORDER.map((key) => [key, Math.max(1, Math.min(10, Number(saved.auxiliaryLevels?.[key]) || 1))]));
+    this.auxiliaryStock = Object.fromEntries(Object.entries(saved.auxiliaryStock ?? {}).map(([type, amount]) => [type, Math.max(0, Math.floor(Number(amount) || 0))]));
     this.durability = {};
     for (const key of BUILDING_ORDER) {
       const value = Number(saved.durability?.[key]);
@@ -598,6 +599,33 @@ export class Camp {
     return { ok: true, message: `${AUXILIARY_BUILDINGS[key].name} melhorada para o nível ${next}!` };
   }
 
+  collectAuxiliary(key) {
+    const level = this.auxiliaryLevels[key];
+    if (!level) return { ok: false, message: 'Construção desconhecida.' };
+    const produced = key === 'sawmill'
+      ? { wood: 4 + level * 2 }
+      : { stone: 3 + level, iron: Math.max(1, Math.floor(level / 2)), coal: Math.max(1, Math.floor(level / 3)) };
+    const delivered = {};
+    const pending = { ...this.auxiliaryStock };
+    for (const [type, amount] of Object.entries(produced)) pending[type] = (pending[type] ?? 0) + amount;
+    for (const [type, amount] of Object.entries(pending)) {
+      const toBag = Math.min(amount, this.scene.inventory?.freeUnitsFor(type) ?? 0);
+      if (toBag > 0) this.scene.inventory.add(type, toBag);
+      const rest = amount - toBag;
+      let stored = 0;
+      if (rest > 0) {
+        stored = this.storageCanAccept({ [type]: rest }) ? this.store({ [type]: rest }).stored[type] ?? 0 : 0;
+        if (stored < rest) this.auxiliaryStock[type] = rest - stored;
+        else delete this.auxiliaryStock[type];
+      } else delete this.auxiliaryStock[type];
+      if (toBag + stored > 0) delivered[type] = toBag + stored;
+    }
+    const total = Object.values(delivered).reduce((sum, value) => sum + value, 0);
+    return total > 0
+      ? { ok: true, delivered, message: `${AUXILIARY_BUILDINGS[key].name}: ${Object.entries(delivered).map(([type, amount]) => `${amount} ${RESOURCE_TYPES[type]?.label?.toLowerCase() ?? type}`).join(', ')}.` }
+      : { ok: false, message: 'Mochila e armazém estão cheios.' };
+  }
+
   upgrade(key) {
     const definition = BUILDING_DEFS[key];
     if (!definition) return { ok: false, message: 'Construção desconhecida.' };
@@ -820,6 +848,7 @@ export class Camp {
       buildingLevelsVersion: 3,
       levels: { ...this.levels },
       auxiliaryLevels: { ...this.auxiliaryLevels },
+      auxiliaryStock: { ...this.auxiliaryStock },
       durability: { ...this.durability },
       wallHp: this.defense ? Math.round(this.defense.wallHp) : this.savedWallHp,
       questKills: this.questKills,
