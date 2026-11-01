@@ -76,6 +76,13 @@ export const ASSET_CONFIG = {
     key: 'vfx',
     texture: 'assets/vfx/vfx-atlas.png',
     data: 'assets/vfx/vfx-atlas.json'
+  },
+  envDragon: {
+    kind: 'spritesheet',
+    key: 'env-dragon',
+    file: 'assets/vfx/env-dragon.png',
+    frameWidth: 512,
+    frameHeight: 512
   }
 };
 
