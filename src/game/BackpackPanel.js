@@ -1,5 +1,5 @@
 import { CONSUMABLES, isConsumable } from '../data/consumables.js';
-import { RESOURCE_TYPES } from './config.js';
+import { RESOURCE_TYPES, INVENTORY_MAX_LEVEL, inventorySlotsForLevel, inventoryUpgradeCost } from './config.js';
 import { formatCount } from './formatCount.js';
 import { resourceIconHtml, textureUrl } from './iconUrls.js';
 
@@ -41,7 +41,28 @@ export class BackpackPanel {
     this.lastKey = '';
     this.icon.src = textureUrl(scene, 'hud-backpack');
 
+    this.filter = 'all';
+    // Itens fixados (★) ficam sempre no topo da lista — persistem neste aparelho.
+    this.pinned = new Set(JSON.parse(localStorage.getItem('lendas-pinned') ?? '[]'));
     this.handleClick = (event) => {
+      const pinButton = event.target.closest('button[data-bag="pin"]');
+      if (pinButton) {
+        const type = pinButton.dataset.type;
+        if (this.pinned.has(type)) this.pinned.delete(type);
+        else this.pinned.add(type);
+        localStorage.setItem('lendas-pinned', JSON.stringify([...this.pinned]));
+        this.lastKey = '';
+        this.refresh();
+        return;
+      }
+      const filterButton = event.target.closest('button[data-filter]');
+      if (filterButton) {
+        this.filter = filterButton.dataset.filter;
+        for (const el of this.root.querySelectorAll('button[data-filter]')) el.classList.toggle('is-active', el === filterButton);
+        this.lastKey = '';
+        this.refresh();
+        return;
+      }
       const button = event.target.closest('button[data-bag]');
       if (!button || button.disabled) return;
       if (button.dataset.bag === 'equipment') {
@@ -56,6 +77,10 @@ export class BackpackPanel {
       }
       if (button.dataset.bag === 'use') this.scene.useItem(button.dataset.type);
       if (button.dataset.bag === 'store-all') this.scene.storeAllAtCamp();
+      if (button.dataset.bag === 'upgrade') {
+        const result = this.scene.camp?.upgradeInventory();
+        this.scene.ui?.showMessage(result?.message ?? '');
+      }
       this.lastKey = '';
       this.refresh();
     };
@@ -99,9 +124,13 @@ export class BackpackPanel {
     // Cada espaço guarda até unitsPerSlot do mesmo item; quantidades maiores ocupam mais espaços.
     const occupied = Object.entries(inventory.items).filter(([, amount]) => amount > 0).flatMap(([type, amount]) =>
       Array.from({ length: inventory.slotsFor(amount) }, (_, index) =>
-        [type, Math.min(inventory.unitsPerSlot, amount - index * inventory.unitsPerSlot)])).slice(0, inventory.maxSlots);
+        [type, Math.min(inventory.unitsPerSlot, amount - index * inventory.unitsPerSlot)])).slice(0, inventory.maxSlots)
+      // Filtro da mochila: usáveis (poções/comida) ou só materiais.
+      .filter(([type]) => this.filter === 'all' || (this.filter === 'usable') === isConsumable(type))
+      // Fixados (★) primeiro, depois na ordem original.
+      .sort((a, b) => (this.pinned.has(b[0]) ? 1 : 0) - (this.pinned.has(a[0]) ? 1 : 0));
     // Só redesenha quando algo muda (o HUD chama refresh a cada quadro).
-    const key = JSON.stringify([occupied, storeAll, inventory.maxSlots]);
+    const key = JSON.stringify([occupied, storeAll, inventory.maxSlots, this.filter, [...this.pinned]]);
     if (key === this.lastKey) return;
     this.lastKey = key;
 
@@ -111,8 +140,10 @@ export class BackpackPanel {
       const [type, amount] = entry;
       const label = RESOURCE_TYPES[type]?.label ?? type;
       const usable = isConsumable(type);
+      const pinned = this.pinned.has(type);
       return `
-        <div class="bag-slot ${usable ? 'bag-slot--usable' : ''}" title="${label}">
+        <div class="bag-slot ${usable ? 'bag-slot--usable' : ''} ${pinned ? 'bag-slot--pinned' : ''}" title="${label}">
+          <button type="button" class="bag-slot__pin ${pinned ? 'is-pinned' : ''}" data-bag="pin" data-type="${type}" aria-label="${pinned ? 'Desafixar' : 'Fixar'} ${label}">${pinned ? '★' : '☆'}</button>
           <button type="button" class="bag-slot__look" data-bag="info" data-type="${type}" aria-label="Informações: ${label}">
             <span class="bag-slot__icon">${resourceIconHtml(scene, type, 32)}<span class="bag-slot__count">${formatCount(amount)}</span></span>
             <span class="bag-slot__name">${label}</span>
@@ -123,9 +154,26 @@ export class BackpackPanel {
     }).join('');
     this.grid.innerHTML = slots;
     this.summary.textContent = `${inventory.usedSlots}/${inventory.maxSlots} espaços • ${formatCount(inventory.total)}/${formatCount(inventory.totalCapacity)} itens`;
+    // Botão de evolução da mochila (apenas perto do acampamento e enquanto houver próximo nível).
+    let upgradeButton = '';
+    const camp = this.scene.camp;
+    if (camp && camp.inventoryLevel < INVENTORY_MAX_LEVEL) {
+      const nextLevel = camp.inventoryLevel + 1;
+      const nextSlots = inventorySlotsForLevel(nextLevel);
+      const cost = camp.inventoryUpgradeCostFor();
+      const canPay = cost ? camp.canPay(cost) : false;
+      const parts = Object.entries(cost ?? {}).map(([type, amount]) =>
+        type === 'coins' ? `${amount} moedas` : `${amount} ${RESOURCE_TYPES[type]?.label ?? type}`
+      );
+      upgradeButton = `<button type="button" class="button--primary" data-bag="upgrade" ${!canPay ? 'disabled' : ''}>
+        EVOLUIR MOCHILA → ${nextSlots} espaços • ${parts.join(' + ')}
+      </button>`;
+    }
     const gearButton = '<div class="backpack-panel__gear"><button type="button" data-bag="equipment">EQUIPAMENTO</button><small>Tecla V</small></div>';
     this.footer.innerHTML = (storeAll
       ? `<button type="button" class="button--primary" data-bag="store-all" ${inventory.total === 0 ? 'disabled' : ''}>GUARDAR TUDO NA CASA</button>`
-      : '<p>Teclas rápidas: 1 poção • 2 comer • 3 tocha • 4 vigor/armadilha • 5 elixir</p>') + gearButton;
+      : '<p>Teclas rápidas: 1 poção • 2 comer • 3 tocha • 4 vigor/armadilha • 5 elixir</p>')
+      + upgradeButton
+      + gearButton;
   }
 }

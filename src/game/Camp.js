@@ -18,7 +18,7 @@ import {
   payCost,
   upgradeCost
 } from '../data/buildings.js';
-import { INVENTORY_CONFIG, RESOURCE_TYPES, WORLD } from './config.js';
+import { INVENTORY_CONFIG, INVENTORY_MAX_LEVEL, RESOURCE_TYPES, WORLD, inventorySlotsForLevel, inventoryUpgradeCost } from './config.js';
 import { EquipmentSystem } from './EquipmentSystem.js';
 import { CampDefense } from './CampDefense.js';
 import { freeUnitsFor, slotsUsed, storeBundle, canStoreBundle } from './storageSlots.js';
@@ -71,6 +71,8 @@ export class Camp {
     this.lastAutoReviveDay = Number(saved.lastAutoReviveDay) || 0;
     this.lastLocalReviveNight = Number(saved.lastLocalReviveNight) || 0;
     this.dailyBuffDay = Number(saved.dailyBuffDay) || 0;
+    // Nível de evolução da mochila: 1 = 12 espaços, 2 = 24 espaços, 3 = 36 espaços.
+    this.inventoryLevel = Math.min(INVENTORY_MAX_LEVEL, Math.max(1, Number(saved.inventoryLevel) || 1));
     this.equipment = new EquipmentSystem({
       saved: saved.crafted ?? {},
       unlockedRecipes: saved.unlockedRecipes ?? [],
@@ -164,8 +166,7 @@ export class Camp {
         this.fireGlow.setAlpha(0.42 + offsets[this.flickerIndex]);
       }
     });
-    // Placa do acampamento: entra na regra de "só o rótulo mais próximo" (GameScene.updateBuildingLabels).
-    this.campSign = scene.add.text(this.x, this.y + 236, 'ACAMPAMENTO  •  C', {
+    scene.add.text(this.x, this.y + 236, 'ACAMPAMENTO  •  C', {
       fontFamily: 'Press Start 2P', fontSize: '8px', color: '#f8e7ba',
       backgroundColor: '#1d2b24d9', padding: { x: 8, y: 5 }
     }).setOrigin(0.5).setDepth(1000).setScale(0.5);
@@ -173,13 +174,10 @@ export class Camp {
   }
 
   makeLabel(key, x, y) {
-    // Rodada 4: o rótulo sobe se cruzar um personagem (WorldTexts.avoidCharacters).
-    const label = this.scene.add.text(x, y, '', {
+    return this.scene.add.text(x, y, '', {
       fontFamily: 'Press Start 2P', fontSize: '8px', color: '#f8edcc',
       backgroundColor: '#1d2b24d9', padding: { x: 5, y: 4 }
     }).setOrigin(0.5).setDepth(y + 80).setScale(0.5);
-    label.avoidSprites = true;
-    return label;
   }
 
   drawBuilding(key) {
@@ -298,10 +296,8 @@ export class Camp {
 
   createAnimalPen() {
     // Item 19: curral à direita da trilha, na frente do mercado; cerca 72x36 (2,25x), mourões a cada 63 px.
-    // Rodada 4: 25 px para a esquerda e 13 px para cima: o canto do curral encostava na muralha diagonal e
-    // o herói lá dentro ficava atrás dela.
-    const cx = this.x + 150;
-    const cy = this.y + 192;
+    const cx = this.x + 175;
+    const cy = this.y + 205;
     const halfWidth = 94;
     const halfHeight = 46;
     this.pen = { cx, cy, halfWidth, halfHeight, fences: [] };
@@ -555,6 +551,35 @@ export class Camp {
     return { ok: true, message: `${BUILDING_DEFS[key].name} reparado.` };
   }
 
+  // ---------- Evolução da mochila ----------
+
+  get inventorySlots() {
+    return inventorySlotsForLevel(this.inventoryLevel);
+  }
+
+  /** Custo para evoluir para o próximo nível (null se já estiver no máximo). */
+  inventoryUpgradeCostFor() {
+    const next = this.inventoryLevel + 1;
+    return inventoryUpgradeCost(next);
+  }
+
+  /** Evolui a mochila para o próximo nível (12 → 24 → 36), pagando do inventário/armazém/moedas. */
+  upgradeInventory() {
+    const nextLevel = this.inventoryLevel + 1;
+    if (nextLevel > INVENTORY_MAX_LEVEL) {
+      return { ok: false, message: 'Mochila já está no tamanho máximo.' };
+    }
+    const cost = inventoryUpgradeCost(nextLevel);
+    if (!cost || !this.pay(cost)) return { ok: false, message: 'Recursos insuficientes para evoluir a mochila.' };
+    this.inventoryLevel = nextLevel;
+    // Aplica imediatamente ao inventário do jogador.
+    if (this.scene?.inventory) {
+      this.scene.inventory.maxSlots = inventorySlotsForLevel(nextLevel);
+    }
+    this.refreshVisuals();
+    return { ok: true, message: `Mochila evoluída para ${this.inventorySlots} espaços!`, level: this.inventoryLevel, slots: this.inventorySlots };
+  }
+
   /** Golpe de um invasor: tira 10% da durabilidade. Devolve true se o prédio foi destruído agora. */
   damageBuilding(key, amount = BUILDING_HIT_DURABILITY_LOSS) {
     if (!this.isBuilt(key) || this.durability[key] <= 0) return false;
@@ -720,7 +745,8 @@ export class Camp {
       crafted: this.equipment.serialize(),
       unlockedRecipes: this.equipment.serializeUnlocks(),
       storage: { ...this.storage },
-      secretChest: { ...this.secretChest }
+      secretChest: { ...this.secretChest },
+      inventoryLevel: this.inventoryLevel
     };
   }
 }

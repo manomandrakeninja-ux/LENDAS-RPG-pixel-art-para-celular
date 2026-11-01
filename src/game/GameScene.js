@@ -8,13 +8,14 @@ import { COMBAT_CONFIG } from '../data/combat.js';
 import { DAY_NIGHT_CONFIG } from '../data/dayNight.js';
 import { HARVEST_STRUCTURE_TYPES } from '../data/harvestStructures.js';
 import { LEVEL_CHOICES, PERK_EFFECTS, PERKS, PlayerProgression } from '../data/progression.js';
+import { PlayerSkills, SKILLS } from '../data/skills.js';
 import { enemyXp } from '../data/enemies.js';
 import { chestCoins, rollCoinDrop } from '../data/economy.js';
 import { BOSS_CONFIG } from '../data/boss.js';
 import { CONSUMABLES, HOTKEY_ITEMS, POTION_COOLDOWN_MS, itemForHotkey, useConsumable } from '../data/consumables.js';
 import { ENCHANTMENTS, FARM_CROPS } from '../data/buildingSystems.js';
 import { BUILDING_DEFS, CAMP_COMPLETION_MESSAGE, DUNGEON_CONFIG } from '../data/buildings.js';
-import { isRaining } from '../data/weather.js';
+import { isRaining, WEATHER_ICONS, weatherAt } from '../data/weather.js';
 import { CampfireTravelers, TRAVELER_GOODS } from '../data/travelers.js';
 import { INVENTORY_CONFIG, WORLD, RESOURCE_TYPES } from './config.js';
 import { AudioManager } from './Audio.js';
@@ -37,7 +38,9 @@ import { World } from './World.js';
 import { GraphicsManager } from './GraphicsManager.js';
 import { WorldMapOverlay } from './WorldMapOverlay.js';
 import { RegionWorld } from './RegionWorld.js';
+import { EnvDragon } from './EnvDragon.js';
 import { Bestiary } from './Bestiary.js';
+import { LanSync } from './LanSync.js';
 import { HuntSystem } from './HuntSystem.js';
 import { HuntUI } from './HuntUI.js';
 import { InvasionDirector } from './InvasionDirector.js';
@@ -49,7 +52,7 @@ import { CompanionSystem } from './CompanionSystem.js';
 import { HeroChoice, shouldAskHero } from './HeroChoice.js';
 import { HERO_LABELS, normalizeGender } from './HeroStyle.js';
 import { EffectsPanel } from './EffectsPanel.js';
-import { actionForCode, keyCodeFor, loadKeybinds } from './Keybinds.js';
+import { actionForCode, keyCodeFor, keyLabel, loadKeybinds } from './Keybinds.js';
 import { WARD_TIP_TEXT, WARD_TIP_TITLE, isNewbieProtected, shouldShowWardTip } from './NewbieProtection.js';
 import { EnemyProjectiles } from './EnemyProjectiles.js';
 import { BestiaryPanel } from './BestiaryPanel.js';
@@ -58,7 +61,7 @@ import { GearSystem } from './GearSystem.js';
 import { EquipmentPanel } from './EquipmentPanel.js';
 import { GEAR_ITEMS, RARITIES, blessingPrice, rollGearDrop } from '../data/gear.js';
 import { JEWELS, rollJewelDrop } from '../data/enhance.js';
-import { TILE } from '../data/worldRegions.js';
+import { OVERWORLD_ROWS, REGION_INFO, TILE, WORLD_COLS, roadAt } from '../data/worldRegions.js';
 import { ExperiencePickups } from './ExperiencePickups.js';
 import { LevelUpOverlay } from './LevelUpOverlay.js';
 import { EconomySystem } from './EconomySystem.js';
@@ -124,6 +127,12 @@ export class GameScene extends Phaser.Scene {
     createGameAnimations(this);
     const saveResult = loadSaveDetailed();
     const saved = saveResult.data;
+    // Avisa quando o save foi gravado pela última vez (só se havia save).
+    if (saved?.savedAt) {
+      const when = new Date(saved.savedAt);
+      const label = Number.isNaN(when.getTime()) ? saved.savedAt : when.toLocaleString('pt-BR');
+      this.time.delayedCall(2500, () => this.ui?.showMessage(`💾 Save carregado (gravado em ${label}).`));
+    }
     this.worldBounds = { ...WORLD, camp: WORLD.camp };
     this.inventory = new Inventory(saved?.inventory);
     this.buffs = new BuffSystem(saved?.buffs);
@@ -131,6 +140,7 @@ export class GameScene extends Phaser.Scene {
     this.traps = [];
     this.obstacles = new Obstacles(this);
     this.regionWorld = new RegionWorld(this, saved?.regions);
+    this.envDragon = new EnvDragon(this);
     this.bestiary = new Bestiary(saved?.bestiary);
     // Caçadas do Mestre de Caça (saves antigos não têm o campo: começam sem caçada).
     this.hunts = new HuntSystem(saved?.hunts);
@@ -138,15 +148,26 @@ export class GameScene extends Phaser.Scene {
     this.xpBoost = new XpBoost(saved?.xpBoost);
     this.heroGender = normalizeGender(saved?.hero?.gender);
     this.world = new World(this);
+    this.world.restoreFog(saved?.fog);
     this.world.create();
     this.camp = new Camp(this, saved?.camp);
+    // Garante que a mochila reflita o nível salvo no acampamento (ex: 24 ou 36 espaços).
+    if (this.camp.inventoryLevel > 1) {
+      this.inventory.maxSlots = this.camp.inventorySlots;
+    }
     // Equipamento vestido (elmo, peitoral, anel...): cobre a peça da Forja do mesmo espaço.
     this.gear = new GearSystem(saved?.gear);
     this.camp.equipment.overrides = () => this.gear.forgeOverrides();
     this.raid = new RaidDirector(this, saved?.raid);
     const inventoryOverflow = this.inventory.takeMigrationOverflow();
     this.progression = new PlayerProgression(saved?.progression);
+    this.skills = new PlayerSkills(saved?.skills);
     this.economy = new EconomySystem(saved?.economy);
+    // Texto flutuante dourado "+N" perto do jogador sempre que ganhar moedas.
+    this.economy.onGain = (coins) => {
+      const player = this.player;
+      if (player) this.effects?.spawnDamage(player.x, player.y - 34, `+${coins}`, '#ffd76b');
+    };
     this.player = new Player(this, WORLD.camp.x, WORLD.camp.y + 85, saved?.player, this.progression);
     this.player.setGender(this.heroGender);
     this.player.recalculateEquipment(this.camp.equipment);
@@ -166,7 +187,32 @@ export class GameScene extends Phaser.Scene {
       ownedAccessories: () => this.camp.equipment.accessories
     });
     this.travelers.refresh(this.timeState.dayCount, this.camp.levels.campfire);
-    this.isRaining = isRaining(this.timeState);
+    this.weather = weatherAt(this.regionWorld.currentRegion(), this.timeState);
+    this.isRaining = this.weather === 'rain' || this.weather === 'snow';
+    // Waypoint personalizado: marcado com Shift+clique no mapa (M) e salvo.
+    this.waypoint = saved?.waypoint && Number.isFinite(saved.waypoint.x) && Number.isFinite(saved.waypoint.y)
+      ? { x: saved.waypoint.x, y: saved.waypoint.y }
+      : null;
+    // Dia em que a pedra rúnica de um vilarejo foi tocada (buff +50% XP até amanhecer).
+    this.runeDay = Number.isFinite(saved?.runeDay) ? saved.runeDay : 0;
+    // Eventos aleatórios do overworld (a cada ~1-2 min: moedas, XP, cura, vento a favor...).
+    this.eventSpeedUntil = 0;
+    this.eventSlowUntil = 0;
+    this.eventSlowRegenUntil = 0;
+    this.randomEventMs = Phaser.Math.Between(45000, 90000);
+    // Medidor de desempenho leve (ring buffer dos últimos 120 frames) — legível no console via window.__lendasPerf.
+    this.frameTimes = [];
+    window.__lendasPerf = () => {
+      const arr = this.frameTimes;
+      if (!arr.length) return null;
+      const avg = arr.reduce((a, b) => a + b, 0) / arr.length;
+      const sorted = [...arr].sort((a, b) => a - b);
+      return { frames: arr.length, avgMs: +avg.toFixed(2), fps: +(1000 / avg).toFixed(1), p95Ms: +sorted[Math.floor(sorted.length * 0.95)].toFixed(2) };
+    };
+    // Auto-save periódico (a cada 3 min) com aviso discreto no canto.
+    this.autoSaveMs = 180000;
+    // Y: voltar ao acampamento de graça (cooldown de 60 s, fora de combate/caverna).
+    this.lastRecallAt = 0;
     this.harvestStructures = new HarvestStructures(this, {
       saved: saved?.harvestStructures ?? [],
       dayCount: this.timeState.dayCount
@@ -244,6 +290,9 @@ export class GameScene extends Phaser.Scene {
     const uiObjects = new Set(this.ui.fixed);
     this.cameras.main.ignore([...uiObjects]);
     this.hudCamera.ignore(this.children.list.filter((child) => !uiObjects.has(child)));
+    // Seta verde na borda da tela apontando para o waypoint (Shift+clique no mapa) quando ele está fora da tela.
+    this.waypointArrow = this.add.graphics().setDepth(9999).setScrollFactor(0).setVisible(false);
+    this.hudCamera.ignore(this.waypointArrow);
     // Textos do mundo com tamanho constante na tela (inverso do zoom).
     this.worldTexts = new WorldTexts(this);
     // Campanha "As Cinzas do Primeiro Mundo": 100 missões, moradores, regiões e diárias.
@@ -259,7 +308,7 @@ export class GameScene extends Phaser.Scene {
       camp: 'C', map: 'M', rest: 'F', sleep: 'R', escape: 'ESC'
     });
     this.cursors = this.input.keyboard.createCursorKeys();
-    this.input.keyboard.on('keydown', () => this.audio.unlock());
+    this.input.keyboard.on('keydown', () => { this.audio.unlock(); this.audio.startAmbience(); });
     this.input.keyboard.on('keydown-L', () => {
       if (this.campaign?.ui?.isOpen || !this.overlayBlocked()) this.toggleJournal();
     });
@@ -293,17 +342,40 @@ export class GameScene extends Phaser.Scene {
     this.input.keyboard.on('keydown-F', () => this.restAtCamp());
     this.input.keyboard.on('keydown-T', () => { if (this.achievements.isOpen || !this.overlayBlocked()) this.achievements.toggle(); });
     this.input.keyboard.on('keydown-G', () => { if (!this.overlayBlocked()) this.companions.action('mount'); });
-    this.input.keyboard.on('keydown-R', () => this.sleepAtCamp());
+    // H convoca o cavalo de onde ele ficou e monta (atalho para quem desmontou longe).
+    this.input.keyboard.on('keydown-H', () => { if (!this.overlayBlocked()) this.companions.summonMount(); });
+    // P: modo foto (esconde toda a HUD para tirar print; P de novo volta).
+    this.photoMode = false;
+    this.input.keyboard.on('keydown-P', () => { if (this.photoMode || !this.overlayBlocked()) this.togglePhotoMode(); });
+    // R: loot rápido — coleta de uma vez todos os recursos simples perto.
+    this.input.keyboard.on('keydown-R', () => { if (!this.overlayBlocked()) this.collectAllNearby(); });
+    // N: dormir até de manhã (só perto da fogueira do acampamento).
+    this.input.keyboard.on('keydown-N', () => this.sleepAtCamp());
+    // Y: recall gratuito para o acampamento (cooldown 60 s; não em caverna nem em combate).
+    this.input.keyboard.on('keydown-Y', () => this.recallCamp());
+    // Grito (Fus Ro Dah): ultimate na tecla Z, carregado pela barra de Fúria (dano causado/recebido).
+    this.input.keyboard.on('keydown-Z', () => this.shout());
     // Ataque, especial, esquiva, interagir e poção: teclas configuráveis (Ajustes → Teclas).
     this.applyKeybinds(loadKeybinds());
     this.input.keyboard.on('keydown', (event) => {
       if (event.ctrlKey || event.altKey || event.metaKey) return;
+      // Shift+/ = "?" abre/fecha a ajuda de teclas.
+      if (event.code === 'Slash' && event.shiftKey) {
+        event.preventDefault();
+        this.toggleHelp();
+        return;
+      }
       const action = actionForCode(this.keybinds, event.code);
       if (action === 'interact') this.interact();
       else if (action === 'attack') this.attackNearby();
       else if (action === 'special') this.specialAttack();
       else if (action === 'potion') this.useHotkey('1');
     });
+    // Monta o painel de ajuda (?).
+    this.helpRoot = document.getElementById('help-overlay');
+    this.helpKeys = document.getElementById('help-keys');
+    document.getElementById('help-close')?.addEventListener('click', () => this.toggleHelp(false));
+    this.input.keyboard.on('keydown-ESC', () => { if (this.helpOpen) this.toggleHelp(false); });
     this.input.keyboard.on('keydown-TWO', () => this.useHotkey('2'));
     this.input.keyboard.on('keydown-THREE', () => this.useHotkey('3'));
     this.input.keyboard.on('keydown-FOUR', () => this.useHotkey('4'));
@@ -320,6 +392,7 @@ export class GameScene extends Phaser.Scene {
     this.handleCanvasPointerDown = (event) => {
       if (event.button !== 0) return;
       this.audio.unlock();
+      this.audio.startAmbience();
       const rect = this.game.canvas.getBoundingClientRect();
       const x = (event.clientX - rect.left) * (this.scale.width / rect.width);
       const y = (event.clientY - rect.top) * (this.scale.height / rect.height);
@@ -364,7 +437,22 @@ export class GameScene extends Phaser.Scene {
     });
 
     this.handleVisibilityChange = () => {
-      if (document.visibilityState === 'hidden') this.save();
+      if (document.visibilityState === 'hidden') {
+        this.save();
+        // Aba oculta: pausa a física para o jogador não morrer sem ver (só se nada já pausou).
+        if (!this.isUiPaused() && !this.gameOver && !this.wasAutoPausedHidden) {
+          this.wasAutoPausedHidden = true;
+          this.physics.world.pause();
+          this.ui.showMessage('⏸ Jogo pausado (aba oculta). Voltou? Aperte qualquer tecla.');
+          this.hiddenKeyHandler = (event) => {
+            if (document.visibilityState !== 'visible') return;
+            this.wasAutoPausedHidden = false;
+            if (this.physics.world.isPaused) this.physics.world.resume();
+            this.input.keyboard.off('keydown', this.hiddenKeyHandler);
+          };
+          this.input.keyboard.on('keydown', this.hiddenKeyHandler);
+        }
+      }
     };
     this.handlePageHide = () => this.save();
     document.addEventListener('visibilitychange', this.handleVisibilityChange);
@@ -374,6 +462,7 @@ export class GameScene extends Phaser.Scene {
     this.events.once('shutdown', () => {
       this.game.canvas.removeEventListener('pointerdown', this.handleCanvasPointerDown);
       this.gameOverButton.removeEventListener('click', this.handleGameOverRestart);
+      this.lan?.disconnect();
       this.touch?.destroy();
       this.worldMap?.destroy();
       this.bestiaryPanel?.destroy();
@@ -397,8 +486,14 @@ export class GameScene extends Phaser.Scene {
     if (!saved && shouldAskHero()) this.heroChoice = new HeroChoice(this);
     this.saveTimer = this.time.addEvent({ delay: 60000, loop: true, callback: () => this.save() });
     this.lastPhase = this.timeState.phase;
+    // Boot com save noturno: sem isso a troca de fase nunca ocorre e o modo noturno da música não liga.
+    this.audio.setNight(this.timeState.phase === 'night' || this.timeState.phase === 'dusk');
     this.warningTriggered = false;
     this.isRespawning = false;
+    // Multijogador LAN (desligado por padrão; liga no painel 🌐 ou via ?lan=ws://... na URL).
+    this.lan = new LanSync(this);
+    this.lan.attach();
+
     // Atrás da tela de início o mundo fica parado; ele volta quando o jogador começa.
     window.dispatchEvent(new CustomEvent('lendas:ready', { detail: this }));
     if (window.__lendasSplash?.active) this.scene.pause();
@@ -676,7 +771,24 @@ export class GameScene extends Phaser.Scene {
   }
 
   updateFrame(_time, delta) {
+    // Ring buffer de ms/frame (máx 120) para o medidor __lendasPerf.
+    this.frameTimes.push(delta);
+    if (this.frameTimes.length > 120) this.frameTimes.shift();
+    // Regeneração leve fora de combate: após 6 s sem levar dano, +0.6% da vida máx por segundo.
+    if (!this.gameOver && this.player.health > 0 && this.player.health < this.player.maxHealth) {
+      const lastHit = this.lastPlayerDamageAt ?? -Infinity;
+      if (time - lastHit > 6000) {
+        const before = this.player.health;
+        this.player.health = Math.min(this.player.maxHealth, this.player.health + (this.player.maxHealth * 0.006 * delta) / 1000);
+        // Efeito visual espaçado (a cada ~2 s) para feedback.
+        if (this.player.health - before > 0 && (this.lastRegenFxAt ?? 0) + 2000 < time) {
+          this.lastRegenFxAt = time;
+          this.effects.spawnHeal?.(this.player.x, this.player.y - 20);
+        }
+      }
+    }
     this.graphics?.update(delta);
+    this.lan?.update(delta);
     if (this.gameOver) {
       this.player.body.setVelocity(0, 0);
       for (const enemy of this.enemies) enemy.body?.setVelocity(0, 0);
@@ -695,7 +807,44 @@ export class GameScene extends Phaser.Scene {
       } else if (!this.hitstopActive) this.physics.world.resume();
     }
     if (!paused) this.timeState = this.updateDayNight(delta);
-    this.isRaining = isRaining(this.timeState);
+    // Clima segue a região atual do mapa grande (neve no gelo, poeira no deserto, cinzas em brasa).
+    this.weather = weatherAt(this.regionWorld.currentRegion(), this.timeState);
+    this.isRaining = this.weather === 'rain' || this.weather === 'snow';
+    // Marca "choveu antes" por 90 s depois que a chuva passa (evento arco-íris usa isso).
+    if (this.isRaining) this.lastRainAt = this.time.now;
+    this.lastWeatherWasRain = this.time.now - (this.lastRainAt ?? -Infinity) < 90000;
+    this.updateWaypointArrow();
+    // Marca de morte some quando o jogador chega perto do local.
+    if (this.deathMarker && Phaser.Math.Distance.Between(this.player.x, this.player.y, this.deathMarker.x, this.deathMarker.y) < 160) {
+      this.deathMarker = null;
+    }
+    // Coordenadas no modo foto (atualizadas aqui, no update).
+    if (this.photoMode && this.photoCoords) {
+      const meters = (v) => Math.round((v / TILE) * 10);
+      this.photoCoords.textContent = `📍 ${meters(this.player.x)} m, ${meters(this.player.y)} m • dia ${this.timeState.dayCount}`;
+    }
+    // Vinheta vermelha pulsante com vida abaixo de 25% (feedback de perigo).
+    this.lowHpEl ??= document.getElementById('low-hp-vignette');
+    if (this.lowHpEl) this.lowHpEl.hidden = this.photoMode || !(this.player.health > 0 && this.player.health < this.player.maxHealth * 0.25);
+    // Eventos aleatórios só no overworld (não dentro de caverna/torre, nem pausado).
+    if (!paused && !this.regionWorld?.underground && !this.overlayBlocked()) {
+      this.randomEventMs -= delta;
+      if (this.randomEventMs <= 0) {
+        this.randomEventMs = Phaser.Math.Between(70000, 140000);
+        this.randomEvent();
+      }
+    }
+    // Ambiente sonoro segue a região e o dia/noite (vento + pássaros/grilos).
+    this.audio.setAmbience(this.regionWorld.currentRegion(), this.timeState.isNight);
+    // Auto-save a cada 3 minutos (só no overworld, sem pausa/menu aberto).
+    if (!paused && !this.regionWorld?.underground && !this.overlayBlocked()) {
+      this.autoSaveMs -= delta;
+      if (this.autoSaveMs <= 0) {
+        this.autoSaveMs = 180000;
+        this.save();
+        this.ui.showMessage('💾 Progresso salvo automaticamente');
+      }
+    }
     if (!paused) {
       if (this.buffs.update(delta, this.timeState.dayCount)) this.player.recalculateEquipment(this.camp.equipment);
       this.updateFarm(delta);
@@ -725,9 +874,9 @@ export class GameScene extends Phaser.Scene {
       this.effectsPanel?.update(delta);
       this.camp.defense.update(delta, this.enemies);
       this.updateBuildingLabels();
-      this.updateCanopyFade(delta);
       this.villagers?.update(delta);
       this.regionWorld.update(delta);
+      this.envDragon?.update(delta);
       this.shadows?.update(delta, this.timeState);
       this.updateLegendAura();
       this.updateEnemyStatus(delta);
@@ -829,6 +978,8 @@ export class GameScene extends Phaser.Scene {
         this.audio.playDawn();
         this.ui.showMessage(`Amanheceu. Dia ${state.dayCount} começou.`);
       }
+      // A trilha da região continua, mas à noite/crepúsculo desce 2 semitons e abaixa o volume.
+      this.audio.setNight(state.phase === 'night' || state.phase === 'dusk');
       this.lastPhase = state.phase;
     }
     return state;
@@ -854,6 +1005,12 @@ export class GameScene extends Phaser.Scene {
     this.invasion.checkDay(day);
     this.announceXpEvent();
     this.campaign?.onDayAdvance(day);
+    // Avisa o clima do novo dia na região atual (só no amanhecer natural, não ao dormir — já avisa lá).
+    if (!this.sleptJustNow) {
+      const w = weatherAt(this.regionWorld.currentRegion(), this.timeState);
+      const label = { clear: 'céu limpo ☀️', rain: 'chuva 🌧️', snow: 'neve ❄️', dust: 'poeira 🌪️', ash: 'cinzas 🌋' }[w] ?? w;
+      this.ui.showMessage(`🌅 Dia ${day} — clima na região: ${label}`);
+    }
     this.save();
   }
 
@@ -867,7 +1024,13 @@ export class GameScene extends Phaser.Scene {
     this.skipSave = true;
     this.buildingMenu.close();
     this.worldMap.close();
-    this.gameOverText.textContent = text;
+    // Dica contextual conforme onde e quando o jogador caiu.
+    let hint = '💡 Dica: poções (tecla 1) e comida (2) salvam em apuros; a Esquiva (tecla configurável) livra de golpes.';
+    const region = this.regionWorld?.currentRegion?.();
+    const info = region ? REGION_INFO[region] : null;
+    if (this.timeState?.isNight) hint = '💡 Dica: de noite os inimigos são mais fortes — durma na fogueira (N) ou numa cama de vilarejo antes de anoitecer. ' + hint;
+    if (info && (info.levelRange?.[0] ?? 0) >= (this.progression?.level ?? 1) + 6) hint = `💡 A região ${info.name} é perigosa para o seu nível (sugerido ${info.levels}, você nível ${this.progression?.level ?? 1}). Explore regiões do seu nível primeiro. ` + hint;
+    this.gameOverText.textContent = `${text}\n\n${hint}`;
     this.gameOverRoot.hidden = false;
     this.cameras.main.shake(600, 0.012, true);
   }
@@ -971,7 +1134,10 @@ export class GameScene extends Phaser.Scene {
       ? this.progression.hasPerk('rhythm') ? PERK_EFFECTS.rhythmFinisherMultiplier : COMBAT_CONFIG.combo.finisherMultiplier
       : 1;
     let perkMultiplier = this.progression.damageMultiplier(this.player.health / Math.max(1, this.player.maxHealth));
-    if (Math.random() < (this.player.jewelCrit ?? 0)) perkMultiplier *= 2;
+    const jewelCrit = Math.random() < (this.player.jewelCrit ?? 0);
+    if (jewelCrit) perkMultiplier *= 2;
+    // Skill Lâmina: +2% de dano corpo a corpo por nível treinado.
+    perkMultiplier *= this.skills?.bladeDamageMultiplier?.() ?? 1;
     const attack = Math.round(this.player.attack * multiplier * perkMultiplier) + (this.player.jewelPoison ?? 0);
     const angle = swingAngle;
     if (this.bossIsProtected(target)) {
@@ -982,12 +1148,19 @@ export class GameScene extends Phaser.Scene {
     this.effects.spawnSwingTrail(this.player.x, this.player.y, angle, finisher, this.player.animator?.weaponLook);
     this.effects.spawnSlash(target.x, target.y - 10, angle, finisher ? 2 : 1);
     const killed = target.hit(attack, angle);
+    this.player.addShoutCharge(finisher ? COMBAT_CONFIG.shout.chargePerFinisher : COMBAT_CONFIG.shout.chargePerHit);
+    this.grantSkillXp('blade', finisher ? 9 : 6);
     if (thrown) {
       const broken = this.gear.rollThrownBreak();
       if (broken) this.afterGearChange({ ok: true, message: `${broken.name} quebrou!` });
     }
-    this.effects.spawnImpact(target.x, target.y - 10, { tint: finisher ? 0xffd76b : 0xffe0a0, strong: finisher || killed });
+    this.effects.spawnImpact(target.x, target.y - 10, { tint: finisher || jewelCrit ? 0xffd76b : 0xffe0a0, strong: finisher || killed || jewelCrit });
     this.audio.playHit();
+    // Crítico de joia: hitstop curto + texto dourado "CRÍTICO".
+    if (jewelCrit) {
+      this.hitstop(60);
+      this.effects.spawnDamage(target.x, target.y - 26, 'CRÍTICO!', '#ffd76b');
+    }
     if (finisher || killed) this.hitstop(killed ? 70 : 50);
     this.effects.spawnDamage(target.x, target.y - 18, damage, finisher ? '#ffe28a' : undefined);
     this.applyWeaponEffects(target, damage, killed);
@@ -1039,7 +1212,9 @@ export class GameScene extends Phaser.Scene {
       onComplete: () => {
         arrow.destroy();
         if (!target.active || target.dead) return;
-        const damage = Math.max(1, Math.round(this.player.attack * 0.7));
+        // Skill Arco: +2% de dano de flecha por nível treinado.
+        const damage = Math.max(1, Math.round(this.player.attack * 0.7 * (this.skills?.archeryDamageMultiplier?.() ?? 1)));
+        this.grantSkillXp('archery', 6);
         this.damageEnemy(target, damage, { weapon: true });
       }
     });
@@ -1068,10 +1243,12 @@ export class GameScene extends Phaser.Scene {
 
   specialAttack() {
     if (this.player.specialCooldown > 0 ||
+        (this.player.paralyzedMs ?? 0) > 0 ||
         this.player.stamina < COMBAT_CONFIG.specialStaminaCost ||
         this.progression?.hasPendingChoice || this.worldMap?.isOpen || this.ui.campOpen || this.buildingMenu?.isOpen || this.isUiPaused()) return;
     this.player.specialCooldown = 4800;
     this.player.stamina -= COMBAT_CONFIG.specialStaminaCost;
+    this.player.addShoutCharge(COMBAT_CONFIG.shout.chargePerSpecial);
     this.player.showAttack();
     this.effects.spawnSpecial(this.player.x, this.player.y - 4);
     const targets = this.enemies.filter((enemy) => enemy.active &&
@@ -1098,6 +1275,48 @@ export class GameScene extends Phaser.Scene {
       true
     );
     this.ui.showMessage(targets.length ? 'Golpe especial!' : 'Golpe especial — sem alvo por perto.');
+  }
+
+  /** Grito (Z): consome a Fúria cheia (100) e causa dano em área + empurrão forte. */
+  shout() {
+    const player = this.player;
+    if (!player) return;
+    if (player.shoutCooldown > 0 || (player.paralyzedMs ?? 0) > 0 || player.shoutCharge < 100 ||
+        this.progression?.hasPendingChoice || this.worldMap?.isOpen || this.ui.campOpen ||
+        this.buildingMenu?.isOpen || this.isUiPaused() || this.gameOver) {
+      if (player.shoutCooldown <= 0 && player.shoutCharge < 100) {
+        this.ui.showMessage(`Fúria carregando: ${Math.floor(player.shoutCharge)}% (acerte ou leve dano)`);
+      }
+      return;
+    }
+    const shout = COMBAT_CONFIG.shout;
+    player.shoutCharge = 0;
+    player.shoutCooldown = shout.cooldownMs;
+    player.showAttack();
+    this.effects.spawnShout(player.x, player.y, shout.range);
+    this.cameras.main.shake(shout ? COMBAT_CONFIG.screenShake.shout.duration : 420, COMBAT_CONFIG.screenShake.shout.intensity, true);
+    this.hitstop(90);
+    this.audio.playSpecial?.() ?? this.audio.playHit?.();
+    // Recuo leve do grito: empurra o jogador na direção oposta ao olhar (game feel).
+    const facing = player.facing ?? { x: 0, y: 1 };
+    player.body?.setVelocity(player.body.velocity.x - facing.x * 140, player.body.velocity.y - facing.y * 140);
+    const targets = this.enemies.filter((enemy) => enemy.active &&
+      Phaser.Math.Distance.Between(enemy.x, enemy.y, player.x, player.y) < shout.range);
+    if (this.boss && !this.boss.dead &&
+        Phaser.Math.Distance.Between(this.boss.x, this.boss.y, player.x, player.y) < shout.range &&
+        !this.bossIsProtected(this.boss)) {
+      targets.push(this.boss);
+    }
+    targets.forEach((enemy) => {
+      const angle = Phaser.Math.Angle.Between(player.x, player.y, enemy.x, enemy.y);
+      enemy.applyKnockback?.(angle, shout.knockback);
+      const damage = Math.min(enemy.health, Math.round(player.attack * shout.damageMultiplier + shout.flatDamage));
+      this.effects.spawnSlash(enemy.x, enemy.y - 10, angle, 2);
+      const killed = enemy.hit(Math.round(player.attack * shout.damageMultiplier + shout.flatDamage), angle);
+      this.effects.spawnDamage(enemy.x, enemy.y - 18, damage, '#e0a0ff');
+      if (killed) this.defeatEnemy(enemy);
+    });
+    this.showEpic?.('FUS RO DAH!', targets.length ? `${targets.length} ${targets.length === 1 ? 'inimigo empurrado' : 'inimigos empurrados'}!` : 'A onda de choque varre a área.', 1800);
   }
 
   /** Aplica as teclas de ação (esquiva usa uma tecla do Phaser; as outras vêm do evento keydown). */
@@ -1285,6 +1504,7 @@ export class GameScene extends Phaser.Scene {
     this.save();
     const message = `Você renasceu! Renascimentos: ${result.rebirths} (+${result.rebirths * 5}% de dano, vida e XP).`;
     this.ui.showMessage(message);
+    this.achievements?.checkAchievements(); // conquistas de renascimento
     return { ok: true, message };
   }
 
@@ -1309,10 +1529,532 @@ export class GameScene extends Phaser.Scene {
     return this.invasion?.statusText ?? '';
   }
 
+  /** XP de skill por uso; avisa quando sobe de nível. */
+  /** Tecla R: coleta todos os recursos coletáveis perto de uma vez (máx. 8, sem picareta). */
+  collectAllNearby() {
+    if (this.mining || this.overlayBlocked() || this.campaign?.ui?.isOpen) return;
+    if (this.campaign?.interact()) return;
+    if (this.regionWorld?.interact()) return;
+    const list = this.world.nearbyResources(this.player.x, this.player.y, 110)
+      .filter((resource) => !resource.definition?.requiresPickaxe);
+    if (!list.length) return;
+    let got = 0;
+    const gained = {};
+    for (const resource of list.slice(0, 8)) {
+      const amount = resource.amount ?? Phaser.Math.Between(2, 4);
+      if (!this.inventory.add(resource.type, amount)) break;
+      gained[resource.type] = (gained[resource.type] ?? 0) + amount;
+      this.effects.spawnHarvest(resource.x, resource.y - 8, RESOURCE_TYPES[resource.type]?.accent ?? 0x9ed36e);
+      this.campaign?.onGathered?.({ [resource.type]: amount });
+      this.world.harvest(resource);
+      got += 1;
+    }
+    if (got) {
+      this.audio.playCollect();
+      const parts = Object.entries(gained).map(([type, amount]) => `${amount} ${RESOURCE_TYPES[type]?.label.toLowerCase() ?? type}`);
+      this.ui.showMessage(`🧺 Loot rápido: ${parts.join(', ')}!`);
+      this.save();
+    }
+  }
+
+  /** Modo foto: esconde a câmera de HUD (Phaser) e os painéis DOM, dejando só o mundo. */
+  togglePhotoMode() {
+    this.photoMode = !this.photoMode;
+    this.hudCamera?.setVisible(!this.photoMode);
+    for (const el of document.querySelectorAll('#game > *')) {
+      if (el.tagName === 'CANVAS') continue;
+      if (this.photoMode) {
+        if (el.dataset.prevDisplay === undefined) el.dataset.prevDisplay = el.style.display;
+        el.style.display = 'none';
+      } else if (el.dataset.prevDisplay !== undefined) {
+        el.style.display = el.dataset.prevDisplay;
+        delete el.dataset.prevDisplay;
+      }
+    }
+    // No modo foto mostramos só as coordenadas (canto inferior direito) — útil para registrar lugares.
+    this.photoCoords = document.getElementById('photo-coords');
+    if (this.photoCoords) this.photoCoords.hidden = !this.photoMode;
+    if (this.photoMode) this.ui.showMessage('📷 Modo foto ativado — aperte P para voltar');
+  }
+
+  /** Seta na borda da tela → direção do waypoint quando ele está fora da visão (muda de lado ao passar por ele). */
+  updateWaypointArrow() {
+    const arrow = this.waypointArrow;
+    const waypoint = this.waypoint;
+    if (!arrow || !waypoint || this.photoMode) {
+      arrow?.setVisible(false);
+      return;
+    }
+    const view = this.cameras.main.worldView;
+    const margin = 46;
+    const inside = waypoint.x > view.x + margin && waypoint.x < view.right - margin
+      && waypoint.y > view.y + margin && waypoint.y < view.bottom - margin;
+    if (inside) {
+      arrow.setVisible(false);
+      return;
+    }
+    const cx = this.scale.width / 2;
+    const cy = this.scale.height / 2;
+    const angle = Math.atan2(waypoint.y - this.player.y, waypoint.x - this.player.x);
+    // Ponto na borda do retângulo da tela na direção do waypoint (interseção raio × borda).
+    const dx = Math.cos(angle);
+    const dy = Math.sin(angle);
+    const scaleX = dx !== 0 ? (cx - margin) / Math.abs(dx) : Infinity;
+    const scaleY = dy !== 0 ? (cy - margin) / Math.abs(dy) : Infinity;
+    const t = Math.min(scaleX, scaleY);
+    const px = cx + dx * t;
+    const py = cy + dy * t;
+    // Triângulo rotacionado (vértices calculados em JS, sem depender de rotate do Graphics).
+    const tip = { x: px + dx * 14, y: py + dy * 14 };
+    const back = { x: px - dx * 8, y: py - dy * 8 };
+    const perp = { x: -dy * 9, y: dx * 9 };
+    arrow.setVisible(true);
+    arrow.clear();
+    arrow.fillStyle(0x5aff8a, 0.92);
+    arrow.lineStyle(2, 0x0c2a14, 0.9);
+    arrow.beginPath();
+    arrow.moveTo(tip.x, tip.y);
+    arrow.lineTo(back.x + perp.x, back.y + perp.y);
+    arrow.lineTo(back.x - perp.x, back.y - perp.y);
+    arrow.closePath();
+    arrow.fillPath();
+    arrow.strokePath();
+  }
+
+  /** Painel de ajuda (tecla ?): lista todas as teclas fixas e as configuráveis. */
+  toggleHelp(force) {
+    this.helpOpen = force ?? !this.helpOpen;
+    if (!this.helpRoot) return;
+    if (this.helpOpen && this.helpKeys && !this.helpKeys.childElementCount) {
+      const kb = this.keybinds ?? loadKeybinds();
+      const rows = [
+        ['WASD / setas', 'Mover'],
+        [`${keyLabel(kb.attack)}`, 'Atacar'],
+        [`${keyLabel(kb.special)}`, 'Golpe especial'],
+        [`${keyLabel(kb.dodge)}`, 'Esquiva'],
+        [`${keyLabel(kb.interact)}`, 'Interagir (E)'],
+        [`${keyLabel(kb.potion)} … 5`, 'Poção / comer / tocha / vigor / elixir'],
+        ['B ou I', 'Mochila (filtros: todos/usáveis/materiais)'],
+        ['V', 'Equipamento'],
+        ['L', 'Diário (missões, descobertas, skills)'],
+        ['M', 'Mapa do mundo (clique: região · Shift+clique: waypoint · perto de POI: viajar)'],
+        ['T', 'Conquistas'],
+        ['C', 'Acampamento'],
+        ['K', 'Ajustes'],
+        ['F', 'Descansar (no acampamento)'],
+        ['N', 'Dormir até de manhã (fogueira do acampamento ou cama de vilarejo)'],
+        ['G', 'Montar/desmontar'],
+        ['H', 'Convocar o cavalo e montar'],
+        ['Z', 'GRITO FUS RO DAH! (barra de Fúria cheia)'],
+        ['R', 'Loot rápido (pega tudo perto)'],
+        ['Y', 'Voltar ao acampamento (60 s de cooldown)'],
+        ['P', 'Modo foto (esconde a HUD)'],
+        ['?', 'Esta ajuda']
+      ];
+      this.helpKeys.innerHTML = rows.map(([key, label]) => `<div><span>${label}</span><b>${key}</b></div>`).join('');
+    }
+    this.helpRoot.hidden = !this.helpOpen;
+  }
+
+  /** Tecla Y: volta ao acampamento de graça (60 s de cooldown; bloqueado em caverna/luta/ataque). */
+  recallCamp() {
+    if (this.overlayBlocked()) return;
+    if (this.regionWorld?.underground) {
+      this.ui.showMessage('Dentro de caverna não dá para voltar — ache a escada de saída.');
+      return;
+    }
+    const now = this.time.now;
+    const remaining = 60000 - (now - this.lastRecallAt);
+    if (remaining > 0) {
+      this.ui.showMessage(`O recall recarrega em ${Math.ceil(remaining / 1000)} s.`);
+      return;
+    }
+    const inCombat = (this.enemies ?? []).some((enemy) => enemy.active
+      && Phaser.Math.Distance.Between(enemy.x, enemy.y, this.player.x, this.player.y) < 420);
+    if (inCombat) {
+      this.ui.showMessage('Não dá para voltar ao acampamento no meio da luta!');
+      return;
+    }
+    if (this.raid?.active || this.raid?.warning) {
+      this.ui.showMessage('O acampamento está sob ataque agora!');
+      return;
+    }
+    this.lastRecallAt = now;
+    this.regionWorld?.fastTravelTo({ type: 'camp', name: 'Acampamento', cost: 0 });
+  }
+
+  /** Evento aleatório do overworld: moedas, XP, cura, vento a favor ou um presságio. */
+  randomEvent() {
+    const roll = Math.random();
+    if (roll < 0.0000005 && this.timeState?.phase === 'day' && this.regionWorld?.currentRegion?.() === 'vale') {
+      const xp = Phaser.Math.Between(6, 12);
+      this.grantExperience(xp);
+      this.effects.spawnDamage(this.player.x, this.player.y - 30, '🍃', '#a8e080');
+      this.ui.showMessage(`🍃 Evento: brisa fresca do vale! +${xp} XP`);
+    } else if (roll < 0.0000006 && this.timeState?.phase === 'night' && this.regionWorld?.currentRegion?.() === 'neve' && this.weather === 'clear') {
+      const xp = Phaser.Math.Between(10, 16);
+      this.grantExperience(xp);
+      this.effects.spawnDamage(this.player.x, this.player.y - 30, '🌌', '#b8ccff');
+      this.ui.showMessage(`🌌 Evento: aurora boreal sobre a neve! +${xp} XP`);
+    } else if (roll < 0.0000008 && this.timeState?.phase === 'day' && this.regionWorld?.currentRegion?.() === 'esmeralda' && this.weather === 'clear') {
+      const xp = Phaser.Math.Between(10, 16);
+      this.grantExperience(xp);
+      this.effects.spawnDamage(this.player.x, this.player.y - 30, '💚', '#7af0b0');
+      this.ui.showMessage(`💚 Evento: fonte de vida da ilha Esmeralda! +${xp} XP`);
+    } else if (roll < 0.000001 && this.timeState?.phase === 'night' && this.regionWorld?.currentRegion?.() === 'cinzas') {
+      const xp = Phaser.Math.Between(12, 20);
+      this.grantExperience(xp);
+      this.effects.spawnDamage(this.player.x, this.player.y - 30, '💀', '#d8d0c8');
+      this.ui.showMessage(`💀 Evento: caveira sussurrante nas cinzas à noite! +${xp} XP`);
+    } else if (roll < 0.0000015 && this.timeState?.phase === 'day' && this.regionWorld?.currentRegion?.() === 'antiga' && this.weather === 'clear') {
+      const coins = Phaser.Math.Between(6, 12);
+      this.economy.addCoins(coins);
+      this.audio.playCoin();
+      this.effects.spawnDamage(this.player.x, this.player.y - 30, '🏺', '#e8c890');
+      this.ui.showMessage(`🏺 Evento: ânfora antiga encontrada entre ruínas! +${coins} moedas`);
+    } else if (roll < 0.000002 && this.timeState?.phase === 'night' && this.regionWorld?.currentRegion?.() === 'brasa' && this.weather === 'ash') {
+      const xp = Phaser.Math.Between(15, 25);
+      this.grantExperience(xp);
+      this.effects.spawnDamage(this.player.x, this.player.y - 30, '🔥', '#ff8040');
+      this.ui.showMessage(`🔥 Evento: brasa viva na cinza da ilha de Brasa! +${xp} XP`);
+    } else if (roll < 0.000003 && this.timeState?.phase === 'day' && this.regionWorld?.currentRegion?.() === 'brejo' && this.weather === 'rain') {
+      const xp = Phaser.Math.Between(8, 14);
+      this.grantExperience(xp);
+      this.effects.spawnDamage(this.player.x, this.player.y - 30, '🐸', '#7ac86a');
+      this.ui.showMessage(`🐸 Evento: sapo da chuva canta no brejo! +${xp} XP`);
+    } else if (roll < 0.000004 && this.timeState?.phase === 'night' && this.regionWorld?.currentRegion?.() === 'gelo' && this.weather === 'snow') {
+      const xp = Phaser.Math.Between(12, 20);
+      this.grantExperience(xp);
+      this.effects.spawnDamage(this.player.x, this.player.y - 30, '❄️', '#cfe8ff');
+      this.ui.showMessage(`❄️ Evento: nevasca mágica no gelo! +${xp} XP`);
+    } else if (roll < 0.000005 && this.timeState?.phase === 'day' && this.regionWorld?.currentRegion?.() === 'areia' && this.weather === 'clear') {
+      const xp = Phaser.Math.Between(8, 14);
+      this.grantExperience(xp);
+      this.effects.spawnDamage(this.player.x, this.player.y - 30, '🌵', '#9ae070');
+      this.ui.showMessage(`🌵 Evento: cacto em flor no calor do deserto! +${xp} XP`);
+    } else if (roll < 0.000006 && this.timeState?.phase === 'night' && this.regionWorld?.currentRegion?.() === 'floresta' && this.weather === 'clear') {
+      const xp = Phaser.Math.Between(10, 16);
+      this.grantExperience(xp);
+      this.effects.spawnDamage(this.player.x, this.player.y - 30, '🍄', '#c8a0e0');
+      this.ui.showMessage(`🍄 Evento: cogumelo lunar brilhando na floresta! +${xp} XP`);
+    } else if (roll < 0.000008 && this.timeState?.phase === 'day' && this.regionWorld?.currentRegion?.() === 'selva') {
+      const xp = Phaser.Math.Between(8, 14);
+      this.grantExperience(xp);
+      this.effects.spawnDamage(this.player.x, this.player.y - 30, '🦋', '#f0b060');
+      this.ui.showMessage(`🦋 Evento: borboleta dourada na selva de dia! +${xp} XP`);
+    } else if (roll < 0.00001 && this.timeState?.phase === 'night' && this.regionWorld?.currentRegion?.() === 'antiga') {
+      const xp = Phaser.Math.Between(15, 25);
+      this.grantExperience(xp);
+      this.effects.spawnDamage(this.player.x, this.player.y - 30, '👻', '#b8c8e8');
+      this.ui.showMessage(`👻 Evento: eco de um herói antigo nas terras antigas! +${xp} XP`);
+    } else if (roll < 0.000015 && this.timeState?.phase === 'day' && this.regionWorld?.currentRegion?.() === 'floresta' && this.weather === 'rain') {
+      const xp = Phaser.Math.Between(10, 16);
+      this.grantExperience(xp);
+      this.effects.spawnDamage(this.player.x, this.player.y - 30, '🍄', '#e07a9a');
+      this.ui.showMessage(`🍄 Evento: cogumelo raro brotou na chuva da floresta! +${xp} XP`);
+    } else if (roll < 0.00002 && this.timeState?.phase === 'night' && this.regionWorld?.currentRegion?.() === 'praia') {
+      const xp = Phaser.Math.Between(10, 16);
+      this.grantExperience(xp);
+      this.effects.spawnDamage(this.player.x, this.player.y - 30, '🐚', '#f0c8d8');
+      this.ui.showMessage(`🐚 Evento: concha rara brilhando na praia à noite! +${xp} XP`);
+    } else if (roll < 0.00003 && this.timeState?.phase === 'day' && this.regionWorld?.currentRegion?.() === 'neve') {
+      const xp = Phaser.Math.Between(10, 16);
+      this.grantExperience(xp);
+      this.effects.spawnDamage(this.player.x, this.player.y - 30, '🐺', '#c8d8e8');
+      this.ui.showMessage(`🐺 Evento: lobo das neves uiva perto! +${xp} XP`);
+    } else if (roll < 0.00004 && this.timeState?.phase === 'night' && this.regionWorld?.currentRegion?.() === 'selva') {
+      const xp = Phaser.Math.Between(12, 20);
+      this.grantExperience(xp);
+      this.effects.spawnDamage(this.player.x, this.player.y - 30, '🐸', '#8ad86a');
+      this.ui.showMessage(`🐸 Evento: sapo dourado na selva noturna! +${xp} XP`);
+    } else if (roll < 0.00006 && this.timeState?.phase === 'day' && this.regionWorld?.currentRegion?.() === 'brejo' && this.weather === 'clear') {
+      const xp = Phaser.Math.Between(8, 14);
+      this.grantExperience(xp);
+      this.effects.spawnDamage(this.player.x, this.player.y - 30, '🐝', '#f4d040');
+      this.ui.showMessage(`🐝 Evento: abelha dourada no brejo ensolarado! +${xp} XP`);
+    } else if (roll < 0.00008 && this.timeState?.phase === 'night' && this.regionWorld?.currentRegion?.() === 'vale' && this.weather === 'clear') {
+      const coins = Phaser.Math.Between(8, 14);
+      this.economy.addCoins(coins);
+      this.audio.playCoin();
+      this.effects.spawnDamage(this.player.x, this.player.y - 30, '🌠', '#fff8c8');
+      this.ui.showMessage(`🌠 Evento: estrela cadente sobre o vale! +${coins} moedas`);
+    } else if (roll < 0.0001 && this.timeState?.phase === 'day' && this.regionWorld?.currentRegion?.() === 'esmeralda') {
+      const xp = Phaser.Math.Between(10, 18);
+      this.grantExperience(xp);
+      this.effects.spawnDamage(this.player.x, this.player.y - 30, '🌿', '#6af0a0');
+      this.ui.showMessage(`🌿 Evento: orquídea rara floresceu na ilha Esmeralda! +${xp} XP`);
+    } else if (roll < 0.00015 && this.timeState?.phase === 'night' && this.regionWorld?.currentRegion?.() === 'vale') {
+      const xp = Phaser.Math.Between(8, 14);
+      this.grantExperience(xp);
+      this.effects.spawnDamage(this.player.x, this.player.y - 30, '🦉', '#c8b8f0');
+      this.ui.showMessage(`🦉 Evento: coruja do vale à noite! +${xp} XP`);
+    } else if (roll < 0.0002 && this.timeState?.phase === 'day' && this.regionWorld?.currentRegion?.() === 'praia') {
+      const coins = Phaser.Math.Between(4, 8);
+      this.economy.addCoins(coins);
+      this.audio.playCoin();
+      this.effects.spawnDamage(this.player.x, this.player.y - 30, '🦀', '#f08050');
+      this.ui.showMessage(`🦀 Evento: caranguejo dourado saiu da toca na praia! +${coins} moedas`);
+    } else if (roll < 0.0003 && this.timeState?.phase === 'day' && this.regionWorld?.currentRegion?.() === 'antiga' && this.weather === 'clear') {
+      const xp = Phaser.Math.Between(10, 18);
+      this.grantExperience(xp);
+      this.effects.spawnDamage(this.player.x, this.player.y - 30, '🏛️', '#e8d8a0');
+      this.ui.showMessage(`🏛️ Evento: ruínas banhadas de sol nas terras antigas! +${xp} XP`);
+    } else if (roll < 0.0004 && this.timeState?.phase === 'night' && this.regionWorld?.currentRegion?.() === 'brasa') {
+      const xp = Phaser.Math.Between(15, 25);
+      this.grantExperience(xp);
+      this.effects.spawnDamage(this.player.x, this.player.y - 30, '🌋', '#ff7040');
+      this.ui.showMessage(`🌋 Evento: erupção distante na ilha de Brasa! +${xp} XP`);
+    } else if (roll < 0.0005 && this.timeState?.phase === 'day' && this.regionWorld?.currentRegion?.() === 'brejo') {
+      const coins = Phaser.Math.Between(5, 10);
+      this.economy.addCoins(coins);
+      this.audio.playCoin();
+      this.effects.spawnDamage(this.player.x, this.player.y - 30, '🪷', '#f0a0c8');
+      this.ui.showMessage(`🪷 Evento: lírio d'água dourado no brejo! +${coins} moedas`);
+    } else if (roll < 0.0006 && this.timeState?.phase === 'night' && this.regionWorld?.currentRegion?.() === 'areia') {
+      const xp = Phaser.Math.Between(8, 14);
+      this.grantExperience(xp);
+      this.effects.spawnDamage(this.player.x, this.player.y - 30, '🌵', '#8ad86a');
+      this.ui.showMessage(`🌵 Evento: cacto florido no deserto à noite! +${xp} XP`);
+    } else if (roll < 0.0008 && this.timeState?.phase === 'day' && this.regionWorld?.currentRegion?.() === 'gelo') {
+      const xp = Phaser.Math.Between(6, 12);
+      this.grantExperience(xp);
+      this.effects.spawnDamage(this.player.x, this.player.y - 30, '🧊', '#a8d8f8');
+      this.ui.showMessage(`🧊 Evento: bloco de gelo brilhante no gelo! +${xp} XP`);
+    } else if (roll < 0.001 && this.timeState?.phase === 'night' && this.regionWorld?.currentRegion?.() === 'esmeralda') {
+      const xp = Phaser.Math.Between(15, 25);
+      this.grantExperience(xp);
+      this.effects.spawnDamage(this.player.x, this.player.y - 30, '💎', '#6af0c8');
+      this.ui.showMessage(`💎 Evento: cristal da ilha esmeralda pulsa à noite! +${xp} XP`);
+    } else if (roll < 0.0012 && this.timeState?.phase === 'night' && this.regionWorld?.currentRegion?.() === 'cinzas') {
+      const xp = Phaser.Math.Between(12, 20);
+      this.grantExperience(xp);
+      this.effects.spawnDamage(this.player.x, this.player.y - 30, '👺', '#ff6a50');
+      this.ui.showMessage(`👺 Evento: espírito das cinzas à noite! +${xp} XP`);
+    } else if (roll < 0.0015 && this.timeState?.phase === 'day' && this.regionWorld?.currentRegion?.() === 'praia') {
+      const coins = Phaser.Math.Between(4, 9);
+      this.economy.addCoins(coins);
+      this.audio.playCoin();
+      this.effects.spawnDamage(this.player.x, this.player.y - 30, '🐚', '#f0c8a0');
+      this.ui.showMessage(`🐚 Evento: uma concha brilhante na areia! +${coins} moedas`);
+    } else if (roll < 0.002 && this.timeState?.phase === 'night' && this.weather === 'rain') {
+      const heal = Math.max(1, Math.round(this.player.maxHealth * 0.06));
+      this.player.health = Math.min(this.player.maxHealth, this.player.health + heal);
+      this.effects.spawnDamage(this.player.x, this.player.y - 30, '🌙', '#b0c8f0');
+      this.ui.showMessage(`🌙 Evento: chuva morna à noite Cura leve! +${heal} vida`);
+    } else if (roll < 0.0025 && this.timeState?.phase === 'day' && this.regionWorld?.currentRegion?.() === 'vale') {
+      const xp = Phaser.Math.Between(6, 12);
+      this.grantExperience(xp);
+      this.effects.spawnDamage(this.player.x, this.player.y - 30, '🍃', '#a8e88a');
+      this.ui.showMessage(`🍃 Evento: vento forte带来 folhas no vale! +${xp} XP`);
+    } else if (roll < 0.003 && this.timeState?.phase === 'day' && this.regionWorld?.currentRegion?.() === 'cinzas') {
+      const xp = Phaser.Math.Between(10, 18);
+      this.grantExperience(xp);
+      this.effects.spawnDamage(this.player.x, this.player.y - 30, '🔥', '#ff9040');
+      this.ui.showMessage(`🔥 Evento: brasa viva salta das cinzas! +${xp} XP`);
+    } else if (roll < 0.004 && this.timeState?.phase === 'night' && this.regionWorld?.currentRegion?.() === 'selva') {
+      const coins = Phaser.Math.Between(6, 12);
+      this.economy.addCoins(coins);
+      this.audio.playCoin();
+      this.effects.spawnDamage(this.player.x, this.player.y - 30, '🦋', '#c0a0f0');
+      this.ui.showMessage(`🦋 Evento: vaga-lumes da selva à noite! +${coins} moedas`);
+    } else if (roll < 0.005 && this.timeState?.phase === 'day' && this.regionWorld?.currentRegion?.() === 'gelo' && this.weather === 'snow') {
+      const xp = Phaser.Math.Between(8, 14);
+      this.grantExperience(xp);
+      this.effects.spawnDamage(this.player.x, this.player.y - 30, '🌨️', '#e8f4ff');
+      this.ui.showMessage(`🌨️ Evento: nevasca mágica no gelo! +${xp} XP`);
+    } else if (roll < 0.006 && this.timeState?.phase === 'night' && this.regionWorld?.currentRegion?.() === 'brejo') {
+      const xp = Phaser.Math.Between(10, 16);
+      this.grantExperience(xp);
+      this.effects.spawnDamage(this.player.x, this.player.y - 30, '🐸', '#a8e88a');
+      this.ui.showMessage(`🐸 Evento: coro de sapos do brejo à noite! +${xp} XP`);
+    } else if (roll < 0.008 && this.timeState?.phase === 'day' && this.regionWorld?.currentRegion?.() === 'vale' && this.weather === 'rain') {
+      const heal = Math.max(2, Math.round(this.player.maxHealth * 0.1));
+      this.player.health = Math.min(this.player.maxHealth, this.player.health + heal);
+      this.effects.spawnDamage(this.player.x, this.player.y - 30, '🌧️', '#8ad8f0');
+      this.ui.showMessage(`🌧️ Evento: chuva fresca no vale cura suas feridas! +${heal} vida`);
+    } else if (roll < 0.01 && this.timeState?.phase === 'night' && this.regionWorld?.currentRegion?.() === 'antiga') {
+      const xp = Phaser.Math.Between(12, 20);
+      this.grantExperience(xp);
+      this.effects.spawnDamage(this.player.x, this.player.y - 30, '👻', '#cfe0ff');
+      this.ui.showMessage(`👻 Evento: um fantasma antigo sussurrou segredos! +${xp} XP`);
+    } else if (roll < 0.012 && this.timeState?.phase === 'day' && this.regionWorld?.currentRegion?.() === 'selva') {
+      const xp = Phaser.Math.Between(10, 18);
+      this.grantExperience(xp);
+      this.effects.spawnDamage(this.player.x, this.player.y - 30, '🌺', '#ff88c0');
+      this.ui.showMessage(`🌺 Evento: flor exótica da selva te deu energia! +${xp} XP`);
+    } else if (roll < 0.015 && this.timeState?.phase === 'night' && this.regionWorld?.currentRegion?.() === 'gelo') {
+      const coins = Phaser.Math.Between(10, 18);
+      this.economy.addCoins(coins);
+      this.audio.playCoin();
+      this.effects.spawnDamage(this.player.x, this.player.y - 30, '❄️', '#cfe8ff');
+      this.ui.showMessage(`❄️ Evento: aurora boreal no gelo! +${coins} moedas`);
+    } else if (roll < 0.02 && this.timeState?.phase === 'night' && this.regionWorld?.currentRegion?.() === 'floresta') {
+      const xp = 20;
+      this.grantExperience(xp);
+      this.effects.spawnDamage(this.player.x, this.player.y - 30, '🍄', '#c080e8');
+      this.ui.showMessage(`🍄 Evento: cogumelo mágico brilhando na floresta! +${xp} XP`);
+    } else if (roll < 0.025 && this.timeState?.phase === 'day' && terrainAt(this.player.x, this.player.y + TILE * 1.2) === T.SEA) {
+      const xp = Phaser.Math.Between(5, 10);
+      this.grantExperience(xp);
+      this.effects.spawnDamage(this.player.x, this.player.y - 30, '🌊', '#8ad8f0');
+      this.ui.showMessage(`🌊 Evento: uma onda molhou seus pés na praia! +${xp} XP`);
+    } else if (roll < 0.03 && this.timeState?.phase === 'night' && this.regionWorld?.currentRegion?.() === 'areia') {
+      const coins = Phaser.Math.Between(8, 15);
+      this.economy.addCoins(coins);
+      this.audio.playCoin();
+      this.effects.spawnDamage(this.player.x, this.player.y - 30, '🦂', '#e8c060');
+      this.ui.showMessage(`🦂 Evento: um escorpião dourado cruzou a duna à noite! +${coins} moedas`);
+    } else if (roll < 0.04 && this.timeState?.phase === 'day' && this.regionWorld?.currentRegion?.() === 'brejo') {
+      // Sapo no brejo: cura pequena.
+      const heal = Math.max(1, Math.round(this.player.maxHealth * 0.08));
+      this.player.health = Math.min(this.player.maxHealth, this.player.health + heal);
+      this.effects.spawnHeal?.(this.player.x, this.player.y - 20);
+      this.effects.spawnDamage(this.player.x, this.player.y - 32, '🐸', '#8ad86a');
+      this.ui.showMessage(`🐸 Evento: um sapo do brejo te deu um beijo! +${heal} vida`);
+    } else if (roll < 0.05 && this.timeState?.phase === 'night' && this.weather === 'clear') {
+      const coins = Phaser.Math.Between(5, 12);
+      this.economy.addCoins(coins);
+      this.audio.playCoin();
+      this.effects.spawnDamage(this.player.x, this.player.y - 30, '⭐', '#fff8c8');
+      this.ui.showMessage(`⭐ Evento: estrelas cadentes na noite limpa! +${coins} moedas`);
+    } else if (roll < 0.06 && this.timeState?.phase === 'day' && this.weather === 'clear') {
+      const xp = 8;
+      this.grantExperience(xp);
+      this.effects.spawnDamage(this.player.x, this.player.y - 30, '☀️', '#ffe080');
+      this.ui.showMessage(`☀️ Evento: sol forte no céu aberto! +${xp} XP`);
+    } else if (roll < 0.08 && this.timeState?.phase === 'day') {
+      const xp = Phaser.Math.Between(2, 5);
+      this.grantExperience(xp);
+      this.effects.spawnDamage(this.player.x, this.player.y - 28, '🍃', '#8ad86a');
+      this.ui.showMessage(`🍃 Evento: uma folha soprou no vento... +${xp} XP`);
+    } else if (roll < 0.1 && this.timeState?.phase === 'night' && this.timeState.dayCount % 7 === 0) {
+      const xp = 20 + this.player.level * 2;
+      this.grantExperience(xp);
+      this.effects.spawnDamage(this.player.x, this.player.y - 32, '🌕', '#f0e8c8');
+      this.ui.showMessage(`🌕 Evento: lua cheia (dia ${this.timeState.dayCount})! +${xp} XP`);
+    } else if (roll < 0.12 && this.timeState?.phase === 'day' && this.weather !== 'dust' && terrainAt(this.player.x, this.player.y + TILE * 1.2) === T.SEA) {
+      const ok = this.inventory?.add?.('food', 1);
+      this.effects.spawnDamage(this.player.x, this.player.y - 30, '🐟', '#8ad8f0');
+      this.ui.showMessage(ok === false ? '🐟 Evento: um peixe saltou perto da praia (mochila cheia)!' : '🐟 Evento: um peixe saltou perto da praia! +1 comida');
+      if (ok !== false) this.audio.playCollect();
+    } else if (roll < 0.14 && this.timeState?.phase === 'day' && ['floresta', 'vale'].includes(this.regionWorld?.currentRegion?.())) {
+      const xp = Phaser.Math.Between(5, 12);
+      this.grantExperience(xp);
+      this.effects.spawnDamage(this.player.x, this.player.y - 30, '🦋', '#a8d8ff');
+      this.ui.showMessage(`🦋 Evento: uma borboleta azul passou... +${xp} XP`);
+    } else if (roll < 0.16 && this.timeState?.phase === 'day' && this.regionWorld?.currentRegion?.() === 'vale') {
+      const ok = this.inventory?.add?.('food', 1);
+      this.effects.spawnDamage(this.player.x, this.player.y - 30, '🐇', '#e8e0d0');
+      this.ui.showMessage(ok === false ? '🐇 Evento: um coelho passou correndo (mochila cheia)!' : '🐇 Evento: você pegou um coelhinho! +1 comida');
+      if (ok !== false) this.audio.playCollect();
+    } else if (roll < 0.18 && this.timeState?.phase === 'night') {
+      const xp = Phaser.Math.Between(15, 30);
+      this.grantExperience(xp);
+      this.effects.spawnDamage(this.player.x, this.player.y - 30, '🍀', '#6ad86a');
+      this.ui.showMessage(`🍀 Evento: trevo da sorte na noite! +${xp} XP`);
+    } else if (roll < 0.2 && this.timeState?.phase === 'day' && this.weather === 'dust') {
+      // Calor do deserto: stamina recupera mais devagar por 30 s (avisado na mensagem).
+      this.eventSlowRegenUntil = this.time.now + 30000;
+      this.effects.spawnDamage(this.player.x, this.player.y - 30, '🔥', '#ffab6b');
+      this.ui.showMessage('🔥 Evento: onda de calor no deserto! regeneração de stamina -50% por 30 s');
+    } else if (roll < 0.22 && this.timeState?.phase === 'day' && this.lastWeatherWasRain) {
+      // Arco-íris depois da chuva: presentinho visual + mensagem.
+      this.effects.spawnDamage(this.player.x, this.player.y - 34, '🌈', '#ff9ad8');
+      this.ui.showMessage('🌈 Evento: um arco-íris abriu no céu depois da chuva!');
+    } else if (roll < 0.26 && this.timeState?.phase === 'day') {
+      const coins = Phaser.Math.Between(3, 8);
+      this.economy.addCoins(coins);
+      this.audio.playCoin();
+      this.effects.spawnDamage(this.player.x, this.player.y - 30, '🐦', '#bfe8a0');
+      this.ui.showMessage(`🐦 Evento: um passarinho deixou cair uma moedinha... +${coins} moedas!`);
+    } else if (roll < 0.28) {
+      const coins = Phaser.Math.Between(8, 24);
+      this.economy.addCoins(coins);
+      this.audio.playCoin();
+      this.ui.showMessage(`🪙 Evento: um baúzinho tombou de um galho... +${coins} moedas!`);
+    } else if (roll < 0.52) {
+      const xp = Phaser.Math.Between(15, 40);
+      this.grantExperience(xp, true);
+      this.ui.showMessage(`✨ Evento: uma pedra runica brilhou perto de você! +${xp} XP`);
+    } else if (roll < 0.72 && this.player.health < this.player.maxHealth) {
+      const amount = Math.round(this.player.maxHealth * 0.3);
+      this.player.heal(amount);
+      this.effects.spawnHeal?.(this.player.x, this.player.y - 20) ?? this.effects.spawnHarvest(this.player.x, this.player.y - 20, 0x7ad84a);
+      this.ui.showMessage(`🌿 Evento: você achou ervas medicinais! +${amount} vida`);
+    } else if (roll < 0.88) {
+      this.eventSpeedUntil = this.time.now + 30000;
+      this.ui.showMessage('💨 Evento: vento a favor! +25% velocidade por 30 s');
+    } else if (roll < 0.94 && this.timeState?.phase === 'night' && this.regionWorld?.currentRegion?.() === 'gelo') {
+      // Nevasca no gelo à noite: 20% mais lento por 20 s.
+      this.eventSlowUntil = this.time.now + 20000;
+      this.effects.spawnDamage(this.player.x, this.player.y - 30, '🌨️', '#cfe8ff');
+      this.ui.showMessage('🌨️ Evento: nevasca! -20% velocidade por 20 s');
+    } else if (roll < 0.94 && this.timeState?.phase === 'night') {
+      // Cometa à noite: moedas + um pouco de XP (efeito visual leve).
+      const coins = Phaser.Math.Between(20, 45);
+      this.economy.addCoins(coins);
+      this.grantExperience(Phaser.Math.Between(10, 25), true);
+      this.audio.playCoin();
+      this.effects.spawnDamage(this.player.x, this.player.y - 34, '☄️', '#9ad8ff');
+      this.ui.showMessage(`☄️ Evento: um cometa cruzou o céu noturno! +${coins} moedas e boa sorte (+XP)`);
+    } else if (roll < 0.94 && roadAt(this.player.x, this.player.y)) {
+      // Baú abandonado na beira da estrada: moedas e, às vezes, um suprimento.
+      const coins = Phaser.Math.Between(15, 35);
+      this.economy.addCoins(coins);
+      let extra = '';
+      if (Math.random() < 0.4) {
+        const type = Math.random() < 0.5 ? 'potion' : 'food';
+        if (this.inventory.add(type, 1)) extra = ` +1 ${type === 'potion' ? 'poção' : 'comida'}`;
+      }
+      this.audio.playChest();
+      this.effects.spawnHarvest(this.player.x, this.player.y - 16, 0xffd76b);
+      this.ui.showMessage(`🧰 Evento: baú abandonado na estrada! +${coins} moedas${extra}`);
+    } else {
+      this.ui.showMessage('👀 Evento: você viu algo se mover entre as árvores... foi só o vento.');
+    }
+    this.save?.();
+  }
+
+  /** Marca/limpa o waypoint personalizado (Shift+clique no mapa grande). */
+  setWaypoint(point) {
+    // Limita o waypoint aos limites do mundo (o mapa grande pode mostrar bordas além).
+    this.waypoint = point ? {
+      x: Math.max(0, Math.min(WORLD_COLS * TILE, Math.round(point.x))),
+      y: Math.max(0, Math.min(OVERWORLD_ROWS * TILE, Math.round(point.y)))
+    } : null;
+    this.ui.showMessage(point ? `Waypoint marcado (${Math.round(point.x / 48 * 10)} m, ${Math.round(point.y / 48 * 10)} m) — seta verde no minimapa. Shift+clique de novo no mapa limpa.` : 'Waypoint removido.');
+    this.save?.();
+  }
+
+  grantSkillXp(skill, amount) {
+    const levels = this.skills?.addXp(skill, amount) ?? 0;
+    if (levels > 0 && SKILLS[skill]) {
+      const level = this.skills.level(skill);
+      this.ui.showMessage(`${SKILLS[skill].icon} ${SKILLS[skill].name} subiu para o nível ${level}!`);
+      this.audio.playCollect?.();
+      this.save?.();
+    }
+  }
+
+  /** Pedra rúnica de um vilarejo: +50% XP até o fim do dia (1x por dia). */
+  touchRuneStone(village) {
+    const day = this.timeState?.dayCount ?? 1;
+    if (this.runeDay === day) {
+      this.ui.showMessage(`💠 A pedra rúnica de ${village.name} já te abençoou hoje.`);
+      return;
+    }
+    this.runeDay = day;
+    this.audio.playCollect?.();
+    this.effects.spawnDamage(this.player.x, this.player.y - 30, '💠 ABENÇOADO!', '#9ad8ff');
+    this.ui.showMessage(`💠 Pedra rúnica de ${village.name}: +50% XP até amanhecer!`);
+    this.save?.();
+  }
+
   grantExperience(amount, announce = true) {
     const levelBefore = this.progression.level;
-    // Evento "XP em dobro" (dia 7, 14...) ou bônus de novato da Fogueira (não acumulam).
-    const boosted = Math.round((Number(amount) || 0) * this.xpBoost.multiplier(this.timeState?.dayCount ?? 1));
+    // Evento "XP em dobro" (dia 7, 14...), bônus de novato da Fogueira e pedra rúnica (não acumulam entre si no máx? acumulam o rúnico).
+    let boosted = Math.round((Number(amount) || 0) * this.xpBoost.multiplier(this.timeState?.dayCount ?? 1));
+    if (this.runeDay === (this.timeState?.dayCount ?? 1)) boosted = Math.round(boosted * 1.5);
     amount = boosted;
     const result = this.progression.addXp(amount);
     this.player.recalculateEquipment(this.camp.equipment);
@@ -1326,6 +2068,12 @@ export class GameScene extends Phaser.Scene {
       this.showLevelUpChoice();
     } else if (announce) {
       this.ui.showMessage(`+${amount} XP`);
+      // Texto flutuante ciano no jogador (com throttle para não virarwall of text em hordas).
+      const now = this.time.now;
+      if (!this.lastXpFloatAt || now - this.lastXpFloatAt > 700) {
+        this.lastXpFloatAt = now;
+        this.effects?.spawnDamage(this.player.x, this.player.y - 34, `+${amount} XP`, '#8ad8ff');
+      }
     }
     this.save();
     return result;
@@ -1456,7 +2204,10 @@ export class GameScene extends Phaser.Scene {
 
   respawn() {
     this.isRespawning = true;
+    // Marca onde o jogador caiu (caveira vermelha no minimapa) para voltar e pegar o loot.
+    this.deathMarker = { x: Math.round(this.player.x), y: Math.round(this.player.y) };
     this.arena?.end('Você caiu na arena. Fim da tentativa.');
+    this.achievements?.note('deaths'); // conquista de mortes (só aviso/título)
     const day = this.timeState.dayCount;
     const camp = this.camp;
     const raidActive = Boolean(this.raid?.active);
@@ -1655,7 +2406,7 @@ export class GameScene extends Phaser.Scene {
         ? 0xe2b64d
         : RESOURCE_TYPES[reward.type]?.accent ?? 0x9ed36e;
       this.effects.spawnHarvest(structure.x, structure.y - 8, accent);
-      this.audio.playCollect();
+      if (reward.loot) this.audio.playChest(); else this.audio.playCollect();
       const label = definition.label.toLowerCase();
       this.ui.showMessage(Object.keys(leftover).length > 0
         ? INVENTORY_CONFIG.fullMessage
@@ -1807,55 +2558,15 @@ export class GameScene extends Phaser.Scene {
    * do herói, no celular e no PC, com transição suave (120 -> 180 px); assim não cobrem a arte do
    * acampamento nem uns aos outros. "Sempre" mostra todos.
    */
-  /**
-   * Copas na frente do herói (rodada 3): árvore, pinheiro ou rocha alta desenhada DEPOIS do herói (base mais
-   * abaixo) cujo desenho cobre o corpo dele fica semitransparente (45 %), com transição curta.
-   */
-  updateCanopyFade(delta) {
-    this.canopyTimer = (this.canopyTimer ?? 0) - delta;
-    const step = Math.min(1, delta / 120);
-    if (this.canopyTimer <= 0) {
-      this.canopyTimer = 90;
-      const p = this.player;
-      const hero = { left: p.x - 9, right: p.x + 9, top: p.y - 46, bottom: p.y - 4 };
-      const list = [...(this.world?.treeSprites ?? [])];
-      for (const chunk of this.regionWorld?.chunks?.values() ?? []) if (chunk.active) for (const o of chunk.objects) if (o.displayHeight > 40 && o.depth > -900) list.push(o);
-      const faded = new Set();
-      for (const o of list) {
-        if (!o.active || o.depth <= (p.depth ?? p.y) || o.y - p.y > 120 || Math.abs(o.x - p.x) > 90) continue;
-        const b = o.getBounds();
-        // Só a copa (acima do tronco) conta: passar na frente do pé da árvore não apaga nada.
-        const bottom = o.y - Math.min(18, o.displayHeight * 0.18);
-        if (b.right > hero.left && b.left < hero.right && b.top < hero.bottom && bottom > hero.top) faded.add(o);
-      }
-      for (const o of this.canopyFaded ?? []) if (!faded.has(o)) o.canopyTarget = 1;
-      for (const o of faded) o.canopyTarget = 0.45;
-      this.canopyFaded = new Set([...(this.canopyFaded ?? []), ...faded]);
-    }
-    for (const o of this.canopyFaded ?? []) {
-      if (!o.active) { this.canopyFaded.delete(o); continue; }
-      const target = o.canopyTarget ?? 1;
-      const alpha = o.alpha + (target - o.alpha) * step * 2;
-      o.setAlpha(Math.abs(alpha - target) < 0.02 ? target : alpha);
-      if (target === 1 && o.alpha === 1) this.canopyFaded.delete(o);
-    }
-  }
-
   updateBuildingLabels() {
     const mode = this.settingsPanel?.labels ?? 'auto';
-    const labels = [...Object.values(this.camp.buildings).map((building) => building.label), this.camp.defense?.wallBuilding?.label, this.camp.campSign]
+    const labels = [...Object.values(this.camp.buildings).map((building) => building.label), this.camp.defense?.wallBuilding?.label]
       .filter((label, index, list) => label?.active && list.indexOf(label) === index);
-    // Rodada 3: só o rótulo mais próximo do herói (nada de "ACAMPAMENTO" e "MURALHA" empilhados) e nenhum
-    // rótulo com inimigo a menos de 120 px dele (não cobre a luta).
-    const distanceOf = (label) => Phaser.Math.Distance.Between(this.player.x, this.player.y, label.x, label.y + 30);
-    const nearest = mode === 'always' ? null : labels.reduce((best, label) => (!best || distanceOf(label) < distanceOf(best) ? label : best), null);
-    const enemies = this.enemies ? [...this.enemies].filter((enemy) => enemy?.active) : [];
     for (const label of labels) {
       let alpha = 1;
       if (mode !== 'always') {
-        const distance = distanceOf(label);
-        alpha = label !== nearest ? 0 : distance <= 120 ? 1 : distance >= 180 ? 0 : 1 - (distance - 120) / 60;
-        if (alpha > 0 && enemies.some((enemy) => Math.abs(enemy.x - label.x) < 120 && Math.abs(enemy.y - label.y) < 120)) alpha = 0;
+        const distance = Phaser.Math.Distance.Between(this.player.x, this.player.y, label.x, label.y + 30);
+        alpha = distance <= 120 ? 1 : distance >= 180 ? 0 : 1 - (distance - 120) / 60;
       }
       if (Math.abs(label.alpha - alpha) > 0.02) label.setAlpha(alpha);
     }
@@ -2053,7 +2764,7 @@ export class GameScene extends Phaser.Scene {
         }
         this.campaign?.emit({ type: 'craft', target: arg });
         this.effects.spawnHarvest(this.player.x, this.player.y - 10, 0xf2c45c);
-        this.audio.playCollect();
+        this.audio.playCraft();
         const gained = [formatGain(items), ...extras].filter(Boolean).join(', ');
         result = { ok: true, message: `${recipe.name}: ${gained}.` };
       }
@@ -2335,6 +3046,19 @@ export class GameScene extends Phaser.Scene {
       this.ui.showMessage('Só é possível dormir junto à fogueira ou à casa.');
       return { ok: false, message: 'Só é possível dormir junto à fogueira ou à casa.' };
     }
+    return this.doSleep('acampamento');
+  }
+
+  /** Dormir numa cama de vilarejo (interação da feature 'bed'). Cura e avança para o amanhecer. */
+  sleepAtBed(village) {
+    const place = village?.name ?? 'vilarejo';
+    const result = this.doSleep(place);
+    if (result.ok && village) this.world.discovered?.add?.(`vila:${village.id}`);
+    return result;
+  }
+
+  /** Lógica comum de dormir: valida fase/perigos, pula a noite, cura e salva. */
+  doSleep(place) {
     const phase = this.dayNight.getState().phase;
     if (phase !== 'night' && phase !== 'dawn') {
       this.ui.showMessage('Você só pode pular a noite depois que ela começar.');
@@ -2347,7 +3071,9 @@ export class GameScene extends Phaser.Scene {
     }
     this.dayNight.skipNight();
     this.enemyDirector.clearNightEnemies();
+    this.sleptJustNow = true; // evita aviso duplo de clima (o doSleep já mostra na própria mensagem)
     this.handleDayAdvance(this.dayNight.dayCount);
+    this.sleptJustNow = false;
     this.world.setNight(false);
     this.harvestStructures.setNight(false);
     this.lastPhase = 'day';
@@ -2356,7 +3082,10 @@ export class GameScene extends Phaser.Scene {
     const recoveryMessage = this.recoverAtCamp();
     const extra = this.applyWakeUp();
     this.audio.playDawn();
-    const message = `Você dormiu até amanhecer. Dia ${this.dayNight.dayCount} começou. ${recoveryMessage}${extra}`;
+    // Clima previsto para o novo dia na região atual.
+    const todayWeather = weatherAt(this.regionWorld.currentRegion(), this.timeState);
+    const weatherLabel = { clear: 'céu limpo ☀️', rain: 'chuva 🌧️', snow: 'neve ❄️', dust: 'poeira 🌪️', ash: 'cinzas 🌋' }[todayWeather] ?? todayWeather;
+    const message = `Você dormiu até amanhecer no ${place}. Dia ${this.dayNight.dayCount} começou (${weatherLabel}). ${recoveryMessage}${extra}`;
     this.ui.showMessage(message);
     this.save();
     return { ok: true, message };
@@ -2452,6 +3181,7 @@ export class GameScene extends Phaser.Scene {
         baseAttack: this.player.baseAttack, baseDefense: this.player.baseDefense
       },
       progression: this.progression.serialize(),
+      skills: this.skills.serialize(),
       economy: this.economy.serialize(),
       boss: this.boss ? this.boss.serialize() : { defeated: true, health: 0 },
       camp: this.camp.serialize(),
@@ -2467,6 +3197,9 @@ export class GameScene extends Phaser.Scene {
       },
       deathBackpacks: this.deathBackpacks.serialize(),
       harvestStructures: this.harvestStructures.serialize(),
+      fog: this.world.serializeFog(),
+      waypoint: this.waypoint ? { ...this.waypoint } : null,
+      runeDay: this.runeDay ?? 0,
       regions: this.regionWorld?.serialize(),
       bestiary: this.bestiary?.serialize(),
       gear: this.gear?.serialize(),

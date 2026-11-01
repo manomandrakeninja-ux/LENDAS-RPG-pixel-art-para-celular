@@ -1,5 +1,5 @@
 import { migrateLegacyDayTime } from './DayNightCycle.js';
-import { INVENTORY_CONFIG } from './config.js';
+import { INVENTORY_CONFIG, INVENTORY_MAX_LEVEL, inventorySlotsForLevel } from './config.js';
 
 export const SAVE_VERSION = 2;
 export const SAVE_KEY_V1 = 'brumavale-save-v1';
@@ -32,13 +32,16 @@ export function migrateV1ToV2(data = {}) {
     },
     player: data.player ?? { health: 100, maxHealth: 100, attack: 12, defense: 0 },
     progression: data.progression ?? {},
+    skills: (data.skills && typeof data.skills === 'object') ? data.skills : {},
     economy: data.economy ?? {},
     boss: data.boss ?? {},
     camp: data.camp ?? { levels: {}, questKills: 0, questClaimed: false, crafted: {}, storage: {} },
     farm: data.farm ?? { plots: [], animals: {} },
     market: data.market ?? { day: 1, offers: [] },
     deathBackpacks: Array.isArray(data.deathBackpacks) ? data.deathBackpacks : [],
-    harvestStructures: Array.isArray(data.harvestStructures) ? data.harvestStructures : []
+    harvestStructures: Array.isArray(data.harvestStructures) ? data.harvestStructures : [],
+    fog: Array.isArray(data.fog) ? data.fog : [],
+    waypoint: (data.waypoint && Number.isFinite(data.waypoint.x) && Number.isFinite(data.waypoint.y)) ? { x: data.waypoint.x, y: data.waypoint.y } : null
   };
 }
 
@@ -62,12 +65,16 @@ export function migrateSave(data = {}) {
         ...(data.inventory ?? {}),
         capacityVersion: INVENTORY_CONFIG.capacityVersion,
         maxSlots: Number(data.inventory?.capacityVersion) >= INVENTORY_CONFIG.capacityVersion
-          ? Math.min(INVENTORY_CONFIG.maxSlots, Math.max(1, Number(data.inventory?.maxSlots) || INVENTORY_CONFIG.maxSlots))
+          ? Math.min(
+              inventorySlotsForLevel(INVENTORY_MAX_LEVEL),
+              Math.max(1, Number(data.inventory?.maxSlots) || INVENTORY_CONFIG.maxSlots)
+            )
           : INVENTORY_CONFIG.maxSlots,
         unitsPerSlot: INVENTORY_CONFIG.unitsPerSlot,
         items: data.inventory?.items ?? {}
       },
       progression: data.progression ?? {},
+      skills: (data.skills && typeof data.skills === 'object') ? data.skills : {},
       economy: data.economy ?? {},
       boss: data.boss ?? {},
       camp: {
@@ -79,7 +86,9 @@ export function migrateSave(data = {}) {
       farm: data.farm ?? { plots: [], animals: {} },
       market: data.market ?? { day: 1, offers: [] },
       deathBackpacks: Array.isArray(data.deathBackpacks) ? data.deathBackpacks : [],
-      harvestStructures: Array.isArray(data.harvestStructures) ? data.harvestStructures : []
+      harvestStructures: Array.isArray(data.harvestStructures) ? data.harvestStructures : [],
+      fog: Array.isArray(data.fog) ? data.fog : [],
+      waypoint: (data.waypoint && Number.isFinite(data.waypoint.x) && Number.isFinite(data.waypoint.y)) ? { x: data.waypoint.x, y: data.waypoint.y } : null
     };
   }
   return migrateV1ToV2(data);
@@ -174,13 +183,24 @@ export function savePreRaidSnapshot() {
   }
 }
 
-/** Volta ao save de antes do ataque. Sem cópia, mantém o save atual. */
+/** Volta ao save de antes do ataque. Sem cópia, mantém o save atual.
+ *  Ao recomeçar após a derrota no ataque, o acampamento volta reparado (durability 100):
+ *  isso é a regra de jogo (os prédios são reconstruídos) e também elimina a corrida entre
+ *  o restore e novos danos durante o scene.restart. */
 export function restorePreRaidSnapshot() {
   if (!storageAvailable()) return false;
   const snapshot = localStorage.getItem(SAVE_KEY_PRE_RAID);
   if (snapshot === null) return false;
   try {
-    localStorage.setItem(SAVE_KEY_V2, snapshot);
+    const parsed = JSON.parse(snapshot);
+    if (parsed && typeof parsed === 'object') {
+      const durability = {};
+      for (const key of Object.keys(parsed.camp?.durability ?? {})) durability[key] = 100;
+      parsed.camp = { ...(parsed.camp ?? {}), durability };
+      localStorage.setItem(SAVE_KEY_V2, JSON.stringify(parsed));
+    } else {
+      localStorage.setItem(SAVE_KEY_V2, snapshot);
+    }
     return true;
   } catch {
     return false;

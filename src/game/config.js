@@ -1,3 +1,5 @@
+import { OVERWORLD } from '../data/worldRegions.js';
+
 export const INVENTORY_CONFIG = Object.freeze({
   maxSlots: 12,
   unitsPerSlot: 1000,
@@ -5,11 +7,41 @@ export const INVENTORY_CONFIG = Object.freeze({
   fullMessage: 'Mochila cheia! Volte ao acampamento'
 });
 
-// Mundo grande (Vale + regiões novas + mar e ilhas). O Vale original continua em
-// 0..2880 x 0..2160; as salas das cavernas ficam abaixo, fora do mapa visível.
+// Níveis de evolução da mochila: 12 → 24 → 36 espaços.
+// O nível 1 (12 slots) é o base e não custa nada.
+export const INVENTORY_LEVELS = Object.freeze([
+  { level: 1, slots: 12 },
+  { level: 2, slots: 24 },
+  { level: 3, slots: 36 }
+]);
+export const INVENTORY_MAX_LEVEL = INVENTORY_LEVELS.length;
+
+/** Quantos slots a mochila tem no nível informado (1, 2 ou 3). */
+export function inventorySlotsForLevel(level) {
+  const entry = INVENTORY_LEVELS.find((l) => l.level === level);
+  return entry ? entry.slots : INVENTORY_CONFIG.maxSlots;
+}
+
+/** Custo para evoluir a mochila para o nível alvo (pago na Casa/armazém). */
+export function inventoryUpgradeCost(targetLevel) {
+  const costs = {
+    2: { wood: 80, stone: 40, iron: 15, coins: 300 },
+    3: { wood: 200, stone: 100, iron: 50, gold: 5, coins: 1000 }
+  };
+  return costs[targetLevel] ? { ...costs[targetLevel] } : null;
+}
+
+/** Descrição curta de cada nível, para mostrar na interface. */
+export function inventoryLevelDescription(level) {
+  const byLevel = { 1: 'Simples (12 espaços)', 2: 'Grande (24 espaços)', 3: 'Enorme (36 espaços)' };
+  return byLevel[level] ?? '';
+}
+
+// Mundo grande 400x300 ladrilhos (Vale + regiões + mar e ilhas). O Vale original
+// continua em 0..2880 x 0..2160 no canto noroeste; as salas das cavernas ficam abaixo.
 export const WORLD = {
-  width: 7200,
-  height: 5376,
+  width: OVERWORLD.width,
+  height: OVERWORLD.height,
   tileSize: 48,
   camp: { x: 1440, y: 1080 },
   valley: { width: 2880, height: 2160 }
