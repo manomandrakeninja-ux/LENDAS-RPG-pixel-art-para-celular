@@ -68,7 +68,10 @@ const UP = (() => {
 export const DEFAULT_RIG = Object.freeze({ down: DOWN, left: mirrorDir(RIGHT), right: RIGHT, up: UP });
 
 /** Ajustes por textura (ex.: 'player-warrior': { down: { hands: { 7: [15, 14] } } }). */
-export const RIG_OVERRIDES = { ...SKIN_RIGS, ...PAINTED_RIGS };
+// As folhas atuais foram redesenhadas juntas, com o mesmo centro e proporção.
+// Os pontos antigos de SKIN_RIGS pertenciam às folhas anteriores e deixavam a
+// espada deslocada para fora do corpo em alguns quadros/direções.
+export const RIG_OVERRIDES = { ...PAINTED_RIGS };
 // As 4 guerreiras usam o mesmo ajuste.
 for (const id of ['warrior-blue', 'warrior-green', 'warrior-black']) RIG_OVERRIDES[`player-${id}`] ??= RIG_OVERRIDES['player-warrior'];
 

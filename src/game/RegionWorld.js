@@ -114,6 +114,10 @@ export class RegionWorld {
     this.tileIndex = index;
     const map = scene.make.tilemap({ tileWidth: TILE, tileHeight: TILE, width: cols, height: rows });
     this.map = map;
+    // Evita sangramento de pixels entre células do atlas quando a câmera se move
+    // em posições fracionárias (as linhas finas apareciam entre terrenos).
+    scene.textures.get('grass')?.setFilter(Phaser.Textures.FilterMode.NEAREST);
+    scene.textures.get('terrain-tiles')?.setFilter(Phaser.Textures.FilterMode.NEAREST);
     const grass = map.addTilesetImage('grass', 'grass', TILE, TILE, 0, 0, GRASS_GID);
     const terrain = map.addTilesetImage('terrain', 'terrain-tiles', TILE, TILE, 0, 0, TERRAIN_GID);
     // Textura da camada animada: um quadro de cada tipo lado a lado, redesenhada a cada passo.
