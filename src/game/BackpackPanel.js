@@ -155,7 +155,8 @@ export class BackpackPanel {
     this.grid.innerHTML = slots;
     const camp = this.scene.camp;
     const currentLevel = camp?.inventoryLevel ?? 1;
-    this.summary.textContent = `Nível ${currentLevel} • ${inventory.usedSlots}/${inventory.maxSlots} espaços • ${formatCount(inventory.total)}/${formatCount(inventory.totalCapacity)} itens`;
+    const capacityLabel = inventory.totalCapacity.toLocaleString('pt-BR');
+    this.summary.textContent = `Nível ${currentLevel} • ${inventory.usedSlots}/${inventory.maxSlots} espaços • ${formatCount(inventory.total)}/${capacityLabel} itens`;
     // Botão de evolução da mochila (apenas perto do acampamento e enquanto houver próximo nível).
     let upgradeButton = '';
     if (camp && camp.inventoryLevel < INVENTORY_MAX_LEVEL) {

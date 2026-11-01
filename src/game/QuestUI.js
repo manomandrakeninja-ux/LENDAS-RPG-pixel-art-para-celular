@@ -128,7 +128,9 @@ export class QuestUI {
     const item = (type) => RESOURCE_TYPES[type]?.label ?? type;
     const region = objective.region === 'noite' ? ' à noite' : objective.region ? ` (${REGIONS[objective.region]?.name})` : '';
     switch (objective.type) {
-      case 'gather': return `Obter ${item(objective.target)}`;
+      case 'gather': return objective.target === 'wood'
+        ? 'Cortar madeira em árvores e tocos'
+        : `Obter ${item(objective.target)}`;
       case 'structure': return objective.target === 'chest' ? 'Abrir baús' : objective.target === 'mushroom' ? 'Colher cogumelos' : `Coletar ${objective.target}`;
       case 'kill': return `Derrotar ${this.enemyName(objective.target)}${region}`;
       case 'boss': return `Derrotar ${this.enemyName(objective.target)}`;
@@ -195,6 +197,7 @@ export class QuestUI {
     this.tracker.innerHTML = `
       <p class="quest-tracker__kicker">Capítulo ${tracked.chapter} • missão ${tracked.number}/100</p>
       <h3>${escapeHtml(tracked.title)}</h3>
+      ${tracked.number === 1 ? '<p class="quest-tracker__guide">Comece perto do acampamento: aproxime-se de uma árvore ou toco e pressione E para coletar.</p>' : ''}
       <ul>${lines}</ul>
       ${route}
       ${ready ? `<p class="quest-tracker__ready">Pronta! Entregue a ${escapeHtml(NPCS[tracked.npc]?.name ?? 'pelo Diário')}</p>` : ''}`;
