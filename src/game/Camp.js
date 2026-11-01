@@ -26,6 +26,8 @@ import { quantizePixels } from '../art/palette.js';
 import { OVERLAY_DEPTH } from './depths.js';
 import { AUXILIARY_BUILDINGS, AUXILIARY_ORDER, auxiliaryUpgradeCost } from '../data/auxiliaryBuildings.js';
 
+export const AUXILIARY_COLLECTION_COOLDOWN_MS = 5 * 60 * 1000;
+
 export const BUILDINGS = BUILDING_DEFS;
 
 // Prédios com sprite do atlas; Fogueira, Muralha e Torre têm visual próprio.
@@ -59,6 +61,10 @@ export class Camp {
     }
     this.auxiliaryLevels = Object.fromEntries(AUXILIARY_ORDER.map((key) => [key, Math.max(1, Math.min(10, Number(saved.auxiliaryLevels?.[key]) || 1))]));
     this.auxiliaryStock = Object.fromEntries(Object.entries(saved.auxiliaryStock ?? {}).map(([type, amount]) => [type, Math.max(0, Math.floor(Number(amount) || 0))]));
+    this.auxiliaryNextCollectionAt = Object.fromEntries(AUXILIARY_ORDER.map((key) => [
+      key,
+      Math.max(0, Number(saved.auxiliaryNextCollectionAt?.[key]) || 0)
+    ]));
     this.durability = {};
     for (const key of BUILDING_ORDER) {
       const value = Number(saved.durability?.[key]);
@@ -602,6 +608,12 @@ export class Camp {
   collectAuxiliary(key) {
     const level = this.auxiliaryLevels[key];
     if (!level) return { ok: false, message: 'Construção desconhecida.' };
+    const now = Date.now();
+    const nextAt = this.auxiliaryNextCollectionAt[key] ?? 0;
+    if (now < nextAt) {
+      const seconds = Math.ceil((nextAt - now) / 1000);
+      return { ok: false, reason: 'cooldown', nextAt, remainingSeconds: seconds, message: `A próxima coleta estará disponível em ${Math.floor(seconds / 60)}min ${seconds % 60}s.` };
+    }
     const produced = key === 'sawmill'
       ? { wood: 4 + level * 2 }
       : { stone: 3 + level, iron: Math.max(1, Math.floor(level / 2)), coal: Math.max(1, Math.floor(level / 3)) };
@@ -621,9 +633,11 @@ export class Camp {
       if (toBag + stored > 0) delivered[type] = toBag + stored;
     }
     const total = Object.values(delivered).reduce((sum, value) => sum + value, 0);
-    return total > 0
-      ? { ok: true, delivered, message: `${AUXILIARY_BUILDINGS[key].name}: ${Object.entries(delivered).map(([type, amount]) => `${amount} ${RESOURCE_TYPES[type]?.label?.toLowerCase() ?? type}`).join(', ')}.` }
-      : { ok: false, message: 'Mochila e armazém estão cheios.' };
+    if (total > 0) {
+      this.auxiliaryNextCollectionAt[key] = now + AUXILIARY_COLLECTION_COOLDOWN_MS;
+      return { ok: true, delivered, nextAt: this.auxiliaryNextCollectionAt[key], message: `${AUXILIARY_BUILDINGS[key].name}: ${Object.entries(delivered).map(([type, amount]) => `${amount} ${RESOURCE_TYPES[type]?.label?.toLowerCase() ?? type}`).join(', ')}. Próxima coleta em 5 min.` };
+    }
+    return { ok: false, message: 'Mochila e armazém estão cheios.' };
   }
 
   upgrade(key) {
@@ -849,6 +863,7 @@ export class Camp {
       levels: { ...this.levels },
       auxiliaryLevels: { ...this.auxiliaryLevels },
       auxiliaryStock: { ...this.auxiliaryStock },
+      auxiliaryNextCollectionAt: { ...this.auxiliaryNextCollectionAt },
       durability: { ...this.durability },
       wallHp: this.defense ? Math.round(this.defense.wallHp) : this.savedWallHp,
       questKills: this.questKills,
