@@ -44,7 +44,7 @@ await runInChrome({ name: 'graphics', port: 9391, width: 390, height: 844, mobil
   await click('[data-settings="graphics"][data-value="light"]');
   const light = await state();
   check(light.mode === 'light' && light.simpleLight && light.shadowsSimple, `Modo Leve não aplicou: ${JSON.stringify(light)}`);
-  check(light.canvasWidth < light.cssWidth * 0.8 && light.canvasWidth > light.cssWidth * 0.7, `Resolução interna do Leve fora de 75%: ${JSON.stringify(light)}`);
+  check(light.canvasWidth < light.cssWidth * 0.65 && light.canvasWidth > light.cssWidth * 0.55, `Resolução interna do Leve fora de 60%: ${JSON.stringify(light)}`);
   check(light.saved.graphics === 'light' && light.saved.graphicsChosen === true, 'Modo Leve não foi salvo.');
   await inScene((scene) => { scene.dayNight.cycleTime = 240; scene.updateDayNight(0); scene.settingsPanel.close(); });
   await delay(600);

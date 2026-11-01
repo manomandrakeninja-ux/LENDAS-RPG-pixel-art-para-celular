@@ -2586,6 +2586,10 @@ export class GameScene extends Phaser.Scene {
       : Infinity;
     // Pontos de missão podem compartilhar a posição de árvores e outros nós.
     // A ação contextual deve coletar o recurso próximo antes de abrir o texto.
+    // Pontos de missão que não são de coleta (baú, altar, resgate…) abrem mesmo com árvore/pedra encostada, senão a missão trava.
+    const questTarget = this.campaign?.nearestInteraction();
+    const questChest = questTarget?.type === 'site' && this.campaign.sites.get(questTarget.id)?.def.kind !== 'source';
+    if (questChest && this.campaign.interact()) return;
     if (!resource && !structure && !backpack) {
       if (this.campaign?.interact()) return;
       // Incidente no acampamento (marcador "!"), farol apagado e pesca no píer.
