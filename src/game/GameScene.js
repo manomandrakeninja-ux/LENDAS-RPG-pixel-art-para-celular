@@ -2596,7 +2596,9 @@ export class GameScene extends Phaser.Scene {
   }
 
   upgradeBuilding(key) {
-    const result = this.camp.upgrade(key);
+    const result = this.camp.auxiliaryLevels?.[key] !== undefined
+      ? this.camp.upgradeAuxiliary(key)
+      : this.camp.upgrade(key);
     if (result.ok) {
       if (key === 'farm') this.farm.setLevel(this.camp.levels.farm);
       if (key === 'market') this.market.setLevel(this.camp.levels.market);

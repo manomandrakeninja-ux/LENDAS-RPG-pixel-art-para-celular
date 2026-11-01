@@ -24,6 +24,7 @@ import { CampDefense } from './CampDefense.js';
 import { freeUnitsFor, slotsUsed, storeBundle, canStoreBundle } from './storageSlots.js';
 import { quantizePixels } from '../art/palette.js';
 import { OVERLAY_DEPTH } from './depths.js';
+import { AUXILIARY_BUILDINGS, AUXILIARY_ORDER, auxiliaryUpgradeCost } from '../data/auxiliaryBuildings.js';
 
 export const BUILDINGS = BUILDING_DEFS;
 
@@ -56,6 +57,7 @@ export class Camp {
       }
       this.levels[key] = clampLevel(key, raw ?? BUILDING_DEFS[key].startLevel);
     }
+    this.auxiliaryLevels = Object.fromEntries(AUXILIARY_ORDER.map((key) => [key, Math.max(1, Math.min(10, Number(saved.auxiliaryLevels?.[key]) || 1))]));
     this.durability = {};
     for (const key of BUILDING_ORDER) {
       const value = Number(saved.durability?.[key]);
@@ -201,6 +203,7 @@ export class Camp {
       .setAlpha(0.05)
       .setDepth(OVERLAY_DEPTH + 4501 + y / 1000);
     if (key === 'forge') glow.setTint(0xff9a4a);
+    this.animateStructure(sprite, glow, key.length * 97);
     this.lightGlows.push(glow);
     const building = { sprite, glow, label: this.makeLabel(key, x, y - 55), sprites: [sprite], obstacles: [] };
     this.placeFootprint(key, building, visual?.stage ?? 1);
@@ -219,7 +222,7 @@ export class Camp {
     };
     this.auxiliaryBuildings = {};
     for (const [key, definition] of Object.entries(definitions)) {
-      const stage = visualStage(this.levels[definition.sourceLevel]);
+      const stage = visualStage(this.auxiliaryLevels[key]);
       const sprite = this.scene.add.image(this.x + definition.x, this.y + definition.y, `camp-${key}-${stage}`)
         .setOrigin(0.5, 0.86)
         .setScale(stage === 1 ? 0.13 : stage === 4 ? 0.145 : 0.16)
@@ -227,12 +230,37 @@ export class Camp {
         .setInteractive({ useHandCursor: true });
       sprite.on('pointerdown', (pointer, localX, localY, event) => {
         event?.stopPropagation?.();
-        this.scene.ui?.showMessage(`${definition.label} • visual NV ${stage}`);
+        this.scene.openBuilding?.(key);
       });
       this.scene.obstacles?.add(sprite.x, sprite.y + 8, 86, 28);
       const label = this.makeLabel(key, sprite.x, sprite.y - 78);
       label.setText(`${definition.label} • NV ${stage}`);
+      this.animateStructure(sprite, null, key.length * 113);
       this.auxiliaryBuildings[key] = { sprite, label, definition, stage };
+    }
+  }
+
+  animateStructure(sprite, glow, seed = 0) {
+    const baseY = sprite.y;
+    this.scene.tweens.add({
+      targets: sprite,
+      y: baseY - 1,
+      duration: 2200 + (seed % 700),
+      ease: 'Sine.easeInOut',
+      yoyo: true,
+      repeat: -1,
+      delay: seed % 500
+    });
+    if (glow) {
+      this.scene.tweens.add({
+        targets: glow,
+        alpha: { from: 0.04, to: 0.1 },
+        duration: 1500 + (seed % 600),
+        ease: 'Sine.easeInOut',
+        yoyo: true,
+        repeat: -1,
+        delay: seed % 300
+      });
     }
   }
 
@@ -276,7 +304,7 @@ export class Camp {
 
   refreshAuxiliaryBuildings() {
     for (const [key, building] of Object.entries(this.auxiliaryBuildings ?? {})) {
-      const stage = visualStage(this.levels[building.definition.sourceLevel]);
+      const stage = visualStage(this.auxiliaryLevels[key]);
       if (stage === building.stage) continue;
       building.stage = stage;
       building.sprite.setTexture(`camp-${key}-${stage}`)
@@ -555,6 +583,21 @@ export class Camp {
     return upgradeCost(key, this.levels[key] + 1);
   }
 
+  auxiliaryUpgradeCostFor(key) {
+    return auxiliaryUpgradeCost(key, (this.auxiliaryLevels[key] ?? 1) + 1);
+  }
+
+  upgradeAuxiliary(key) {
+    if (!AUXILIARY_BUILDINGS[key]) return { ok: false, message: 'Construção desconhecida.' };
+    const next = (this.auxiliaryLevels[key] ?? 1) + 1;
+    const cost = auxiliaryUpgradeCost(key, next);
+    if (!cost) return { ok: false, message: 'Nível máximo atingido.' };
+    if (!this.pay(cost)) return { ok: false, message: 'Recursos insuficientes.' };
+    this.auxiliaryLevels[key] = next;
+    this.refreshAuxiliaryBuildings();
+    return { ok: true, message: `${AUXILIARY_BUILDINGS[key].name} melhorada para o nível ${next}!` };
+  }
+
   upgrade(key) {
     const definition = BUILDING_DEFS[key];
     if (!definition) return { ok: false, message: 'Construção desconhecida.' };
@@ -776,6 +819,7 @@ export class Camp {
     return {
       buildingLevelsVersion: 3,
       levels: { ...this.levels },
+      auxiliaryLevels: { ...this.auxiliaryLevels },
       durability: { ...this.durability },
       wallHp: this.defense ? Math.round(this.defense.wallHp) : this.savedWallHp,
       questKills: this.questKills,
