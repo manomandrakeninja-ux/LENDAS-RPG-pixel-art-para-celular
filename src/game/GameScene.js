@@ -308,6 +308,21 @@ export class GameScene extends Phaser.Scene {
       camp: 'C', map: 'M', rest: 'F', sleep: 'R', escape: 'ESC'
     });
     this.cursors = this.input.keyboard.createCursorKeys();
+    // Fallback global para navegadores que não entregam o estado de movimento
+    // ao teclado do Phaser quando o foco está no BODY ou em um botão da HUD.
+    this.movementKeyCodes = Object.freeze({
+      KeyW: this.keys.up, KeyA: this.keys.left, KeyS: this.keys.down, KeyD: this.keys.right,
+      ArrowUp: this.cursors?.up, ArrowLeft: this.cursors?.left,
+      ArrowDown: this.cursors?.down, ArrowRight: this.cursors?.right
+    });
+    this.handleMovementKey = (event) => {
+      const key = this.movementKeyCodes[event.code];
+      if (!key) return;
+      key.isDown = event.type === 'keydown';
+      event.preventDefault();
+    };
+    window.addEventListener('keydown', this.handleMovementKey, true);
+    window.addEventListener('keyup', this.handleMovementKey, true);
     this.input.keyboard.on('keydown', () => { this.audio.unlock(); this.audio.startAmbience(); });
     this.input.keyboard.on('keydown-L', () => {
       if (this.campaign?.ui?.isOpen || !this.overlayBlocked()) this.toggleJournal();
@@ -459,6 +474,10 @@ export class GameScene extends Phaser.Scene {
     window.addEventListener('pagehide', this.handlePageHide);
 
     this.events.once('shutdown', () => this.save());
+    this.events.once('shutdown', () => {
+      window.removeEventListener('keydown', this.handleMovementKey, true);
+      window.removeEventListener('keyup', this.handleMovementKey, true);
+    });
     this.events.once('shutdown', () => {
       this.game.canvas.removeEventListener('pointerdown', this.handleCanvasPointerDown);
       this.gameOverButton.removeEventListener('click', this.handleGameOverRestart);
