@@ -271,6 +271,12 @@ export class LanSync {
       this.refreshPanel();
       return;
     }
+    if (window.location.protocol === 'https:' && url.startsWith('ws://')) {
+      this.status = 'offline';
+      this.lastError = 'HTTPS bloqueia ws://; use wss:// com servidor seguro ou abra a versao local em http://';
+      this.refreshPanel();
+      return;
+    }
     this.name = sanitizeName(name ?? this.name);
     this.address = url;
     saveLanPrefs({ name: this.name, address: this.address });

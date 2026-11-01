@@ -2295,8 +2295,6 @@ export class GameScene extends Phaser.Scene {
 
   interact() {
     if (this.mining || this.overlayBlocked() || this.campaign?.ui?.isOpen) return;
-    if (this.campaign?.interact()) return;
-    if (this.regionWorld?.interact()) return;
     const resource = this.world.nearbyResource(this.player.x, this.player.y);
     const structure = this.harvestStructures.nearest(this.player.x, this.player.y);
     const backpack = this.deathBackpacks.nearest(this.player.x, this.player.y);
@@ -2306,6 +2304,12 @@ export class GameScene extends Phaser.Scene {
     const structureDistance = structure
       ? Phaser.Math.Distance.Between(this.player.x, this.player.y, structure.x, structure.y)
       : Infinity;
+    // Pontos de missão podem compartilhar a posição de árvores e outros nós.
+    // A ação contextual deve coletar o recurso próximo antes de abrir o texto.
+    if (!resource && !structure && !backpack) {
+      if (this.campaign?.interact()) return;
+      if (this.regionWorld?.interact()) return;
+    }
     if (structure && structureDistance <= resourceDistance) {
       this.collectHarvestStructure(structure);
       return;
