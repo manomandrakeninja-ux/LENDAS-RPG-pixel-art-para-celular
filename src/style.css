@@ -719,6 +719,47 @@ canvas {
   }
 }
 
+/* Celular deitado: a largura de CSS pode continuar grande, mas a altura é
+   curta. O mapa e a legenda precisam compartilhar a altura disponível. */
+@media (max-height: 560px) and (orientation: landscape) {
+  .world-map {
+    padding: max(8px, env(safe-area-inset-top))
+      max(8px, env(safe-area-inset-right))
+      max(8px, env(safe-area-inset-bottom))
+      max(8px, env(safe-area-inset-left));
+  }
+
+  .world-map__header {
+    gap: 8px;
+    padding-bottom: 6px;
+  }
+
+  .world-map__title {
+    font-size: 14px;
+  }
+
+  .world-map__body {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto;
+    gap: 6px;
+    padding-top: 6px;
+  }
+
+  .world-map__legend {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 5px 12px;
+    max-height: 58px;
+    overflow-y: auto;
+    padding: 6px 8px;
+    font-size: 6px;
+  }
+
+  .world-map__legend span {
+    gap: 5px;
+  }
+}
+
 @media (max-height: 520px) and (orientation: landscape) {
   .building-menu {
     padding: 8px 12px;
