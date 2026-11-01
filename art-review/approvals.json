@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "history": [
+    {
+      "id": "tower-stone",
+      "version": "v1",
+      "status": "approved",
+      "note": "",
+      "date": "2026-11-01T15:35:36.221Z"
+    },
+    {
+      "id": "tower-stone",
+      "version": "v1",
+      "status": "approved",
+      "note": "",
+      "date": "2026-11-01T15:35:41.097Z"
+    },
+    {
+      "id": "forge",
+      "version": "v1",
+      "status": "approved",
+      "note": "",
+      "date": "2026-11-01T15:36:25.834Z"
+    },
+    {
+      "id": "vegetation",
+      "version": "v1",
+      "status": "approved",
+      "note": "",
+      "date": "2026-11-01T15:36:48.038Z"
+    }
+  ]
+}

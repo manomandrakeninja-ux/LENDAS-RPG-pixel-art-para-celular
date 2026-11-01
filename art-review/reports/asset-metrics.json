@@ -1,0 +1,65 @@
+[
+  {
+    "id": "tower-stone",
+    "width": 90,
+    "height": 174,
+    "originalBytes": 9455,
+    "proposedBytes": 13853,
+    "rgbaBytes": 62640,
+    "originalBounds": {
+      "x": 2,
+      "y": 0,
+      "w": 86,
+      "h": 174
+    },
+    "proposedBounds": {
+      "x": 5,
+      "y": 0,
+      "w": 79,
+      "h": 174
+    },
+    "colors": 28
+  },
+  {
+    "id": "forge",
+    "width": 168,
+    "height": 176,
+    "originalBytes": 18483,
+    "proposedBytes": 23001,
+    "rgbaBytes": 118272,
+    "originalBounds": {
+      "x": 6,
+      "y": 4,
+      "w": 155,
+      "h": 161
+    },
+    "proposedBounds": {
+      "x": 6,
+      "y": 6,
+      "w": 155,
+      "h": 159
+    },
+    "colors": 39
+  },
+  {
+    "id": "vegetation",
+    "width": 132,
+    "height": 88,
+    "originalBytes": 7777,
+    "proposedBytes": 10482,
+    "rgbaBytes": 46464,
+    "originalBounds": {
+      "x": 0,
+      "y": 0,
+      "w": 128,
+      "h": 88
+    },
+    "proposedBounds": {
+      "x": 0,
+      "y": 0,
+      "w": 128,
+      "h": 88
+    },
+    "colors": 32
+  }
+]

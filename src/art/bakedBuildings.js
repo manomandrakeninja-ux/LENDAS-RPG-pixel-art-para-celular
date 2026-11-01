@@ -1,5 +1,6 @@
 import { PixelCanvas } from './pixel.js';
 import { BAKED_BUILDINGS } from './buildingSprites.js';
+import { APPROVED_BUILDINGS } from './approvedBuildingSprites.js';
 
 // Prédios e estruturas pintados em alta resolução e convertidos para pixel art
 // (gerados por scripts/bake-buildings.mjs; já vêm com contorno, luz de borda, paleta e sombra).
@@ -7,7 +8,7 @@ import { BAKED_BUILDINGS } from './buildingSprites.js';
 const cache = new Map();
 
 function decodeAll(name) {
-  const entry = BAKED_BUILDINGS[name];
+  const entry = APPROVED_BUILDINGS[name] ?? BAKED_BUILDINGS[name];
   if (!entry) return null;
   const colors = entry.colors.split(',').map((key) => [
     Number.parseInt(key.slice(0, 2), 16), Number.parseInt(key.slice(2, 4), 16),
@@ -32,7 +33,7 @@ function decodeAll(name) {
 
 /** Existe arte pintada para este nome? */
 export function hasBakedBuilding(name) {
-  return Boolean(BAKED_BUILDINGS[name]);
+  return Boolean(APPROVED_BUILDINGS[name] ?? BAKED_BUILDINGS[name]);
 }
 
 /** Cópia do quadro pintado (PixelCanvas) ou null se não houver. */
