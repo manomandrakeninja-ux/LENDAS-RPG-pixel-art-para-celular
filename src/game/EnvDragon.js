@@ -65,20 +65,22 @@ function drawDragonFrame(phase = 0) {
 
 function ensureDragonTexture(scene) {
   const key = 'env-dragon';
-  if (scene.textures.exists(key)) return key;
+  if (scene.textures.exists(`${key}-0`)) return `${key}-0`;
   const frames = Array.from({ length: 4 }, (_, index) => drawDragonFrame(index));
-  const texture = scene.textures.createCanvas(key, W * frames.length, H);
-  const context = texture.getContext();
+  const textureKeys = [];
   frames.forEach((frame, index) => {
+    const frameKey = `${key}-${index}`;
+    const texture = scene.textures.createCanvas(frameKey, W, H);
+    const context = texture.getContext();
     const image = context.createImageData(W, H);
     image.data.set(frame.data);
-    texture.add(index, index * W, 0, W, H);
-    context.putImageData(image, index * W, 0);
+    context.putImageData(image, 0, 0);
+    texture.setFilter(Phaser.Textures.FilterMode.NEAREST);
+    texture.refresh();
+    textureKeys.push(frameKey);
   });
-  texture.setFilter(Phaser.Textures.FilterMode.NEAREST);
-  texture.refresh();
-  scene.anims.create({ key: `${key}-fly`, frames: Array.from({ length: 4 }, (_, frame) => ({ key, frame })), frameRate: 8, repeat: -1 });
-  return key;
+  scene.anims.create({ key: `${key}-fly`, frames: textureKeys.map((frameKey) => ({ key: frameKey, frame: 0 })), frameRate: 8, repeat: -1 });
+  return textureKeys[0];
 }
 
 export class EnvDragon {
@@ -107,7 +109,7 @@ export class EnvDragon {
     const x = fromLeft ? cam.scrollX - 90 : cam.scrollX + cam.width + 90;
     const key = ensureDragonTexture(scene);
     const sprite = scene.add.sprite(x, y, key, 0).setDepth(OVERLAY_DEPTH + 4300).setScale(1.75).setFlipX(!fromLeft);
-    sprite.play(`${key}-fly`);
+    sprite.play('env-dragon-fly');
     scene.hudCamera?.ignore(sprite);
     const shadow = scene.add.graphics().setDepth(5);
     scene.hudCamera?.ignore(shadow);
