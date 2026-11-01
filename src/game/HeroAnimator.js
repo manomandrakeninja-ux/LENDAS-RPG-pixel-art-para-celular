@@ -29,8 +29,13 @@ export function createHeroAnimations(scene, prefix) {
     if (scene.anims.exists(idleKey)) scene.anims.remove(idleKey);
     scene.anims.create({
       key: walkKey,
-      frames: scene.anims.generateFrameNumbers(prefix, { frames: [first, first + 1, first + 2, first + 3] }),
-      frameRate: 9,
+      // Ida e volta evita o salto brusco do último quadro para o primeiro.
+      // O pé que avança retorna antes de trocar de lado, deixando a passada
+      // mais natural mesmo nas folhas de quatro quadros.
+      frames: scene.anims.generateFrameNumbers(prefix, {
+        frames: [first, first + 1, first + 2, first + 3, first + 2, first + 1]
+      }),
+      frameRate: 12,
       repeat: -1
     });
     const idle = cols >= 12
