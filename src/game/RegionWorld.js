@@ -25,6 +25,8 @@ const CHUNK = 16;
 const GRASS_GID = 1;
 const TERRAIN_GID = 100;
 const UNDER_GID = 3000;
+const EXTRUDE = 1;
+const HINT_RANGE = 120;
 const SUBS = UNDER_SUBTILES * UNDER_SUBTILES;
 // Camada de baixo: mar (bloqueia), mar sob a borda, lava (bloqueia), lava sob a borda, lodo e gelo.
 const UNDER_SLOTS = [[T.SEA, true], [T.SEA, false], [T.LAVA, true], [T.LAVA, false], [T.MURK, false], [T.ICE, false]];
@@ -118,9 +120,11 @@ export class RegionWorld {
     // Evita sangramento de pixels entre células do atlas quando a câmera se move
     // em posições fracionárias (as linhas finas apareciam entre terrenos).
     scene.textures.get('grass')?.setFilter(Phaser.Textures.FilterMode.NEAREST);
-    scene.textures.get('terrain-tiles')?.setFilter(Phaser.Textures.FilterMode.NEAREST);
+    // Atlas com 1 px de borda repetida por ladrilho: com zoom fracionário (PC, 1,5x) a GPU lia o ladrilho
+    // vizinho do atlas e desenhava uma linha de 1 px (ex.: azul de água) nas emendas do chão.
+    const terrainKey = this.extrudeTileset('terrain-tiles');
     const grass = map.addTilesetImage('grass', 'grass', TILE, TILE, 0, 0, GRASS_GID);
-    const terrain = map.addTilesetImage('terrain', 'terrain-tiles', TILE, TILE, 0, 0, TERRAIN_GID);
+    const terrain = map.addTilesetImage('terrain', terrainKey, TILE, TILE, EXTRUDE, EXTRUDE * 2, TERRAIN_GID);
     // Textura da camada animada: um quadro de cada tipo lado a lado, redesenhada a cada passo.
     if (scene.textures.exists('under-tiles')) scene.textures.remove('under-tiles');
     this.underTexture = scene.textures.createCanvas('under-tiles', UNDER_SLOTS.length * SUBS * TILE, TILE);
@@ -183,8 +187,44 @@ export class RegionWorld {
     this.overlayLayer2?.setVisible(!light);
   }
 
+  /** Copia o atlas com margem EXTRUDE e espaçamento 2*EXTRUDE, repetindo a borda de cada ladrilho; descarta o original. */
+  extrudeTileset(key) {
+    const scene = this.scene;
+    const source = scene.textures.get(key).getSourceImage();
+    this.terrainSource = source;
+    const cols = Math.floor(source.width / TILE);
+    const rows = Math.floor(source.height / TILE);
+    const step = TILE + EXTRUDE * 2;
+    const outKey = `${key}-x`;
+    if (scene.textures.exists(outKey)) scene.textures.remove(outKey);
+    const texture = scene.textures.createCanvas(outKey, cols * step, rows * step);
+    const context = texture.getContext();
+    context.imageSmoothingEnabled = false;
+    for (let row = 0; row < rows; row += 1) {
+      for (let col = 0; col < cols; col += 1) {
+        const sx = col * TILE;
+        const sy = row * TILE;
+        const dx = EXTRUDE + col * step;
+        const dy = EXTRUDE + row * step;
+        context.drawImage(source, sx, sy, TILE, TILE, dx, dy, TILE, TILE);
+        context.drawImage(source, sx, sy, 1, TILE, dx - 1, dy, 1, TILE);
+        context.drawImage(source, sx + TILE - 1, sy, 1, TILE, dx + TILE, dy, 1, TILE);
+        context.drawImage(source, sx, sy, TILE, 1, dx, dy - 1, TILE, 1);
+        context.drawImage(source, sx, sy + TILE - 1, TILE, 1, dx, dy + TILE, TILE, 1);
+        context.drawImage(source, sx, sy, 1, 1, dx - 1, dy - 1, 1, 1);
+        context.drawImage(source, sx + TILE - 1, sy, 1, 1, dx + TILE, dy - 1, 1, 1);
+        context.drawImage(source, sx, sy + TILE - 1, 1, 1, dx - 1, dy + TILE, 1, 1);
+        context.drawImage(source, sx + TILE - 1, sy + TILE - 1, 1, 1, dx + TILE, dy + TILE, 1, 1);
+      }
+    }
+    texture.setFilter(Phaser.Textures.FilterMode.NEAREST);
+    texture.refresh();
+    scene.textures.remove(key); // libera a cópia original da GPU (a imagem fica em this.terrainSource)
+    return outKey;
+  }
+
   drawUnderFrame(frame) {
-    const source = this.scene.textures.get('terrain-tiles').getSourceImage();
+    const source = this.terrainSource;
     const context = this.underTexture.getContext();
     const columns = this.scene.cache.json.get('terrain-index')?.columns ?? 16;
     const index = this.tileIndex ?? this.scene.cache.json.get('terrain-index')?.index ?? {};
@@ -1133,11 +1173,15 @@ export class RegionWorld {
   updateHints() {
     const player = this.scene.player;
     const near = this.nearestFeature(player.x, player.y);
+    // Só o rótulo do ponto mais próximo aparece (e só de perto): perto de várias placas os nomes se empilhavam.
+    let closest = null;
+    let closestDistance = HINT_RANGE;
     for (const feature of this.features) {
-      const label = feature.sprite?.hintLabel;
-      if (!label) continue;
-      label.setVisible(Phaser.Math.Distance.Between(player.x, player.y, feature.x, feature.y) < 220);
+      if (!feature.sprite?.hintLabel) continue;
+      const distance = Phaser.Math.Distance.Between(player.x, player.y, feature.x, feature.y);
+      if (distance < closestDistance) { closest = feature; closestDistance = distance; }
     }
+    for (const feature of this.features) feature.sprite?.hintLabel?.setVisible(feature === closest);
     this.nearLabel = near?.label ?? null;
   }
 

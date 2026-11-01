@@ -146,13 +146,34 @@ function calmField(kind, variant) {
   return field;
 }
 
-/** Tom do chão de grama (índice da rampa) em 2 valores: manchas largas, como na referência. */
-const GRASS_LEVELS = { [T.VALLEY]: [2, 4], [T.JUNGLE]: [2, 4], [T.FOREST]: [2, 3], [T.SWAMP]: [1, 3] };
-const grassLevel = (kind, t) => GRASS_LEVELS[kind][t < 0.5 ? 0 : 1];
+/** Tons do chão de grama (índices da rampa) em 3 degraus e os limiares do campo calmo entre eles. */
+const GRASS_LEVELS = { [T.VALLEY]: [2, 2, 3], [T.JUNGLE]: [2, 3, 3], [T.FOREST]: [1, 2, 3], [T.SWAMP]: [2, 2, 3] };
+const GRASS_CUTS = { [T.VALLEY]: [0.4, 0.62], [T.JUNGLE]: [0.4, 0.62], [T.FOREST]: [0.35, 0.65], [T.SWAMP]: [0.2, 0.42] };
+const grassLevel = (kind, t) => {
+  const [low, high] = GRASS_CUTS[kind];
+  const levels = GRASS_LEVELS[kind];
+  return levels[t < low ? 0 : t < high ? 1 : 2];
+};
+
+// Dithering ordenado (Bayer 4x4, período 4 divide 48): a divisa entre dois tons vira uma faixa de pixels
+// alternados de 1 px (pixel art de verdade, sem blur) e continua igual na emenda entre ladrilhos.
+const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
+const dither = (x, y) => (BAYER[(y & 3) * 4 + (x & 3)] / 16 - 0.47) * 0.1;
 
 function calmGrassFloor(canvas, kind, field) {
   const ramp = RAMP[kind];
-  for (let y = 0; y < S; y += 1) for (let x = 0; x < S; x += 1) canvas.pixel(x, y, ramp[grassLevel(kind, field[y * S + x])]);
+  for (let y = 0; y < S; y += 1) for (let x = 0; x < S; x += 1) canvas.pixel(x, y, ramp[grassLevel(kind, field[y * S + x] + dither(x, y))]);
+  // Lâminas soltas de 1 px: quebram o chão liso sem virar ruído (afastadas da borda para não abrir emenda).
+  const seed = kind * 17 + 3;
+  for (let i = 0; i < 46; i += 1) {
+    const x = 3 + Math.floor(hash(i, 1, seed) * (S - 6));
+    const y = 5 + Math.floor(hash(i, 2, seed) * (S - 9));
+    const level = grassLevel(kind, field[y * S + x]);
+    const up = hash(i, 3, seed) > 0.5;
+    canvas.pixel(x, y, ramp[Math.min(5, level + (up ? 1 : 0))]);
+    canvas.pixel(x, y - 1, ramp[Math.min(5, level + (up ? 2 : 1))]);
+    if (hash(i, 4, seed) > 0.55) canvas.pixel(x, y + 1, ramp[Math.max(0, level - 1)]);
+  }
 }
 
 /**
@@ -309,7 +330,7 @@ function softGround(canvas, kind, field, seed) {
   for (let y = 0; y < S; y += 1) {
     for (let x = 0; x < S; x += 1) {
       const t = field[y * S + x];
-      canvas.pixel(x, y, steps.find(([limit]) => t < limit)[1]);
+      canvas.pixel(x, y, steps.find(([limit]) => t + dither(x, y) < limit)[1]);
       const g = hash(x, y, seed);
       if (g > 0.997) canvas.pixel(x, y, kind === T.SNOW ? '#ffffff' : t > 0.5 ? r[4] : r[0]);
       else if (g < 0.002 && kind !== T.SNOW) canvas.pixel(x, y, r[1]);
@@ -347,7 +368,7 @@ function rockGround(canvas, kind, field, seed) {
   for (let y = 0; y < S; y += 1) {
     for (let x = 0; x < S; x += 1) {
       const t = field[y * S + x];
-      canvas.pixel(x, y, steps.find(([limit]) => t < limit)[1]);
+      canvas.pixel(x, y, steps.find(([limit]) => t + dither(x, y) < limit)[1]);
       // Luz do alto à esquerda nas "lombadas" do chão.
       if (kind === T.CAVE && x > 0 && y > 0 && field[y * S + x] - field[(y - 1) * S + x - 1] > 0.05 && field[y * S + x] > 0.6) canvas.pixel(x, y, r[5]);
       const g = hash(x, y, seed);
@@ -375,9 +396,10 @@ function base(canvas, kind, variant) {
     calmTufts(canvas, kind, calm, core, options);
     if (kind === T.VALLEY) {
       // Gramado naturalista: florais e seixos em pequenos grupos, com manchas de terra entre a grama.
-      {
-        const px = 10 + core * 10 + (variant % 3) * 3;
-        const py = 26 - core * 4 + (variant % 4) * 2;
+      // Só em parte das variantes: manchas de terra esparsas, sem desenhar uma grade de pontos.
+      if ((variant * 7 + core) % 4 === 0) {
+        const px = 10 + Math.floor(hash(variant, core, 91) * 28);
+        const py = 14 + Math.floor(hash(core, variant, 92) * 22);
         canvas.ellipse(px, py, 9 + core, 4 + (core % 2), '#8a4836');
         canvas.ellipse(px, py, 7 + core, 3, '#ad7954');
         canvas.pixel(px - 2, py - 2, '#f6ca9f');
@@ -402,6 +424,14 @@ function base(canvas, kind, variant) {
       });
       if (core === 2) { canvas.line(16, 30, 26, 27, '#391f21'); canvas.line(16, 31, 26, 28, ramp[0]); canvas.pixel(21, 28, '#5d2c28'); }
     } else if (kind === T.SWAMP) {
+      // Manchas de lama esparsas entre o capim (o chão é verde-escuro; a lama aparece em poucos ladrilhos).
+      if ((variant * 5 + core) % 3 === 0) {
+        const px = 11 + Math.floor(hash(variant, core, 93) * 26);
+        const py = 12 + Math.floor(hash(core, variant, 94) * 24);
+        canvas.ellipse(px, py, 8, 3, '#2d2e25');
+        canvas.ellipse(px, py, 7, 2.4, '#494834');
+        canvas.pixel(px - 2, py - 1, '#7a6a4a');
+      }
       // Poça de lama com brilho (só num dos miolos; o resto vem da decoração).
       scatterInner(s + 2, core === 1 ? 1 : 0, (x, y) => {
         canvas.ellipse(x, y, 4, 1.8, '#1c121c');
