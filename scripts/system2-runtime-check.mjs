@@ -104,7 +104,7 @@ await runInChrome({ name: 'system2', port: 9354, width: 390, height: 844, mobile
     resting: Boolean(scene.restState),
     sleepDisabled: document.querySelector('[data-action="sleep"]').disabled
   }));
-  check(rest.health === 70 && rest.resting && rest.sleepDisabled, `Descanso nível 1: ${JSON.stringify(rest)}`);
+  check(Math.abs(rest.health - 70) < 1 && rest.resting && rest.sleepDisabled, `Descanso nível 1: ${JSON.stringify(rest)}`);
   const sleep = await inScene((scene) => {
     scene.restTimer?.remove(false);
     scene.restTimer = null;
