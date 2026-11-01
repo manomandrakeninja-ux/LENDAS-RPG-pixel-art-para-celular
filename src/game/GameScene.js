@@ -770,7 +770,7 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
-  updateFrame(_time, delta) {
+  updateFrame(time, delta) {
     // Ring buffer de ms/frame (máx 120) para o medidor __lendasPerf.
     this.frameTimes.push(delta);
     if (this.frameTimes.length > 120) this.frameTimes.shift();
