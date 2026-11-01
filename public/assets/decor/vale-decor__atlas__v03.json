@@ -1,0 +1,114 @@
+{
+ "frames": {
+  "flor-01": {
+   "frame": {
+    "x": 2,
+    "y": 2,
+    "w": 24,
+    "h": 19
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 24,
+    "h": 19
+   },
+   "sourceSize": {
+    "w": 24,
+    "h": 19
+   }
+  },
+  "flor-02": {
+   "frame": {
+    "x": 28,
+    "y": 2,
+    "w": 24,
+    "h": 20
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 24,
+    "h": 20
+   },
+   "sourceSize": {
+    "w": 24,
+    "h": 20
+   }
+  },
+  "flor-03": {
+   "frame": {
+    "x": 54,
+    "y": 2,
+    "w": 24,
+    "h": 22
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 24,
+    "h": 22
+   },
+   "sourceSize": {
+    "w": 24,
+    "h": 22
+   }
+  },
+  "cogumelo-01": {
+   "frame": {
+    "x": 80,
+    "y": 2,
+    "w": 24,
+    "h": 20
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 24,
+    "h": 20
+   },
+   "sourceSize": {
+    "w": 24,
+    "h": 20
+   }
+  },
+  "cogumelo-02": {
+   "frame": {
+    "x": 106,
+    "y": 2,
+    "w": 24,
+    "h": 22
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 24,
+    "h": 22
+   },
+   "sourceSize": {
+    "w": 24,
+    "h": 22
+   }
+  }
+ },
+ "meta": {
+  "app": "LENDAS decor",
+  "version": "3.0",
+  "image": "vale-decor__atlas__v03.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 132,
+   "h": 26
+  }
+ }
+}
