@@ -705,7 +705,7 @@ export const NODE_REGROW_DAYS = 2;
 
 /** Centro de cada região (nome no mapa e destino dos atalhos "ver no mapa"). */
 export const REGION_CENTERS = Object.freeze({
-  antiga: { x: W(0.549), y: H(0.53) }, brejo: { x: W(0.201), y: H(0.521) }, gelo: { x: W(0.549), y: H(0.214) },
+  antiga: { x: W(0.549), y: H(0.53) }, brejo: { x: W(0.0851), y: H(0.4063) }, gelo: { x: W(0.4313), y: H(0.0881) },
   areia: { x: W(0.854), y: H(0.335) }, esmeralda: { x: W(0.25), y: H(0.822) }, brasa: { x: W(0.764), y: H(0.893) }
 });
 
