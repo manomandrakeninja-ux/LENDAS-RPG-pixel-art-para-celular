@@ -1,0 +1,44 @@
+[
+  {
+    "name": "casa-azul",
+    "w": 180,
+    "h": 143,
+    "opaque": 12863
+  },
+  {
+    "name": "casa-vermelha",
+    "w": 148,
+    "h": 143,
+    "opaque": 13121
+  },
+  {
+    "name": "celeiro",
+    "w": 146,
+    "h": 138,
+    "opaque": 12840
+  },
+  {
+    "name": "ferreiro",
+    "w": 190,
+    "h": 143,
+    "opaque": 15839
+  },
+  {
+    "name": "banca",
+    "w": 140,
+    "h": 110,
+    "opaque": 8525
+  },
+  {
+    "name": "castelo",
+    "w": 234,
+    "h": 140,
+    "opaque": 21001
+  },
+  {
+    "name": "poco",
+    "w": 94,
+    "h": 114,
+    "opaque": 5401
+  }
+]

@@ -1,0 +1,107 @@
+[
+  {
+    "name": "arvore-verde-1",
+    "kind": "arvore",
+    "w": 110,
+    "h": 112,
+    "opaque": 5880
+  },
+  {
+    "name": "arvore-verde-2",
+    "kind": "arvore",
+    "w": 77,
+    "h": 112,
+    "opaque": 4585
+  },
+  {
+    "name": "arvore-laranja",
+    "kind": "arvore",
+    "w": 74,
+    "h": 112,
+    "opaque": 4048
+  },
+  {
+    "name": "arvore-rosa",
+    "kind": "arvore",
+    "w": 85,
+    "h": 112,
+    "opaque": 4507
+  },
+  {
+    "name": "arvore-azul-verde",
+    "kind": "arvore",
+    "w": 82,
+    "h": 112,
+    "opaque": 4388
+  },
+  {
+    "name": "arvore-morta",
+    "kind": "arvore",
+    "w": 85,
+    "h": 112,
+    "opaque": 2172
+  },
+  {
+    "name": "pedra-1",
+    "kind": "pedra",
+    "w": 40,
+    "h": 40,
+    "opaque": 823
+  },
+  {
+    "name": "pedra-2",
+    "kind": "pedra",
+    "w": 40,
+    "h": 36,
+    "opaque": 509
+  },
+  {
+    "name": "pedra-3",
+    "kind": "pedra",
+    "w": 40,
+    "h": 40,
+    "opaque": 714
+  },
+  {
+    "name": "pedra-4",
+    "kind": "pedra",
+    "w": 40,
+    "h": 30,
+    "opaque": 587
+  },
+  {
+    "name": "cerca-1",
+    "kind": "cerca",
+    "w": 32,
+    "h": 21,
+    "opaque": 302
+  },
+  {
+    "name": "cerca-2",
+    "kind": "cerca",
+    "w": 32,
+    "h": 22,
+    "opaque": 296
+  },
+  {
+    "name": "cerca-3",
+    "kind": "cerca",
+    "w": 32,
+    "h": 23,
+    "opaque": 237
+  },
+  {
+    "name": "placa-1",
+    "kind": "placa",
+    "w": 20,
+    "h": 32,
+    "opaque": 304
+  },
+  {
+    "name": "placa-2",
+    "kind": "placa",
+    "w": 25,
+    "h": 32,
+    "opaque": 282
+  }
+]

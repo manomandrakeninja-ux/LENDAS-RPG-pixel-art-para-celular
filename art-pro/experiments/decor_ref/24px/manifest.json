@@ -1,0 +1,146 @@
+[
+  {
+    "file": "decor-ref-01.png",
+    "label": "pedra",
+    "w": 24,
+    "h": 20,
+    "origem": [
+      684,
+      462,
+      53,
+      45
+    ]
+  },
+  {
+    "file": "decor-ref-02.png",
+    "label": "flor-amarela-1",
+    "w": 24,
+    "h": 19,
+    "origem": [
+      749,
+      466,
+      46,
+      37
+    ]
+  },
+  {
+    "file": "decor-ref-03.png",
+    "label": "flor-roxa-rosa",
+    "w": 24,
+    "h": 20,
+    "origem": [
+      809,
+      465,
+      45,
+      37
+    ]
+  },
+  {
+    "file": "decor-ref-04.png",
+    "label": "flor-amarela-rosa",
+    "w": 24,
+    "h": 22,
+    "origem": [
+      869,
+      463,
+      41,
+      38
+    ]
+  },
+  {
+    "file": "decor-ref-05.png",
+    "label": "flor-amarela-pequena",
+    "w": 24,
+    "h": 17,
+    "origem": [
+      684,
+      519,
+      50,
+      36
+    ]
+  },
+  {
+    "file": "decor-ref-06.png",
+    "label": "cogumelos-1",
+    "w": 24,
+    "h": 20,
+    "origem": [
+      749,
+      516,
+      45,
+      38
+    ]
+  },
+  {
+    "file": "decor-ref-07.png",
+    "label": "arbusto-amarelo",
+    "w": 24,
+    "h": 21,
+    "origem": [
+      809,
+      515,
+      44,
+      39
+    ]
+  },
+  {
+    "file": "decor-ref-08.png",
+    "label": "cogumelos-2",
+    "w": 24,
+    "h": 22,
+    "origem": [
+      869,
+      516,
+      40,
+      37
+    ]
+  },
+  {
+    "file": "decor-ref-09.png",
+    "label": "toco",
+    "w": 24,
+    "h": 24,
+    "origem": [
+      745,
+      562,
+      52,
+      53
+    ]
+  },
+  {
+    "file": "decor-ref-10.png",
+    "label": "arbusto-verde-1",
+    "w": 24,
+    "h": 22,
+    "origem": [
+      684,
+      568,
+      52,
+      47
+    ]
+  },
+  {
+    "file": "decor-ref-11.png",
+    "label": "arbusto-verde-2",
+    "w": 24,
+    "h": 21,
+    "origem": [
+      809,
+      570,
+      46,
+      40
+    ]
+  },
+  {
+    "file": "decor-ref-12.png",
+    "label": "arbusto-verde-3",
+    "w": 24,
+    "h": 22,
+    "origem": [
+      868,
+      572,
+      43,
+      39
+    ]
+  }
+]
