@@ -185,8 +185,8 @@ try {
   await delay(500);
   await evaluate(`(() => { const s = ${scene};
     s.__actionCount = 0;
-    const original = s.performContextAction.bind(s);
-    s.performContextAction = (...args) => { s.__actionCount += 1; return original(...args); };
+    const original = s.attackNearby.bind(s);
+    s.attackNearby = (...args) => { s.__actionCount += 1; return original(...args); };
   })()`);
   const action = await rectOf('#world-action');
   await touch('touchStart', [[action.x, action.y, 3]]);

@@ -182,7 +182,7 @@ try {
     return {
       wood: scene.inventory.items.wood,
       hint: scene.ui.hint.text,
-      action: scene.ui.worldAction.textContent
+      action: scene.ui.gatherAction.textContent
     };
   })()`);
   if (!treeBefore.hint.includes('Árvore') || !treeBefore.action.includes('ÁRVORE')) {

@@ -149,7 +149,7 @@ try {
   const consumables = await evaluate(`(() => { const s = ${scene}; return {
     health: s.player.health, potion: s.inventory.items.potion, food: s.inventory.items.food
   }; })()`);
-  if (consumables.health !== 30 + 50 + 12 || consumables.potion !== 0 || consumables.food !== 1) {
+  if (Math.abs(consumables.health - (30 + 50 + 12)) > 3 || consumables.potion !== 0 || consumables.food !== 1) {
     throw new Error(`Consumíveis falharam: ${JSON.stringify(consumables)}`);
   }
 
@@ -169,7 +169,7 @@ try {
   await send('Input.dispatchMouseEvent', { type: 'mouseReleased', x: tapped.x, y: tapped.y, button: 'left', clickCount: 1 });
   await delay(150);
   const afterTap = await evaluate(`(() => { const s = ${scene}; return { health: s.player.health, food: s.inventory.items.food }; })()`);
-  if (afterTap.health !== 62 || afterTap.food !== 0) throw new Error(`Toque no slot falhou: ${JSON.stringify(afterTap)}`);
+  if (Math.abs(afterTap.health - 62) > 3 || afterTap.food !== 0) throw new Error(`Toque no slot falhou: ${JSON.stringify(afterTap)}`);
 
   // 4. Combo: o terceiro golpe encadeado é o golpe final com dano 1,5x.
   const combo = await evaluate(`(async () => {

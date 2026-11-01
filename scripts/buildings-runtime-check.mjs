@@ -29,7 +29,7 @@ await runInChrome({ name: 'buildings', port: 9351 }, async ({ inScene, capture, 
       buildButtons: document.querySelectorAll('[data-action="upgrade"]').length
     };
   });
-  check(overview.open && overview.cards === 8, `Visão geral deveria ter 7 prédios + dormir: ${JSON.stringify(overview)}`);
+  check(overview.open && overview.cards === 10, `Visão geral deveria ter 7 prédios + serraria + mina + dormir: ${JSON.stringify(overview)}`);
 
   // Constrói a Muralha clicando no botão, pagando com o armazém e moedas.
   await inScene((scene) => {
