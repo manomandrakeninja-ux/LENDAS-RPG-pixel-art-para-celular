@@ -325,7 +325,7 @@ export class LanSync {
       this.refreshPanel();
     });
     ws.addEventListener('error', () => {
-      this.lastError = 'falha ao conectar';
+      this.lastError = 'servidor LAN nÃ£o encontrado: execute npm run lan no computador anfitriÃ£o e permita a porta 8787 no Firewall';
       this.refreshPanel();
     });
   }
