@@ -38,7 +38,9 @@ const RIGHT = {
   hands: [[25, 39], [29, 40], [33, 39], [29, 40], [29, 41], [29, 32], [25, 21], [21, 15], [40, 38], [33, 40], [23, 37], [29, 40]],
   layer: ['front', 'front', 'front', 'front', 'front', 'front', 'back', 'back', 'front', 'front', 'front', 'front'],
   // De perfil as costas ficam atrás: cabo atrás da nuca, ponta para baixo e para trás.
-  back: { grip: [24, 22], angle: 135, layer: 'back' },
+  // Nas folhas novas o ombro fica alguns pixels mais para a direita do quadro;
+  // manter 24 fazia a espada escapar do corpo ao ser guardada de perfil.
+  back: { grip: [29, 22], angle: 135, layer: 'back' },
   walkBob: [0, -1, 0, -1]
 };
 
