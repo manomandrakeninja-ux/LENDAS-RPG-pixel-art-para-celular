@@ -668,7 +668,14 @@ export class GameUI {
     this.drawCrop(context, renderer.terrain, left, top, span, size);
     renderer.drawCamp(context, toX, toY, scale);
     renderer.drawNpcs(context, toX, toY, 2);
+    // A névoa é informativa, não deve transformar o minimapa inteiro em um
+    // retângulo preto em uma partida recém-carregada. Mantemos o terreno
+    // visível por baixo e usamos a transparência para indicar o que ainda não
+    // foi explorado.
+    context.save();
+    context.globalAlpha = 0.48;
     this.drawCrop(context, renderer.fog, left, top, span, size);
+    context.restore();
 
     const inside = (x, y, margin = 0) => x >= -margin && y >= -margin && x <= size + margin && y <= size + margin;
     const mine = this.scene.harvestStructures?.state?.byType('mineMarker')?.[0];
