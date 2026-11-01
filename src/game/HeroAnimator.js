@@ -157,7 +157,10 @@ export class HeroAnimator {
     const pose = this.stance.pose();
     const locomotion = this.lastMotion;
     const sprite = this.sprite;
-    const showDir = this.turnMs > 0 && pose.col === null ? this.turnDir : dir;
+    // A direção visual acompanha a direção lógica imediatamente. A antiga
+    // interpolação passava por outra linha da spritesheet (ex.: baixo ao virar
+    // para a esquerda), fazendo o corpo parecer trocar de skin por um instante.
+    const showDir = dir;
     const row = HERO_DIRS.indexOf(showDir);
     let col;
     let offsetX = 0;
@@ -181,8 +184,10 @@ export class HeroAnimator {
       offsetX = showDir === 'left' ? -1 : showDir === 'right' ? 1 : 0;
       col = dodgeCol;
     } else {
-      const key = `${this.textureKey}-${this.turnMs > 0 ? 'idle' : moving ? 'walk' : 'idle'}-${showDir}`;
+      const key = `${this.textureKey}-${moving ? 'walk' : 'idle'}-${showDir}`;
       if (!sprite.anims.isPlaying || sprite.anims.currentAnim?.key !== key) sprite.play(key, true);
+      const walkScale = 0.8 + (locomotion.speedRatio ?? 0) * 0.45;
+      sprite.anims.timeScale = moving ? Math.min(1.35, Math.max(0.8, walkScale)) : 1;
       col = Number(sprite.frame.name) % this.cols;
       if (!Number.isFinite(col)) col = 1;
     }
