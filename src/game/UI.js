@@ -25,6 +25,24 @@ export class GameUI {
     this.storeAllAvailable = false;
     this.messageTimer = null;
     this.worldAction = document.getElementById('world-action');
+    this.gatherAction = document.getElementById('gather-action');
+    const gather = () => { if (!this.scene.overlayBlocked()) this.scene.performContextAction(); };
+    const gatherDown = (event) => {
+      event.preventDefault();
+      this.scene.audio?.unlock();
+      this.scene.actionHeld = true;
+      gather();
+    };
+    const gatherRelease = () => { this.scene.actionHeld = false; };
+    const gatherClick = (event) => { if (event.detail === 0) gather(); };
+    this.gatherAction.addEventListener('pointerdown', gatherDown);
+    this.gatherAction.addEventListener('click', gatherClick);
+    this.gatherAction.addEventListener('pointerleave', gatherRelease);
+    this.scene.events.once('shutdown', () => {
+      this.gatherAction.removeEventListener('pointerdown', gatherDown);
+      this.gatherAction.removeEventListener('click', gatherClick);
+      this.gatherAction.removeEventListener('pointerleave', gatherRelease);
+    });
     this.storeAllAction = document.getElementById('store-all-action');
     this.bossHealth = document.getElementById('boss-health');
     this.bossHealthName = document.getElementById('boss-health-name');
@@ -37,16 +55,15 @@ export class GameUI {
     this.worldAction.addEventListener('pointerdown', (event) => {
       event.preventDefault();
       lastPointerAction = performance.now();
-      this.scene.actionHeld = true;
       // Com controles de toque ligados, o TouchControls já faz a ação no pointerdown.
-      if (!this.scene.touch?.enabled) this.scene.performContextAction();
+      if (!this.scene.touch?.enabled && !this.scene.overlayBlocked()) this.scene.attackNearby();
     });
     const release = () => { this.scene.actionHeld = false; };
     for (const type of ['pointerup', 'pointercancel']) window.addEventListener(type, release);
     this.worldAction.addEventListener('pointerleave', release);
     this.worldAction.addEventListener('click', (event) => {
       // O toque/clique já agiu no pointerdown; aqui só vale teclado (Enter/Espaço no botão).
-      if (performance.now() - lastPointerAction > 800) this.scene.performContextAction();
+      if (event.detail === 0 && !this.scene.overlayBlocked()) this.scene.attackNearby();
     });
     this.storeAllAction.addEventListener('click', () => this.scene.storeAllAtCamp());
     this.ensureResourceIconTextures();
@@ -366,7 +383,10 @@ export class GameUI {
       this.coinLabel.setPosition(left + 20, top + 117);
       this.statusLabel.setPosition(left, top + 136);
     }
-    for (const item of [this.xpLabel, this.dayLabel, this.statusLabel, this.mapLabel]) item?.setVisible(!phone);
+    for (const item of [this.xpLabel, this.dayLabel, this.statusLabel]) item?.setVisible(!phone);
+    // O título identifica o minimapa no celular; sem ele o quadro parece um
+    // painel vazio quando os botões de toque estão recolhidos.
+    this.mapLabel.setVisible(true).setFontSize(phone ? '6px' : '8px');
     (this.oreCounters ?? []).forEach((counter, index) => {
       counter.icon.setVisible(!phone).setPosition(left + 138 + index * 58, top + 121);
       counter.label.setVisible(!phone).setPosition(left + 150 + index * 58, top + 117);
@@ -509,12 +529,14 @@ export class GameUI {
     if (phone) hint = '';
     this.hint.setText(hint).setVisible(hint !== '');
     this.worldAction.hidden = this.buildingMenuOpen;
+    this.gatherAction.hidden = this.buildingMenuOpen;
     this.storeAllAvailable = storeAllAvailable;
     this.storeAllAction.hidden = !storeAllAvailable || this.buildingMenuOpen ||
       (Boolean(this.scene.touch?.enabled) && inventory.total === 0);
     this.storeAllAction.disabled = inventory.total === 0;
     this.storeAllAction.textContent = inventory.total > 0 ? 'GUARDAR TUDO' : 'MOCHILA VAZIA';
-    this.worldAction.textContent = questTarget
+    this.worldAction.textContent = 'ATACAR';
+    this.gatherAction.textContent = questTarget
       ? questTarget.label.split(' ')[0].toUpperCase()
       : nearestStructure
       ? `${HARVEST_STRUCTURE_TYPES[nearestStructure.type].requiresPickaxe ? 'MINERAR' : 'COLETAR'} ${HARVEST_STRUCTURE_TYPES[nearestStructure.type].label.toUpperCase()}`
@@ -522,7 +544,7 @@ export class GameUI {
         ? `${mines(nearestResource) ? 'MINERAR' : 'COLETAR'} ${RESOURCE_TYPES[nearestResource.type].label.toUpperCase()}`
         : nearestBackpack
           ? (nearestBackpack.kind === 'chest' ? 'ABRIR BAÚ' : 'RECUPERAR MOCHILA')
-          : 'ATACAR';
+          : 'COLETAR / MINERAR';
 
     this.statusLabel.setText(this.statusText(time));
     this.updateCompass(player);
@@ -687,7 +709,14 @@ export class GameUI {
     this.drawCrop(context, renderer.terrain, left, top, span, size);
     renderer.drawCamp(context, toX, toY, scale);
     renderer.drawNpcs(context, toX, toY, 2);
+    // A névoa é informativa, não deve transformar o minimapa inteiro em um
+    // retângulo preto em uma partida recém-carregada. Mantemos o terreno
+    // visível por baixo e usamos a transparência para indicar o que ainda não
+    // foi explorado.
+    context.save();
+    context.globalAlpha = 0.48;
     this.drawCrop(context, renderer.fog, left, top, span, size);
+    context.restore();
 
     const inside = (x, y, margin = 0) => x >= -margin && y >= -margin && x <= size + margin && y <= size + margin;
     const mine = this.scene.harvestStructures?.state?.byType('mineMarker')?.[0];

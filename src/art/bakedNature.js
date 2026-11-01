@@ -1,5 +1,6 @@
 import { PixelCanvas } from './pixel.js';
 import { BAKED_NATURE } from './natureSprites.js';
+import { APPROVED_NATURE } from './approvedNatureSprites.js';
 
 // Vegetação e pedras pintadas em alta resolução e convertidas para pixel art
 // (geradas por scripts/bake-nature.mjs; já vêm com contorno, luz de borda, paleta e sombra).
@@ -7,7 +8,7 @@ import { BAKED_NATURE } from './natureSprites.js';
 const cache = new Map();
 
 function decodeAll(name) {
-  const entry = BAKED_NATURE[name];
+  const entry = APPROVED_NATURE[name] ?? BAKED_NATURE[name];
   if (!entry) return null;
   const colors = entry.colors.split(',').map((key) => [
     Number.parseInt(key.slice(0, 2), 16), Number.parseInt(key.slice(2, 4), 16),
@@ -32,7 +33,7 @@ function decodeAll(name) {
 
 /** Existe arte pintada para este nome? */
 export function hasBakedNature(name) {
-  return Boolean(BAKED_NATURE[name]);
+  return Boolean(APPROVED_NATURE[name] ?? BAKED_NATURE[name]);
 }
 
 /** Cópia do quadro pintado (PixelCanvas) ou null se não houver. */

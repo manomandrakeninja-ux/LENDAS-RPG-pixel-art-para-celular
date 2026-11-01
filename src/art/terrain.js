@@ -18,12 +18,12 @@ const LAST = S - 1;
 
 // Rampas: [fundo, sombra, base, luz, brilho, faísca].
 const RAMP = {
-  [T.VALLEY]: ['#134c4c', '#1e6f50', '#33984b', '#5ac54f', '#99e65f', '#d3fc7e'],
-  [T.FOREST]: ['#0c2e44', '#134c4c', '#1e6f50', '#33984b', '#5ac54f', '#99e65f'],
+  [T.VALLEY]: ['#174c32', '#25813d', '#3da34a', '#67c85a', '#95df67', '#d8f985'],
+  [T.FOREST]: ['#134c4c', '#1e6f50', '#33984b', '#5ac54f', '#99e65f', '#d3fc7e'],
   [T.JUNGLE]: ['#134c4c', '#1e6f50', '#33984b', '#5ac54f', '#99e65f', '#d3fc7e'],
-  [T.SWAMP]: ['#2d2e25', '#494834', '#1e6f50', '#33984b', '#5ac54f', '#99e65f'],
+  [T.SWAMP]: ['#2d2e25', '#494834', '#1e6f50', '#33984b', '#99e65f', '#d3fc7e'],
   [T.SNOW]: ['#657392', '#92a1b9', '#9cc8e6', '#d5e8ef', '#ffffff', '#ffffff'],
-  [T.SAND]: ['#8a4836', '#ad7954', '#cba36f', '#f6ca9f', '#f9e6cf', '#ffffff'],
+  [T.SAND]: ['#5d2c28', '#ad7954', '#e69c69', '#f6ca9f', '#ffc825', '#ffffff'],
   [T.DUNE]: ['#5d2c28', '#8a4836', '#ad7954', '#cba36f', '#e69c69', '#f6ca9f'],
   [T.BEACH]: ['#ad7954', '#cba36f', '#f6ca9f', '#f9e6cf', '#ffffff', '#ffffff'],
   [T.ASH]: ['#0e071b', '#1c121c', '#272727', '#2d2e25', '#3d3d3d', '#5d5d5d'],
@@ -147,7 +147,7 @@ function calmField(kind, variant) {
 }
 
 /** Tom do chão de grama (índice da rampa) em 2 valores: manchas largas, como na referência. */
-const GRASS_LEVELS = { [T.VALLEY]: [2, 3], [T.JUNGLE]: [2, 3], [T.FOREST]: [1, 2], [T.SWAMP]: [1, 2] };
+const GRASS_LEVELS = { [T.VALLEY]: [2, 4], [T.JUNGLE]: [2, 4], [T.FOREST]: [2, 3], [T.SWAMP]: [1, 3] };
 const grassLevel = (kind, t) => GRASS_LEVELS[kind][t < 0.5 ? 0 : 1];
 
 function calmGrassFloor(canvas, kind, field) {
@@ -367,13 +367,34 @@ function base(canvas, kind, variant) {
     const calm = calmOf(kind, variant);
     calmGrassFloor(canvas, kind, calm);
     const options = {
-      [T.VALLEY]: { density: 0.68, size: 1 },
-      [T.FOREST]: { density: 0.55, size: 1 },
-      [T.JUNGLE]: { density: 0.64, size: 2 },
+      [T.VALLEY]: { density: 1.12, size: 2 },
+      [T.FOREST]: { density: 0.72, size: 1 },
+      [T.JUNGLE]: { density: 0.78, size: 2 },
       [T.SWAMP]: { density: 0.7, size: 0 }
     }[kind];
     calmTufts(canvas, kind, calm, core, options);
-    if (kind === T.FOREST) {
+    if (kind === T.VALLEY) {
+      // Gramado naturalista: florais e seixos em pequenos grupos, com manchas de terra entre a grama.
+      {
+        const px = 10 + core * 10 + (variant % 3) * 3;
+        const py = 26 - core * 4 + (variant % 4) * 2;
+        canvas.ellipse(px, py, 9 + core, 4 + (core % 2), '#8a4836');
+        canvas.ellipse(px, py, 7 + core, 3, '#ad7954');
+        canvas.pixel(px - 2, py - 2, '#f6ca9f');
+        for (let dx = -10; dx <= 10; dx += 1) {
+          if (hash(dx, core, s) > 0.42) canvas.pixel(px + dx, py + 3 + Math.round(Math.sin(dx * 0.6)), ramp[2]);
+        }
+      }
+      scatterInner(s + 17, 20 + core * 2, (x, y, i) => {
+        if (i % 3 === 0) flower(canvas, x, y, (i + core) % FLOWERS.length, ramp[1]);
+        else if (i % 3 === 1) pebble(canvas, x, y, i % 2, WARM_STONE, ramp[1]);
+        else tuftAt(canvas, x, y, ramp, s + i, { count: 7, min: 3, max: 6, spread: 3 });
+      }, 6);
+      scatterInner(s + 23, 5, (x, y, i) => {
+        for (let dx = -2; dx <= 2; dx += 1) canvas.pixel(x + dx, y, i % 2 ? ramp[3] : ramp[4]);
+        canvas.pixel(x, y - 2, ramp[5]);
+      }, 9);
+    } else if (kind === T.FOREST) {
       // Folhas caídas e gravetos no miolo.
       scatterInner(s + 1, 2 + core, (x, y, i) => {
         const leaf = ['#8a4836', '#bf6f4a', '#5d2c28', '#e07438'][(i + core) % 4];
@@ -525,7 +546,7 @@ function drawPath(canvas, side, v, end) {
   for (let y = 2; y < S - 1; y += 1) {
     for (let x = 1; x < S - 1; x += 1) {
       const d = dist[y * S + x];
-      if (d > -0.5 || d < -3 || hash(x, y, 420 + v) > 0.22) continue;
+      if (d > -0.5 || d < -7 || hash(x, y, 420 + v) > 0.38) continue;
       const height = 2 + Math.floor(hash(x, y, 421) * 3);
       for (let k = 0; k < height; k += 1) {
         const lvl = k / (height - 1);
@@ -533,6 +554,21 @@ function drawPath(canvas, side, v, end) {
         if (px < 0 || px > LAST || y - k < 0) continue;
         canvas.pixel(px, y - k, grass[clamp(Math.round(1.6 + lvl * 2.4), 1, 4)]);
       }
+    }
+  }
+  // Detalhes densos da trilha: seixos, plantas e flores invadem a borda como na vila de referência.
+  for (let i = 0; i < 9; i += 1) {
+    const x = 7 + Math.floor(hash(i, v, 435) * 34);
+    const y = 5 + Math.floor(hash(i, v, 436) * 38);
+    const d = dist[y * S + x];
+    if (d <= 1) continue;
+    if (i % 4 === 0) flower(canvas, x, y, (i + v) % FLOWERS.length, grass[1]);
+    else if (i % 4 === 1) pebble(canvas, x, y, i % 2 ? 1 : 0, WARM_STONE, DIRT[1]);
+    else if (i % 4 === 2) tuftAt(canvas, x, y, grass, 440 + i + v, { count: 8, min: 3, max: 6, spread: 3 });
+    else {
+      canvas.rect(x - 2, y, 5, 1, DIRT[5]);
+      canvas.pixel(x - 1, y - 1, DIRT[6]);
+      canvas.pixel(x + 2, y + 1, DIRT[1]);
     }
   }
   // Um tufinho perdido no meio da terra em algumas variantes.
@@ -722,12 +758,12 @@ export function drawDecorTile(kind, n) {
   switch (kind) {
     case T.VALLEY:
     case T.JUNGLE:
-      if (n === 0) tufts(3);
-      else if (n === 1) { tufts(1); flowers(4, kind === T.JUNGLE ? 2 : 0); }
-      else if (n === 2) flowers(5, kind === T.JUNGLE ? 2 : 1);
-      else if (n === 3) { pebble(canvas, cx, cy, 2, STONE, ramp[0]); tuftAt(canvas, cx - 6, cy + 2, ramp, s, { count: 5, spread: 2 }); }
-      else if (n === 4) tufts(2, { count: 9, min: 4, max: 7, spread: 4 });
-      else { flowers(2, 4); pebble(canvas, cx + 6, cy + 3, 0, STONE, ramp[0]); }
+      if (n === 0) { tufts(7, { count: 9, min: 4, max: 7, spread: 4 }); flowers(3, 0); }
+      else if (n === 1) { tufts(5); flowers(8, kind === T.JUNGLE ? 2 : 0); for (let i = 0; i < 4; i += 1) pebble(canvas, cx - 12 + i * 7, cy + (i % 2) * 5, i % 3 === 0 ? 1 : 0, WARM_STONE, ramp[0]); }
+      else if (n === 2) { flowers(10, kind === T.JUNGLE ? 2 : 1); tufts(4, { count: 11, min: 5, max: 8, spread: 5 }); }
+      else if (n === 3) { pebble(canvas, cx, cy, 2, WARM_STONE, ramp[0]); pebble(canvas, cx - 10, cy + 4, 1, STONE, ramp[0]); tufts(5, { count: 7, min: 4, max: 6, spread: 3 }); }
+      else if (n === 4) { tufts(8, { count: 10, min: 5, max: 9, spread: 5 }); flowers(6, 4); pebble(canvas, cx + 8, cy + 6, 1, STONE, ramp[0]); }
+      else { flowers(5, 4); flowers(3, 1); tufts(5, { count: 8, min: 4, max: 7, spread: 4 }); pebble(canvas, cx + 7, cy + 4, 0, WARM_STONE, ramp[0]); }
       break;
     case T.FOREST:
       if (n === 0) tufts(2, { count: 8, min: 3, max: 6 });

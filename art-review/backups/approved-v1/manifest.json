@@ -1,0 +1,58 @@
+{
+  "date": "2026-11-01T15:45:25.675Z",
+  "authorization": "User: integre e envie ao github; three v1 approvals in panel",
+  "files": [
+    {
+      "file": "src/art/bakedBuildings.js",
+      "before": "029ec562885ea13fb63ab0c8afa5c0e9eef3bced789a9b5e9553bea85557ce19",
+      "after": "5cdcc0bce7c80ea9709764b9962038c78d78aa0937f91fe9a1c8c1b1d3140eec"
+    },
+    {
+      "file": "src/art/bakedNature.js",
+      "before": "1c349c907e60b857424e7aa1c6b333b8c39457f33ee9535620deee59b3e024d2",
+      "after": "3f917054e114311a709053a565bc2e6b4adb501f6ca3ad9bb8010f81d902ebb8"
+    },
+    {
+      "file": "scripts/generate-assets.js",
+      "before": "55f963d9ca3470481d0f6b0275275f15342368ef9c6bd2c489a0adc428591882",
+      "after": "3e75d4ec02189cfc4803d6c4d297e1f4247446e53473612d5668dbdde2b528af"
+    },
+    {
+      "file": "public/assets/buildings/camp-atlas.png",
+      "before": "7bb3c7ca1fd68ab7126533f4310af53328d36dd887cbfe7e61e144390bed133d",
+      "after": "c66beca5062f757a1e476e7e967238d7e551d8958a3b4d65b7fcbc72e4d2fffe"
+    },
+    {
+      "file": "public/assets/nature/nature-atlas.png",
+      "before": "6d765be1c542c45679e523fec43ab6f072894670ff0aac2a411fa0d4e0327d96",
+      "after": "b628c6ab5f40cc96c3dccb0d9e3c91c39f619762dba4fefce1b3712fbbd7f5a7"
+    }
+  ],
+  "added": [
+    {
+      "file": "src/art/approvedBuildingSprites.js",
+      "after": "39b34785ff1876572f942eb43696fe0613aac5d7330e326ddc8f978d3d9ef1a1"
+    },
+    {
+      "file": "src/art/approvedNatureSprites.js",
+      "after": "95479fbd183abde80b585fc87eb7ba4495fbb2e5a00640c7964f875ef24eb891"
+    }
+  ],
+  "proposals": [
+    {
+      "id": "tower-stone",
+      "version": "v1",
+      "sha256": "ec88a900a425d74a8802828fed3030fe542b37d7c4d2fb9e05c0846ae45b29df"
+    },
+    {
+      "id": "forge",
+      "version": "v1",
+      "sha256": "7e07b22d06fd4d7234344567dc4c83d1c8ea1edbaf6a26d60bd34b51224433ef"
+    },
+    {
+      "id": "vegetation",
+      "version": "v1",
+      "sha256": "ac3dfa3a722455b0ca9db07a30aab3a9df5311fd67277e33511bfacca8f46558"
+    }
+  ]
+}

@@ -25,6 +25,7 @@ import { formatRemaining } from './ActiveEffects.js';
 import { formatCount } from './formatCount.js';
 import { REBIRTH_CONFIG, canRebirth } from '../data/rebirth.js';
 import { MOUNT_LEVEL, PETS, PET_IDS, mountUnlocked } from '../data/companions.js';
+import { AUXILIARY_BUILDINGS, AUXILIARY_ORDER, auxiliaryLevelDescription } from '../data/auxiliaryBuildings.js';
 
 // Desenho de cada prédio no cabeçalho e nos cartões (textura, quadro).
 const PORTRAITS = {
@@ -126,6 +127,7 @@ export class BuildingMenu {
         'hunt-accept': () => this.scene.huntAction?.('accept', button.dataset.arg),
         'hunt-turnin': () => this.scene.huntAction?.('turnin'),
         'hunt-abandon': () => this.scene.huntAction?.('abandon')
+        , 'collect-auxiliary': () => this.scene.collectAuxiliary?.(button.dataset.arg)
       }[button.dataset.action];
       const result = direct ? direct() : this.scene.buildingMenuAction?.(button.dataset.action, button.dataset.arg, button.dataset.arg2);
       this.scene.lastBuildingMessage = result?.message ?? this.scene.lastBuildingMessage ?? '';
@@ -144,12 +146,16 @@ export class BuildingMenu {
     };
     this.content.addEventListener('input', this.handleSlider);
     scene.events.once('shutdown', () => {
+      window.clearInterval(this.cooldownTimer);
       this.closeButton.removeEventListener('click', this.handleClose);
       this.tabs.removeEventListener('click', this.handleTabs);
       this.content.removeEventListener('click', this.handleContent);
       this.content.removeEventListener('input', this.handleSlider);
       this.root.hidden = true;
     });
+    this.cooldownTimer = window.setInterval(() => {
+      if (this.isOpen && AUXILIARY_BUILDINGS[this.building]) this.render();
+    }, 1000);
   }
 
   get camp() {
@@ -163,6 +169,7 @@ export class BuildingMenu {
   tabsFor(building) {
     const camp = this.camp;
     if (building === 'camp') return [{ id: 'overview', label: 'Prédios' }];
+    if (AUXILIARY_BUILDINGS[building]) return [UPGRADES_TAB];
     const level = camp.levels[building];
     if (level === 0 || camp.durability[building] <= 0) return [UPGRADES_TAB];
     const unlocked = (unlock) => hasUnlock(building, unlock, level);
@@ -202,7 +209,7 @@ export class BuildingMenu {
   }
 
   open(building) {
-    if (building !== 'camp' && !BUILDING_DEFS[building]) return false;
+    if (building !== 'camp' && !BUILDING_DEFS[building] && !AUXILIARY_BUILDINGS[building]) return false;
     this.building = building;
     this.tab = this.tabsFor(building)[0].id;
     this.root.hidden = false;
@@ -238,12 +245,12 @@ export class BuildingMenu {
       this.title.textContent = 'Acampamento';
       this.kicker.textContent = `Dia ${this.scene.timeState?.dayCount ?? 1} • LENDAS`;
     } else {
-      const level = this.camp.levels[this.building];
-      this.title.textContent = BUILDING_DEFS[this.building].name;
+      const level = AUXILIARY_BUILDINGS[this.building] ? this.camp.auxiliaryLevels[this.building] : this.camp.levels[this.building];
+      this.title.textContent = (AUXILIARY_BUILDINGS[this.building] ?? BUILDING_DEFS[this.building]).name;
       this.kicker.textContent = level === 0 ? 'Não construído • LENDAS' : `Nível ${level}/${MAX_BUILDING_LEVEL} • LENDAS`;
     }
     this.portrait.src = this.portraitUrl(this.building);
-    const level = this.building === 'camp' ? null : this.camp.levels[this.building];
+    const level = this.building === 'camp' ? null : (AUXILIARY_BUILDINGS[this.building] ? this.camp.auxiliaryLevels[this.building] : this.camp.levels[this.building]);
     this.levelbar.innerHTML = level === null ? '' : Array.from({ length: MAX_BUILDING_LEVEL }, (_, index) =>
       `<span class="${index < level ? 'is-done' : index === level ? 'is-next' : ''}"></span>`).join('');
     this.tabs.innerHTML = tabs.map((tab) => `
@@ -264,6 +271,7 @@ export class BuildingMenu {
 
   renderContent() {
     if (this.building === 'camp') return this.renderOverview();
+    if (AUXILIARY_BUILDINGS[this.building]) return this.renderAuxiliaryUpgrade(this.building);
     if (this.tab === 'upgrades') return this.renderUpgrade(this.building);
     if (this.tab === 'recipes') return this.renderRecipes(this.building);
     const renderers = {
@@ -276,6 +284,35 @@ export class BuildingMenu {
       tower: () => this.renderTower()
     };
     return renderers[this.building]();
+  }
+
+  renderAuxiliaryUpgrade(building) {
+    const level = this.camp.auxiliaryLevels[building];
+    const definition = AUXILIARY_BUILDINGS[building];
+    const cost = this.camp.auxiliaryUpgradeCostFor(building);
+    const canUpgrade = cost && this.camp.canPay(cost);
+    const stockTypes = building === 'sawmill' ? ['wood'] : ['stone', 'iron', 'coal'];
+    const stock = stockTypes
+      .filter((type) => (this.camp.auxiliaryStock[type] ?? 0) > 0)
+      .map((type) => `${this.camp.auxiliaryStock[type]} ${resourceLabel(type)}`)
+      .join(' · ') || 'vazio';
+    const nextAt = this.camp.auxiliaryNextCollectionAt?.[building] ?? 0;
+    const remaining = Math.max(0, (nextAt - Date.now()) / 1000);
+    const ready = remaining <= 0;
+    const roadmap = Array.from({ length: MAX_BUILDING_LEVEL }, (_, index) => {
+      const target = index + 1;
+      const state = target <= level ? 'done' : target === level + 1 ? 'next' : 'locked';
+      return `<li class="building-menu__level building-menu__level--${state}"><strong>${target}</strong> ${escapeHtml(auxiliaryLevelDescription(building, target))}</li>`;
+    }).join('');
+    return `<div class="building-menu__grid"><article class="building-menu__card building-menu__card--wide">
+      <h2>${escapeHtml(definition.name)} • nível ${level}/${MAX_BUILDING_LEVEL}</h2>
+      <p>${escapeHtml(auxiliaryLevelDescription(building, level))}</p>
+      <div class="building-menu__stat">Estoque pronto para coleta: ${escapeHtml(stock)}</div>
+      <div class="building-menu__stat">${ready ? 'PRONTO PARA COLETAR' : `Próxima coleta em ${formatSeconds(remaining)}`}</div>
+      <div class="building-menu__stat">Próximo: ${cost ? this.costHtml(cost) : 'NÍVEL MÁXIMO'}</div>
+      <div class="building-menu__actions"><button type="button" data-action="collect-auxiliary" data-arg="${building}" ${disabled(!ready)}>COLETAR PRODUÇÃO</button><button type="button" class="button--primary" data-action="upgrade" data-arg="${building}" ${disabled(!canUpgrade)}>${cost ? `MELHORAR PARA NÍVEL ${level + 1}` : 'NÍVEL MÁXIMO'}</button></div>
+      <ol class="building-menu__roadmap">${roadmap}</ol>
+    </article></div>`;
   }
 
   costHtml(cost) {
@@ -347,6 +384,17 @@ export class BuildingMenu {
         </article>
       `;
     }).join('');
+    const auxiliaryCards = AUXILIARY_ORDER.map((key) => {
+      const definition = AUXILIARY_BUILDINGS[key];
+      const level = camp.auxiliaryLevels[key];
+      const cost = camp.auxiliaryUpgradeCostFor(key);
+      const canUpgrade = cost && camp.canPay(cost);
+      return `<article class="building-menu__card"><h2>${escapeHtml(definition.name)} • nível ${level}/${MAX_BUILDING_LEVEL}</h2>
+        <p>${escapeHtml(auxiliaryLevelDescription(key, level))}</p>
+        <div class="building-menu__stat">${cost ? `Próximo: ${this.costHtml(cost)}` : 'NÍVEL MÁXIMO'}</div>
+        <div class="building-menu__actions"><button type="button" data-action="open" data-arg="${key}">ABRIR</button><button type="button" class="button--primary" data-action="upgrade" data-arg="${key}" ${disabled(!canUpgrade)}>${cost ? `MELHORAR PARA ${level + 1}` : 'NÍVEL MÁXIMO'}</button></div>
+      </article>`;
+    }).join('');
     const complete = BUILDING_ORDER.filter((key) => camp.levels[key] >= MAX_BUILDING_LEVEL).length;
     const night = this.scene.timeState?.isNight;
     return `
@@ -357,6 +405,7 @@ export class BuildingMenu {
       </div>
       <div class="building-menu__grid">
         ${cards}
+        ${auxiliaryCards}
         <article class="building-menu__card">
           <h2>Dormir</h2>
           <p>Pula a noite e salva. Requer Casa nível 2.</p>

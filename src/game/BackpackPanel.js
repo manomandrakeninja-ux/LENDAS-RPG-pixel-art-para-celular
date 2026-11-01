@@ -1,5 +1,5 @@
 import { CONSUMABLES, isConsumable } from '../data/consumables.js';
-import { RESOURCE_TYPES } from './config.js';
+import { RESOURCE_TYPES, INVENTORY_MAX_LEVEL, inventorySlotsForLevel, inventoryUpgradeCost } from './config.js';
 import { formatCount } from './formatCount.js';
 import { resourceIconHtml, textureUrl } from './iconUrls.js';
 
@@ -77,6 +77,10 @@ export class BackpackPanel {
       }
       if (button.dataset.bag === 'use') this.scene.useItem(button.dataset.type);
       if (button.dataset.bag === 'store-all') this.scene.storeAllAtCamp();
+      if (button.dataset.bag === 'upgrade') {
+        const result = this.scene.camp?.upgradeInventory();
+        this.scene.ui?.showMessage(result?.message ?? '');
+      }
       this.lastKey = '';
       this.refresh();
     };
@@ -149,10 +153,36 @@ export class BackpackPanel {
         </div>`;
     }).join('');
     this.grid.innerHTML = slots;
-    this.summary.textContent = `${inventory.usedSlots}/${inventory.maxSlots} espaços • ${formatCount(inventory.total)}/${formatCount(inventory.totalCapacity)} itens`;
+    const camp = this.scene.camp;
+    const currentLevel = camp?.inventoryLevel ?? 1;
+    const capacityLabel = inventory.totalCapacity.toLocaleString('pt-BR');
+    this.summary.textContent = `Nível ${currentLevel} • ${inventory.usedSlots}/${inventory.maxSlots} espaços • ${formatCount(inventory.total)}/${capacityLabel} itens`;
+    // Botão de evolução da mochila (apenas perto do acampamento e enquanto houver próximo nível).
+    let upgradeButton = '';
+    if (camp && camp.inventoryLevel < INVENTORY_MAX_LEVEL) {
+      const nextLevel = camp.inventoryLevel + 1;
+      const nextSlots = inventorySlotsForLevel(nextLevel);
+      const cost = camp.inventoryUpgradeCostFor();
+      const canPay = cost ? camp.canPay(cost) : false;
+      const parts = Object.entries(cost ?? {}).map(([type, amount]) =>
+        type === 'coins' ? `${amount} moedas` : `${amount} ${RESOURCE_TYPES[type]?.label ?? type}`
+      );
+      upgradeButton = `<div class="backpack-upgrade">
+        <div class="backpack-upgrade__heading">EVOLUÇÃO DA MOCHILA</div>
+        <div class="backpack-upgrade__details">Nível ${camp.inventoryLevel} → ${nextLevel} | ${inventory.maxSlots} → ${nextSlots} espaços</div>
+        <div class="backpack-upgrade__cost">Custo: ${parts.join(' + ')}</div>
+        <button type="button" class="button--primary" data-bag="upgrade" ${!canPay ? 'disabled' : ''}>
+          ${canPay ? `EVOLUIR PARA ${nextSlots} ESPAÇOS` : 'RECURSOS INSUFICIENTES'}
+        </button>
+      </div>`;
+    } else if (camp) {
+      upgradeButton = '<div class="backpack-upgrade backpack-upgrade--max"><div class="backpack-upgrade__heading">MOCHILA NO MÁXIMO</div><div class="backpack-upgrade__details">36 espaços disponíveis</div></div>';
+    }
     const gearButton = '<div class="backpack-panel__gear"><button type="button" data-bag="equipment">EQUIPAMENTO</button><small>Tecla V</small></div>';
     this.footer.innerHTML = (storeAll
       ? `<button type="button" class="button--primary" data-bag="store-all" ${inventory.total === 0 ? 'disabled' : ''}>GUARDAR TUDO NA CASA</button>`
-      : '<p>Teclas rápidas: 1 poção • 2 comer • 3 tocha • 4 vigor/armadilha • 5 elixir</p>') + gearButton;
+      : '<p>Teclas rápidas: 1 poção • 2 comer • 3 tocha • 4 vigor/armadilha • 5 elixir</p>')
+      + upgradeButton
+      + gearButton;
   }
 }

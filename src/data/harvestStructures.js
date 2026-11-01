@@ -41,7 +41,10 @@ export const HARVEST_STRUCTURE_TYPES = {
     rewardType: 'food',
     rewardAmount: [1, 3],
     regrowDays: 0,
-    nightOnly: true
+    nightOnly: true,
+    // A missão m002 aponta para a Clareira de Cogumelos, a noroeste do acampamento.
+    spawnCenter: { x: 920, y: 820 },
+    spawnRadius: 150
   },
   chest: {
     label: 'Baú',
@@ -227,6 +230,16 @@ export class HarvestStructureState {
     const width = this.world?.width ?? 2880;
     const height = this.world?.height ?? 2160;
     const camp = this.world?.camp ?? { x: 1440, y: 1080 };
+    if (definition.spawnCenter) {
+      for (let attempt = 0; attempt < 180; attempt += 1) {
+        const angle = random() * Math.PI * 2;
+        const radius = random() * (definition.spawnRadius ?? 120);
+        const x = Math.max(64, Math.min(width - 64, definition.spawnCenter.x + Math.cos(angle) * radius));
+        const y = Math.max(82, Math.min(height - 82, definition.spawnCenter.y + Math.sin(angle) * radius));
+        if (this.structures.some((structure) => Math.hypot(x - structure.x, y - structure.y) < 28)) continue;
+        return { x, y };
+      }
+    }
     // Item 19: fora da muralha nova do acampamento (380; vértice a ~411).
     const minimumDistance = definition.minCampDistance ?? 460;
     const maximumDistance = definition.maxCampDistance ?? Infinity;
@@ -254,8 +267,13 @@ export class HarvestStructureState {
     for (const structure of this.structures) {
       const persisted = savedById.get(structure.id);
       if (!persisted || persisted.type !== structure.type) continue;
-      if (Number.isFinite(Number(persisted.x))) structure.x = Number(persisted.x);
-      if (Number.isFinite(Number(persisted.y))) structure.y = Number(persisted.y);
+      // Nós com área fixa podem ter vindo de um save criado antes da correção
+      // de posicionamento; preservamos coleta/descoberta, mas usamos a posição
+      // atual da área para que a missão continue alcançável.
+      if (!HARVEST_STRUCTURE_TYPES[structure.type].spawnCenter) {
+        if (Number.isFinite(Number(persisted.x))) structure.x = Number(persisted.x);
+        if (Number.isFinite(Number(persisted.y))) structure.y = Number(persisted.y);
+      }
       structure.collected = Boolean(persisted.collected);
       structure.discovered = Boolean(persisted.discovered);
       structure.harvestedDay = Number.isFinite(Number(persisted.harvestedDay))

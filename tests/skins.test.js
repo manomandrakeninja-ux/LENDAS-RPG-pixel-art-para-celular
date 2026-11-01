@@ -46,9 +46,43 @@ test('skins: 7 folhas 12 x 4 de 56 x 64 (padrão da Fase 22), quadros cheios e d
   }
 });
 
+test('skins: os 4 quadros de caminhada mudam pelo menos 6% dos pixels opacos', () => {
+  for (const skin of [...SKINS, { id: null }, { id: 'female' }]) {
+    const png = sheetOf(skin.id);
+    for (let direction = 0; direction < 4; direction += 1) {
+      const walk = [0, 1, 2, 3].map((frame) => frameOf(png, direction, frame));
+      for (let frame = 0; frame < 4; frame += 1) {
+        const a = walk[frame];
+        const b = walk[(frame + 1) % 4];
+        let total = 0;
+        let changed = 0;
+        for (let i = 0; i < a.length; i += 4) {
+          const bothTransparent = a[i + 3] < 128 && b[i + 3] < 128;
+          if (bothTransparent) continue;
+          total += 1;
+          if (a[i] !== b[i] || a[i + 1] !== b[i + 1] || a[i + 2] !== b[i + 2] || a[i + 3] !== b[i + 3]) changed += 1;
+        }
+        assert.ok(changed / total >= 0.06, `${skin.id ?? 'male'} d${direction} quadro ${frame}: ${(100 * changed / total).toFixed(1)}%`);
+      }
+    }
+  }
+});
+
 test('skins: cada cor de capa tem a sua folha', () => {
   const sheets = ['warrior', 'warrior-blue', 'warrior-green', 'warrior-black'].map((id) => sheetOf(id).data.toString('base64'));
   assert.equal(new Set(sheets).size, 4);
+});
+
+test('guerreira verde: capa permanece verde em todas as poses e direcoes', () => {
+  const png = sheetOf('warrior-green');
+  for (let d = 0; d < 4; d += 1) for (let f = 0; f < HERO_COLS; f += 1) {
+    const data = frameOf(png, d, f);
+    let green = 0;
+    for (let i = 0; i < data.length; i += 4) {
+      if (data[i + 3] && data[i + 1] > 80 && data[i + 1] > data[i] * 1.5 && data[i + 1] > data[i + 2] * 1.2) green += 1;
+    }
+    assert.ok(green >= 30, `d${d} f${f}: capa sem verde (${green})`);
+  }
 });
 
 test('skins: textura, quadro e valor seguro', () => {

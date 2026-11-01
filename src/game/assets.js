@@ -76,8 +76,30 @@ export const ASSET_CONFIG = {
     key: 'vfx',
     texture: 'assets/vfx/vfx-atlas.png',
     data: 'assets/vfx/vfx-atlas.json'
+  },
+  envDragon: {
+    kind: 'spritesheet',
+    key: 'env-dragon',
+    file: 'assets/vfx/env-dragon.png',
+    frameWidth: 192,
+    frameHeight: 96
   }
 };
+
+// Prédios auxiliares do acampamento: artes individuais para preservar a
+// transparência e permitir evolução visual sem reempacotar o atlas antigo.
+export const CAMP_BUILDING_IMAGES = Object.freeze({
+  sawmill: {
+    1: 'assets/buildings/new/sawmill-1.png',
+    4: 'assets/buildings/new/sawmill-4.png',
+    8: 'assets/buildings/new/sawmill-8.png'
+  },
+  mine: {
+    1: 'assets/buildings/new/mine-1.png',
+    4: 'assets/buildings/new/mine-4.png',
+    8: 'assets/buildings/new/mine-8.png'
+  }
+});
 
 // Fase 20H: pele da interface (scripts/bake-ui.mjs → src/ui-skin/). O Vite empacota pelo new URL.
 export const UI_SKIN_IMAGES = {
@@ -99,6 +121,9 @@ export const UI_SKIN_IMAGES = {
 
 export function preloadGameAssets(scene) {
   for (const [key, url] of Object.entries(UI_SKIN_IMAGES)) scene.load.image(key, url);
+  for (const [building, stages] of Object.entries(CAMP_BUILDING_IMAGES)) {
+    for (const [stage, file] of Object.entries(stages)) scene.load.image(`camp-${building}-${stage}`, file);
+  }
   for (const asset of Object.values(ASSET_CONFIG)) {
     if (asset.kind === 'spritesheet') {
       scene.load.spritesheet(asset.key, asset.file, {

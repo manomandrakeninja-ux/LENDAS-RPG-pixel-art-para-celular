@@ -93,7 +93,7 @@ export class TouchControls {
       if (event.pointerType === 'mouse' && event.button !== 0) return;
       this.suppressActionClickUntil = performance.now() + 700;
       this.scene.audio?.unlock();
-      this.scene.performContextAction();
+      if (!this.scene.overlayBlocked()) this.scene.attackNearby();
     });
     this.listen(window, 'click', (event) => {
       if (performance.now() < this.suppressActionClickUntil && event.target.closest?.('#world-action')) {

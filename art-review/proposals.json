@@ -1,0 +1,26 @@
+[
+  {
+    "id": "tower-stone", "version": "v1", "name": "Torre de pedra", "category": "Muralhas e torres", "level": "Níveis 4–7", "date": "2026-11-01",
+    "original": "/art-review/originals/tower-4.png", "proposed": "/art-review/proposals/tower-stone/v1/proposed.png",
+    "sourceOriginal": "src/art/buildingSprites.js → tower-stone (RLE)",
+    "description": "Pedras com volume, ameias espessas e sombra sob o parapeito. 90 × 174 px; apenas proposta estática.",
+    "report": "Silhueta proposta 7 px mais estreita; mesma altura e base. Validar arqueiros, canhão e colisão somente após autorização de integração.",
+    "preview": "/art-review/proposals/tower-stone/v1/scene.png", "comparison": "/art-review/proposals/tower-stone/v1/comparison.png"
+  },
+  {
+    "id": "forge", "version": "v1", "name": "Ferreiro do acampamento", "category": "Construções", "level": "Níveis 4–7", "date": "2026-11-01",
+    "original": "/art-review/originals/forge-4.png", "proposed": "/art-review/proposals/forge/v1/proposed.png",
+    "sourceOriginal": "public/assets/buildings/camp-atlas.png → forge",
+    "description": "Telhas legíveis, pedras sombreadas e luz da fornalha contida no prédio. 168 × 176 px; sem alterar produção ou níveis.",
+    "report": "Mesma caixa e base inferior do recorte. Proporções internas e alinhamento da chaminé precisam de revisão antes de eventual integração.",
+    "preview": "/art-review/proposals/forge/v1/scene.png", "comparison": "/art-review/proposals/forge/v1/comparison.png"
+  },
+  {
+    "id": "vegetation", "version": "v1", "name": "Carvalho, arbusto e flores", "category": "Vegetação", "level": "Sem nível", "date": "2026-11-01",
+    "original": "/art-review/originals/vegetation.png", "proposed": "/art-review/proposals/vegetation/v1/proposed.png",
+    "sourceOriginal": "public/assets/nature/nature-atlas.png → oak-tree, bush, detail-flowers",
+    "description": "Copas em grupos de folhas, tronco com volume e contraste de luz superior esquerda. Prancha 132 × 88 px.",
+    "report": "Peças preservadas em regiões 72×88, 40×30 e 20×16, alinhadas pela base. Não é atlas substituto do jogo. Conferir leitura das flores e sombra de contato.",
+    "preview": "/art-review/proposals/vegetation/v1/scene.png", "comparison": "/art-review/proposals/vegetation/v1/comparison.png"
+  }
+]

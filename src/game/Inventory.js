@@ -1,4 +1,4 @@
-import { INVENTORY_CONFIG, RESOURCE_TYPES } from './config.js';
+import { INVENTORY_CONFIG, INVENTORY_MAX_LEVEL, RESOURCE_TYPES, inventorySlotsForLevel } from './config.js';
 
 export class Inventory {
   constructor(saved = {}, options = {}) {
@@ -8,8 +8,10 @@ export class Inventory {
         ? saved.maxSlots
         : INVENTORY_CONFIG.maxSlots
     );
+    // Limite máximo é o último nível de evolução (36 slots), não o valor base (12).
+    const maxAllowedSlots = inventorySlotsForLevel(INVENTORY_MAX_LEVEL);
     this.maxSlots = Math.min(
-      INVENTORY_CONFIG.maxSlots,
+      maxAllowedSlots,
       Math.max(1, Math.floor(Number(requestedSlots) || INVENTORY_CONFIG.maxSlots))
     );
     // Pilha da mochila: sempre o valor atual da config (saves antigos guardavam 12 por espaço).

@@ -38,7 +38,9 @@ const RIGHT = {
   hands: [[25, 39], [29, 40], [33, 39], [29, 40], [29, 41], [29, 32], [25, 21], [21, 15], [40, 38], [33, 40], [23, 37], [29, 40]],
   layer: ['front', 'front', 'front', 'front', 'front', 'front', 'back', 'back', 'front', 'front', 'front', 'front'],
   // De perfil as costas ficam atrás: cabo atrás da nuca, ponta para baixo e para trás.
-  back: { grip: [24, 22], angle: 135, layer: 'back' },
+  // Nas folhas novas o ombro fica alguns pixels mais para a direita do quadro;
+  // manter 24 fazia a espada escapar do corpo ao ser guardada de perfil.
+  back: { grip: [29, 22], angle: 135, layer: 'back' },
   walkBob: [0, -1, 0, -1]
 };
 
@@ -68,7 +70,10 @@ const UP = (() => {
 export const DEFAULT_RIG = Object.freeze({ down: DOWN, left: mirrorDir(RIGHT), right: RIGHT, up: UP });
 
 /** Ajustes por textura (ex.: 'player-warrior': { down: { hands: { 7: [15, 14] } } }). */
-export const RIG_OVERRIDES = { ...SKIN_RIGS, ...PAINTED_RIGS };
+// As folhas atuais foram redesenhadas juntas, com o mesmo centro e proporção.
+// Os pontos antigos de SKIN_RIGS pertenciam às folhas anteriores e deixavam a
+// espada deslocada para fora do corpo em alguns quadros/direções.
+export const RIG_OVERRIDES = { ...PAINTED_RIGS };
 // As 4 guerreiras usam o mesmo ajuste.
 for (const id of ['warrior-blue', 'warrior-green', 'warrior-black']) RIG_OVERRIDES[`player-${id}`] ??= RIG_OVERRIDES['player-warrior'];
 

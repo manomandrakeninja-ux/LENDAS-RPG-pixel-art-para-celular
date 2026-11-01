@@ -1,0 +1,22 @@
+[
+  {
+    "file": "src/art/buildingSprites.js",
+    "sha256": "0594aa5dd2cd5d07f0ffac86b2226275a6bf22cf2523694bd0079443fc1fae92"
+  },
+  {
+    "file": "public/assets/buildings/camp-atlas.png",
+    "sha256": "7bb3c7ca1fd68ab7126533f4310af53328d36dd887cbfe7e61e144390bed133d"
+  },
+  {
+    "file": "public/assets/buildings/camp-atlas.json",
+    "sha256": "1d869ff96ba875a00f53648ac088905e96a6b4c16b1633a9f298585356c86d1d"
+  },
+  {
+    "file": "public/assets/nature/nature-atlas.png",
+    "sha256": "6d765be1c542c45679e523fec43ab6f072894670ff0aac2a411fa0d4e0327d96"
+  },
+  {
+    "file": "public/assets/nature/nature-atlas.json",
+    "sha256": "6e2d4565f907b93eb6a4a48b3e5127b838440dca418eb379d1001b3f074f3777"
+  }
+]

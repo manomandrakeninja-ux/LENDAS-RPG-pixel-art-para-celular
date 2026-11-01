@@ -172,6 +172,35 @@ export class WorldMapOverlay {
       event.preventDefault();
       this.setZoom(this.zoomIndex + (event.deltaY < 0 ? 1 : -1));
     };
+    // Pinça no celular: os níveis continuam discretos para manter a arte
+    // pixelada, mas o gesto usa a distância real entre os dois dedos.
+    this.pinchStartDistance = 0;
+    this.pinchStartZoom = this.zoomIndex;
+    this.pinchMoved = false;
+    this.handleTouchStart = (event) => {
+      if (!this.isOpen || event.touches.length !== 2) return;
+      const [a, b] = event.touches;
+      this.pinchStartDistance = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+      this.pinchStartZoom = this.zoomIndex;
+      this.pinchMoved = false;
+      event.preventDefault();
+    };
+    this.handleTouchMove = (event) => {
+      if (!this.isOpen || event.touches.length !== 2 || !this.pinchStartDistance) return;
+      const [a, b] = event.touches;
+      const distance = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+      const ratio = distance / this.pinchStartDistance;
+      if (Math.abs(ratio - 1) < 0.08) return;
+      const next = ratio > 1 ? this.pinchStartZoom + 1 : this.pinchStartZoom - 1;
+      if (next !== this.zoomIndex) {
+        this.setZoom(next);
+        this.pinchMoved = true;
+      }
+      event.preventDefault();
+    };
+    this.handleTouchEnd = (event) => {
+      if (event.touches.length < 2) this.pinchStartDistance = 0;
+    };
     this.zoomBar.addEventListener('click', this.handleZoomClick);
     // Cartão da região: tocar ou clicar no mapa mostra nome, nível, monstros, cavernas e portos.
     this.card = document.createElement('div');
@@ -180,6 +209,10 @@ export class WorldMapOverlay {
     this.card.hidden = true;
     this.root.append(this.card);
     this.handleCanvasClick = (event) => {
+      if (this.pinchMoved) {
+        this.pinchMoved = false;
+        return;
+      }
       const rect = this.canvas.getBoundingClientRect();
       if (!rect.width) return;
       const view = this.view();
@@ -214,6 +247,10 @@ export class WorldMapOverlay {
       }
     });
     this.canvas.addEventListener('wheel', this.handleWheel, { passive: false });
+    this.canvas.addEventListener('touchstart', this.handleTouchStart, { passive: false });
+    this.canvas.addEventListener('touchmove', this.handleTouchMove, { passive: false });
+    this.canvas.addEventListener('touchend', this.handleTouchEnd, { passive: false });
+    this.canvas.addEventListener('touchcancel', this.handleTouchEnd, { passive: false });
   }
 
   createZoomBar() {
@@ -696,6 +733,10 @@ export class WorldMapOverlay {
     this.closeButton.removeEventListener('click', this.handleClose);
     this.zoomBar?.removeEventListener('click', this.handleZoomClick);
     this.canvas.removeEventListener('wheel', this.handleWheel);
+    this.canvas.removeEventListener('touchstart', this.handleTouchStart);
+    this.canvas.removeEventListener('touchmove', this.handleTouchMove);
+    this.canvas.removeEventListener('touchend', this.handleTouchEnd);
+    this.canvas.removeEventListener('touchcancel', this.handleTouchEnd);
     this.canvas.removeEventListener('click', this.handleCanvasClick);
     this.card?.remove();
   }

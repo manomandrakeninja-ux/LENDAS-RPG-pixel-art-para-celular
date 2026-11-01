@@ -160,6 +160,10 @@ export class GameScene extends Phaser.Scene {
     this.world.restoreFog(saved?.fog);
     this.world.create();
     this.camp = new Camp(this, saved?.camp);
+    // Garante que a mochila reflita o nível salvo no acampamento (ex: 24 ou 36 espaços).
+    if (this.camp.inventoryLevel > 1) {
+      this.inventory.maxSlots = this.camp.inventorySlots;
+    }
     // Equipamento vestido (elmo, peitoral, anel...): cobre a peça da Forja do mesmo espaço.
     this.gear = new GearSystem(saved?.gear);
     this.camp.equipment.overrides = () => this.gear.forgeOverrides();
@@ -335,6 +339,21 @@ export class GameScene extends Phaser.Scene {
       camp: 'C', map: 'M', rest: 'F', sleep: 'R', escape: 'ESC'
     });
     this.cursors = this.input.keyboard.createCursorKeys();
+    // Fallback global para navegadores que não entregam o estado de movimento
+    // ao teclado do Phaser quando o foco está no BODY ou em um botão da HUD.
+    this.movementKeyCodes = Object.freeze({
+      KeyW: this.keys.up, KeyA: this.keys.left, KeyS: this.keys.down, KeyD: this.keys.right,
+      ArrowUp: this.cursors?.up, ArrowLeft: this.cursors?.left,
+      ArrowDown: this.cursors?.down, ArrowRight: this.cursors?.right
+    });
+    this.handleMovementKey = (event) => {
+      const key = this.movementKeyCodes[event.code];
+      if (!key) return;
+      key.isDown = event.type === 'keydown';
+      event.preventDefault();
+    };
+    window.addEventListener('keydown', this.handleMovementKey, true);
+    window.addEventListener('keyup', this.handleMovementKey, true);
     this.input.keyboard.on('keydown', () => { this.audio.unlock(); this.audio.startAmbience(); });
     this.input.keyboard.on('keydown-L', () => {
       if (this.campaign?.ui?.isOpen || !this.overlayBlocked()) this.toggleJournal();
@@ -529,6 +548,10 @@ export class GameScene extends Phaser.Scene {
     window.addEventListener('pagehide', this.handlePageHide);
 
     this.events.once('shutdown', () => this.save());
+    this.events.once('shutdown', () => {
+      window.removeEventListener('keydown', this.handleMovementKey, true);
+      window.removeEventListener('keyup', this.handleMovementKey, true);
+    });
     this.events.once('shutdown', () => {
       this.game.canvas.removeEventListener('pointerdown', this.handleCanvasPointerDown);
       this.gameOverButton.removeEventListener('click', this.handleGameOverRestart);
@@ -2552,12 +2575,6 @@ export class GameScene extends Phaser.Scene {
 
   interact() {
     if (this.mining || this.overlayBlocked() || this.campaign?.ui?.isOpen) return;
-    if (this.campaign?.interact()) return;
-    // Incidente no acampamento (marcador "!"), farol apagado e pesca no píer — antes do resto.
-    if (this.incidents?.interact(this.player)) return;
-    if (this.waylights?.interact(this.player)) return;
-    if (this.fishing?.interact(this.player)) return;
-    if (this.regionWorld?.interact()) return;
     const resource = this.world.nearbyResource(this.player.x, this.player.y);
     const structure = this.harvestStructures.nearest(this.player.x, this.player.y);
     const backpack = this.deathBackpacks.nearest(this.player.x, this.player.y);
@@ -2567,6 +2584,16 @@ export class GameScene extends Phaser.Scene {
     const structureDistance = structure
       ? Phaser.Math.Distance.Between(this.player.x, this.player.y, structure.x, structure.y)
       : Infinity;
+    // Pontos de missão podem compartilhar a posição de árvores e outros nós.
+    // A ação contextual deve coletar o recurso próximo antes de abrir o texto.
+    if (!resource && !structure && !backpack) {
+      if (this.campaign?.interact()) return;
+      // Incidente no acampamento (marcador "!"), farol apagado e pesca no píer.
+      if (this.incidents?.interact(this.player)) return;
+      if (this.waylights?.interact(this.player)) return;
+      if (this.fishing?.interact(this.player)) return;
+      if (this.regionWorld?.interact()) return;
+    }
     if (structure && structureDistance <= resourceDistance) {
       this.collectHarvestStructure(structure);
       return;
@@ -2853,7 +2880,9 @@ export class GameScene extends Phaser.Scene {
   }
 
   upgradeBuilding(key) {
-    const result = this.camp.upgrade(key);
+    const result = this.camp.auxiliaryLevels?.[key] !== undefined
+      ? this.camp.upgradeAuxiliary(key)
+      : this.camp.upgrade(key);
     if (result.ok) {
       if (key === 'farm') this.farm.setLevel(this.camp.levels.farm);
       if (key === 'market') this.market.setLevel(this.camp.levels.market);
@@ -2862,6 +2891,13 @@ export class GameScene extends Phaser.Scene {
       if (result.completed) this.completeCamp();
       this.save();
     }
+    this.ui.showMessage(result.message);
+    return result;
+  }
+
+  collectAuxiliary(key) {
+    const result = this.camp.collectAuxiliary(key);
+    if (result.ok) this.save();
     this.ui.showMessage(result.message);
     return result;
   }
@@ -2936,6 +2972,7 @@ export class GameScene extends Phaser.Scene {
   onBuildingMenuStateChanged(open) {
     this.ui.buildingMenuOpen = open;
     this.ui.worldAction.hidden = open;
+    this.ui.gatherAction.hidden = open;
   }
 
   /** Cobra do conjunto mochila + armazém + moedas. */
@@ -3182,6 +3219,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   performContextAction() {
+    if (this.overlayBlocked()) return;
     if (this.campaign?.nearestInteraction() || this.regionWorld?.nearestFeature(this.player.x, this.player.y)) {
       this.interact();
       return;
@@ -3189,7 +3227,7 @@ export class GameScene extends Phaser.Scene {
     if (this.world.nearbyResource(this.player.x, this.player.y) ||
         this.harvestStructures.nearest(this.player.x, this.player.y) ||
         this.deathBackpacks.nearest(this.player.x, this.player.y)) this.interact();
-    else this.attackNearby();
+    else this.ui.showMessage('Aproxime-se de um recurso para coletar ou minerar.');
   }
 
   restAtHouse() {

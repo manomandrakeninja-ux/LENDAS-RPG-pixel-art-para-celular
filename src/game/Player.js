@@ -58,6 +58,11 @@ export class Player extends Phaser.GameObjects.Container {
     this.torchTimer = 0;
     this.direction = 'down';
     this.stepTimer = 0;
+    // Locomoção com inércia curta: evita a troca brusca de velocidade e deixa
+    // a passada acompanhar o deslocamento real do corpo.
+    this.moveVelocity = new Phaser.Math.Vector2();
+    this.moveSpeedRatio = 0;
+    this.movePhase = 0;
     this.knockbackTimer = 0;
     this.knockbackX = 0;
     this.knockbackY = 0;
@@ -116,7 +121,12 @@ export class Player extends Phaser.GameObjects.Container {
   /** Pose da arma e da ferramenta a cada quadro. */
   poseGear(delta, moving = false) {
     this.refreshGear();
-    this.animator.update(delta, this.direction, moving);
+    this.animator.update(delta, this.direction, moving, {
+      speedRatio: this.moveSpeedRatio,
+      phase: this.movePhase,
+      dodging: this.dodgeTimer > 0,
+      knockback: this.knockbackTimer > 0
+    });
   }
 
   // analog: vetor do joystick de toque (-1 a 1); usado quando nenhuma tecla de movimento está pressionada.
@@ -188,7 +198,23 @@ export class Player extends Phaser.GameObjects.Container {
       // Evento "nevasca" (gelo à noite): deixa 20% mais lento por 20 s.
       const slowFactor = this.scene.eventSlowUntil && this.scene.time.now < this.scene.eventSlowUntil ? 0.8 : 1;
       const speed = 130 * this.speedMultiplier * terrainFactor * eventFactor * slowFactor * (this.scene.companions?.speed ?? 1);
-      this.body.setVelocity(movement.x * speed, movement.y * speed);
+      const targetX = movement.x * speed;
+      const targetY = movement.y * speed;
+      // 0.10 s para ganhar velocidade e 0.14 s para parar: resposta imediata
+      // no controle, mas sem o efeito de “boneco deslizando/teleportando”.
+      const blend = movement.lengthSq() > 0 ? Math.min(1, delta / 100) : Math.min(1, delta / 140);
+      this.moveVelocity.x = Phaser.Math.Linear(this.moveVelocity.x, targetX, blend);
+      this.moveVelocity.y = Phaser.Math.Linear(this.moveVelocity.y, targetY, blend);
+      this.body.setVelocity(this.moveVelocity.x, this.moveVelocity.y);
+    }
+    if (this.knockbackTimer > 0 || this.dodgeTimer > 0) {
+      this.moveVelocity.set(this.body.velocity.x, this.body.velocity.y);
+    }
+    const actualSpeed = this.body.velocity.length();
+    const maxSpeed = 130 * this.speedMultiplier * (this.scene.companions?.speed ?? 1);
+    this.moveSpeedRatio = Phaser.Math.Clamp(maxSpeed > 0 ? actualSpeed / maxSpeed : 0, 0, 1.6);
+    if (this.moveSpeedRatio > 0.04 && this.knockbackTimer === 0) {
+      this.movePhase += (delta / 1000) * (7 + this.moveSpeedRatio * 8);
     }
     // Poeira do passo ao andar/correr (montado levanta mais poeira).
     if (movement.lengthSq() > 0 && this.knockbackTimer === 0) {
@@ -199,7 +225,7 @@ export class Player extends Phaser.GameObjects.Container {
         this.scene.effects?.spawnStepDust(this.x, this.y + 10, mounted);
       }
     }
-    this.poseGear(delta, movement.lengthSq() > 0 && this.knockbackTimer === 0);
+    this.poseGear(delta, this.moveSpeedRatio > 0.08 && this.knockbackTimer === 0);
     this.setDepth(this.y + 30);
   }
 
@@ -228,6 +254,7 @@ export class Player extends Phaser.GameObjects.Container {
     this.scene.time.delayedCall(90, () => this.scene.effects?.spawnDodgeGhost?.(this.x, this.y));
     this.knockbackTimer = 0;
     this.body.setVelocity(this.dodgeX, this.dodgeY);
+    this.moveVelocity.set(this.dodgeX, this.dodgeY);
     this.scene.effects?.spawnDust(this.x, this.y + 8, 6, 0xb0ad82);
     this.scene.audio?.playDodge();
     return true;

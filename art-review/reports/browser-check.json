@@ -1,0 +1,47 @@
+{
+  "date": "2026-11-01T15:15:09.359Z",
+  "browser": {
+    "protocolVersion": "1.3",
+    "product": "Chrome/156.0.8078.74",
+    "revision": "@d331de35ca8ab1358c7a17e4bd41627d55eaef51",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36",
+    "jsVersion": "15.6.75.25"
+  },
+  "metrics": [
+    {
+      "name": "Torre de pedra",
+      "dimensions": "Original: 90 × 174px · Proposta: 90 × 174px · 1:1 = um pixel da imagem por pixel CSS"
+    },
+    {
+      "name": "Ferreiro do acampamento",
+      "dimensions": "Original: 168 × 176px · Proposta: 168 × 176px · 1:1 = um pixel da imagem por pixel CSS"
+    },
+    {
+      "name": "Carvalho, arbusto e flores",
+      "dimensions": "Original: 132 × 88px · Proposta: 132 × 88px · 1:1 = um pixel da imagem por pixel CSS"
+    },
+    {
+      "name": "desktop",
+      "width": 1280,
+      "height": 900,
+      "documentWidth": 1265,
+      "rendering": "crisp-edges"
+    },
+    {
+      "name": "mobile-horizontal",
+      "width": 844,
+      "height": 390,
+      "documentWidth": 844,
+      "rendering": "crisp-edges"
+    },
+    {
+      "name": "mobile-vertical",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "rendering": "crisp-edges"
+    }
+  ],
+  "errors": [],
+  "decisionTest": "4 events persisted in disposable fixture; v2 independent; real approvals untouched"
+}

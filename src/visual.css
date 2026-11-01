@@ -342,6 +342,30 @@
   font: 7px/1.7 var(--pixel-font);
 }
 
+.backpack-upgrade {
+  display: grid;
+  gap: 5px;
+  margin-top: 8px;
+  padding: 8px;
+  border: 2px solid rgba(232, 199, 121, 0.55);
+  border-radius: 8px;
+  background: rgba(20, 12, 8, 0.72);
+}
+
+.backpack-upgrade__heading {
+  color: var(--gold);
+  font: 8px/1.2 var(--pixel-font);
+}
+
+.backpack-upgrade__details,
+.backpack-upgrade__cost {
+  color: #e3cfa5;
+  font: 7px/1.5 var(--pixel-font);
+}
+
+.backpack-upgrade__cost { color: #f2d58b; }
+.backpack-upgrade--max { opacity: 0.78; }
+
 @keyframes panel-in {
   from { opacity: 0; transform: translateY(-50%) translateX(-12px); }
 }

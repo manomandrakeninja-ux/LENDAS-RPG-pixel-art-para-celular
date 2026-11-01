@@ -1,5 +1,5 @@
 import { migrateLegacyDayTime } from './DayNightCycle.js';
-import { INVENTORY_CONFIG } from './config.js';
+import { INVENTORY_CONFIG, INVENTORY_MAX_LEVEL, inventorySlotsForLevel } from './config.js';
 
 export const SAVE_VERSION = 2;
 export const SAVE_KEY_V1 = 'brumavale-save-v1';
@@ -65,7 +65,10 @@ export function migrateSave(data = {}) {
         ...(data.inventory ?? {}),
         capacityVersion: INVENTORY_CONFIG.capacityVersion,
         maxSlots: Number(data.inventory?.capacityVersion) >= INVENTORY_CONFIG.capacityVersion
-          ? Math.min(INVENTORY_CONFIG.maxSlots, Math.max(1, Number(data.inventory?.maxSlots) || INVENTORY_CONFIG.maxSlots))
+          ? Math.min(
+              inventorySlotsForLevel(INVENTORY_MAX_LEVEL),
+              Math.max(1, Number(data.inventory?.maxSlots) || INVENTORY_CONFIG.maxSlots)
+            )
           : INVENTORY_CONFIG.maxSlots,
         unitsPerSlot: INVENTORY_CONFIG.unitsPerSlot,
         items: data.inventory?.items ?? {}

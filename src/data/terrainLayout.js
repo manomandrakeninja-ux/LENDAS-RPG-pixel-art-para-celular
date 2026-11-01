@@ -28,7 +28,7 @@ export const FRINGE_PRIORITY = Object.freeze({
   [T.SNOW]: 9, [T.VALLEY]: 8, [T.JUNGLE]: 7, [T.FOREST]: 6, [T.SWAMP]: 5, [T.BEACH]: 4, [T.SAND]: 3, [T.DUNE]: 2, [T.ASH]: 1
 });
 export const DECOR_VARIANTS = 6;
-const DECOR_DENSITY = 0.42;
+const DECOR_DENSITY = 0.82;
 
 // Folha 'grass' do Vale: 0..47 grama (Wang), 48..55 trilha reta (lado x 4 variantes), 56..59 fim da trilha.
 export const VALLEY_FRAMES = 64;

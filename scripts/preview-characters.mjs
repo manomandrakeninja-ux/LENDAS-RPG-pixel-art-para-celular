@@ -1,8 +1,11 @@
 import path from 'node:path';
 import { PixelCanvas } from '../src/art/pixel.js';
-import { drawKnightFrame } from '../src/art/knight.js';
 import { MONSTER_PREVIEW, drawMonsterFrame } from '../src/art/monsters.js';
 import { writePng } from './png.js';
+import fs from 'node:fs';
+import { PNG } from 'pngjs';
+import { HERO_SKINS, heroTexture } from '../src/game/HeroStyle.js';
+import { SKIN_FRAME } from '../src/art/skins.js';
 
 // Gera prévias ampliadas do jogador e dos monstros em previa-personagens/.
 // Rode com `npm run preview:characters`.
@@ -33,14 +36,26 @@ function board(width, height) {
   return canvas;
 }
 
-// Jogador: 4 direções x 4 quadros.
-const knightCell = { width: 32 * SCALE + 20, height: 40 * SCALE + 20 };
-const player = board(knightCell.width * 4, knightCell.height * 4);
-for (let direction = 0; direction < 4; direction += 1) {
-  for (let frame = 0; frame < 4; frame += 1) {
-    player.blit(enlarge(drawKnightFrame(direction, frame)), frame * knightCell.width + 10, direction * knightCell.height + 10);
+// Personagens: folhas reais 56 x 64, 12 poses x 4 direções.
+const knightCell = { width: SKIN_FRAME.width * SCALE + 20, height: SKIN_FRAME.height * SCALE + 20 };
+const player = board(knightCell.width * 4, knightCell.height * HERO_SKINS.length);
+HERO_SKINS.forEach((skin, skinRow) => {
+  const file = path.resolve(`public/assets/characters/${heroTexture(skin)}-sheet.png`);
+  const png = PNG.sync.read(fs.readFileSync(file));
+  for (let direction = 0; direction < 4; direction += 1) {
+    for (let frame = 0; frame < 4; frame += 1) {
+      const sprite = new PixelCanvas(SKIN_FRAME.width, SKIN_FRAME.height);
+      for (let y = 0; y < SKIN_FRAME.height; y += 1) {
+        for (let x = 0; x < SKIN_FRAME.width; x += 1) {
+          const from = ((direction * SKIN_FRAME.height + y) * png.width + (frame * SKIN_FRAME.width + x)) * 4;
+          const color = '#' + png.data.readUIntBE(from, 3).toString(16).padStart(6, '0');
+          if (png.data[from + 3]) sprite.pixel(x, y, color, png.data[from + 3]);
+        }
+      }
+      player.blit(enlarge(sprite, SCALE), direction * knightCell.width + 10, skinRow * knightCell.height + 10);
+    }
   }
-}
+});
 writePng(path.join(outDir, 'jogador-cavaleiro.png'), player);
 
 // Monstros: normal (2 quadros) e elite (1 quadro), cada um numa linha.

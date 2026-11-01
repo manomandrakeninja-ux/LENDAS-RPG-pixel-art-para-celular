@@ -492,6 +492,8 @@ const natureEntries = [
   {
     name: 'detail-flowers', width: 20, height: 16, outline: false,
     draw: (canvas) => {
+      const approved = bakedNature('detail-flowers');
+      if (approved) { canvas.blit(approved, 0, 0); return; }
       canvas.line(6, 14, 6, 8, GRASS[3]);
       canvas.line(14, 14, 14, 9, GRASS[3]);
       canvas.pixel(7, 11, GRASS[4]);

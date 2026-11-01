@@ -29,8 +29,13 @@ export function createHeroAnimations(scene, prefix) {
     if (scene.anims.exists(idleKey)) scene.anims.remove(idleKey);
     scene.anims.create({
       key: walkKey,
-      frames: scene.anims.generateFrameNumbers(prefix, { frames: [first, first + 1, first + 2, first + 3] }),
-      frameRate: 9,
+      // Ida e volta evita o salto brusco do último quadro para o primeiro.
+      // O pé que avança retorna antes de trocar de lado, deixando a passada
+      // mais natural mesmo nas folhas de quatro quadros.
+      frames: scene.anims.generateFrameNumbers(prefix, {
+        frames: [first, first + 1, first + 2, first + 3, first + 2, first + 1]
+      }),
+      frameRate: 12,
       repeat: -1
     });
     const idle = cols >= 12
@@ -57,6 +62,8 @@ export class HeroAnimator {
     this.turnMs = 0;
     this.turnDir = null;
     this.flashMs = 0;
+    this.lastStepCol = null;
+    this.lastMotion = { speedRatio: 0, phase: 0, dodging: false, knockback: false };
     this.weaponLook = null;
     this.toolLooks = {};
     this.back = scene.add.image(0, 0, '__DEFAULT').setVisible(false);
@@ -133,20 +140,27 @@ export class HeroAnimator {
   onAnimFrame(anim, frame) {
     if (!anim?.key?.includes('-walk-')) return;
     const col = Number(frame.textureFrame) % this.cols;
-    if ((col === 0 || col === 2) && this.onStep) this.onStep(col);
+    // Cada pé dispara uma vez por ciclo, inclusive no ping-pong 0-1-2-3-2-1.
+    if ((col === 0 || col === 3) && col !== this.lastStepCol && this.onStep) this.onStep(col);
+    this.lastStepCol = col;
   }
 
   /** dir: direção do herói; moving: está andando. */
-  update(delta, dir, moving) {
+  update(delta, dir, moving, motion = {}) {
     this.stance.update(delta);
+    this.lastMotion = { ...this.lastMotion, ...motion };
     if (dir !== this.dir) {
       if (OPPOSITE[this.dir] === dir) { this.turnMs = TURN_MS; this.turnDir = TURN_VIA[dir]; }
       this.dir = dir;
     }
     this.turnMs = Math.max(0, this.turnMs - delta);
     const pose = this.stance.pose();
+    const locomotion = this.lastMotion;
     const sprite = this.sprite;
-    const showDir = this.turnMs > 0 && pose.col === null ? this.turnDir : dir;
+    // A direção visual acompanha a direção lógica imediatamente. A antiga
+    // interpolação passava por outra linha da spritesheet (ex.: baixo ao virar
+    // para a esquerda), fazendo o corpo parecer trocar de skin por um instante.
+    const showDir = dir;
     const row = HERO_DIRS.indexOf(showDir);
     let col;
     let offsetX = 0;
@@ -160,15 +174,30 @@ export class HeroAnimator {
       }
       sprite.setFrame(row * this.cols + usable);
       col = pose.col;
+    } else if (locomotion.dodging) {
+      // A esquiva usa poses já desenhadas da folha e um pequeno deslocamento,
+      // sem rotacionar o sprite (rotação borraria a pixel art).
+      if (sprite.anims.isPlaying) sprite.anims.stop();
+      const dodgeCol = locomotion.speedRatio > 0.7 ? 8 : 7;
+      const usable = this.cols >= 12 ? dodgeCol : 1;
+      sprite.setFrame(row * this.cols + usable);
+      offsetX = showDir === 'left' ? -1 : showDir === 'right' ? 1 : 0;
+      col = dodgeCol;
     } else {
-      const key = `${this.textureKey}-${this.turnMs > 0 ? 'idle' : moving ? 'walk' : 'idle'}-${showDir}`;
+      const key = `${this.textureKey}-${moving ? 'walk' : 'idle'}-${showDir}`;
       if (!sprite.anims.isPlaying || sprite.anims.currentAnim?.key !== key) sprite.play(key, true);
+      const walkScale = 0.8 + (locomotion.speedRatio ?? 0) * 0.45;
+      sprite.anims.timeScale = moving ? Math.min(1.35, Math.max(0.8, walkScale)) : 1;
       col = Number(sprite.frame.name) % this.cols;
       if (!Number.isFinite(col)) col = 1;
     }
     const rig = this.rig[showDir];
-    const bob = moving && pose.col === null && col < 4 ? (rig.walkBob[col] ?? 0) : 0;
-    sprite.y = this.baseY + bob;
+    const walkingPose = moving && pose.col === null && !locomotion.dodging && col < 4;
+    const bob = walkingPose ? (rig.walkBob[col] ?? 0) : 0;
+    const idleBreath = !moving && pose.col === null && !locomotion.dodging
+      ? Math.sin((this.scene.time?.now ?? 0) / 520) * 0.45
+      : 0;
+    sprite.y = this.baseY + bob + idleBreath;
     sprite.x = offsetX;
 
     // Dano: clarão avermelhado curto, depois pisca enquanto dura a reação.

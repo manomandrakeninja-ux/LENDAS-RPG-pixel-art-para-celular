@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { ensureNpcAnims, hasNpcSheet, npcOriginY, npcSheetKey } from './npcArt.js';
 import { PixelCanvas } from '../art/pixel.js';
 import { buildingFootprint } from './Obstacles.js';
-import { buildingVisual } from '../data/buildingVisuals.js';
+import { buildingVisual, visualStage } from '../data/buildingVisuals.js';
 import {
   BUILDING_DEFS,
   BUILDING_HIT_DURABILITY_LOSS,
@@ -18,12 +18,15 @@ import {
   payCost,
   upgradeCost
 } from '../data/buildings.js';
-import { INVENTORY_CONFIG, RESOURCE_TYPES, WORLD } from './config.js';
+import { INVENTORY_CONFIG, INVENTORY_MAX_LEVEL, RESOURCE_TYPES, WORLD, inventorySlotsForLevel, inventoryUpgradeCost } from './config.js';
 import { EquipmentSystem } from './EquipmentSystem.js';
 import { CampDefense } from './CampDefense.js';
 import { freeUnitsFor, slotsUsed, storeBundle, canStoreBundle } from './storageSlots.js';
 import { quantizePixels } from '../art/palette.js';
 import { OVERLAY_DEPTH } from './depths.js';
+import { AUXILIARY_BUILDINGS, AUXILIARY_ORDER, auxiliaryUpgradeCost } from '../data/auxiliaryBuildings.js';
+
+export const AUXILIARY_COLLECTION_COOLDOWN_MS = 5 * 60 * 1000;
 
 export const BUILDINGS = BUILDING_DEFS;
 
@@ -56,6 +59,12 @@ export class Camp {
       }
       this.levels[key] = clampLevel(key, raw ?? BUILDING_DEFS[key].startLevel);
     }
+    this.auxiliaryLevels = Object.fromEntries(AUXILIARY_ORDER.map((key) => [key, Math.max(1, Math.min(10, Number(saved.auxiliaryLevels?.[key]) || 1))]));
+    this.auxiliaryStock = Object.fromEntries(Object.entries(saved.auxiliaryStock ?? {}).map(([type, amount]) => [type, Math.max(0, Math.floor(Number(amount) || 0))]));
+    this.auxiliaryNextCollectionAt = Object.fromEntries(AUXILIARY_ORDER.map((key) => [
+      key,
+      Math.max(0, Number(saved.auxiliaryNextCollectionAt?.[key]) || 0)
+    ]));
     this.durability = {};
     for (const key of BUILDING_ORDER) {
       const value = Number(saved.durability?.[key]);
@@ -71,6 +80,8 @@ export class Camp {
     this.lastAutoReviveDay = Number(saved.lastAutoReviveDay) || 0;
     this.lastLocalReviveNight = Number(saved.lastLocalReviveNight) || 0;
     this.dailyBuffDay = Number(saved.dailyBuffDay) || 0;
+    // Nível de evolução da mochila: 1 = 12 espaços, 2 = 24 espaços, 3 = 36 espaços.
+    this.inventoryLevel = Math.min(INVENTORY_MAX_LEVEL, Math.max(1, Number(saved.inventoryLevel) || 1));
     this.equipment = new EquipmentSystem({
       saved: saved.crafted ?? {},
       unlockedRecipes: saved.unlockedRecipes ?? [],
@@ -125,6 +136,7 @@ export class Camp {
     });
 
     for (const key of Object.keys(ATLAS_FRAMES)) this.buildings[key] = this.drawBuilding(key);
+    this.createAuxiliaryBuildings();
 
     const forge = this.buildings.forge.sprite;
     this.smoke = scene.add.sprite(forge.x + 36, forge.y - 144, 'buildings', 'smoke-0')
@@ -198,10 +210,65 @@ export class Camp {
       .setAlpha(0.05)
       .setDepth(OVERLAY_DEPTH + 4501 + y / 1000);
     if (key === 'forge') glow.setTint(0xff9a4a);
+    this.animateStructure(sprite, glow, key.length * 97);
     this.lightGlows.push(glow);
     const building = { sprite, glow, label: this.makeLabel(key, x, y - 55), sprites: [sprite], obstacles: [] };
     this.placeFootprint(key, building, visual?.stage ?? 1);
     return building;
+  }
+
+  // Serraria e mina ficam dentro do anel da muralha, entre os prédios laterais
+  // e a fogueira. Suas artes são independentes do atlas legado e evoluem com
+  // os estágios visuais já usados pelo acampamento.
+  createAuxiliaryBuildings() {
+    const definitions = {
+      // Cantos superiores internos: ficam a mais de um prédio de distância
+      // da fogueira, do portão, do curral e dos prédios centrais.
+      sawmill: { x: -260, y: -155, sourceLevel: 'farm', label: 'SERRARIA' },
+      mine: { x: 260, y: -155, sourceLevel: 'forge', label: 'MINA' }
+    };
+    this.auxiliaryBuildings = {};
+    for (const [key, definition] of Object.entries(definitions)) {
+      const stage = visualStage(this.auxiliaryLevels[key]);
+      const sprite = this.scene.add.image(this.x + definition.x, this.y + definition.y, `camp-${key}-${stage}`)
+        .setOrigin(0.5, 0.86)
+        .setScale(stage === 1 ? 0.13 : stage === 4 ? 0.145 : 0.16)
+        .setDepth(this.y + definition.y + 10)
+        .setInteractive({ useHandCursor: true });
+      sprite.on('pointerdown', (pointer, localX, localY, event) => {
+        event?.stopPropagation?.();
+        this.scene.openBuilding?.(key);
+      });
+      this.scene.obstacles?.add(sprite.x, sprite.y + 8, 86, 28);
+      const label = this.makeLabel(key, sprite.x, sprite.y - 78);
+      label.setText(`${definition.label} • NV ${stage}`);
+      this.animateStructure(sprite, null, key.length * 113);
+      this.auxiliaryBuildings[key] = { sprite, label, definition, stage };
+    }
+  }
+
+  animateStructure(sprite, glow, seed = 0) {
+    const baseY = sprite.y;
+    this.scene.tweens.add({
+      targets: sprite,
+      y: baseY - 1,
+      duration: 2200 + (seed % 700),
+      ease: 'Sine.easeInOut',
+      yoyo: true,
+      repeat: -1,
+      delay: seed % 500
+    });
+    if (glow) {
+      this.scene.tweens.add({
+        targets: glow,
+        alpha: { from: 0.04, to: 0.1 },
+        duration: 1500 + (seed % 600),
+        ease: 'Sine.easeInOut',
+        yoyo: true,
+        repeat: -1,
+        delay: seed % 300
+      });
+    }
   }
 
   /** Colisão da base conforme o estágio (cada estágio tem um tamanho de prédio). */
@@ -239,6 +306,18 @@ export class Camp {
       }
     }
     this.refreshAnimalPen();
+    this.refreshAuxiliaryBuildings();
+  }
+
+  refreshAuxiliaryBuildings() {
+    for (const [key, building] of Object.entries(this.auxiliaryBuildings ?? {})) {
+      const stage = visualStage(this.auxiliaryLevels[key]);
+      if (stage === building.stage) continue;
+      building.stage = stage;
+      building.sprite.setTexture(`camp-${key}-${stage}`)
+        .setScale(stage === 1 ? 0.13 : stage === 4 ? 0.145 : 0.16);
+      building.label.setText(`${building.definition.label} • NV ${stage}`);
+    }
   }
 
   /**
@@ -511,6 +590,56 @@ export class Camp {
     return upgradeCost(key, this.levels[key] + 1);
   }
 
+  auxiliaryUpgradeCostFor(key) {
+    return auxiliaryUpgradeCost(key, (this.auxiliaryLevels[key] ?? 1) + 1);
+  }
+
+  upgradeAuxiliary(key) {
+    if (!AUXILIARY_BUILDINGS[key]) return { ok: false, message: 'Construção desconhecida.' };
+    const next = (this.auxiliaryLevels[key] ?? 1) + 1;
+    const cost = auxiliaryUpgradeCost(key, next);
+    if (!cost) return { ok: false, message: 'Nível máximo atingido.' };
+    if (!this.pay(cost)) return { ok: false, message: 'Recursos insuficientes.' };
+    this.auxiliaryLevels[key] = next;
+    this.refreshAuxiliaryBuildings();
+    return { ok: true, message: `${AUXILIARY_BUILDINGS[key].name} melhorada para o nível ${next}!` };
+  }
+
+  collectAuxiliary(key) {
+    const level = this.auxiliaryLevels[key];
+    if (!level) return { ok: false, message: 'Construção desconhecida.' };
+    const now = Date.now();
+    const nextAt = this.auxiliaryNextCollectionAt[key] ?? 0;
+    if (now < nextAt) {
+      const seconds = Math.ceil((nextAt - now) / 1000);
+      return { ok: false, reason: 'cooldown', nextAt, remainingSeconds: seconds, message: `A próxima coleta estará disponível em ${Math.floor(seconds / 60)}min ${seconds % 60}s.` };
+    }
+    const produced = key === 'sawmill'
+      ? { wood: 4 + level * 2 }
+      : { stone: 3 + level, iron: Math.max(1, Math.floor(level / 2)), coal: Math.max(1, Math.floor(level / 3)) };
+    const delivered = {};
+    const pending = { ...this.auxiliaryStock };
+    for (const [type, amount] of Object.entries(produced)) pending[type] = (pending[type] ?? 0) + amount;
+    for (const [type, amount] of Object.entries(pending)) {
+      const toBag = Math.min(amount, this.scene.inventory?.freeUnitsFor(type) ?? 0);
+      if (toBag > 0) this.scene.inventory.add(type, toBag);
+      const rest = amount - toBag;
+      let stored = 0;
+      if (rest > 0) {
+        stored = this.storageCanAccept({ [type]: rest }) ? this.store({ [type]: rest }).stored[type] ?? 0 : 0;
+        if (stored < rest) this.auxiliaryStock[type] = rest - stored;
+        else delete this.auxiliaryStock[type];
+      } else delete this.auxiliaryStock[type];
+      if (toBag + stored > 0) delivered[type] = toBag + stored;
+    }
+    const total = Object.values(delivered).reduce((sum, value) => sum + value, 0);
+    if (total > 0) {
+      this.auxiliaryNextCollectionAt[key] = now + AUXILIARY_COLLECTION_COOLDOWN_MS;
+      return { ok: true, delivered, nextAt: this.auxiliaryNextCollectionAt[key], message: `${AUXILIARY_BUILDINGS[key].name}: ${Object.entries(delivered).map(([type, amount]) => `${amount} ${RESOURCE_TYPES[type]?.label?.toLowerCase() ?? type}`).join(', ')}. Próxima coleta em 5 min.` };
+    }
+    return { ok: false, message: 'Mochila e armazém estão cheios.' };
+  }
+
   upgrade(key) {
     const definition = BUILDING_DEFS[key];
     if (!definition) return { ok: false, message: 'Construção desconhecida.' };
@@ -547,6 +676,35 @@ export class Camp {
     this.durability[key] = MAX_DURABILITY;
     this.refreshVisuals();
     return { ok: true, message: `${BUILDING_DEFS[key].name} reparado.` };
+  }
+
+  // ---------- Evolução da mochila ----------
+
+  get inventorySlots() {
+    return inventorySlotsForLevel(this.inventoryLevel);
+  }
+
+  /** Custo para evoluir para o próximo nível (null se já estiver no máximo). */
+  inventoryUpgradeCostFor() {
+    const next = this.inventoryLevel + 1;
+    return inventoryUpgradeCost(next);
+  }
+
+  /** Evolui a mochila para o próximo nível (12 → 24 → 36), pagando do inventário/armazém/moedas. */
+  upgradeInventory() {
+    const nextLevel = this.inventoryLevel + 1;
+    if (nextLevel > INVENTORY_MAX_LEVEL) {
+      return { ok: false, message: 'Mochila já está no tamanho máximo.' };
+    }
+    const cost = inventoryUpgradeCost(nextLevel);
+    if (!cost || !this.pay(cost)) return { ok: false, message: 'Recursos insuficientes para evoluir a mochila.' };
+    this.inventoryLevel = nextLevel;
+    // Aplica imediatamente ao inventário do jogador.
+    if (this.scene?.inventory) {
+      this.scene.inventory.maxSlots = inventorySlotsForLevel(nextLevel);
+    }
+    this.refreshVisuals();
+    return { ok: true, message: `Mochila evoluída para ${this.inventorySlots} espaços!`, level: this.inventoryLevel, slots: this.inventorySlots };
   }
 
   /** Golpe de um invasor: tira 10% da durabilidade. Devolve true se o prédio foi destruído agora. */
@@ -703,6 +861,9 @@ export class Camp {
     return {
       buildingLevelsVersion: 3,
       levels: { ...this.levels },
+      auxiliaryLevels: { ...this.auxiliaryLevels },
+      auxiliaryStock: { ...this.auxiliaryStock },
+      auxiliaryNextCollectionAt: { ...this.auxiliaryNextCollectionAt },
       durability: { ...this.durability },
       wallHp: this.defense ? Math.round(this.defense.wallHp) : this.savedWallHp,
       questKills: this.questKills,
@@ -714,7 +875,8 @@ export class Camp {
       crafted: this.equipment.serialize(),
       unlockedRecipes: this.equipment.serializeUnlocks(),
       storage: { ...this.storage },
-      secretChest: { ...this.secretChest }
+      secretChest: { ...this.secretChest },
+      inventoryLevel: this.inventoryLevel
     };
   }
 }
