@@ -116,6 +116,12 @@ export class GameScene extends Phaser.Scene {
     preloadGameAssets(this);
     // Mundo grande: chão das regiões, objetos dos biomas.
     this.load.image('terrain-tiles', 'assets/tiles/terrain-sheet.png');
+    // Caminhos do Vale: atlas dual-grid v02 (48 quadros de 48 px, máscara dos quadrantes).
+    this.load.image('vale-paths', 'assets/paths/vale-paths.png');
+    this.load.json('vale-paths-index', 'assets/paths/vale-paths.json');
+    // Franja de acabamento dos caminhos (vale-finish v04): quadros de 64 px, ver art-pro/incoming/vale-finish.
+    this.load.image('vale-finish', 'assets/finish/vale-finish.png');
+    this.load.json('vale-finish-index', 'assets/finish/vale-finish.json');
     this.load.json('terrain-index', 'assets/tiles/terrain-sheet.json');
     this.load.atlas('biome', 'assets/nature/biome-atlas.png', 'assets/nature/biome-atlas.json');
   }

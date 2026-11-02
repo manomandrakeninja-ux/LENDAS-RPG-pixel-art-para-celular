@@ -1,0 +1,1 @@
+Vale-finish v04. Coloque PNG e JSON em art-pro/incoming/vale-finish/. Rode o validador original do Claude usando --finish e --finish-json apontando para v04. Sem integração definitiva até capturas aprovadas.

@@ -26,3 +26,7 @@ RETOMAR_TRABALHO.md
 retomar-claude.ps1
 retomada-claude.log
 .retomada.lock
+
+# build temporario no projeto (TEMP/TMP/TMPDIR) e backups locais
+.temp-build/
+art-pro/backups/

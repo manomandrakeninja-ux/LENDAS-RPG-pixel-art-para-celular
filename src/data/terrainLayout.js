@@ -1,5 +1,5 @@
 import { hash } from '../art/pixel.js';
-import { T, TILE, UNDER_TERRAINS, VALLEY } from './worldRegions.js';
+import { T, TILE, UNDER_TERRAINS, VALLEY, regionAt } from './worldRegions.js';
 
 // Decide o ladrilho de cada quadrado a partir da grade de terrenos.
 // Usado pelo gerador de imagens (para saber quais bordas desenhar) e pelo jogo.
@@ -11,6 +11,8 @@ const UNDER_PRIORITY = [T.SEA, T.LAVA, T.MURK, T.ICE];
 // manchas claras/escuras passam de um ladrilho para o outro sem emenda e sem repetir a cada 48 px.
 // Variante = cantos (TL 1, TR 2, BL 4, BR 8) + 16 x miolo (3 miolos diferentes com a mesma borda).
 export const WANG_INTERIORS = 3;
+/** Caminhos do Vale pelo atlas dual-grid (assets/paths). Com ele ligado, as bordas orgânicas antigas ficam desligadas. */
+export const VALE_PATH_ATLAS = true;
 export const BASE_VARIANTS = 16 * WANG_INTERIORS;
 /** Mar, lava, lodo e gelo em blocos de 3x3 ladrilhos (repetem só a cada 144 px). */
 export const UNDER_SUBTILES = 3;
@@ -98,6 +100,22 @@ export function layoutTiles(grid, camp) {
   const under = new Int8Array(cols * rows).fill(-1);
   const overlay = new Array(cols * rows).fill(null);
   const overlay2 = new Array(cols * rows).fill(null);
+  // Caminhos do Vale: estrada que toca a grama e trilha do acampamento. Essas células contam como grama no
+  // cálculo dos cantos Wang, então a grama sob o caminho segue o mesmo padrão dos vizinhos (sem quadrados).
+  const paths = new Uint8Array(cols * rows);
+  if (VALE_PATH_ATLAS) {
+    for (let row = 0; row < rows; row += 1) {
+      for (let col = 0; col < cols; col += 1) {
+        const index = row * cols + col;
+        const trail = terrain[index] === T.VALLEY && valleyPathFrame(col, row, camp) !== null;
+        // Toda estrada dentro da região do Vale é caminho (inclusive o miolo, sem contato com a grama).
+        // Estrada de outros biomas continua como antes.
+        const roadInVale = terrain[index] === T.ROAD && regionAt(col * TILE + TILE / 2, row * TILE + TILE / 2) === 'vale';
+        if (trail || roadInVale) paths[index] = 1;
+      }
+    }
+  }
+  const kindOf = (i) => (paths[i] ? T.VALLEY : terrain[i]);
   // Quadrados "lisos" (base Wang); bordas, trilha e paredes forçam a classe 0 nos cantos em volta.
   const plain = new Uint8Array(cols * rows);
   for (let row = 0; row < rows; row += 1) {
@@ -133,7 +151,7 @@ export function layoutTiles(grid, camp) {
           continue;
         }
       }
-      if (kind === T.VALLEY) {
+      if (kind === T.VALLEY && !paths[index]) {
         const path = valleyPathFrame(col, row, camp);
         if (path !== null) { ground[index] = path; continue; }
       }
@@ -145,7 +163,7 @@ export function layoutTiles(grid, camp) {
     if (i <= 0 || j <= 0 || i >= cols || j >= rows) return 0;
     const a = (j - 1) * cols + i - 1;
     const cells = [a, a + 1, a + cols, a + cols + 1];
-    if (!cells.every((cell) => plain[cell] && terrain[cell] === terrain[a])) return 0;
+    if (!cells.every((cell) => plain[cell] && kindOf(cell) === kindOf(a))) return 0;
     return cornerNoise(i, j);
   };
   for (let row = 0; row < rows; row += 1) {
@@ -154,7 +172,7 @@ export function layoutTiles(grid, camp) {
       if (!plain[index]) continue;
       const wang = corner(col, row) + corner(col + 1, row) * 2 + corner(col, row + 1) * 4 + corner(col + 1, row + 1) * 8;
       const variant = wang + 16 * Math.floor(hash(col, row, 44) * WANG_INTERIORS);
-      ground[index] = terrain[index] === T.VALLEY ? variant : baseName(terrain[index], variant);
+      ground[index] = kindOf(index) === T.VALLEY ? variant : baseName(terrain[index], variant);
     }
   }
   // Bordas orgânicas entre estrada (ROAD) e grama plana do Vale: a célula troca o ladrilho por uma versão com
@@ -162,7 +180,7 @@ export function layoutTiles(grid, camp) {
   const plainGround = ground.slice();
   const roadPlain = (i) => typeof plainGround[i] === 'string' && plainGround[i].startsWith('base-16-');
   const grassPlain = (i) => typeof plainGround[i] === 'number' && plainGround[i] < VALLEY_PATH_START;
-  for (let row = 0; row < rows; row += 1) {
+  if (!VALE_PATH_ATLAS) for (let row = 0; row < rows; row += 1) {
     for (let col = 0; col < cols; col += 1) {
       const index = row * cols + col;
       const kind = terrain[index];
@@ -203,7 +221,7 @@ export function layoutTiles(grid, camp) {
       if (hash(col, row, 61) < DECOR_DENSITY) overlay[index] = decorName(kind, Math.floor(hash(col, row, 62) * DECOR_VARIANTS));
     }
   }
-  return { ground, under, overlay, overlay2 };
+  return { ground, under, overlay, overlay2, paths };
 }
 
 /** Pares terreno/vizinho onde vale pôr manchas de transição (fronteira de regiões). */

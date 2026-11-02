@@ -27,6 +27,7 @@ const TERRAIN_GID = 100;
 const UNDER_GID = 3000;
 const EXTRUDE = 1;
 const HINT_RANGE = 120;
+const PATHS_GID = 20000;
 // Decoração do Vale: chance por ladrilho de grama (soma ~3,5%) e tipos do atlas 'vale-decor' (v03, flores e cogumelos).
 const VALE_CAMP = { x: 1440, y: 1080 };
 const DECOR_KINDS = [
@@ -184,6 +185,7 @@ export class RegionWorld {
       }
     }
     scene.hudCamera?.ignore([this.underLayer, this.groundLayer, this.overlayLayer2, this.overlayLayer]);
+    this.buildValePaths(map);
   }
 
   /** Modo gráfico Leve: esconde as camadas de detalhe do chão (overlay) para renderizar menos tiles. */
@@ -191,6 +193,60 @@ export class RegionWorld {
     if (!this.overlayLayer) return;
     this.overlayLayer.setVisible(!light);
     this.overlayLayer2?.setVisible(!light);
+  }
+
+  /** Caminhos do Vale: atlas dual-grid; cada vértice escolhe o quadro pela máscara dos 4 quadrantes (célula é caminho). */
+  buildValePaths(map) {
+    const scene = this.scene;
+    const { cols, rows } = this.grid;
+    const frames = scene.cache.json.get('vale-paths-index')?.frames;
+    if (!frames || !scene.textures.exists('vale-paths')) return;
+    const byMask = new Map();
+    for (const frame of Object.values(frames)) {
+      if (!byMask.has(frame.mask)) byMask.set(frame.mask, []);
+      byMask.get(frame.mask).push(frame.index);
+    }
+    const pathCells = this.layout.paths;
+    const isPath = (c, r) => c >= 0 && r >= 0 && c < cols && r < rows && pathCells[r * cols + c] === 1;
+    const tileset = map.addTilesetImage('vale-paths', 'vale-paths', TILE, TILE, 0, 0, PATHS_GID);
+    // Vértice (vc, vr): quadrantes TL = célula (vc-1, vr-1), TR = (vc, vr-1), BL = (vc-1, vr), BR = (vc, vr).
+    // A camada fica deslocada meio ladrilho para o quadro ficar centrado no vértice.
+    const layer = map.createBlankLayer('paths', tileset).setDepth(-998.8).setPosition(-TILE / 2, -TILE / 2);
+    for (let vr = 0; vr < rows; vr += 1) {
+      for (let vc = 0; vc < cols; vc += 1) {
+        const mask = (isPath(vc - 1, vr - 1) ? 1 : 0) | (isPath(vc, vr - 1) ? 2 : 0) | (isPath(vc - 1, vr) ? 4 : 0) | (isPath(vc, vr) ? 8 : 0);
+        if (!mask) continue;
+        const options = byMask.get(mask);
+        layer.putTileAt(PATHS_GID + options[Math.floor(hash(vc, vr, 77) * options.length)], vc, vr, false);
+      }
+    }
+    this.pathLayer = layer;
+    scene.hudCamera?.ignore(layer);
+    this.buildValeFinish(pathCells, cols, rows);
+  }
+
+  /** Franja de acabamento (vale-finish v04): cada vértice de borda recebe o quadro da sua máscara, deslocado 8 px. */
+  buildValeFinish(pathCells, cols, rows) {
+    const scene = this.scene;
+    const finish = scene.cache.json.get('vale-finish-index')?.frames;
+    if (!finish || !scene.textures.exists('vale-finish')) return;
+    const isPath = (c, r) => c >= 0 && r >= 0 && c < cols && r < rows && pathCells[r * cols + c] === 1;
+    const group = [];
+    for (let vr = 0; vr < rows; vr += 1) {
+      for (let vc = 0; vc < cols; vc += 1) {
+        const mask = (isPath(vc - 1, vr - 1) ? 1 : 0) | (isPath(vc, vr - 1) ? 2 : 0) | (isPath(vc - 1, vr) ? 4 : 0) | (isPath(vc, vr) ? 8 : 0);
+        if (!mask || mask === 15) continue;
+        const variant = Math.floor(hash(vc, vr, 91) * 2);
+        const frame = finish[`finish-m${String(mask).padStart(2, '0')}-v${variant}`]?.frame;
+        if (!frame) continue;
+        const image = scene.add.image(vc * TILE - 32, vr * TILE - 32, 'vale-finish').setOrigin(0, 0).setDepth(-998.7);
+        image.setCrop(frame.x, frame.y, frame.w, frame.h);
+        image.setPosition(vc * TILE - 32, vr * TILE - 32);
+        group.push(image);
+      }
+    }
+    this.finishImages = group;
+    scene.hudCamera?.ignore(group);
   }
 
   /** Copia o atlas com margem EXTRUDE e espaçamento 2*EXTRUDE, repetindo a borda de cada ladrilho; descarta o original. */
